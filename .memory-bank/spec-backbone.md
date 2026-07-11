@@ -15,6 +15,9 @@ status: active
   recommended application mechanisms.
 - [IDEA_OS.md](../IDEA_OS.md): central-server, SpaPromoClient, minimal security
   and recommended deployment profile.
+- [IDEA_INGEST.md](../IDEA_INGEST.md): batch-first photo ingestion, direct
+  upload and public Yandex Disk link intake from arbitrary photographer
+  accounts.
 - These files are discovery inputs only. They do not change the blocked status
   or replace `/brief`, `/write-prd`, `/spec-init` and `/spec-design` outputs.
 

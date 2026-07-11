@@ -576,6 +576,26 @@ workers и очереди для них заранее не создаются.
 
 **Почему принято:** схема допускает простое горизонтальное увеличение числа consumers, но не оплачивает эту сложность заранее.
 
+### 7.5 Идемпотентность worker
+
+**Принятое архитектурное решение:** jobs выполняются по модели at-least-once, но
+повтор одной комбинации `(photo_id, pipeline_revision_id, job_type)` должен
+приводить к тому же итоговому состоянию без дублирования результатов.
+
+Original и pipeline revision неизменяемы. Worker выполняет тяжёлую обработку вне
+транзакции, а затем одной PostgreSQL-транзакцией проверяет актуальный
+`locked_by = worker_id:claim_uuid`, полностью заменяет `photo_faces`, обновляет
+`photo_pipeline_states` в `ready | no_faces` и помечает job как `completed`.
+Повтор terminal job становится no-op; автоматический lease recovery остаётся
+рекомендацией.
+
+Preview и thumbnail сначала записываются в MinIO по детерминированному versioned
+key, после чего key публикуется в БД. Возможный orphan безопасно удаляется позже;
+distributed transaction и exactly-once infrastructure не требуются.
+
+**Почему принято:** схема переживает crash и retry средствами уже выбранных
+PostgreSQL и MinIO, не добавляя broker, coordinator или новый workflow engine.
+
 ---
 
 ## 8. RealtimeFaceService

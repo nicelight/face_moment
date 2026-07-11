@@ -10,6 +10,9 @@ status: active
   и явно отмеченные рекомендации.
 - [IDEA_OS.md](../IDEA_OS.md): Инфраструктурная концепция, topology display
   clients, минимальная безопасность и deployment-рекомендации.
+- [IDEA_INGEST.md](../IDEA_INGEST.md): Batch-first поступление фотографий,
+  direct upload и импорт публичных ссылок Яндекс Диска из произвольных
+  аккаунтов фотографов.
 
 ## Навигация
 
