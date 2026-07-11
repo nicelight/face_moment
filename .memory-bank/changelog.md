@@ -4,6 +4,12 @@ status: active
 ---
 # Changelog
 
+## [2026-07-11] Discovery input refinement
+- Linked `IDEA_APP.md` and `IDEA_OS.md` as non-normative pre-PRD inputs.
+- Preserved blocked SDD readiness until the formal brief/PRD/spec workflow runs.
+- Split the central host into administrative `facemoment` and unprivileged
+  autologin `display` users; required the standard Chromium sandbox.
+
 ## [2026-07-09] Initial setup
 - Created Memory Bank skeleton
 - Seeded core docs (product, requirements, testing, task registry)

@@ -4,6 +4,13 @@ status: active
 ---
 # Memory Bank Index
 
+## Pre-PRD discovery inputs
+
+- [IDEA_APP.md](../IDEA_APP.md): Концепция приложения, обязательные MVP-границы
+  и явно отмеченные рекомендации.
+- [IDEA_OS.md](../IDEA_OS.md): Инфраструктурная концепция, topology display
+  clients, минимальная безопасность и deployment-рекомендации.
+
 ## Навигация
 
 - [.memory-bank/constitution.md](constitution.md): Project Constitution — top governing policy for agents.

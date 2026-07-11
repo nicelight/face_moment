@@ -6,8 +6,17 @@ status: active
 
 ## Pre-PRD Spec Status
 - Status: blocked
-- Last updated: 2026-07-09
+- Last updated: 2026-07-11
 - Notes: Run /spec-init after /write-prd to determine whether PRD decomposition is safe.
+
+## Discovery Inputs
+
+- [IDEA_APP.md](../IDEA_APP.md): product/application concept, data model and
+  recommended application mechanisms.
+- [IDEA_OS.md](../IDEA_OS.md): central-server, SpaPromoClient, minimal security
+  and recommended deployment profile.
+- These files are discovery inputs only. They do not change the blocked status
+  or replace `/brief`, `/write-prd`, `/spec-init` and `/spec-design` outputs.
 
 ## Decomposition Inputs
 - User scenarios: not_started

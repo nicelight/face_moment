@@ -1,16 +1,19 @@
 # Face Moment: приложение
 
 
-Обновлено: 2026-07-10
+Обновлено: 2026-07-11
 
 ## 0. Статус документа
 
 Этот документ фиксирует продуктовую концепцию, принятые архитектурные решения и границы MVP.
 
-Используются три статуса:
+Используются четыре статуса:
 
 - **Требование** — поведение, которое система обязана обеспечивать.
 - **Принятое архитектурное решение** — текущий способ реализации, выбранный осознанно.
+- **Рекомендация** — предпочтительная стартовая реализация, которую можно
+  упростить или заменить без изменения продуктовых требований и принятых
+  архитектурных границ.
 - **Кандидат на будущее** — возможное усложнение, которое нельзя добавлять без измеримой необходимости.
 
 ### Правило для разработчиков и AI-агентов
@@ -23,6 +26,10 @@
 2. Проблема подтверждена метриками, benchmark-ом или эксплуатационными данными.
 
 **Почему принято:** проект следует KISS. Сложность добавляется для решения уже наблюдаемой проблемы, а не для гипотетического будущего масштаба.
+
+Рекомендации не являются MVP gates. Их разрешено не реализовывать, если более
+простое решение сохраняет корректность, наблюдаемость обязательных SLA и
+принятые архитектурные границы.
 
 ---
 
@@ -204,13 +211,23 @@ Production-режим: фотография обрабатывается тол�
 
 #### `dual_benchmark`
 
-Пилотный режим: SFace и Buffalo M независимо выполняют полный detection, preprocessing и embedding extraction на одной фотографии.
+Рекомендуемый пилотный режим: SFace и Buffalo M независимо выполняют полный
+detection, preprocessing и embedding extraction на одной фотографии.
 
 Клиентская выдача всё равно строится только по одному обслуживающему pipeline.
 
-**Почему принято:** `active_only` сохраняет производительность production, а `dual_benchmark` позволяет честно сравнить модели на одинаковых реальных данных без multi-model ensemble в клиентском поиске.
+`dual_benchmark` не является обязательным режимом MVP и может выполняться
+отдельным offline benchmark-ом.
+
+**Почему принято:** `active_only` сохраняет производительность production, а
+`dual_benchmark` рекомендуется только тогда, когда нужен честный online-срез на
+одинаковых реальных данных без multi-model ensemble в клиентском поиске.
 
 ### 4.6 Безопасное переключение pipeline
+
+**Статус: рекомендация.** Serving/pending migration нужна, только если в пилоте
+действительно требуется менять pipeline без окна неполной выдачи. Базовый MVP
+может работать с одной заранее выбранной serving revision.
 
 Для SPA хранятся:
 
@@ -223,13 +240,17 @@ processing_mode
 Переключение выполняется так:
 
 1. Админ выбирает новый pipeline как `pending`.
-2. PostgreSQL создаёт jobs для отсутствующих embeddings.
+2. PostgreSQL создаёт jobs для отсутствующих состояний и embeddings.
 3. Пока идёт миграция, новые фотографии обрабатываются serving и pending pipelines.
-4. Админка показывает процент покрытия pending pipeline.
-5. После полного покрытия и успешного прогрева модели pending pipeline атомарно становится serving.
+4. Coverage pending pipeline считается по состояниям `ready` и `no_faces`.
+5. После полного покрытия, успешного прогрева модели и наличия калибровки для
+   `pipeline_code` pending pipeline атомарно становится serving.
 6. Старые embeddings можно удалить позже по отдельной подтверждённой операции.
 
-Нельзя немедленно менять serving pipeline, если его embeddings отсутствуют для части активного периода.
+Нельзя менять serving pipeline, если часть активного периода не имеет terminal
+state `ready | no_faces` или для соответствующего `pipeline_code` отсутствуют
+откалиброванные thresholds. Управление pending pipeline через админку является
+рекомендацией; ту же операцию можно выполнить простым административным command.
 
 **Почему принято:** мгновенное переключение создаёт период, когда часть новых или старых фотографий невозможно найти. Минимальная схема serving/pending устраняет эту дыру без сложного orchestration.
 
@@ -259,14 +280,14 @@ name
 serving_pipeline_revision_id
 pending_pipeline_revision_id
 processing_mode
-cosine_threshold_sface_selfie
-cosine_threshold_sface_reference
-cosine_threshold_buffalo_m_selfie
-cosine_threshold_buffalo_m_reference
 min_query_face_quality
 created_at
 updated_at
 ~~~
+
+`pending_pipeline_revision_id` и изменяемый `processing_mode` нужны только при
+включении рекомендуемых serving/pending или `dual_benchmark` flows. Минимальный
+MVP может хранить только serving revision и фиксированный `active_only`.
 
 #### `photos`
 
@@ -283,7 +304,6 @@ width
 height
 checksum_sha256
 created_at
-searchable_at
 ~~~
 
 #### `pipeline_revisions`
@@ -299,6 +319,51 @@ normalization_version
 embedding_dim
 created_at
 ~~~
+
+#### `pipeline_thresholds`
+
+~~~text
+spa_id
+pipeline_code: opencv_sface | insightface_buffalo_m
+query_source: selfie | reference
+threshold
+calibration_id
+calibrated_at
+
+UNIQUE(spa_id, pipeline_code, query_source)
+~~~
+
+Threshold хранится на уровне типа модели и SPA, а не на уровне
+`pipeline_revision_id`. Наличие `calibration_id` и `calibrated_at` означает, что
+данная комбинация `spa_id + pipeline_code + query_source` откалибрована и может
+использоваться для serving. Если калибровки нет, переключение блокируется, а
+админке рекомендуется предложить запуск или регистрацию калибровки.
+
+**Почему принято:** type-level threshold соответствует умеренному KISS и не
+создаёт отдельную настройку для каждой revision. `calibration_id` сохраняет
+происхождение значения без связывания threshold с revision.
+
+#### `photo_pipeline_states`
+
+~~~text
+photo_id
+pipeline_revision_id
+status: pending | processing | ready | no_faces | failed
+searchable_at
+last_error
+
+UNIQUE(photo_id, pipeline_revision_id)
+~~~
+
+`ready` означает, что обработка завершена и searchable face records созданы.
+`no_faces` является успешным terminal state без найденных лиц. Coverage pipeline
+считается как доля `ready + no_faces` среди ожидаемых фотографий; `failed` в
+coverage не входит. `photos.searchable_at` не хранится: доступность фотографии
+для текущего serving pipeline определяется по `photo_pipeline_states`.
+
+**Почему принято:** отдельное состояние устраняет неоднозначность между «ещё не
+обработано», «обработано без лиц» и «обработка завершилась ошибкой», не создавая
+сложного workflow engine.
 
 #### `photo_faces`
 
@@ -358,7 +423,7 @@ query embedding
 → WHERE spa_id = selected SPA
 → WHERE captured_at входит в дату / visit / time window
 → точное cosine distance по оставшимся векторам
-→ фильтр по calibrated threshold
+→ фильтр по calibrated threshold для SPA, pipeline code и query source
 → сортировка
 → группировка по photo_id
 → preview
@@ -375,7 +440,7 @@ query embedding
 ~~~text
 query_face_quality >= min_query_face_quality
 AND
-cosine_similarity >= threshold[pipeline][query_source]
+cosine_similarity >= threshold[spa_id][pipeline_code][query_source]
 ~~~
 
 Threshold калибруется отдельно для:
@@ -384,6 +449,9 @@ Threshold калибруется отдельно для:
 - SFace reference-camera;
 - Buffalo M selfie;
 - Buffalo M reference-camera.
+
+Значения редактируются отдельно для каждого SPA в админке. Threshold не
+привязывается к `pipeline_revision_id`.
 
 ### 6.3 Top-1 / top-2 margin не используется
 
@@ -413,17 +481,25 @@ Threshold калибруется отдельно для:
 → создать preview и thumbnail
 → запустить нужный FaceEngine
 → сохранить photo_faces
-→ отметить фотографию searchable
+→ обновить photo_pipeline_states
 → перейти к следующей job
 ~~~
 
-Worker обрабатывает одну фотографию за раз. Внутри одной операции OpenCV/ONNX/OpenVINO могут использовать несколько разрешённых CPU-ядер.
+Worker обрабатывает одну фотографию за раз. Внутри одной операции
+OpenCV/ONNX/OpenVINO могут использовать несколько CPU-ядер; конкретные cpuset и
+thread limits являются deployment-рекомендацией из `IDEA_OS.md`, а не
+требованием приложения.
 
 **Почему принято:** один последовательный worker устраняет конкуренцию нескольких inference-процессов и проще диагностируется. При 1 500–3 000 фото в день его достаточность сначала проверяется benchmark-ом.
 
 ### 7.2 PostgreSQL как очередь фоновых jobs
 
-Используется таблица:
+**Статус: рекомендация.** Обязательная граница состоит в том, что background
+processing остаётся в PostgreSQL и не требует внешнего broker-а. Развитая job
+schema, автоматический recovery, fixed ordering и retry являются рекомендуемой
+production-профильной реализацией, а не требованием MVP.
+
+Рекомендуемая таблица:
 
 #### `photo_processing_jobs`
 
@@ -445,22 +521,31 @@ finished_at
 UNIQUE(photo_id, pipeline_revision_id, job_type)
 ~~~
 
-Worker атомарно забирает одну job через транзакцию и `FOR UPDATE SKIP LOCKED`. Зависшая `processing` job возвращается в `pending` после timeout. Число retry ограничено.
+Worker атомарно забирает одну job через транзакцию. Для развитого варианта
+рекомендуется `FOR UPDATE SKIP LOCKED`, возврат зависшей `processing` job в
+`pending` после timeout и ограниченное число retry. Более простой single-worker
+MVP может использовать обычный transactional claim и ручной повтор failed jobs.
 
-Внутри одной таблицы используется простое детерминированное правило выбора:
+Для развитого варианта рекомендуется простое детерминированное правило выбора:
 
 1. новые фотографии для serving pipeline;
 2. недостающие embeddings pending pipeline;
 3. `dual_benchmark` и массовая переобработка;
 4. ограниченная порция cleanup-задач.
 
-Это реализуется одним SQL `ORDER BY` без поля произвольного priority и без отдельных очередей.
+Это можно реализовать одним SQL `ORDER BY` без поля произвольного priority и без
+отдельных очередей. Fixed ordering не является обязательным, пока в MVP нет
+одновременного backlog разных классов jobs.
 
-**Почему принято:** PostgreSQL уже является обязательной частью проекта и достаточен для одного фонового consumer-а. Фиксированный порядок не позволяет массовой переобработке заблокировать новые фотографии, но не требует внешнего broker-а, нескольких priority queues или scheduler-а.
+**Почему принято:** PostgreSQL уже является обязательной частью проекта и
+достаточен для одного фонового consumer-а. Рекомендуемый фиксированный порядок
+не позволяет массовой переобработке заблокировать новые фотографии, но не
+требует внешнего broker-а, нескольких priority queues или scheduler-а.
 
 ### 7.3 Что обрабатывает тот же worker
 
-Тот же worker выполняет:
+**Статус: рекомендация.** При наличии соответствующих jobs тот же worker может
+выполнять:
 
 - первичную обработку фотографий;
 - пересчёт missing embeddings;
@@ -468,11 +553,17 @@ Worker атомарно забирает одну job через транзак�
 - `dual_benchmark` jobs;
 - периодическую очистку истёкших временных файлов и sessions.
 
-Не создаются отдельные workers и очереди для каждого типа операций.
+В MVP допустимо реализовать только первичную обработку. Backfill, переобработка,
+`dual_benchmark` и cleanup подключаются по фактической необходимости; отдельные
+workers и очереди для них заранее не создаются.
 
-**Почему принято:** все задачи используют один и тот же CPU-heavy pipeline и не требуют параллельного выполнения на текущем масштабе.
+**Почему принято:** если эти задачи появляются, один worker остаётся самым
+простым местом их выполнения и не требует параллельных очередей на текущем
+масштабе.
 
 ### 7.4 Условие масштабирования background processing
+
+**Статус: рекомендация для следующего минимального шага, не требование MVP.**
 
 Второй PostgreSQL-worker разрешено добавить, если выполняется хотя бы одно условие:
 
@@ -480,7 +571,8 @@ Worker атомарно забирает одну job через транзак�
 - возраст самой старой pending job растёт во время обычной дневной нагрузки;
 - worker не успевает обработать суточный объём до следующего рабочего периода.
 
-Новый worker использует ту же таблицу и `SKIP LOCKED`; Redis/Celery для этого не требуются.
+Если второй consumer действительно нужен, рекомендуется использовать ту же
+таблицу и `SKIP LOCKED`; Redis/Celery для этого не требуются.
 
 **Почему принято:** схема допускает простое горизонтальное увеличение числа consumers, но не оплачивает эту сложность заранее.
 
@@ -515,7 +607,35 @@ RealtimeFaceService загружает SFace и Buffalo M при старте и
 
 **Почему принято:** разные SPA могут одновременно использовать разные pipelines. Загрузка модели по первому запросу создаёт непредсказуемую задержку, поэтому обе модели должны быть заранее готовы.
 
-### 8.5 Concurrency и короткая очередь в памяти
+### 8.3 Контракт SpaPromoClient
+
+Локальный HDMI-display центрального сервера и отдельные клиенты остальных SPA
+используют один логический контракт `SpaPromoClient`:
+
+~~~text
+захватить 3-5 кадров
+→ локально выбрать лучший кадр
+→ отправить один синхронный HTTPS request с spa_client_token
+→ получить previews + QR + result_ttl
+→ показать результат до истечения TTL
+→ вернуться к локально закэшированной рекламе
+~~~
+
+`spa_client_token` является простым секретом клиента. Сервер хранит отображение
+`token_hash -> spa_id`, определяет SPA только по token и не доверяет `spa_id` из
+request body. Token передаётся в HTTP authorization header, не помещается в URL
+и не записывается в application logs.
+
+Ответ возвращается в том же HTTP request/response. SSE и WebSocket для этого
+сценария не используются. При timeout или сетевой ошибке клиент отбрасывает
+устаревший запрос, продолжает показывать рекламу и может повторить операцию только
+со свежим кадром.
+
+**Почему принято:** результат нужен только инициировавшему его клиенту и готовится
+в рамках короткой синхронной операции. Request/response проще отдельного event
+channel и исключает маршрутизацию событий между display-клиентами.
+
+### 8.4 Concurrency и короткая очередь в памяти
 
 Стартовая конфигурация RealtimeFaceService:
 
@@ -524,7 +644,8 @@ RealtimeFaceService загружает SFace и Buffalo M при старте и
 - ограниченная FIFO-очередь в памяти;
 - deadline для каждого запроса;
 - устаревшие reference-запросы не обрабатываются;
-- при перезапуске сервиса SPA-клиент повторяет запрос.
+- при перезапуске сервиса `SpaPromoClient` повторяет запрос только со свежим
+  reference-кадром.
 
 Это не durable job queue и не требует Redis.
 
@@ -532,7 +653,12 @@ RealtimeFaceService загружает SFace и Buffalo M при старте и
 
 ## 9. Метрики p50/p95/p99
 
-### 9.1 Realtime timestamps
+Для проверки обязательных SLA достаточно сохранять данные для трёх базовых
+показателей: `trigger_to_preview_p95`, `realtime_queue_wait_p95` и
+`ingest_to_searchable_p95`. Детальная телеметрия ниже является рекомендацией и
+не блокирует минимальный MVP.
+
+### 9.1 Рекомендуемые realtime timestamps
 
 Для каждого realtime-запроса сохраняются:
 
@@ -559,15 +685,18 @@ query_source
 - `server_total_ms`;
 - `trigger_to_preview_ms`.
 
-### 9.2 Percentiles
+### 9.2 Рекомендуемые percentiles
 
-PostgreSQL рассчитывает p50/p95/p99 через `percentile_cont` за выбранный период и отдельно по SPA, pipeline и query source.
+Рекомендуется рассчитывать p50/p95/p99 в PostgreSQL через `percentile_cont` за
+выбранный период и, когда это полезно, отдельно по SPA, pipeline и query source.
 
 Не требуется отдельный Prometheus/Grafana stack для MVP.
 
-**Почему принято:** PostgreSQL уже хранит события и способен вычислять необходимые перцентили. Отдельный monitoring stack добавляется позже только при появлении более широких эксплуатационных требований.
+**Почему принято:** PostgreSQL уже хранит события и способен вычислять
+необходимые перцентили без обязательного отдельного monitoring stack. Разрезы
+добавляются только тогда, когда помогают диагностировать измеримую проблему.
 
-### 9.3 Основные наблюдаемые показатели
+### 9.3 Рекомендуемые расширенные показатели
 
 - `trigger_to_preview_p50/p95/p99`;
 - `realtime_queue_wait_p50/p95/p99`;
@@ -576,8 +705,8 @@ PostgreSQL рассчитывает p50/p95/p99 через `percentile_cont` з�
 - `ingest_to_searchable_p50/p95/p99`;
 - oldest pending background job;
 - доля rejected/expired realtime requests;
-- доля фотографий без embeddings serving pipeline;
-- processing failures по pipeline revision.
+- coverage serving pipeline по `ready + no_faces`;
+- доля `pending | processing | failed` по pipeline revision.
 
 **Почему принято:** разделение этапов показывает реальный источник задержки: сеть, ожидание свободного сервиса, inference, поиск или background backlog.
 
@@ -606,32 +735,52 @@ SFace и Buffalo M сравниваются на размеченных реал
 
 Raw-значения `manual_false_positive_count` без числа поисков не используются как основная метрика.
 
+Результат принятой калибровки получает `calibration_id` и записывает type-level
+thresholds для конкретного SPA и query source через админку. Отдельная запись на
+каждую pipeline revision не создаётся.
+
 **Почему принято:** threshold и выбор модели нельзя надёжно определить по публичным benchmark-ам. Решение должно учитывать реальные камеры, освещение и фотографии проекта.
 
 ---
 
 ## 13. Админка
 
-### 13.1 Загрузка и обработка
+### 13.1 Минимальная админка
 
 - batch upload с checksum и повторной отправкой;
 - привязка к SPA и дате;
-- статус originals, preview и embeddings;
-- pending/processing/completed/failed jobs;
-- просмотр и повтор failed jobs;
-- процент фотографий, доступных для поиска.
+- базовый статус originals, preview и `photo_pipeline_states`;
+- выбор serving pipeline для SPA;
+- редактирование thresholds для каждого SPA.
 
-### 13.2 Pipeline settings
+### 13.2 Threshold settings
 
-- `serving_pipeline_revision`;
+Администратор выбирает SPA и может изменить четыре type-level значения:
+
+- SFace для `selfie`;
+- SFace для `reference`;
+- Buffalo M для `selfie`;
+- Buffalo M для `reference`.
+
+Для каждого значения показываются `calibration_id` и `calibrated_at`. Thresholds
+не создаются и не редактируются отдельно для pipeline revisions. Если нужная
+комбинация `pipeline_code + query_source` не откалибрована, переключение serving
+pipeline блокируется и админка предлагает зарегистрировать или запустить
+калибровку.
+
+### 13.3 Рекомендуемое расширенное управление pipeline
+
+Следующие возможности полезны для длительной эксплуатации, но не являются
+требованием MVP:
+
 - `pending_pipeline_revision`;
-- `active_only` / `dual_benchmark`;
-- coverage каждой pipeline revision;
-- запуск reprocess missing embeddings;
-- отдельные thresholds для selfie и reference;
-- статус моделей: missing/loading/warming/ready/error.
+- UI control для `active_only` / `dual_benchmark`;
+- coverage каждой pipeline revision по `ready + no_faces`;
+- запуск reprocess missing states/embeddings;
+- просмотр и повтор failed jobs;
+- состояния моделей: missing/loading/warming/ready/error.
 
-### 13.3 Realtime и performance
+### 13.4 Рекомендуемая техническая диагностика
 
 - p50/p95/p99 queue wait, inference и trigger-to-preview;
 - число expired/rejected requests;
@@ -641,9 +790,15 @@ Raw-значения `manual_false_positive_count` без числа поиск�
 - фактический CPU set RealtimeFaceService;
 - число разрешённых inference threads.
 
+Эти показатели можно сначала получать через SQL, logs и deployment diagnostics.
+Отдельные UI-панели добавляются только при подтверждённой операционной пользе.
+
 В админке нет кнопок pause/resume workers, priority, `reference_mode` и Redis TTL.
 
-**Почему принято:** админка показывает фактическое состояние и измерения, но не раскрывает операторам сложные механизмы управления scheduler-ом, которых в архитектуре нет.
+**Почему принято:** минимальная админка покрывает загрузку, serving pipeline и
+обязательную настройку thresholds. Coverage, pending management, model states,
+CPU sets, thread limits и богатые percentile-разрезы остаются рекомендациями и
+не раздувают первый MVP.
 
 ---
 
@@ -664,35 +819,63 @@ selfie/reference match
 - preview с watermark;
 - маленькие preview на публичном экране;
 - оригиналы только после оплаты;
-- короткоживущие signed download URLs;
+- короткоживущие signed download URLs через публичный HTTPS endpoint backend;
 - TTL для QR/search sessions;
 - временные selfie/reference-файлы удаляются после истечения session;
 - все запросы имеют rate limit;
+- каждый `SpaPromoClient` аутентифицируется своим простым
+  `spa_client_token`, по которому сервер определяет `spa_id`;
+- локальный Chromium запускается непривилегированным OS-user `display` со
+  штатным sandbox; флаг `--no-sandbox` запрещён;
+- административные SSH, `sudo`, Docker и deployment secrets доступны только
+  OS-user `facemoment`;
+- PostgreSQL и MinIO доступны только внутри server/Docker network и не
+  публикуются наружу;
+- preview и originals отдаются через HTTPS backend; signed URL не открывает
+  прямой внешний доступ к MinIO;
 - visit code/браслет/чек может быть добавлен как дополнительное ограничение поиска.
 
-**Почему принято:** face similarity не должна быть единственным механизмом доступа к оригиналам. Ограничение области поиска одновременно снижает риск неправильной выдачи и ускоряет exact search.
+**Почему принято:** face similarity не должна быть единственным механизмом
+доступа к оригиналам. Ограничение области поиска одновременно снижает риск
+неправильной выдачи и ускоряет exact search. Простой client token создаёт
+необходимую привязку display к SPA без mTLS, VLAN или сложного RBAC.
 
 ---
 
 ## 15. Что входит в MVP приложения
 
-2. Админка и batch upload.
-3. PostgreSQL + pgvector exact search.
-4. MinIO/S3-compatible storage.
+1. Минимальная админка, batch upload и type-level thresholds для каждого SPA.
+2. PostgreSQL + pgvector exact search.
+3. MinIO/S3-compatible storage без внешней публикации.
+4. `photo_pipeline_states` как источник searchable state и coverage.
 5. Один PostgreSQL-backed `BackgroundPhotoWorker`.
 6. Один синхронный `RealtimeFaceService`.
-7. Постоянно загруженные SFace и Buffalo M.
-8. `FaceEngine` adapters с родным preprocessing.
-9. Pipeline-specific `photo_faces`.
-10. Выбор serving pipeline на уровне SPA.
-11. Режимы `active_only` и `dual_benchmark`.
-12. Безопасное serving/pending переключение pipeline.
-13. Поиск по selfie/live-selfie.
-15. Галерея preview с watermark.
-16. Оплата и выдача signed download URL.
-17. p50/p95/p99 для realtime и background pipeline.
-18. Retry и восстановление зависших PostgreSQL jobs.
-20. Benchmark SFace и Buffalo M на реальных данных.
+7. Синхронный HTTP contract для `SpaPromoClient` и простой
+   `spa_client_token -> spa_id` mapping.
+8. Постоянно загруженные SFace и Buffalo M.
+9. `FaceEngine` adapters с родным preprocessing.
+10. Pipeline-specific `photo_faces`.
+11. Один выбранный serving pipeline на уровне SPA и режим `active_only`.
+12. Поиск по selfie/live-selfie.
+13. Галерея preview с watermark.
+14. Оплата и выдача signed download URL через HTTPS backend.
+15. Минимальные p95-метрики для realtime queue, trigger-to-preview и
+    ingest-to-searchable.
+16. Benchmark SFace и Buffalo M на реальных данных.
+
+### 15.1 Рекомендуется после минимального MVP
+
+- `dual_benchmark` как online-режим;
+- serving/pending migration и backfill;
+- fixed ordering разных классов jobs;
+- автоматический recovery зависших jobs и retry;
+- benchmark, backfill и cleanup в одном worker;
+- масштабирование consumers через `SKIP LOCKED`;
+- coverage/model-state/pending controls в админке;
+- богатые p50/p95/p99 разрезы, CPU sets и thread-limit diagnostics.
+
+Эти рекомендации можно включить раньше только при подтверждённой пользе для
+пилота; они не являются условиями готовности базового MVP.
 
 ## 16. Что осознанно не входит в MVP приложения
 
@@ -740,11 +923,16 @@ selfie/reference match
 
 ### 18.4 Ошибочный threshold
 
-Слишком низкий threshold показывает чужие фотографии, слишком высокий пропускает нужные. Значения нельзя брать только из документации моделей; они калибруются на данных проекта.
+Слишком низкий threshold показывает чужие фотографии, слишком высокий пропускает
+нужные. Значения нельзя брать только из документации моделей; они калибруются на
+данных проекта отдельно по SPA, pipeline code и query source и редактируются в
+админке.
 
 ### 18.5 Переключение pipeline
 
-Неполное покрытие pending pipeline создаёт missing results. Serving меняется только после завершения backfill.
+Если serving/pending migration включена, неполное покрытие pending pipeline
+создаёт missing results. Serving меняется только после coverage по
+`ready + no_faces` и проверки type-level calibration.
 
 ## 19. Финальная архитектурная формула приложения
 
@@ -761,13 +949,20 @@ MinIO/S3-compatible storage
 +
 один синхронный RealtimeFaceService
 +
+синхронный HTTP SpaPromoClient с простым spa_client_token
++
+facemoment для администрирования + непривилегированный display с Chromium sandbox
++
 SFace и Buffalo M с родным preprocessing
 +
-pipeline-specific face records
+pipeline-specific face records и photo_pipeline_states
++
+type-level thresholds для каждого SPA
 +
 никаких Redis/Celery/priority/pause/ANN/clustering/margin
 +
-p50/p95/p99 как основание для любого будущего усложнения
+развитые jobs, pending management, CPU diagnostics и богатые percentiles
+остаются рекомендациями
 ~~~
 
 Главный принцип:
