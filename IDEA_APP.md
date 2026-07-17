@@ -1,11 +1,16 @@
 # Face Moment: приложение
 
 
-Обновлено: 2026-07-11
+Обновлено: 2026-07-17
 
 ## 0. Статус документа
 
-Этот документ фиксирует продуктовую концепцию, принятые архитектурные решения и границы MVP.
+Этот документ фиксирует продуктовую концепцию, принятые архитектурные решения,
+границы первого закрытого pilot и post-pilot направление продукта.
+
+Если не указано иное, `pilot MVP` означает одну SPA и контролируемые проходы
+заранее информированных и согласившихся тестировщиков. Целевая платформа на
+10–15 SPA и paid flow не являются gate первого pilot.
 
 Используются четыре статуса:
 
@@ -35,11 +40,38 @@
 
 ## 1. Суть проекта
 
-В SPA-центрах фотографы делают фотографии посетителей. После посещения клиент должен найти свои фотографии по селфи, выбрать их, оплатить и скачать оригиналы.
+### 1.1 Продуктовая проблема
 
-Также на выходе из SPA устанавливается промо-экран с камерой. Он делает reference-кадры посетителя, находит его фотографии и показывает несколько preview и QR-код для перехода на телефон.
+Главная проблема Face Moment — привлечь внимание посетителя SPA к возможности
+купить сделанные во время посещения фотографии. Основной носитель проблемы —
+фотограф: без своевременного персонального контакта с посетителем потенциальный
+покупатель может не узнать о готовых снимках и фотограф теряет продажу.
 
-### 1.1 Масштаб
+Посетитель является пользователем поиска и покупателем, а Promo на выходе
+служит моментом привлечения его внимания к фотографиям.
+
+### 1.2 Сквозной путь первого pilot
+
+~~~text
+фотограф снимает разных посетителей SPA
+→ через authenticated web app загружает готовые JPEG и подтверждает batch
+→ система обрабатывает фотографии и делает их доступными для поиска
+→ sensor автоматически запускает reference-серию при проходе тестировщиков
+→ Promo показывает четыре low-quality фотографии без watermark и QR
+→ QR открывает на телефоне уже найденную session без повторного selfie
+→ landing показывает SPA, дату, один teaser и число N фотографий результата
+~~~
+
+Payment, фактическое скачивание и standalone selfie-search не входят в первый
+pilot. Post-pilot paid product продаёт за одну фиксированную сумму весь найденный
+пакет, после чего выдаёт originals через короткоживущие signed URLs.
+
+### 1.3 Масштаб
+
+- первый pilot: одна пока не выбранная SPA, один `SpaPromoClient` и закрытая
+  группа согласившихся тестировщиков;
+
+Целевая capacity после pilot:
 
 - один центральный сервер в РФ;
 - 10–15 SPA;
@@ -49,19 +81,24 @@
 - хранение истории минимум один месяц;
 - inference выполняется на центральном сервере без внешних cloud face-recognition API.
 
-### 1.2 Главная продуктовая формула
+### 1.4 Главная продуктовая формула
 
 ~~~text
 фотографии заранее загружаются и индексируются
 +
-клиент предоставляет query-фото лица
+автоматическая reference-серия создаёт до пяти query detections
 +
 система выполняет поиск только внутри нужного SPA и периода
 +
-клиент получает preview, оплачивает и скачивает оригиналы
+Promo показывает четыре teaser-фотографии и QR
++
+телефон продолжает ту же search session
 ~~~
 
-### 1.3 Критическая операционная зависимость
+В post-pilot paid flow весь найденный пакет продаётся по одной фиксированной
+цене; поштучного выбора фотографий нет.
+
+### 1.5 Критическая операционная зависимость
 
 Промо-экран сможет найти только те фотографии, которые уже загружены и обработаны.
 
@@ -77,13 +114,19 @@
 
 Целевая метрика: `ingest_to_searchable_p95`.
 
+Для pilot она означает, что не менее 95% JPEG из подтверждённых batches
+становятся searchable менее чем за 15 минут от `batch.confirmed_at`; точная
+population и failure semantics определены в `IDEA_INGEST.md`.
+
 **Почему принято:** скорость inference не имеет значения, если коммерческие фотографии ещё не попали в поисковую базу. Эта метрика выявляет реальный bottleneck загрузки и фоновой обработки.
 
 ---
 
 ## 2. Пользовательские сценарии
 
-### 2.1 Поиск через сайт
+### 2.1 Post-pilot standalone поиск через сайт
+
+Этот сценарий не входит в первый pilot.
 
 1. Клиент открывает общую ссылку или ссылку с уже заданным SPA/визитом.
 2. Выбирает SPA и дату, если они не заданы ссылкой.
@@ -92,12 +135,28 @@
 5. `RealtimeFaceService` создаёт embedding активным pipeline данного SPA.
 6. Выполняется точный поиск среди embeddings той же `pipeline_revision`.
 7. Поиск ограничивается `spa_id` и датой, визитом или временным окном.
-8. Клиент получает preview с watermark.
-9. Выбирает фотографии, оплачивает и скачивает оригиналы.
+8. Клиент получает low-quality preview без watermark и состав полного пакета.
+9. Оплачивает пакет по фиксированной цене и скачивает originals.
+
+### 2.2 Pilot Promo и QR continuation
+
+1. Фотограф заранее загружает и подтверждает batch.
+2. Заранее согласившийся тестировщик проходит через capture-zone.
+3. Sensor запускает автоматическую reference-серию без действия тестировщика.
+4. Система best-effort обрабатывает до пяти face detections и формирует четыре
+   уникальные teaser-фотографии.
+5. Display показывает low-quality previews без watermark и QR.
+6. QR открывает уже найденную session без нового selfie.
+7. Landing показывает SPA, `visit_date`, один teaser, `N` уникальных
+   `photo_id` результата и post-pilot CTA полного пакета.
+
+Group flow поддерживается текущим best-effort алгоритмом. Один физический
+человек может занять несколько detection slots, а покрытие каждого уникального
+участника группы не гарантируется.
 
 ## 3. Принятая топология приложения
 
-### 3.2 Минимальное разделение процессов
+### 3.1 Минимальное разделение процессов
 
 Система не разбивается на множество микросервисов. Отдельными процессами выделяются только:
 
@@ -303,8 +362,14 @@ thumbnail_path
 width
 height
 checksum_sha256
+perceptual_hash
 created_at
 ~~~
+
+`perceptual_hash` (`pHash`) детерминированно рассчитывается для каждой
+фотографии после исправления EXIF orientation на одинаково нормализованном
+изображении. Он используется только для визуального разнообразия promo-коллажа
+и не участвует в принятии face match.
 
 #### `pipeline_revisions`
 
@@ -421,7 +486,8 @@ UNIQUE(photo_id, pipeline_revision_id, face_index)
 query embedding
 → WHERE pipeline_revision_id = serving pipeline
 → WHERE spa_id = selected SPA
-→ WHERE captured_at входит в дату / visit / time window
+→ WHERE visit_date = подтверждённая рабочая дата batch
+→ optional: WHERE captured_at входит в подтверждённый time window
 → точное cosine distance по оставшимся векторам
 → фильтр по calibrated threshold для SPA, pipeline code и query source
 → сортировка
@@ -429,13 +495,16 @@ query embedding
 → preview
 ~~~
 
-Обычные B-tree индексы используются для `spa_id`, `captured_at`, `photo_id` и `pipeline_revision_id`.
+`visit_date` является authoritative дневным scope. EXIF `captured_at` применяется
+для сортировки или дополнительного time window только когда его качество и
+timezone подтверждены. Обычные B-tree индексы используются для `spa_id`,
+`visit_date`, `captured_at`, `photo_id` и `pipeline_revision_id`.
 
 **Почему принято:** даже при 10–15 SPA запрос ограничен одним SPA и коротким периодом. Exact search проще, детерминирован и не теряет recall, а ANN пока не решает измеримой проблемы.
 
 ### 6.2 Условия принятия совпадения
 
-В MVP используются только:
+В первом pilot используется только:
 
 ~~~text
 query_face_quality >= min_query_face_quality
@@ -443,7 +512,8 @@ AND
 cosine_similarity >= threshold[spa_id][pipeline_code][query_source]
 ~~~
 
-Threshold калибруется отдельно для:
+Pilot требует reference threshold выбранного serving pipeline. Полная
+post-pilot матрица калибруется отдельно для:
 
 - SFace selfie;
 - SFace reference-camera;
@@ -459,13 +529,262 @@ Threshold калибруется отдельно для:
 
 **Почему принято:** top-1 и top-2 могут быть двумя разными фотографиями одного и того же клиента. Маленький margin в таком случае подтверждает совпадение, а не опровергает его.
 
-### 6.4 Multi-frame consistency
+### 6.4 Reference-серия и выбор лиц
 
-В MVP query embedding создаётся из одного лучшего reference-кадра.
+`SpaPromoClient` постоянно получает локальный видеопоток от webcam или IP PoE
+camera и хранит короткий кольцевой буфер. Сигнал удалённого датчика движения не
+включает камеру и не открывает отдельный затвор, а отмечает событие в уже
+идущем видеопотоке. Client сохраняет серию кадров до и после сигнала, чтобы не
+зависеть от задержки датчика и выбрать кадры без motion blur и с подходящим
+положением лица.
 
-Сравнение по двум лучшим кадрам является кандидатом на будущее и добавляется только если benchmark покажет недостаточную точность одного кадра.
+Сразу после сигнала display переходит из обычной рекламы в экранное состояние
+`prePromo` и ищет доступные звуки типа `preChime`. Если найден хотя бы один
+звук, client случайно выбирает один из них и воспроизводит короткий максимально
+ненавязчивый `preChime`. Сочетание `prePromo + preChime` должно лишь помочь
+направить взгляд человека к расположенной рядом камере; останавливаться или
+выполнять инструкцию от посетителя не требуется.
 
-**Почему принято:** второй embedding увеличивает CPU latency. Сначала необходимо измерить, даёт ли он значимый прирост качества на реальных кадрах.
+`prePromo` является одним заранее подготовленным видео и не использует
+reference-кадры посетителя или найденные для него фотографии. Видео состоит из
+двух визуальных фаз:
+
+1. короткий импульс появления произвольной фотографии, снятой в SPA; все лица
+   на такой фотографии заранее размыты;
+2. следующая за импульсом длинная спокойная анимация поиска фотографий по
+   картотеке.
+
+`preChime` синхронизируется с начальным импульсом `prePromo`. Произвольная
+SPA-фотография является локальным promo asset и не выбирается из текущей
+клиентской выдачи.
+
+Финальный `Chime` в этот момент не звучит. После успешного формирования четырёх
+фотографий display ищет доступные звуки типа `Chime`. Если найден хотя бы один
+звук, client случайно выбирает один из них и воспроизводит более призывающий
+`Chime`. Одновременно display переходит из `prePromo` в состояние `Promo`,
+которое показывает итоговый коллаж и QR. Стартовый предустановленный набор
+содержит 15 звуков типа `Chime`.
+
+Успешный визуальный переход выполняется без резкой смены кадров:
+
+1. текущее видео `prePromo` плавно затемняется до полностью чёрного экрана за
+   1000 ms;
+2. под чёрным слоем подготавливается `Promo`;
+3. `Promo` появляется из чёрного экрана за 500 ms.
+
+`Promo` использует grid из шести одинаковых ячеек в три колонки и два ряда:
+
+~~~text
+┌─────────────┬─────────────┬─────────────┐
+│ 1: photo    │ 2: photo    │ 3: QR       │
+├─────────────┼─────────────┼─────────────┤
+│ 4: photo    │ 5: photo    │ 6: text     │
+└─────────────┴─────────────┴─────────────┘
+~~~
+
+- ячейки `1`, `2`, `4`, `5` содержат четыре выбранные promo-фотографии;
+- ячейка `3` содержит QR-код;
+- ячейка `6` содержит текст
+  «Скачать можно на сайте или по QR-коду».
+
+Перед общей анимацией дыхания выполняется последовательная intro-анимация,
+подобная hover-прохождению cursor-а по ячейкам:
+
+~~~text
+5 → 4 → 1 → 2 → 3
+~~~
+
+В ячейках `5`, `4`, `1`, `2` внутреннее содержимое последовательно плавно
+увеличивается, а затем возвращается к исходному размеру. QR-код изначально
+намеренно показан уменьшенным. При достижении ячейки `3` он увеличивается до
+полного рабочего размера ячейки и уже не возвращается к начальному размеру.
+
+Над grid по тому же маршруту отображается один лёгкий cursor в виде inline SVG.
+Он является только визуальным пояснением hover-последовательности: анимация
+контента не зависит от наличия cursor-а и должна корректно выполняться, даже
+если этот слой отключён. QR увеличивается дольше, чем каждая отдельная
+фотография; во время увеличения QR cursor одновременно плавно исчезает.
+
+Общая длительность intro-прохода и размер cursor-а задаются через `.env`:
+
+~~~text
+PROMO_INTRO_DURATION_MS=2000
+PROMO_CURSOR_SIZE_PX=<настраиваемое значение>
+~~~
+
+`PROMO_INTRO_DURATION_MS` охватывает весь маршрут `5 → 4 → 1 → 2 → 3`,
+увеличение фотографий, более продолжительное увеличение QR и исчезновение
+cursor-а. Внутренние durations масштабируются относительно общего значения.
+
+После intro-анимации начинается общая длительная анимация `Promo`. Четыре
+фотографии и увеличенный QR-код плавно «дышат»: незначительно смещаются и
+циклически увеличиваются/уменьшаются без изменения размеров и структуры grid.
+Текст в ячейке `6` получает отдельную ненавязчивую анимацию. QR остаётся
+контрастным, не вращается и не меняет opacity; его quiet zone сохраняется на
+всех фазах анимации.
+
+**Рекомендуемая стартовая реализация QR:** локальный MIT-пакет
+`qr-code-styling` без CDN или внешнего QR service. QR создаётся как SVG сразу в
+полном рабочем размере, а его начальное уменьшение и последующее увеличение
+выполняются только через CSS `transform`. Стартовый визуальный профиль:
+
+- скруглённые внутренние modules;
+- `extra-rounded` внешние finder eyes и круглые внутренние eyes;
+- тёмные modules на белом фоне без gradients и logo;
+- error correction level `Q`;
+- белая quiet zone не меньше четырёх modules со всех сторон;
+- после достижения рабочего размера дыхание QR ограничивается медленным
+  масштабированием примерно в пределах 1–2%.
+
+Декоративный QR должен проверяться программным decode и на реальных телефонах с
+целевого расстояния, экрана и яркости. Точная версия npm-пакета фиксируется
+lockfile при реализации.
+
+Для browser-native реализации используются:
+
+- `<video>` для `prePromo`;
+- HTML/CSS Grid для шести ячеек `Promo`;
+- Web Animations API для перехода через чёрный экран, intro-последовательности,
+  cursor-а и длительного дыхания;
+- только compositor-friendly `transform` и `opacity`; размеры grid-ячеек не
+  анимируются.
+
+Сторонняя animation library для этого сценария не требуется. Конкретные
+амплитуды, durations и easing должны сохранять читаемость текста и возможность
+стабильного сканирования QR.
+
+Границы reference-серии и частота сохранения кадров задаются deployment-
+настройками в `.env`:
+
+~~~text
+CAPTURE_PRE_TRIGGER_MS=400
+CAPTURE_POST_TRIGGER_MS=2000
+CAPTURE_FRAME_INTERVAL_MS=300
+~~~
+
+Sensor trigger принимается за `t=0`. Client сохраняет кадры из кольцевого
+буфера начиная с `t=-CAPTURE_PRE_TRIGGER_MS`, продолжает сохранять их до
+`t=CAPTURE_POST_TRIGGER_MS` включительно и делает очередной shot с интервалом
+`CAPTURE_FRAME_INTERVAL_MS`. Кольцевой буфер всегда должен покрывать как минимум
+настроенный pre-trigger interval.
+
+Из полученной reference-серии выбирается не более пяти face candidates для
+поиска. Они сортируются по убыванию reference face quality. Для каждого
+кандидата создаётся отдельный query embedding; embeddings разных лиц и кадров
+не объединяются.
+
+Face candidates являются отдельными detections, а не попыткой определить пять
+уникальных людей. Один и тот же физический человек может присутствовать на
+нескольких reference-кадрах и занять все пять поисковых слотов. Между кадрами не
+выполняются tracking, identity clustering или дедупликация reference-лиц:
+каждый выбранный face candidate независимо запускается на поиск. Исключение уже
+зарезервированных `photo_id` при обработке следующих candidates предотвращает
+повтор фотографий в итоговых pools.
+
+Это является принятым best-effort group behavior первого pilot. Несколько людей
+могут попасть в результат, но система не гарантирует отдельный slot и полное
+покрытие каждого физического участника группы. Повторные detections одного
+человека допустимы и не считаются ошибкой алгоритма.
+
+Во время обработки reference-серии новый capture не запускается. Повторный
+capture разрешается только после успешного показа результата и последующего
+cooldown либо сразу после полного неуспешного поиска.
+
+**Почему принято:** постоянный поток и серия кадров дают возможность выбрать
+валидное лицо у движущегося человека. Ограничение пятью face candidates
+сдерживает latency при групповом кадре, не требуя от посетителей менять своё
+поведение.
+
+### 6.5 Candidate pools promo-поиска
+
+Для формирования четырёх фотографий используются три понятия:
+
+- `matched_candidates` — все фотографии текущего reference-лица, которые
+  находятся в нужном SPA и периоде, принадлежат serving pipeline revision,
+  прошли calibrated face-match threshold и имеют готовый preview;
+- `diverse_candidates` — предпочтительный глобальный pool визуально различных
+  фотографий; каждое из максимум пяти reference-лиц может добавить в него до
+  четырёх фотографий, поэтому размер pool не превышает 20;
+- `fallback_candidates` — глобальный резерв фотографий, которые прошли face
+  match, но не были выбраны как визуально различные; каждое reference-лицо
+  добавляет сюда только недостающее до четырёх число фотографий.
+
+Отдельно `session_result_photo_ids` содержит union всех уникальных `photo_id`,
+которые прошли обычный calibrated threshold хотя бы для одной из обработанных
+selected detections. Этот set не ограничивается четырьмя teaser-фотографиями и
+используется для `N` на QR landing и будущего full-package flow. Повторные
+detections одного человека и одна фотография с несколькими совпавшими лицами не
+увеличивают `N` повторно.
+
+Расчёт этого union является только агрегацией уже полученных matches: он не
+меняет выбор reference detections, thresholds, candidate ranking или четыре
+показываемые Promo-фотографии.
+
+Перед поиском для второго и каждого следующего reference-лица формируется
+`reserved_photo_ids`:
+
+~~~text
+reserved_photo_ids =
+    photo_id из diverse_candidates
+    UNION
+    photo_id из fallback_candidates
+~~~
+
+Фотографии с этими `photo_id` исключаются из `matched_candidates` следующего
+лица. Поэтому одна физическая фотография не может повториться в pools или
+занять несколько ячеек итогового коллажа, даже если на ней присутствуют
+несколько reference-лиц.
+
+Для каждого reference-лица выполняется следующий отбор:
+
+1. Найти `matched_candidates`, исключив `reserved_photo_ids`, и упорядочить их
+   по убыванию face similarity.
+2. Первым `diverse_candidate` выбрать фотографию с максимальным face
+   similarity.
+3. Следующего кандидата выбирать методом farthest-first: для каждой оставшейся
+   фотографии рассчитать минимальное Hamming distance её `pHash` до уже
+   выбранных фотографий и взять фотографию с максимальным таким расстоянием.
+4. Повторять farthest-first, пока не выбрано четыре фотографии или пока
+   максимальное доступное расстояние не стало равно нулю.
+5. Добавить выбранные фотографии в глобальный `diverse_candidates`.
+6. Если текущее лицо добавило меньше четырёх diverse-фотографий, взять лучшие
+   по face similarity оставшиеся `matched_candidates` и добавить недостающее до
+   четырёх число фотографий в `fallback_candidates`.
+
+Для `pHash` не задаётся diversity threshold. Числовая сортировка самого hash не
+используется, потому что числовой порядок bit string не отражает визуальное
+сходство. `pHash` сравнивается только через Hamming distance:
+
+~~~text
+pHash_distance(a, b) = bit_count(a XOR b)
+~~~
+
+После обработки всех выбранных reference-лиц применяется итоговое правило:
+
+1. Если в `diverse_candidates` меньше четырёх фотографий, pool дополняется
+   лучшими доступными фотографиями из `fallback_candidates`, пока не будет
+   получено четыре фотографии или fallback не закончится.
+2. Если суммарно доступно меньше четырёх уникальных `photo_id`, поиск считается
+   неуспешным: promo-коллаж не показывается и capture cooldown не запускается.
+3. Если в `diverse_candidates` ровно четыре фотографии, показываются они.
+4. Если фотографий больше четырёх, итоговые четыре выбираются тем же
+   farthest-first способом: первая имеет максимальный face similarity, каждая
+   следующая максимизирует минимальное Hamming distance до уже выбранных.
+5. Итоговый коллаж может содержать фотографии разных найденных лиц в любой
+   композиции, включая `4`, `3+1`, `2+2`, `2+1+1` или `1+1+1+1`.
+
+Текущий алгоритм выбора detections и четырёх Promo-фотографий в pilot не
+меняется. Формулировка «результат группы» означает union совпадений обработанных
+detections, а не гарантию распознавания каждого уникального человека в кадре.
+
+Face-match threshold остаётся обязательным gate. Разнообразие по `pHash` только
+ранжирует уже допустимые фотографии и никогда не превращает слабое или
+непрошедшее threshold совпадение в результат.
+
+**Почему принято:** два глобальных pool позволяют предпочитать разные кадры,
+но всё же сформировать полный коллаж из четырёх реальных фотографий при
+серийной съёмке. Farthest-first использует корректную метрику pHash без
+калибровки дополнительного threshold, clustering или новой ML-модели.
 
 ---
 
@@ -604,8 +923,8 @@ PostgreSQL и MinIO, не добавляя broker, coordinator или новый
 
 Отдельный синхронный HTTP-сервис обрабатывает:
 
-- reference-кадры с промо-экранов;
-- selfie/live-selfie запросы с сайта.
+- reference-кадры с промо-экранов в первом pilot;
+- selfie/live-selfie запросы с сайта после pilot.
 
 Сервис выполняет:
 
@@ -623,9 +942,14 @@ validate image
 
 ### 8.2 Постоянно загруженные модели
 
-RealtimeFaceService загружает SFace и Buffalo M при старте и выполняет тестовый inference до получения пользовательских запросов.
+В первом one-SPA pilot RealtimeFaceService обязан заранее загрузить и прогреть
+только выбранный serving pipeline. Одновременная загрузка SFace и Buffalo M
+нужна лишь для online `dual_benchmark` или target deployment, где разные SPA
+используют разные pipelines.
 
-**Почему принято:** разные SPA могут одновременно использовать разные pipelines. Загрузка модели по первому запросу создаёт непредсказуемую задержку, поэтому обе модели должны быть заранее готовы.
+**Почему принято:** загрузка модели по первому запросу создаёт непредсказуемую
+задержку, но второй pipeline не должен потреблять ресурсы pilot без измеримой
+необходимости.
 
 ### 8.3 Контракт SpaPromoClient
 
@@ -633,13 +957,52 @@ RealtimeFaceService загружает SFace и Buffalo M при старте и
 используют один логический контракт `SpaPromoClient`:
 
 ~~~text
-захватить 3-5 кадров
-→ локально выбрать лучший кадр
+постоянно получать видеопоток и вести короткий кольцевой буфер
+→ получить сигнал удалённого датчика движения
+→ показать prePromo
+→ если доступен preChime-звук, воспроизвести preChime
+→ зафиксировать reference-серию в настраиваемом окне до и после сигнала
 → отправить один синхронный HTTPS request с spa_client_token
-→ получить previews + QR + result_ttl
-→ показать результат до истечения TTL
+→ получить четыре previews + QR continuation URL/token + qr_expires_at
+→ если доступен Chime-звук, воспроизвести Chime
+→ заменить prePromo на Promo: grid 3x2 из четырёх фото, QR и текста
+  «Скачать можно на сайте или по QR-коду»
+→ показать результат в течение RESULT_DISPLAY_SECONDS
 → вернуться к локально закэшированной рекламе
 ~~~
+
+Promo previews и phone teaser показываются без watermark. Они являются
+low-quality изображениями; originals в первом pilot не выдаются.
+
+Время показа результата, блокировка нового capture, срок QR и browser idle —
+четыре независимые deployment-настройки:
+
+~~~text
+RESULT_DISPLAY_SECONDS=20
+CAPTURE_COOLDOWN_SECONDS=60
+QR_SESSION_TTL_SECONDS=900
+BROWSER_SESSION_IDLE_TTL_SECONDS=1800
+~~~
+
+Значения являются стартовыми configurable defaults, а не неизменяемыми product
+requirements. Истечение `RESULT_DISPLAY_SECONDS` возвращает display к рекламе и
+не завершает QR session.
+
+От момента получения reference-серии и до завершения поиска по всем выбранным
+лицам client не начинает новый capture. Cooldown запускается только после того,
+как сервер вернул четыре валидные фотографии и client действительно показал
+их на promo display. Если четырёх фотографий не получено, результат считается
+неуспешным, cooldown не запускается и capture снова разрешается сразу после
+завершения обработки.
+
+Цель первого pilot: корректно показывать фотографии, найденные для обработанных
+reference detections. Полностью видимый и сканируемый QR должен появиться менее
+чем через 10 секунд от `reference_series_ready_at`.
+
+QR landing продолжает ту же session без повторного selfie и показывает SPA,
+`visit_date`, одну из четырёх low-quality teaser-фотографий, `N` из
+`session_result_photo_ids` и post-pilot CTA полного пакета. Payment и actual
+download в pilot отсутствуют.
 
 `spa_client_token` является простым секретом клиента. Сервер хранит отображение
 `token_hash -> spa_id`, определяет SPA только по token и не доверяет `spa_id` из
@@ -655,7 +1018,37 @@ request body. Token передаётся в HTTP authorization header, не по
 в рамках короткой синхронной операции. Request/response проще отдельного event
 channel и исключает маршрутизацию событий между display-клиентами.
 
-### 8.4 Concurrency и короткая очередь в памяти
+### 8.4 Состояния SpaPromoClient
+
+Минимальные состояния client-а:
+
+~~~text
+advertising
+→ capturing
+→ searching
+→ result
+→ cooldown
+→ advertising
+~~~
+
+- `advertising`: показывается локально закэшированная реклама; capture разрешён,
+  если cooldown завершён.
+- `capturing`: датчик уже сработал, показывается `prePromo`, формируется
+  reference-серия; новые сигналы игнорируются.
+- `searching`: продолжает показываться `prePromo`, выполняется поиск
+  последовательно по максимум пяти лицам; новые сигналы игнорируются.
+- `result`: показывается `Promo` с четырьмя фотографиями и QR; независимо работает
+  `RESULT_DISPLAY_SECONDS`.
+- `cooldown`: новые capture-события игнорируются до истечения
+  `CAPTURE_COOLDOWN_SECONDS`; после завершения result display экран может уже
+  показывать рекламу.
+
+Неуспешный путь `capturing → searching`, при котором не сформированы четыре
+фотографии, без дополнительного звука заменяет `prePromo` обычной рекламой и
+возвращается прямо в `advertising`. `Chime` и `Promo` не запускаются, cooldown
+не начинается, а новый capture разрешается сразу после завершения поиска.
+
+### 8.5 Concurrency и короткая очередь в памяти
 
 Стартовая конфигурация RealtimeFaceService:
 
@@ -673,22 +1066,30 @@ channel и исключает маршрутизацию событий межд
 
 ## 9. Метрики p50/p95/p99
 
-Для проверки обязательных SLA достаточно сохранять данные для трёх базовых
-показателей: `trigger_to_preview_p95`, `realtime_queue_wait_p95` и
-`ingest_to_searchable_p95`. Детальная телеметрия ниже является рекомендацией и
-не блокирует минимальный MVP.
+Для проверки pilot достаточно сохранять данные для четырёх базовых показателей:
+`reference_ready_to_qr_p95`, `trigger_to_preview_p95`,
+`realtime_queue_wait_p95` и `ingest_to_searchable_p95`.
+
+Product acceptance anchor — `reference_series_ready_at`; sensor-triggered
+interval остаётся end-to-end diagnostic metric и не заменяет этот критерий.
+Детальная телеметрия ниже является рекомендацией.
 
 ### 9.1 Рекомендуемые realtime timestamps
 
 Для каждого realtime-запроса сохраняются:
 
 ~~~text
-triggered_at
+sensor_triggered_at
+reference_series_ready_at
+request_sent_at
 received_at
 processing_started_at
 embedding_finished_at
 search_finished_at
 response_finished_at
+response_received_at
+promo_fully_visible_at: nullable
+qr_fully_visible_at: nullable
 displayed_at: nullable
 status
 spa_id
@@ -703,7 +1104,17 @@ query_source
 - `inference_ms`;
 - `vector_search_ms`;
 - `server_total_ms`;
-- `trigger_to_preview_ms`.
+- `trigger_to_preview_ms`;
+- `reference_ready_to_qr_ms = qr_fully_visible_at - reference_series_ready_at`.
+
+Pilot acceptance:
+
+- не менее 19 из 20 ожидаемо успешных попыток имеют
+  `reference_ready_to_qr_ms < 10_000`;
+- ни одна из 20 попыток не показывает вручную подтверждённую фотографию
+  постороннего человека;
+- timeout, no-match и incorrect result считаются неуспешными попытками, а не
+  исключаются из выборки.
 
 ### 9.2 Рекомендуемые percentiles
 
@@ -719,6 +1130,7 @@ query_source
 ### 9.3 Рекомендуемые расширенные показатели
 
 - `trigger_to_preview_p50/p95/p99`;
+- `reference_ready_to_qr_p50/p95/p99`;
 - `realtime_queue_wait_p50/p95/p99`;
 - `inference_p50/p95/p99`;
 - `vector_search_p50/p95/p99`;
@@ -740,9 +1152,11 @@ SFace и Buffalo M сравниваются на размеченных реал
 
 - genuine pairs: фотографии одного человека;
 - impostor pairs: фотографии разных людей;
-- site-selfie samples;
 - reference-camera samples;
 - сложные случаи: движение, плохой свет, pose, частичное перекрытие.
+
+`site-selfie samples` добавляются только вместе с post-pilot standalone
+selfie-search и не входят в dataset/gate первого pilot.
 
 Метрики:
 
@@ -763,11 +1177,69 @@ thresholds для конкретного SPA и query source через адми
 
 ---
 
+## 11. Diagnostic sessions первого pilot
+
+Каждая capture/search попытка получает один
+`diagnostic_session_id/correlation_id`, связывающий:
+
+- исходную reference-серию;
+- нормализованные изображения и выбранные face crops;
+- camera/config metadata и pipeline revision;
+- detections, quality values, candidates, thresholds и выбранные `photo_id`;
+- timestamps всех этапов;
+- screenshot фактически показанного Promo и QR continuation event;
+- ручную annotation `correct | incorrect | uncertain` и issue tags.
+
+Изображения хранятся в закрытом object storage, manifest и индексируемые события
+— в PostgreSQL. Diagnostic routes не являются публичными и не доступны через
+Promo или QR session.
+
+Diagnostic bundle автоматически удаляется через 90 дней. Долгоживущий backup
+не должен продлевать этот срок. Отдельный полезный case можно вручную перенести
+в calibration/benchmark dataset только при отдельном основании, ограничении
+доступа и audit event.
+
+Selfie capture, calibration selfies и standalone selfie-search не входят в
+первый pilot. Они требуют отдельного post-pilot scope и consent flow.
+
+## 12. Граница и acceptance первого pilot
+
+Pilot является закрытым smoke test на одной SPA-площадке. В нём участвуют только
+заранее информированные тестировщики с зафиксированным согласием на automatic
+capture, персональный Promo и 90-day diagnostic retention. Запуск на обычных
+посетителях запрещён до отдельного legal/privacy решения, notice/deletion flow и
+более крупной field validation.
+
+Acceptance run содержит 20 ожидаемо успешных попыток; одни тестировщики могут
+участвовать многократно, а набор включает проверку group flow. У каждого
+участника заранее есть минимум четыре searchable фотографии.
+
+Критерии:
+
+- ни один Promo не показывает вручную подтверждённую фотографию постороннего
+  человека;
+- минимум 19 из 20 попыток дают полностью видимый и сканируемый QR менее чем за
+  10 секунд от `reference_series_ready_at`;
+- landing каждой успешной попытки правильно показывает SPA, `visit_date`,
+  teaser и `N`;
+- для каждой попытки, включая timeout, no-match и incorrect result, сохраняется
+  diagnostic bundle.
+
+Для group attempt «посторонняя фотография» означает, что manual annotation не
+подтверждает корректный match ни с одним участником текущей reference-сцены.
+Присутствие других людей на коммерческом групповом снимке само по себе не делает
+его ошибочным.
+
+Этот run подтверждает техническую работоспособность, но не production FAR,
+полное покрытие каждого человека в группе или допустимость публичного rollout.
+
+---
+
 ## 13. Админка
 
 ### 13.1 Минимальная админка
 
-- batch upload с checksum и повторной отправкой;
+- authenticated direct JPEG batch upload с checksum и повторной отправкой;
 - привязка к SPA и дате;
 - базовый статус originals, preview и `photo_pipeline_states`;
 - выбор serving pipeline для SPA;
@@ -775,7 +1247,11 @@ thresholds для конкретного SPA и query source через адми
 
 ### 13.2 Threshold settings
 
-Администратор выбирает SPA и может изменить четыре type-level значения:
+Для первого pilot обязательны откалиброванные reference threshold выбранного
+serving pipeline и простой способ его зарегистрировать или изменить.
+
+Post-pilot администратор выбирает SPA и может изменить четыре type-level
+значения:
 
 - SFace для `selfie`;
 - SFace для `reference`;
@@ -831,17 +1307,22 @@ spa_id + visit date/time window
 +
 короткоживущая search/promo session
 +
-selfie/reference match
+reference match (selfie — post-pilot)
 ~~~
 
 Требования:
 
-- preview с watermark;
-- маленькие preview на публичном экране;
-- оригиналы только после оплаты;
-- короткоживущие signed download URLs через публичный HTTPS endpoint backend;
+- только low-quality preview без watermark на Promo и phone landing;
+- originals в pilot не выдаются; после pilot они доступны только после оплаты;
+- post-pilot originals выдаются через короткоживущие signed download URLs через
+  публичный HTTPS endpoint backend;
 - TTL для QR/search sessions;
-- временные selfie/reference-файлы удаляются после истечения session;
+- pilot reference diagnostic bundles хранятся в private storage 90 дней и затем
+  автоматически удаляются;
+- первый pilot доступен только заранее информированным и согласившимся
+  тестировщикам; public rollout до отдельного legal/privacy gate запрещён;
+- diagnostic bundles доступны только через authenticated administrative path и
+  не через Promo/QR routes;
 - все запросы имеют rate limit;
 - каждый `SpaPromoClient` аутентифицируется своим простым
   `spa_client_token`, по которому сервер определяет `spa_id`;
@@ -855,36 +1336,47 @@ selfie/reference match
   прямой внешний доступ к MinIO;
 - visit code/браслет/чек может быть добавлен как дополнительное ограничение поиска.
 
-**Почему принято:** face similarity не должна быть единственным механизмом
-доступа к оригиналам. Ограничение области поиска одновременно снижает риск
-неправильной выдачи и ускоряет exact search. Простой client token создаёт
-необходимую привязку display к SPA без mTLS, VLAN или сложного RBAC.
+**Почему принято:** отсутствие watermark является явным product decision, а
+риск копирования снижается только low-quality форматом и отсутствием originals
+до оплаты. Face similarity не должна быть единственным механизмом доступа к
+originals. Ограничение области поиска одновременно снижает риск неправильной
+выдачи и ускоряет exact search. Простой client token создаёт необходимую
+привязку display к SPA без mTLS, VLAN или сложного RBAC.
 
 ---
 
 ## 15. Что входит в MVP приложения
 
-1. Минимальная админка, batch upload и type-level thresholds для каждого SPA.
-2. PostgreSQL + pgvector exact search.
-3. MinIO/S3-compatible storage без внешней публикации.
-4. `photo_pipeline_states` как источник searchable state и coverage.
-5. Один PostgreSQL-backed `BackgroundPhotoWorker`.
-6. Один синхронный `RealtimeFaceService`.
-7. Синхронный HTTP contract для `SpaPromoClient` и простой
+1. Одна закрытая pilot SPA и только заранее согласившиеся тестировщики.
+2. Authenticated direct JPEG batch upload с authoritative `visit_date`.
+3. PostgreSQL + pgvector exact search и MinIO без внешней публикации.
+4. `photo_pipeline_states` как источник searchable state.
+5. Один PostgreSQL-backed `BackgroundPhotoWorker` и один синхронный
+   `RealtimeFaceService`.
+6. Один выбранный serving pipeline, `FaceEngine` adapters с родным preprocessing
+   и pipeline-specific `photo_faces`.
+7. Синхронный HTTP contract для одного `SpaPromoClient` и
    `spa_client_token -> spa_id` mapping.
-8. Постоянно загруженные SFace и Buffalo M.
-9. `FaceEngine` adapters с родным preprocessing.
-10. Pipeline-specific `photo_faces`.
-11. Один выбранный serving pipeline на уровне SPA и режим `active_only`.
-12. Поиск по selfie/live-selfie.
-13. Галерея preview с watermark.
-14. Оплата и выдача signed download URL через HTTPS backend.
-15. Минимальные p95-метрики для realtime queue, trigger-to-preview и
-    ingest-to-searchable.
-16. Benchmark SFace и Buffalo M на реальных данных.
+8. Полностью автоматическая sensor-triggered reference-серия.
+9. Текущий best-effort group algorithm до пяти detections без tracking,
+   identity clustering и гарантии покрытия каждого человека.
+10. Promo только при наличии четырёх уникальных фотографий: low-quality previews
+    без watermark и QR continuation.
+11. Phone landing с SPA, `visit_date`, teaser, `N` и post-pilot CTA без
+    payment/download.
+12. Private diagnostic bundles для каждой попытки с retention 90 дней.
+13. Метрики `reference_ready_to_qr`, realtime queue и
+    `ingest_to_searchable`, а также acceptance run из 20 попыток.
+14. Benchmark SFace и Buffalo M на reference-camera данных pilot; selfie samples
+    только post-pilot.
 
 ### 15.1 Рекомендуется после минимального MVP
 
+- standalone selfie/live-selfie search;
+- payment полного пакета по фиксированной цене, receipt/refund и signed download
+  originals;
+- Яндекс Диск и другие external ingest channels;
+- публичная field validation и rollout после legal/privacy gate;
 - `dual_benchmark` как online-режим;
 - serving/pending migration и backfill;
 - fixed ordering разных классов jobs;
@@ -894,11 +1386,19 @@ selfie/reference match
 - coverage/model-state/pending controls в админке;
 - богатые p50/p95/p99 разрезы, CPU sets и thread-limit diagnostics.
 
-Эти рекомендации можно включить раньше только при подтверждённой пользе для
-пилота; они не являются условиями готовности базового MVP.
+Эти направления не являются условиями готовности первого pilot.
 
 ## 16. Что осознанно не входит в MVP приложения
 
+- публичный rollout на обычных посетителях;
+- deployment сразу на 10–15 SPA;
+- standalone selfie/live-selfie search;
+- payment, receipt, refund и actual download originals;
+- продажа отдельных фотографий;
+- Яндекс Диск и другие external ingest channels;
+- watermark на Promo, phone landing или других preview;
+- tracking и дедупликация физических людей между reference-кадрами;
+- гарантия полного покрытия каждого человека в группе;
 - Redis;
 - Celery, RQ, Arq и другие queue frameworks;
 - несколько priority queues;
@@ -922,7 +1422,7 @@ selfie/reference match
 |---|---|---|
 | Exact pgvector search | vector_search_p95 становится значимой частью SLA после фильтрации | исследовать HNSW на реальном наборе |
 | PostgreSQL jobs | PostgreSQL polling/locking подтверждённо ограничивает throughput | рассмотреть простой broker |
-| Один лучший reference-кадр | качество поиска не достигает целевого FAR/recall | проверить fusion двух кадров |
+| До пяти независимых face detections из настраиваемой reference-серии без tracking/fusion | качество поиска не достигает целевого FAR/recall при соблюдении latency пилота | сначала скорректировать capture window и quality ranking; затем отдельно проверить fusion |
 | Нет identity clustering | появляется подтверждённая продуктовая задача идентичности между визитами | проектировать clustering отдельно |
 
 **Почему принято:** таблица задаёт измеримые границы. Агенты не должны предлагать следующий уровень сложности до выполнения соответствующего условия.
@@ -931,7 +1431,9 @@ selfie/reference match
 
 ### 18.1 Одновременные realtime-запросы
 
-10–15 SPA могут отправить reference/selfie запросы одновременно. Риск контролируется bounded in-memory queue, deadline и метрикой queue wait.
+В первом pilot источник один. После расширения 10–15 SPA смогут отправлять
+reference/selfie запросы одновременно; риск контролируется bounded in-memory
+queue, deadline и метрикой queue wait.
 
 ### 18.2 Задержка загрузки коммерческих фотографий
 
@@ -954,9 +1456,24 @@ selfie/reference match
 создаёт missing results. Serving меняется только после coverage по
 `ready + no_faces` и проверки type-level calibration.
 
+### 18.6 Best-effort group search
+
+Один человек может занять несколько detection slots, а другой участник группы —
+не попасть в search. Это принято для pilot и должно быть явно отражено в UX,
+diagnostics и интерпретации acceptance; полное group coverage не обещается.
+
+### 18.7 Diagnostic privacy и preview copying
+
+Raw reference data и производные diagnostic artifacts являются чувствительными.
+Риск ограничивается закрытым consented pilot, private access и удалением через
+90 дней. Preview намеренно не имеют watermark, поэтому low-quality формат лишь
+снижает, но не устраняет риск их копирования.
+
 ## 19. Финальная архитектурная формула приложения
 
 ~~~text
+одна закрытая consented pilot SPA
++
 Python/FastAPI backend
 +
 PostgreSQL + pgvector exact search
@@ -970,6 +1487,12 @@ MinIO/S3-compatible storage
 один синхронный RealtimeFaceService
 +
 синхронный HTTP SpaPromoClient с простым spa_client_token
++
+best-effort group search без tracking и гарантии полного покрытия
++
+четыре low-quality preview без watermark + QR continuation
++
+private diagnostic bundles с retention 90 дней
 +
 facemoment для администрирования + непривилегированный display с Chromium sandbox
 +

@@ -1,12 +1,16 @@
 # Face Moment: сервер, ОС и display/kiosk
 
-Обновлено: 2026-07-11
+Обновлено: 2026-07-17
 
 ## 0. Статус документа
 
 Этот документ фиксирует инфраструктурную часть концепции: центральный сервер,
 серверную ОС, базовую настройку, Docker, рекомендации по CPU isolation, storage,
 backup, hardware и display/kiosk с рекламой.
+
+Первый pilot — закрытый one-SPA smoke test с заранее согласившимися
+тестировщиками. Топология на 10–15 SPA является target capacity после pilot, а
+payment/download originals — post-pilot product flow.
 
 Продуктовая логика приложения, face-recognition pipeline, поиск, модель данных,
 админка, оплата и выдача оригиналов вынесены в `IDEA_APP.md`.
@@ -43,7 +47,19 @@ GPU-инфраструктурой или внешним monitoring stack тол
 
 ## 1. Deployment-контекст
 
-Стартовая схема:
+First pilot profile:
+
+- один центральный CPU-only сервер в РФ;
+- одна пока не выбранная SPA и один `SpaPromoClient`;
+- один Promo display с автоматическим sensor-triggered capture;
+- только заранее информированные и согласившиеся тестировщики;
+- preview и QR continuation без payment/download.
+
+После выбора площадки один и тот же logical client может работать на локальном
+HDMI центрального сервера или на отдельном remote display-компьютере. Конкретный
+вариант не является Product Brief gate.
+
+Target capacity после pilot:
 
 - один центральный сервер в РФ;
 - 10-15 SPA;
@@ -60,15 +76,21 @@ GPU-инфраструктурой или внешним monitoring stack тол
 - MinIO/S3-compatible object storage;
 - один `BackgroundPhotoWorker`;
 - один `RealtimeFaceService`;
-- SFace и Buffalo M;
-- сервис выдачи preview и оригиналов;
+- выбранный serving face pipeline; второй pipeline — только для benchmark или
+  post-pilot multi-SPA режима;
+- сервис выдачи preview и QR continuation;
 - KDE Plasma и один локальный `SpaPromoClient` на подключённом HDMI-мониторе.
 
+Выдача paid originals через signed URLs добавляется после pilot.
+
 Центральный сервер по HDMI может обслуживать только один физически подключённый
-экран. В остальных SPA работают отдельные `SpaPromoClient` с камерой и экраном.
-Каждый client локально захватывает 3-5 кадров, выбирает лучший кадр, отправляет
-его синхронным HTTPS request в `RealtimeFaceService`, получает previews, QR и TTL
-в HTTP response и самостоятельно отображает результат.
+экран. При расширении в других SPA работают отдельные `SpaPromoClient` с камерой,
+удалённым датчиком движения и экраном. Каждый client постоянно получает видеопоток,
+хранит короткий кольцевой буфер, по сигналу датчика формирует настраиваемую
+reference-серию и отправляет её синхронным HTTPS request в
+`RealtimeFaceService`. Полный capture/search/display алгоритм является частью
+[IDEA_APP.md](IDEA_APP.md), разделы 6.4–6.5 и 8.3–8.4; инфраструктурный документ
+его не дублирует.
 
 Каждому `SpaPromoClient` выдаётся простой `spa_client_token`. Сервер хранит
 отображение `token_hash -> spa_id` и не принимает `spa_id` из request body как
@@ -88,11 +110,13 @@ Promo display выполняет только:
 
 - захват кадров;
 - показ рекламы между поисковыми событиями;
-- показ найденных preview;
+- показ найденных low-quality preview без watermark;
 - показ QR-кода;
 - автоматическое восстановление соединения после сетевого сбоя.
 
-На display нет сенсорной навигации, оплаты и скачивания.
+На display нет сенсорной навигации, оплаты и скачивания. В первом pilot телефон
+проверяет только QR continuation page; payment и выдача originals выполняются
+после pilot.
 
 **Почему принято:** телефон клиента уже предоставляет безопасный и привычный
 интерфейс для выбора, оплаты и скачивания. Полноценный kiosk mode не даёт
@@ -108,13 +132,27 @@ Promo-интерфейс реализуется как web-приложение,
 ~~~text
 обычный режим
 -> показ рекламных слайдов или видео
--> захватить 3-5 кадров и выбрать лучший
+-> сигнал удалённого датчика движения
+-> показать prePromo и воспроизвести доступный preChime
+-> сформировать reference-серию из постоянного видеопотока
 -> отправить синхронный HTTPS request с spa_client_token
--> получить previews + QR + result_ttl в HTTP response
--> показ preview и QR-кода
--> истёк TTL результата
+-> при успехе получить четыре previews + QR continuation URL/token + qr_expires_at
+-> воспроизвести доступный Chime и показать Promo
+-> истекло RESULT_DISPLAY_SECONDS
 -> возврат к рекламе
 ~~~
+
+Четыре независимые настройки не объединяются в один `result_ttl`:
+
+~~~text
+RESULT_DISPLAY_SECONDS=20
+CAPTURE_COOLDOWN_SECONDS=60
+QR_SESSION_TTL_SECONDS=900
+BROWSER_SESSION_IDLE_TTL_SECONDS=1800
+~~~
+
+Это стартовые configurable defaults. Истечение display duration не завершает QR
+session, а cooldown независимо ограничивает следующий успешный capture.
 
 `SpaPromoClient` самостоятельно инициирует каждый поиск и получает результат тем
 же синхронным HTTP request/response. SSE и WebSocket не используются. При timeout
@@ -126,14 +164,23 @@ desktop-приложение. Результат нужен только ини�
 синхронный request/response проще отдельного event channel и не требует
 маршрутизации событий между SPA.
 
-### 2.2 Поведение при неоднозначном кадре
+### 2.2 Поведение при нескольких лицах
 
-Для MVP обрабатывается одно доминирующее лицо. Если в кадре несколько
-сопоставимых по качеству лиц и нельзя надёжно выбрать одно доминирующее лицо,
-display не должен показывать персональные preview.
+Из reference-серии выбирается до пяти лучших face detections независимо от
+того, принадлежат ли они разным людям или одному человеку на разных кадрах.
+Tracking и дедупликация людей между кадрами не выполняются. Каждая detection
+последовательно запускается на поиск; итоговый Promo показывается только после
+формирования четырёх уникальных `photo_id`. Точный candidate-pool и pHash
+алгоритм определён в [IDEA_APP.md](IDEA_APP.md), раздел 6.5.
 
-**Почему принято:** это сохраняет предсказуемый UX и не требует трекинга
-нескольких людей и нескольких параллельных экранных сессий.
+Это best-effort group search: один физический человек может занять несколько
+detection slots, а полное покрытие каждого участника группы не гарантируется.
+Такое поведение принято для первого pilot и не требует изменения текущего
+алгоритма. `N` на phone landing является union уникальных `photo_id`, прошедших
+обычный calibrated threshold для обработанных selected detections.
+
+Если четыре фотографии не найдены, prePromo без дополнительного звука
+возвращается к рекламе, cooldown не запускается и новый capture снова разрешён.
 
 ---
 
@@ -233,10 +280,14 @@ restart: unless-stopped
 - SSH разрешает вход только по ключу, password authentication отключён;
 - PostgreSQL, MinIO и внутренние порты контейнеров не публикуются на внешнем
   network interface и доступны только через internal Docker network;
-- backend API, `RealtimeFaceService`, previews и signed download endpoint
-  доступны через один внешний HTTPS entry point;
+- backend API, `RealtimeFaceService` и previews доступны через один внешний
+  HTTPS entry point; signed download endpoint является post-pilot;
 - `spa_client_token` передаётся в authorization header, хранится на сервере в
   виде hash и не попадает в URL или application logs;
+- pilot доступен только заранее согласившимся тестировщикам;
+- diagnostic bundles не доступны через Promo, QR или другие public routes и
+  открываются только через authenticated administrative path;
+- diagnostic objects имеют обязательный 90-day lifecycle;
 - Docker daemon/API не публикуется наружу.
 
 Сохраняются Kubuntu, Chromium и autologin пользователя `display`. Административные
@@ -333,7 +384,7 @@ conditions, зависшие паузы и сложное восстановле
 Перераспределение CPU или второй экземпляр `RealtimeFaceService` разрешены, если:
 
 - `realtime_queue_wait_p95` устойчиво превышает 2 секунды;
-- `trigger_to_preview_p95` устойчиво превышает 5 секунд при нормальной сети;
+- configured search deadline регулярно исчерпывается;
 - сервис регулярно отклоняет запросы из-за заполнения in-memory queue.
 
 Второй PostgreSQL-worker разрешено добавить, если выполняется хотя бы одно
@@ -356,6 +407,7 @@ backlog, а не заранее.
 45 000-90 000 фото в месяц
 ~~~
 
+Это target-capacity оценка для 10–15 SPA, а не storage gate первого pilot.
 Оценка только для originals:
 
 | Средний размер | 45 000 фото | 90 000 фото |
@@ -386,10 +438,25 @@ PostgreSQL хранит только object keys и метаданные.
 короткоживущих signed URLs и возможный перенос файлов на отдельное хранилище без
 изменения бизнес-логики.
 
-### 5.3 Резервная копия
+### 5.3 Diagnostic storage первого pilot
+
+Raw reference series, normalized images, face crops и screenshot Promo хранятся
+в закрытом object-storage prefix. PostgreSQL хранит versioned manifest,
+`diagnostic_session_id/correlation_id`, timestamps и индексируемые annotations.
+
+Diagnostic objects автоматически удаляются через 90 дней и не доступны через
+public preview/QR routes. Их фактический объём измеряется отдельно и учитывается
+при sizing pilot storage. Ручной перенос полезного case в calibration/benchmark
+dataset требует отдельного основания и audit event.
+
+### 5.4 Резервная копия
 
 Backup originals и PostgreSQL должен находиться на другом физическом носителе
 или сервере. MinIO на одном диске не является резервной копией.
+
+Diagnostic data либо не включается в долгоживущий backup, либо удаляется из всех
+backup copies не позже 90 дней. Backup не может неявно превращать diagnostic
+retention в бессрочный.
 
 **Почему принято:** центральный сервер является единой точкой хранения для
 10-15 SPA; отказ одного NVMe не должен уничтожить все коммерческие оригиналы.
@@ -398,7 +465,7 @@ Backup originals и PostgreSQL должен находиться на друго
 
 ## 6. Hardware
 
-Пилотная отправная точка:
+Target deployment reference для 10–15 SPA:
 
 ~~~text
 Intel Core i5-13400 или CPU не слабее
@@ -415,6 +482,17 @@ ONNX Runtime / OpenVINO / OpenCV / InsightFace
 32 GB RAM допустимы для раннего прототипа, но не фиксируются как целевая
 production-конфигурация на 10-15 SPA.
 
+Для one-SPA pilot точные CPU, RAM и storage подтверждаются benchmark и sizing;
+4 TB не является обязательным pilot gate.
+
+### 6.1 Display/capture baseline первого pilot
+
+- 43-inch landscape display;
+- 16:9 и logical viewport 1920x1080;
+- capture distance 3–5 метров;
+- exact camera, lens, passage sensor и lighting выбираются после обследования
+  площадки и проверки face size, blur, pose и exposure.
+
 **Почему принято:** CPU-only сервер достаточен для проверки текущего объёма, а
 окончательный размер CPU/RAM определяется по `ingest_to_searchable` и realtime
 percentiles. GPU не добавляется до подтверждения CPU bottleneck-а.
@@ -423,10 +501,35 @@ percentiles. GPU не добавляется до подтверждения CPU
 
 ## 7. Операционные метрики
 
-Минимально обязательны данные для `trigger_to_preview_p95`,
-`realtime_queue_wait_p95`, `ingest_to_searchable_p95` и контроля свободного
-места. Расширенный набор ниже является рекомендацией:
+Product acceptance metric первого pilot:
 
+~~~text
+reference_ready_to_qr_ms =
+    qr_fully_visible_at - reference_series_ready_at
+~~~
+
+Минимум 19 из 20 ожидаемо успешных попыток должны иметь
+`reference_ready_to_qr_ms < 10_000`. `trigger_to_preview` остаётся отдельной
+end-to-end diagnostic metric и не подменяет этот anchor.
+
+Минимально обязательны также `realtime_queue_wait_p95`,
+`ingest_to_searchable_p95` и контроль свободного места. Один correlation ID
+связывает timestamps:
+
+~~~text
+sensor_triggered_at
+reference_series_ready_at
+request_sent_at
+received_at
+processing_started_at
+response_finished_at
+response_received_at
+qr_fully_visible_at
+~~~
+
+Расширенный набор:
+
+- `reference_ready_to_qr_p50/p95/p99`;
 - `trigger_to_preview_p50/p95/p99`;
 - `realtime_queue_wait_p50/p95/p99`;
 - `ingest_to_searchable_p50/p95/p99`;
@@ -436,7 +539,8 @@ percentiles. GPU не добавляется до подтверждения CPU
 - доля `pending | processing | failed` по pipeline revision;
 - фактический CPU set `RealtimeFaceService`;
 - число разрешённых inference threads;
-- свободное место primary storage и backup storage.
+- свободное место primary storage и backup storage;
+- объём diagnostic storage и число bundles, ожидающих 90-day deletion.
 
 Рекомендуется рассчитывать p50/p95/p99 в PostgreSQL через `percentile_cont` за
 выбранный период и добавлять разрезы по SPA, pipeline и query source только при
@@ -452,7 +556,7 @@ percentiles. GPU не добавляется до подтверждения CPU
 
 ## 8. Что входит в MVP сервера и display
 
-1. Один центральный сервер для пилотных SPA.
+1. Один центральный сервер и одна закрытая pilot SPA.
 2. Kubuntu 26.04 LTS с KDE Plasma.
 3. Пользователь `facemoment` для SSH, `sudo` и Docker без autologin.
 4. Непривилегированный пользователь `display` с autologin и Chromium sandbox.
@@ -461,14 +565,21 @@ percentiles. GPU не добавляется до подтверждения CPU
 7. MinIO/S3-compatible storage без внешней публикации.
 8. Один `BackgroundPhotoWorker`.
 9. Один `RealtimeFaceService`.
-10. Один локальный HDMI-display центрального сервера.
-11. `SpaPromoClient` в остальных SPA с локальным выбором кадра и синхронным
-    HTTP request/response.
+10. Один `SpaPromoClient` на локальном HDMI или отдельном remote client после
+    выбора pilot-площадки.
+11. Постоянный локальный видеопоток и автоматическая sensor-triggered
+    reference-серия только для заранее согласившихся тестировщиков.
 12. Простой `spa_client_token -> spa_id` mapping.
 13. Только HTTPS и key-only SSH снаружи; PostgreSQL, MinIO и Docker API закрыты.
-14. Chromium на весь экран и показ рекламы между результатами.
-15. Автоматическое восстановление Chromium/display после сбоя.
-16. Отдельное backup storage.
+14. Best-effort group search без tracking и гарантии полного покрытия.
+15. Chromium на весь экран, реклама между результатами, четыре low-quality
+    preview без watermark и QR continuation.
+16. Независимые display, cooldown, QR и browser idle timers.
+17. Private diagnostic storage с retention 90 дней.
+18. Acceptance `<10 s` от `reference_series_ready_at` до fully visible QR для
+    минимум 19 из 20 попыток.
+19. Автоматическое восстановление Chromium/display после сбоя.
+20. Отдельное backup storage для коммерческих originals и PostgreSQL.
 
 ### 8.1 Рекомендуется после базового запуска
 
@@ -486,6 +597,12 @@ percentiles. GPU не добавляется до подтверждения CPU
 
 ## 9. Что осознанно не входит в MVP сервера и display
 
+- публичный rollout на обычных посетителях;
+- deployment сразу на 10–15 SPA;
+- payment, receipt, refund и actual original download;
+- tracking и дедупликация физических людей между frames;
+- гарантия полного group coverage;
+- watermarking preview;
 - Docker Desktop;
 - Kubernetes;
 - distributed scheduler;
@@ -516,7 +633,7 @@ bottleneck. Их добавление увеличит стоимость раз
 
 | Текущее решение | Когда разрешено пересмотреть | Следующий минимальный шаг |
 |---|---|---|
-| Один realtime instance, CPU profile подбирается benchmark-ом | queue wait p95 > 2 s или trigger-to-preview p95 > 5 s | скорректировать CPU sets; затем рассмотреть второй instance |
+| Один realtime instance, CPU profile подбирается benchmark-ом | queue wait p95 > 2 s, регулярный search deadline exhaustion или bounded queue rejection | скорректировать CPU sets; затем рассмотреть второй instance |
 | Один background worker | растёт oldest pending job или ingest-to-searchable p95 | рекомендовать второй PostgreSQL consumer с `SKIP LOCKED` |
 | PostgreSQL jobs | PostgreSQL polling/locking подтверждённо ограничивает throughput | рассмотреть простой broker |
 | Один центральный сервер | доступность одного узла не соответствует требуемому SLA | добавить standby/репликацию |
@@ -556,14 +673,28 @@ HDMI-мониторе, но не должно останавливать Docker-
 ### 11.5 Storage exhaustion
 
 Центральный сервер хранит данные всех SPA. Необходимо контролировать свободное
-место primary storage, backup storage, БД, временных файлов и логов.
+место primary storage, backup storage, diagnostic bundles, БД, временных файлов
+и логов.
+
+### 11.6 Best-effort group selection
+
+Один человек может занять несколько detection slots, а другой — не попасть в
+search. Это принято для pilot, но требует явного UX, ручной annotation и не даёт
+права обещать полное покрытие группы.
+
+### 11.7 Diagnostic privacy
+
+Raw reference images и производные artifacts создают privacy и storage risk.
+Первый pilot ограничен pre-consented testers, private administrative access и
+автоматическим удалением diagnostic copies через 90 дней. Public rollout требует
+отдельного legal/privacy gate.
 
 ---
 
 ## 12. Финальная инфраструктурная формула
 
 ~~~text
-один центральный сервер для 10-15 SPA
+один central server + одна closed consented pilot SPA
 +
 Kubuntu 26.04 LTS и два пользователя: facemoment + display
 +
@@ -579,9 +710,19 @@ MinIO/S3-compatible storage
 +
 один RealtimeFaceService
 +
-один локальный HDMI-display и SpaPromoClient в остальных SPA
+один локальный или remote SpaPromoClient
 +
 синхронный HTTPS request/response с простым spa_client_token
++
+automatic sensor capture + best-effort group search
++
+четыре low-quality preview без watermark + QR continuation
++
+90-day private diagnostic storage
++
+независимые display/cooldown/QR/browser timers
++
+<10 секунд от reference_series_ready_at до fully visible QR
 +
 PostgreSQL и MinIO только во внутренней сети; снаружи HTTPS и key-only SSH
 +
@@ -594,6 +735,9 @@ percentiles остаются рекомендациями
 +
 никаких Redis/Celery/priority/pause/Kubernetes/GPU на старте
 ~~~
+
+10–15 SPA остаются target capacity после успешного pilot и не являются его
+acceptance gate.
 
 Главный принцип:
 
