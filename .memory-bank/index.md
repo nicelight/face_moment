@@ -13,6 +13,8 @@ status: active
 - [IDEA_INGEST.md](../IDEA_INGEST.md): Batch-first поступление фотографий,
   direct upload и импорт публичных ссылок Яндекс Диска из произвольных
   аккаунтов фотографов.
+- [IDEA_DEBUG.md](../IDEA_DEBUG.md): Developer-only browser/server logging,
+  investigation attempts и KISS-подбор face threshold/quality gates.
 
 ## Навигация
 

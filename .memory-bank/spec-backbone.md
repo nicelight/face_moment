@@ -18,6 +18,8 @@ status: active
 - [IDEA_INGEST.md](../IDEA_INGEST.md): batch-first photo ingestion, direct
   upload and public Yandex Disk link intake from arbitrary photographer
   accounts.
+- [IDEA_DEBUG.md](../IDEA_DEBUG.md): developer logging, attempt investigation,
+  manual annotations and parameter recommendations within the existing backend.
 - These files are discovery inputs only. They do not change the blocked status
   or replace `/brief`, `/write-prd`, `/spec-init` and `/spec-design` outputs.
 

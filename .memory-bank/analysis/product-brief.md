@@ -12,7 +12,9 @@ type: product-brief
 - Source artifacts:
   - `.memory-bank/analysis/brainstorming/BR-001.md`
   - `.memory-bank/analysis/brainstorming/BR-002.md`
+  - `.memory-bank/analysis/brainstorming/BR-003.md`
   - `IDEA_APP.md`
+  - `IDEA_DEBUG.md`
   - `IDEA_INGEST.md`
   - `IDEA_OS.md`
 
@@ -29,6 +31,8 @@ one-SPA pilot, показывает четыре персональных teaser
   потенциальным покупателем.
 - Оператор Face Moment/SPA — контролирует batches, searchable readiness, Promo и
   диагностику.
+- Разработчик приложения — расследует attempts и browser/server logs, размечает
+  результаты и подбирает thresholds/quality gates.
 - После pilot: посетитель SPA как покупатель полного пакета фотографий.
 
 Экономический заказчик будущего продукта пока является гипотезой: SPA, фотограф
@@ -99,6 +103,8 @@ Post-pilot paid product продаёт весь найденный пакет з
 - QR continuation page без нового selfie: SPA, дата, teaser, `N` и post-pilot
   CTA полного пакета;
 - diagnostic bundle каждой попытки с retention 90 дней;
+- developer-only `Attempts`, `Log Explorer` и `Calibration` в существующем
+  backend/PostgreSQL согласно `IDEA_DEBUG.md`;
 - failure mode с локальной рекламой и diagnostic event;
 - controlled acceptance run из 20 попыток.
 
@@ -174,7 +180,9 @@ PRD описывает только one-SPA pilot и заканчивается 
 continuation. Обязательные решения: automatic Promo, authenticated JPEG upload,
 четыре no-watermark teaser, continuation без selfie, текущий best-effort group
 algorithm, 90-day diagnostics и performance acceptance `19/20 under 10s`.
-Payment и originals остаются post-pilot context.
+Developer logging, attempt investigation, manual annotation и explainable
+parameter recommendations определены в `IDEA_DEBUG.md` и также являются входом
+PRD. Payment и originals остаются post-pilot context.
 
 ## 15. Decision
 
