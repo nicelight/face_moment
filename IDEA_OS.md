@@ -8,8 +8,8 @@
 серверную ОС, базовую настройку, Docker, рекомендации по CPU isolation, storage,
 backup, hardware и display/kiosk с рекламой.
 
-Первый pilot — закрытый one-SPA smoke test с заранее согласившимися
-тестировщиками. Топология на 10–15 SPA является target capacity после pilot, а
+Первый pilot — one-SPA smoke test с тестировщиками. Топология на 10–15 SPA
+является target capacity после pilot, а
 payment/download originals — post-pilot product flow.
 
 Продуктовая логика приложения, face-recognition pipeline, поиск, модель данных,
@@ -40,7 +40,7 @@ GPU-инфраструктурой или внешним monitoring stack тол
 наблюдаемой проблемы, а не для гипотетического будущего масштаба.
 
 Рекомендации не являются MVP gates. Их разрешено не реализовывать, если более
-простое deployment-решение сохраняет обязательную безопасность, корректность и
+простое deployment-решение сохраняет работоспособность, корректность и
 наблюдаемость базовых SLA.
 
 ---
@@ -52,7 +52,7 @@ First pilot profile:
 - один центральный CPU-only сервер в РФ;
 - одна пока не выбранная SPA и один `SpaPromoClient`;
 - один Promo display с автоматическим sensor-triggered capture;
-- только заранее информированные и согласившиеся тестировщики;
+- выбранная группа тестировщиков;
 - preview и QR continuation без payment/download.
 
 После выбора площадки один и тот же logical client может работать на локальном
@@ -118,8 +118,8 @@ Promo display выполняет только:
 проверяет только QR continuation page; payment и выдача originals выполняются
 после pilot.
 
-**Почему принято:** телефон клиента уже предоставляет безопасный и привычный
-интерфейс для выбора, оплаты и скачивания. Полноценный kiosk mode не даёт
+**Почему принято:** телефон клиента уже предоставляет привычный интерфейс для
+выбора, оплаты и скачивания. Полноценный kiosk mode не даёт
 достаточной пользы для своей сложности.
 
 ### 2.1 Display-приложение
@@ -271,9 +271,9 @@ restart: unless-stopped
 **Почему принято:** Chromium может упасть или потерять соединение, но display
 должен восстанавливаться без участия локального пользователя.
 
-### 3.5 Минимальная безопасность
+### 3.5 Минимальная network/access configuration
 
-Обязательная стартовая конфигурация:
+Стартовая конфигурация:
 
 - host firewall использует default deny для входящих соединений;
 - наружу открыты только TCP 443 для HTTPS и TCP 22 для SSH;
@@ -284,9 +284,7 @@ restart: unless-stopped
   HTTPS entry point; signed download endpoint является post-pilot;
 - `spa_client_token` передаётся в authorization header, хранится на сервере в
   виде hash и не попадает в URL или application logs;
-- pilot доступен только заранее согласившимся тестировщикам;
-- diagnostic bundles не доступны через Promo, QR или другие public routes и
-  открываются только через authenticated administrative path;
+- diagnostic route отделён от Promo/QR routes;
 - diagnostic objects имеют обязательный 90-day lifecycle;
 - Docker daemon/API не публикуется наружу.
 
@@ -294,9 +292,9 @@ restart: unless-stopped
 операции выполняются только пользователем `facemoment`. В MVP не добавляются
 другие Unix users, mTLS, VLAN, сложный RBAC или headless-топология.
 
-**Почему принято:** разделение `facemoment`/`display`, штатный Chromium sandbox,
-закрытые PostgreSQL/MinIO, key-only SSH, HTTPS и простой per-client token дают
-минимальный понятный perimeter без дополнительной инфраструктуры.
+**Почему принято:** разделение `facemoment`/`display`, единый HTTPS entry point
+и простой per-client token сохраняют понятную network/process topology без
+дополнительной инфраструктуры.
 
 ---
 
@@ -418,7 +416,7 @@ backlog, а не заранее.
 | 25 MB | 1.125 TB | 2.25 TB |
 
 Дополнительно нужны preview, thumbnails, БД, временные файлы, логи и свободное
-место для безопасной работы.
+место для стабильной работы.
 
 2 TB больше не считается гарантированно достаточным объёмом для 10-15 SPA.
 Стартовый ориентир — не менее 4 TB usable primary storage с уточнением после
@@ -441,22 +439,19 @@ PostgreSQL хранит только object keys и метаданные.
 ### 5.3 Diagnostic storage первого pilot
 
 Raw reference series, normalized images, face crops и screenshot Promo хранятся
-в закрытом object-storage prefix. PostgreSQL хранит versioned manifest,
+в отдельном object-storage prefix. PostgreSQL хранит versioned manifest,
 `diagnostic_session_id/correlation_id`, timestamps и индексируемые annotations.
 
-Diagnostic objects автоматически удаляются через 90 дней и не доступны через
-public preview/QR routes. Их фактический объём измеряется отдельно и учитывается
-при sizing pilot storage. Ручной перенос полезного case в calibration/benchmark
-dataset требует отдельного основания и audit event.
+Diagnostic objects автоматически удаляются через 90 дней. Их фактический объём
+измеряется отдельно и учитывается при sizing pilot storage. Полезный case можно
+вручную перенести в calibration/benchmark dataset.
 
 ### 5.4 Резервная копия
 
 Backup originals и PostgreSQL должен находиться на другом физическом носителе
 или сервере. MinIO на одном диске не является резервной копией.
 
-Diagnostic data либо не включается в долгоживущий backup, либо удаляется из всех
-backup copies не позже 90 дней. Backup не может неявно превращать diagnostic
-retention в бессрочный.
+Diagnostic data не включается в долгоживущий backup из-за 90-day lifecycle.
 
 **Почему принято:** центральный сервер является единой точкой хранения для
 10-15 SPA; отказ одного NVMe не должен уничтожить все коммерческие оригиналы.
@@ -556,7 +551,7 @@ qr_fully_visible_at
 
 ## 8. Что входит в MVP сервера и display
 
-1. Один центральный сервер и одна закрытая pilot SPA.
+1. Один центральный сервер и одна pilot SPA.
 2. Kubuntu 26.04 LTS с KDE Plasma.
 3. Пользователь `facemoment` для SSH, `sudo` и Docker без autologin.
 4. Непривилегированный пользователь `display` с autologin и Chromium sandbox.
@@ -568,14 +563,14 @@ qr_fully_visible_at
 10. Один `SpaPromoClient` на локальном HDMI или отдельном remote client после
     выбора pilot-площадки.
 11. Постоянный локальный видеопоток и автоматическая sensor-triggered
-    reference-серия только для заранее согласившихся тестировщиков.
+    reference-серия для участников pilot.
 12. Простой `spa_client_token -> spa_id` mapping.
 13. Только HTTPS и key-only SSH снаружи; PostgreSQL, MinIO и Docker API закрыты.
 14. Best-effort group search без tracking и гарантии полного покрытия.
 15. Chromium на весь экран, реклама между результатами, четыре low-quality
     preview без watermark и QR continuation.
 16. Независимые display, cooldown, QR и browser idle timers.
-17. Private diagnostic storage с retention 90 дней.
+17. Diagnostic storage с retention 90 дней.
 18. Acceptance `<10 s` от `reference_series_ready_at` до fully visible QR для
     минимум 19 из 20 попыток.
 19. Автоматическое восстановление Chromium/display после сбоя.
@@ -682,19 +677,12 @@ HDMI-мониторе, но не должно останавливать Docker-
 search. Это принято для pilot, но требует явного UX, ручной annotation и не даёт
 права обещать полное покрытие группы.
 
-### 11.7 Diagnostic privacy
-
-Raw reference images и производные artifacts создают privacy и storage risk.
-Первый pilot ограничен pre-consented testers, private administrative access и
-автоматическим удалением diagnostic copies через 90 дней. Public rollout требует
-отдельного legal/privacy gate.
-
 ---
 
 ## 12. Финальная инфраструктурная формула
 
 ~~~text
-один central server + одна closed consented pilot SPA
+один central server + одна pilot SPA
 +
 Kubuntu 26.04 LTS и два пользователя: facemoment + display
 +
@@ -718,7 +706,7 @@ automatic sensor capture + best-effort group search
 +
 четыре low-quality preview без watermark + QR continuation
 +
-90-day private diagnostic storage
+90-day diagnostic storage
 +
 независимые display/cooldown/QR/browser timers
 +

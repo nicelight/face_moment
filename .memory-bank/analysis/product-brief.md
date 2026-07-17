@@ -18,14 +18,13 @@ type: product-brief
 
 ## 1. One-liner
 
-Face Moment автоматически находит профессиональные фотографии заранее
-согласившихся участников закрытого SPA-pilot, показывает четыре персональных
-teaser на Promo display и переносит найденную session на телефон по QR без
-повторного selfie.
+Face Moment автоматически находит профессиональные фотографии участников
+one-SPA pilot, показывает четыре персональных teaser на Promo display и
+переносит найденную session на телефон по QR без повторного selfie.
 
 ## 2. Target Users
 
-- Участник pilot — заранее информированный и согласившийся тестировщик.
+- Участник pilot — тестировщик пользовательского сценария.
 - Фотограф — загружает свежие готовые JPEG и получает новый канал контакта с
   потенциальным покупателем.
 - Оператор Face Moment/SPA — контролирует batches, searchable readiness, Promo и
@@ -87,7 +86,7 @@ Post-pilot paid product продаёт весь найденный пакет з
 
 ## 7. MVP Scope
 
-- одна выбранная SPA и закрытая группа consented testers;
+- одна выбранная SPA и ограниченная группа тестировщиков;
 - 43-inch landscape display, baseline 16:9 / 1920×1080;
 - automatic sensor-triggered capture с дистанции 3–5 метров;
 - authenticated direct web upload готовых JPEG с подтверждением SPA,
@@ -99,7 +98,7 @@ Post-pilot paid product продаёт весь найденный пакет з
 - четыре low-quality preview и QR без watermark;
 - QR continuation page без нового selfie: SPA, дата, teaser, `N` и post-pilot
   CTA полного пакета;
-- private diagnostic bundle каждой попытки с retention 90 дней;
+- diagnostic bundle каждой попытки с retention 90 дней;
 - failure mode с локальной рекламой и diagnostic event;
 - controlled acceptance run из 20 попыток.
 
@@ -112,35 +111,29 @@ Post-pilot paid product продаёт весь найденный пакет з
 - Яндекс Диск и другие external ingest channels;
 - watermark на любых preview;
 - гарантия полного покрытия каждого человека в группе;
-- доказательство production FAR/recall по 20 попыткам;
+- production-grade validation по 20 попыткам;
 - RAW, identity clustering, ANN, Redis/Celery/Kafka, Kubernetes, GPU-first и
   полноценный kiosk.
 
 ## 9. Success Metrics
 
-- Ни одна из 20 попыток не показывает вручную подтверждённую фотографию
-  постороннего человека на Promo.
-- Минимум 19 из 20 ожидаемо успешных попыток показывают полностью видимый и
-  сканируемый QR менее чем за 10 секунд от `reference_series_ready_at`.
-- Landing каждой успешной попытки правильно показывает SPA, `visit_date`, teaser
-  и `N`.
-- Для каждой попытки, включая timeout/no-match/incorrect, создан diagnostic
-  bundle.
+- Минимум 19 из 20 попыток показывают полностью видимый и сканируемый QR менее
+  чем за 10 секунд от `reference_series_ready_at`.
+- Landing каждой завершённой попытки правильно показывает SPA, `visit_date` и
+  согласованные с той же session teaser и `N`.
+- Для каждой попытки создан diagnostic bundle.
 - Не менее 95% JPEG подтверждённых batches становятся searchable менее чем за
   15 минут от `batch.confirmed_at`; задержка фотографа до подтверждения измеряется
   отдельно.
 
-Метрики доказывают smoke-pilot работоспособность, но не production safety.
-Для group attempt посторонней считается фотография без корректного match хотя бы
-с одним участником текущей reference-сцены; другие люди на том же коммерческом
-кадре не делают его ошибочным автоматически.
+Метрики доказывают работоспособность smoke-pilot.
 
 ## 10. Constraints
 
 - один центральный CPU-only сервер в РФ и одна pilot SPA;
 - без external cloud face-recognition API;
 - capture запускается автоматически, без действия участника;
-- только pre-consented testers и 90-day private diagnostics;
+- только участники pilot и 90-day diagnostics;
 - no-watermark policy для всех preview; originals в pilot не выдаются;
 - PostgreSQL/MinIO не публикуются наружу, public boundary использует HTTPS;
 - поиск ограничен SPA, датой/периодом и совместимой pipeline revision;
@@ -151,17 +144,13 @@ Post-pilot paid product продаёт весь найденный пакет з
 - У каждого тестировщика заранее есть минимум четыре searchable фотографии.
 - Фотограф загружает JPEG сразу после законченной съёмочной серии.
 - Serving pipeline и reference threshold откалиброваны до acceptance run.
-- Consent на automatic capture, Promo и diagnostics фиксируется до участия.
-- Diagnostic bundles доступны только назначенным операторам.
 - Конкретные camera, lens, sensor и lighting выбираются после обследования SPA.
 
 ## 12. Risks
 
-- false match может показать чужую фотографию;
 - group algorithm может повторно выбрать одного человека и пропустить другого;
 - motion blur, pose, lighting и размер лица могут сорвать поиск;
 - поздний upload лишает Promo актуальных снимков;
-- diagnostic bundles содержат чувствительные biometric-like данные;
 - отсутствие watermark облегчает копирование teaser, хотя low-quality ограничивает
   их коммерческую ценность;
 - один сервер и один realtime process создают latency/availability risk;
@@ -171,24 +160,21 @@ Post-pilot paid product продаёт весь найденный пакет з
 
 - Какая SPA и геометрия прохода выбраны для pilot?
 - Какие camera, lens, passage sensor и lighting проходят validation?
-- Как фиксируются consent, его отзыв и досрочное удаление diagnostics?
-- Кто имеет доступ к diagnostics и какой audit trail обязателен?
 - Какие final QR/browser TTL и expired-session UX используются?
 - Какая field validation обязательна перед запуском на реальных посетителях?
 - Кто является экономическим заказчиком post-pilot продукта?
 - Какие package threshold, payment, receipt/refund и download rules применяются
   после pilot?
 
-Эти вопросы не блокируют PRD закрытого pilot, но соответствующие privacy и field
-validation решения блокируют публичный launch.
+Эти вопросы не блокируют PRD pilot; публичный launch не входит в текущий scope.
 
 ## 14. PRD Input Summary
 
-PRD описывает только закрытый one-SPA pilot и заканчивается проверенным QR
+PRD описывает только one-SPA pilot и заканчивается проверенным QR
 continuation. Обязательные решения: automatic Promo, authenticated JPEG upload,
 четыре no-watermark teaser, continuation без selfie, текущий best-effort group
-algorithm, 90-day diagnostics и acceptance `19/20 under 10s` при нуле чужих
-фотографий. Payment и originals остаются post-pilot context.
+algorithm, 90-day diagnostics и performance acceptance `19/20 under 10s`.
+Payment и originals остаются post-pilot context.
 
 ## 15. Decision
 

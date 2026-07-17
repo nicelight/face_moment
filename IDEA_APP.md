@@ -6,10 +6,10 @@
 ## 0. Статус документа
 
 Этот документ фиксирует продуктовую концепцию, принятые архитектурные решения,
-границы первого закрытого pilot и post-pilot направление продукта.
+границы первого pilot и post-pilot направление продукта.
 
 Если не указано иное, `pilot MVP` означает одну SPA и контролируемые проходы
-заранее информированных и согласившихся тестировщиков. Целевая платформа на
+тестировщиков. Целевая платформа на
 10–15 SPA и paid flow не являются gate первого pilot.
 
 Используются четыре статуса:
@@ -68,8 +68,8 @@ pilot. Post-pilot paid product продаёт за одну фиксирован
 
 ### 1.3 Масштаб
 
-- первый pilot: одна пока не выбранная SPA, один `SpaPromoClient` и закрытая
-  группа согласившихся тестировщиков;
+- первый pilot: одна пока не выбранная SPA, один `SpaPromoClient` и ограниченная
+  группа тестировщиков;
 
 Целевая capacity после pilot:
 
@@ -141,7 +141,7 @@ population и failure semantics определены в `IDEA_INGEST.md`.
 ### 2.2 Pilot Promo и QR continuation
 
 1. Фотограф заранее загружает и подтверждает batch.
-2. Заранее согласившийся тестировщик проходит через capture-zone.
+2. Тестировщик проходит через capture-zone.
 3. Sensor запускает автоматическую reference-серию без действия тестировщика.
 4. Система best-effort обрабатывает до пяти face detections и формирует четыре
    уникальные teaser-фотографии.
@@ -470,7 +470,8 @@ UNIQUE(photo_id, pipeline_revision_id, face_index)
 
 Результаты поиска только группируются и дедуплицируются по `photo_id`.
 
-**Почему принято:** кластеризация может ошибочно объединить разных людей или разделить одного человека. При текущем размере отфильтрованной выборки она не нужна для скорости поиска.
+**Почему принято:** при текущем размере отфильтрованной выборки clustering не
+нужен для скорости поиска.
 
 ---
 
@@ -549,8 +550,7 @@ camera и хранит короткий кольцевой буфер. Сигн�
 reference-кадры посетителя или найденные для него фотографии. Видео состоит из
 двух визуальных фаз:
 
-1. короткий импульс появления произвольной фотографии, снятой в SPA; все лица
-   на такой фотографии заранее размыты;
+1. короткий импульс появления произвольной фотографии, снятой в SPA;
 2. следующая за импульсом длинная спокойная анимация поиска фотографий по
    картотеке.
 
@@ -1109,12 +1109,8 @@ query_source
 
 Pilot acceptance:
 
-- не менее 19 из 20 ожидаемо успешных попыток имеют
-  `reference_ready_to_qr_ms < 10_000`;
-- ни одна из 20 попыток не показывает вручную подтверждённую фотографию
-  постороннего человека;
-- timeout, no-match и incorrect result считаются неуспешными попытками, а не
-  исключаются из выборки.
+- не менее 19 из 20 попыток имеют `reference_ready_to_qr_ms < 10_000`;
+- timeout/no-match без завершённого QR считается performance failure.
 
 ### 9.2 Рекомендуемые percentiles
 
@@ -1150,8 +1146,6 @@ SFace и Buffalo M сравниваются на размеченных реал
 
 Нужны:
 
-- genuine pairs: фотографии одного человека;
-- impostor pairs: фотографии разных людей;
 - reference-camera samples;
 - сложные случаи: движение, плохой свет, pose, частичное перекрытие.
 
@@ -1160,14 +1154,11 @@ selfie-search и не входят в dataset/gate первого pilot.
 
 Метрики:
 
-- search-level false accept rate;
-- recall/TAR при заданном false accept rate;
 - доля запросов без результата;
+- количество найденных фотографий;
 - latency p50/p95/p99;
 - processing failures;
 - влияние качества и размера лица.
-
-Raw-значения `manual_false_positive_count` без числа поисков не используются как основная метрика.
 
 Результат принятой калибровки получает `calibration_id` и записывает type-level
 thresholds для конкретного SPA и query source через админку. Отдельная запись на
@@ -1188,27 +1179,21 @@ thresholds для конкретного SPA и query source через адми
 - detections, quality values, candidates, thresholds и выбранные `photo_id`;
 - timestamps всех этапов;
 - screenshot фактически показанного Promo и QR continuation event;
-- ручную annotation `correct | incorrect | uncertain` и issue tags.
+- technical outcome/status и issue tags.
 
-Изображения хранятся в закрытом object storage, manifest и индексируемые события
-— в PostgreSQL. Diagnostic routes не являются публичными и не доступны через
-Promo или QR session.
+Изображения хранятся в object storage, manifest и индексируемые события — в
+PostgreSQL. Diagnostic route отделён от Promo/QR flow.
 
-Diagnostic bundle автоматически удаляется через 90 дней. Долгоживущий backup
-не должен продлевать этот срок. Отдельный полезный case можно вручную перенести
-в calibration/benchmark dataset только при отдельном основании, ограничении
-доступа и audit event.
+Diagnostic bundle автоматически удаляется через 90 дней. Отдельный полезный
+case можно вручную перенести в calibration/benchmark dataset.
 
 Selfie capture, calibration selfies и standalone selfie-search не входят в
-первый pilot. Они требуют отдельного post-pilot scope и consent flow.
+первый pilot. Они требуют отдельного post-pilot scope.
 
 ## 12. Граница и acceptance первого pilot
 
-Pilot является закрытым smoke test на одной SPA-площадке. В нём участвуют только
-заранее информированные тестировщики с зафиксированным согласием на automatic
-capture, персональный Promo и 90-day diagnostic retention. Запуск на обычных
-посетителях запрещён до отдельного legal/privacy решения, notice/deletion flow и
-более крупной field validation.
+Pilot является техническим smoke test на одной SPA-площадке с выбранной группой
+тестировщиков. Публичный rollout не входит в текущий scope.
 
 Acceptance run содержит 20 ожидаемо успешных попыток; одни тестировщики могут
 участвовать многократно, а набор включает проверку group flow. У каждого
@@ -1216,22 +1201,14 @@ Acceptance run содержит 20 ожидаемо успешных попыт�
 
 Критерии:
 
-- ни один Promo не показывает вручную подтверждённую фотографию постороннего
-  человека;
 - минимум 19 из 20 попыток дают полностью видимый и сканируемый QR менее чем за
   10 секунд от `reference_series_ready_at`;
-- landing каждой успешной попытки правильно показывает SPA, `visit_date`,
-  teaser и `N`;
-- для каждой попытки, включая timeout, no-match и incorrect result, сохраняется
-  diagnostic bundle.
+- landing каждой завершённой попытки правильно показывает SPA, `visit_date` и
+  согласованные с той же session teaser и `N`;
+- для каждой попытки сохраняется diagnostic bundle.
 
-Для group attempt «посторонняя фотография» означает, что manual annotation не
-подтверждает корректный match ни с одним участником текущей reference-сцены.
-Присутствие других людей на коммерческом групповом снимке само по себе не делает
-его ошибочным.
-
-Этот run подтверждает техническую работоспособность, но не production FAR,
-полное покрытие каждого человека в группе или допустимость публичного rollout.
+Этот run подтверждает техническую работоспособность, но не полное покрытие
+каждого человека в группе.
 
 ---
 
@@ -1298,7 +1275,7 @@ CPU sets, thread limits и богатые percentile-разрезы остают
 
 ---
 
-## 14. Техническая приватность и доступ
+## 14. Search scope, sessions и delivery
 
 Минимальная схема доступа:
 
@@ -1317,37 +1294,21 @@ reference match (selfie — post-pilot)
 - post-pilot originals выдаются через короткоживущие signed download URLs через
   публичный HTTPS endpoint backend;
 - TTL для QR/search sessions;
-- pilot reference diagnostic bundles хранятся в private storage 90 дней и затем
-  автоматически удаляются;
-- первый pilot доступен только заранее информированным и согласившимся
-  тестировщикам; public rollout до отдельного legal/privacy gate запрещён;
-- diagnostic bundles доступны только через authenticated administrative path и
-  не через Promo/QR routes;
 - все запросы имеют rate limit;
 - каждый `SpaPromoClient` аутентифицируется своим простым
   `spa_client_token`, по которому сервер определяет `spa_id`;
-- локальный Chromium запускается непривилегированным OS-user `display` со
-  штатным sandbox; флаг `--no-sandbox` запрещён;
-- административные SSH, `sudo`, Docker и deployment secrets доступны только
-  OS-user `facemoment`;
-- PostgreSQL и MinIO доступны только внутри server/Docker network и не
-  публикуются наружу;
-- preview и originals отдаются через HTTPS backend; signed URL не открывает
-  прямой внешний доступ к MinIO;
 - visit code/браслет/чек может быть добавлен как дополнительное ограничение поиска.
 
 **Почему принято:** отсутствие watermark является явным product decision, а
-риск копирования снижается только low-quality форматом и отсутствием originals
-до оплаты. Face similarity не должна быть единственным механизмом доступа к
-originals. Ограничение области поиска одновременно снижает риск неправильной
-выдачи и ускоряет exact search. Простой client token создаёт необходимую
-привязку display к SPA без mTLS, VLAN или сложного RBAC.
+originals относятся к paid flow. Ограничение области поиска ускоряет exact
+search. Простой client token привязывает display к SPA без более сложной
+configuration scheme.
 
 ---
 
 ## 15. Что входит в MVP приложения
 
-1. Одна закрытая pilot SPA и только заранее согласившиеся тестировщики.
+1. Одна pilot SPA и ограниченная группа тестировщиков.
 2. Authenticated direct JPEG batch upload с authoritative `visit_date`.
 3. PostgreSQL + pgvector exact search и MinIO без внешней публикации.
 4. `photo_pipeline_states` как источник searchable state.
@@ -1364,7 +1325,7 @@ originals. Ограничение области поиска одновреме
     без watermark и QR continuation.
 11. Phone landing с SPA, `visit_date`, teaser, `N` и post-pilot CTA без
     payment/download.
-12. Private diagnostic bundles для каждой попытки с retention 90 дней.
+12. Diagnostic bundles для каждой попытки с retention 90 дней.
 13. Метрики `reference_ready_to_qr`, realtime queue и
     `ingest_to_searchable`, а также acceptance run из 20 попыток.
 14. Benchmark SFace и Buffalo M на reference-camera данных pilot; selfie samples
@@ -1376,7 +1337,7 @@ originals. Ограничение области поиска одновреме
 - payment полного пакета по фиксированной цене, receipt/refund и signed download
   originals;
 - Яндекс Диск и другие external ingest channels;
-- публичная field validation и rollout после legal/privacy gate;
+- публичная field validation и rollout;
 - `dual_benchmark` как online-режим;
 - serving/pending migration и backfill;
 - fixed ordering разных классов jobs;
@@ -1422,7 +1383,7 @@ originals. Ограничение области поиска одновреме
 |---|---|---|
 | Exact pgvector search | vector_search_p95 становится значимой частью SLA после фильтрации | исследовать HNSW на реальном наборе |
 | PostgreSQL jobs | PostgreSQL polling/locking подтверждённо ограничивает throughput | рассмотреть простой broker |
-| До пяти независимых face detections из настраиваемой reference-серии без tracking/fusion | качество поиска не достигает целевого FAR/recall при соблюдении latency пилота | сначала скорректировать capture window и quality ranking; затем отдельно проверить fusion |
+| До пяти независимых face detections из настраиваемой reference-серии без tracking/fusion | измерения показывают, что текущая обработка не выполняет цели pilot | сначала скорректировать capture window и quality ranking; затем отдельно проверить fusion |
 | Нет identity clustering | появляется подтверждённая продуктовая задача идентичности между визитами | проектировать clustering отдельно |
 
 **Почему принято:** таблица задаёт измеримые границы. Агенты не должны предлагать следующий уровень сложности до выполнения соответствующего условия.
@@ -1443,12 +1404,11 @@ queue, deadline и метрикой queue wait.
 
 Плохой свет, motion blur, pose и несколько людей могут влиять сильнее, чем выбор между SFace и Buffalo M. Камера, освещение и зона захвата должны тестироваться вместе с моделями.
 
-### 18.4 Ошибочный threshold
+### 18.4 Калибровка threshold
 
-Слишком низкий threshold показывает чужие фотографии, слишком высокий пропускает
-нужные. Значения нельзя брать только из документации моделей; они калибруются на
-данных проекта отдельно по SPA, pipeline code и query source и редактируются в
-админке.
+Значения нельзя брать только из документации моделей; они калибруются по доле
+запросов без результата и количеству найденных фотографий на данных проекта
+отдельно по SPA, pipeline code и query source и редактируются в админке.
 
 ### 18.5 Переключение pipeline
 
@@ -1462,17 +1422,10 @@ queue, deadline и метрикой queue wait.
 не попасть в search. Это принято для pilot и должно быть явно отражено в UX,
 diagnostics и интерпретации acceptance; полное group coverage не обещается.
 
-### 18.7 Diagnostic privacy и preview copying
-
-Raw reference data и производные diagnostic artifacts являются чувствительными.
-Риск ограничивается закрытым consented pilot, private access и удалением через
-90 дней. Preview намеренно не имеют watermark, поэтому low-quality формат лишь
-снижает, но не устраняет риск их копирования.
-
 ## 19. Финальная архитектурная формула приложения
 
 ~~~text
-одна закрытая consented pilot SPA
+одна pilot SPA
 +
 Python/FastAPI backend
 +
@@ -1492,7 +1445,7 @@ best-effort group search без tracking и гарантии полного по
 +
 четыре low-quality preview без watermark + QR continuation
 +
-private diagnostic bundles с retention 90 дней
+diagnostic bundles с retention 90 дней
 +
 facemoment для администрирования + непривилегированный display с Chromium sandbox
 +

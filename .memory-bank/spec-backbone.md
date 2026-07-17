@@ -13,8 +13,8 @@ status: active
 
 - [IDEA_APP.md](../IDEA_APP.md): product/application concept, data model and
   recommended application mechanisms.
-- [IDEA_OS.md](../IDEA_OS.md): central-server, SpaPromoClient, minimal security
-  and recommended deployment profile.
+- [IDEA_OS.md](../IDEA_OS.md): central-server, SpaPromoClient, and recommended
+  deployment profile.
 - [IDEA_INGEST.md](../IDEA_INGEST.md): batch-first photo ingestion, direct
   upload and public Yandex Disk link intake from arbitrary photographer
   accounts.
