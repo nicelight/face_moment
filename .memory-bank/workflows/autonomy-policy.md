@@ -6,6 +6,54 @@ status: active
 
 ## Default mode
 - Prefer interactive mode unless the user explicitly requested unattended execution.
+- Canonical scheduler execution is sequential: select, execute, verify, and
+  record one task before selecting the next.
+- Parallel task execution is experimental and disabled unless the run was
+  explicitly invoked with `--experimental-parallel`.
+
+## Experimental parallel execution
+- Record the opt-in in `.protocols/AUTONOMOUS-RUN/status.md`.
+- Never use advisory `touched_files` as proof that tasks are disjoint.
+- Parallel candidates require non-empty, deliberately hard, pairwise-disjoint
+  `runtime_context.write_boundary` values and isolated worktrees/sandboxes.
+- T3 tasks and tasks that write shared/governing state, package manifests,
+  lockfiles, CI, or global configuration remain sequential.
+- If isolation or non-overlap cannot be proved, fall back to sequential without
+  treating the fallback as an error.
+- This option adds no task status, schema field, registry, or lifecycle.
+
+## Durable run checkpoint
+- `.protocols/AUTONOMOUS-RUN/status.md` is the resumable orchestration
+  checkpoint for `/autonomous` and `/autopilot`; it is not authoritative task
+  state or a second task registry.
+- Keep the checkpoint compact and linked to authoritative indexed task records.
+  It records:
+  - current task, or `none` during a run-level stage;
+  - current stage, using the scheduler-owned vocabulary defined by
+    `/autopilot`;
+  - last durable child verdict or handoff path;
+  - next action.
+- The scheduler checkpoint becomes active when `/autopilot` queue execution
+  begins. Before `/autonomous` enters its first scheduler phase, Product/Design
+  resume is owned by the existing run plan, review coverage/counters, decision
+  log, and authoritative artifacts; do not invent non-scheduler stage values.
+- When `/autonomous` continues after a completed Foundation queue, retain the
+  last scheduler checkpoint as durable history and record the exact outer next
+  action without rewriting `current stage` to a Product/Design value.
+- Update the checkpoint immediately before a child stage and again after its
+  durable handoff or verdict is written. Do not advance it from transient
+  conversation state alone.
+- `next action` names the exact unfinished scheduler action. Set it to `none`
+  only after the applicable full-queue terminal result is durably recorded.
+  Never overwrite an unfinished `red-verify`, `closure`, or `wave-boundary`
+  checkpoint with `selection` merely because no task is currently
+  `in_progress`.
+- On resume, reconcile every checkpoint value with the indexed `.task.json`,
+  task protocol, handoff, and verdict evidence before acting. Never trust the
+  checkpoint alone or use it to override authoritative lifecycle state.
+- Queue summaries in run status are derived snapshots or links. The lifecycle
+  remains `planned|ready|in_progress|blocked|done|failed` only in indexed task
+  records.
 
 ## Hard-stop categories
 - security / compliance ambiguity
@@ -13,16 +61,36 @@ status: active
 - destructive data migrations
 - secret reads / prod writes / deploys
 
-## Allowed assumptions
-- naming / wording / non-critical UX defaults
-- low-impact implementation details that can be verified later
-
-Non-blocking gaps must be written as explicit assumptions in `.protocols/AUTONOMOUS-RUN/decision-log.md`.
+## Operator decisions and local tactics
+- Unattended runs apply only decisions already fixed by Constitution, clarified
+  PRD, accepted operator policy/decision, production baseline, ADR, canonical
+  spec, or another authoritative artifact.
+- An unresolved material product, UX/acceptance, architecture, API/event/data/
+  state/storage/security/compatibility, Foundation, task-boundary, tier,
+  dependency, verification, or human-checkpoint branch is not an allowed
+  assumption. Record the exact question and halt with
+  `HALT_CLARIFICATION_REQUIRED` or `HALT_BLOCKING_QUESTIONS` plus the owning
+  interactive resume skill.
+- A recommendation, framework preference, reversible/conservative default,
+  silence, or continued reasoning is not operator consent.
+- Agents may choose low-impact implementation tactics, naming inside an
+  accepted contract, exploration order, tools, and the cheapest sufficient
+  checks when those choices do not change an operator-owned decision or expand
+  the approved scope/tier.
+- Record material applied authoritative decisions and any temporary
+  implementation-only assumption that needs later verification in the existing
+  `.protocols/AUTONOMOUS-RUN/decision-log.md`; do not create an assumption or
+  interview registry.
 
 ## Required gates
 - latest `/review-tasks-plan FT-<NNN>` verdict must be `APPROVE` for every
-  task-linked product feature
-- mandatory `/mb-doctor --strict` before autonomous/autopilot task selection, after `/mb-sync` before promotion, and before final success
+  task-linked product feature in the active queue scope; scoped FT-000
+  execution has no product-feature review target and must not mutate
+  out-of-scope product records
+- mandatory matching-scope strict doctor before autonomous/autopilot task
+  selection, after `/mb-sync` before promotion, and before final success:
+  `/mb-doctor --strict --scope FT-000` for the nested Foundation queue and
+  full `/mb-doctor --strict` for product/full-queue execution
 - tier-appropriate verification per TASK:
   - T0/T1: compact evidence may be enough
   - Scheduler mode T2: full protocol, applicable task/spec gates, and `/verify` PASS are required before scheduler marks the task done; per-task `/red-verify` is not required
@@ -46,6 +114,26 @@ Non-blocking gaps must be written as explicit assumptions in `.protocols/AUTONOM
 - max_retries_per_task: 2
 - max_consecutive_failures: 3
 - max_open_blockers: 3
+
+## Terminal fallback
+- A no-ready pass or resumed run must preserve any already-recorded specific
+  `HALT_*` state together with its reason, owner, and resume route; never
+  overwrite it with `HALT_DEPENDENCY_DEADLOCK`.
+- Use `HALT_DEPENDENCY_DEADLOCK` only for genuine dependency-only graph
+  exhaustion: every unfinished record in the active queue scope is non-runnable
+  solely because its task dependencies are unfinished.
+
+## Run state and nested queue result
+- `STATE: RUNNING` is the only non-terminal run state. It means the outer
+  `/autonomous` or standalone `/autopilot` run still has an authorized next
+  action.
+- Standalone/full-queue `/autopilot` writes its final result to `STATE`.
+- When `/autonomous` invokes `/autopilot --scope FT-000`, a successful scoped
+  scheduler phase records `Foundation queue result: SUCCESS`, the named final
+  gate/evidence, and the exact outer next action while `STATE` remains
+  `RUNNING`. This is phase evidence, not a new terminal state.
+- Any scoped scheduler `HALT_*` becomes the outer `STATE` unchanged with its
+  reason, owner, evidence, and resume route.
 
 ## Terminal states
 - `SUCCESS`

@@ -23,6 +23,7 @@ const TASK_ID_FORMAT = 'TASK-NNN-TN-FT-NNN-WN';
 const TASK_ID_RE = /^TASK-[0-9]{3}-T[0-3]-FT-[0-9]{3}-W[0-9]+$/;
 const FOUNDATION_TASK_ID_FORMAT = 'TASK-NNN-TN-FT-000-WN';
 const FOUNDATION_TASK_ID_RE = /^TASK-[0-9]{3}-T[0-3]-FT-000-W[0-9]+$/;
+const FOUNDATION_SCOPE = 'FT-000';
 const FOUNDATION_GATE_PENDING = 'pending_foundation_to_tasks';
 const VALID_STATUSES = new Set(['planned', 'ready', 'in_progress', 'blocked', 'done', 'failed']);
 const VALID_TIERS = new Set(['T0', 'T1', 'T2', 'T3']);
@@ -63,7 +64,9 @@ if (options.help) {
 
 if (options.errors.length) {
   for (const message of options.errors) {
-    addFinding('error', 'CLI_INVALID_ARGUMENT', message, { suggested_fix: 'Use only --strict and/or --json.' });
+    addFinding('error', 'CLI_INVALID_ARGUMENT', message, {
+      suggested_fix: 'Use --strict, optional --scope FT-000, optional --json, or --help.',
+    });
   }
   finish();
 }
@@ -81,19 +84,39 @@ function parseArgs(args) {
     strict: false,
     json: false,
     help: false,
+    scope: null,
     errors: [],
   };
 
-  for (const arg of args) {
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
     if (arg === '--strict') {
       parsed.strict = true;
     } else if (arg === '--json') {
       parsed.json = true;
+    } else if (arg === '--scope') {
+      const value = args[index + 1];
+      if (!value || value.startsWith('-')) {
+        parsed.errors.push('--scope requires FT-000.');
+      } else {
+        index += 1;
+        if (parsed.scope !== null) {
+          parsed.errors.push('--scope may be provided only once.');
+        } else if (value !== FOUNDATION_SCOPE) {
+          parsed.errors.push(`Unsupported scope: ${value}. Only ${FOUNDATION_SCOPE} is allowed.`);
+        } else {
+          parsed.scope = value;
+        }
+      }
     } else if (arg === '--help' || arg === '-h') {
       parsed.help = true;
     } else {
       parsed.errors.push(`Unknown flag: ${arg}`);
     }
+  }
+
+  if (parsed.scope !== null && !parsed.strict) {
+    parsed.errors.push('--scope FT-000 is valid only with --strict.');
   }
 
   return parsed;
@@ -103,11 +126,13 @@ function printHelp() {
   console.log(`mb-doctor
 
 Usage:
-  node scripts/mb-doctor.mjs [--strict] [--json]
+  node scripts/mb-doctor.mjs [--strict] [--scope FT-000] [--json]
 
 Flags:
-  --strict  Require an executable autonomous/autopilot task queue.
-  --json    Emit stable machine-readable JSON findings.
+  --strict         Require an executable autonomous/autopilot task queue.
+  --scope FT-000   In strict mode, evaluate FT-000 readiness while retaining
+                   global lint/schema/dependency safety checks.
+  --json           Emit stable machine-readable JSON findings.
 `);
 }
 
@@ -232,7 +257,7 @@ function checkBackboneReadiness() {
         path: SPEC_BACKBONE_REL,
         details: { status: 'missing', migration_hint: migrationHint },
         suggested_fix:
-          `Run /spec-init to create ${SPEC_BACKBONE_REL}, then /spec-design after /prd. Record Global Backbone Status complete, or minimal with explicit not_applicable areas; resolve blocked decisions before /prd-to-tasks.`,
+          `Run /spec-init to create ${SPEC_BACKBONE_REL}, then /spec-design after /prd-to-features. Record Global Backbone Status complete, or minimal with explicit not_applicable areas; resolve blocked decisions before /feature-to-tasks.`,
       }
     );
     return;
@@ -272,12 +297,12 @@ function checkBackboneReadiness() {
     addFinding(
       severity,
       'SPEC_BACKBONE_NOT_READY',
-      `${SPEC_BACKBONE_REL}: pre-PRD framing is prepared for /prd; Global Backbone Status is intentionally pending until /spec-design.`,
+      `${SPEC_BACKBONE_REL}: pre-PRD framing is prepared for /prd-to-features; Global Backbone Status is intentionally pending until /spec-design.`,
       {
         path: SPEC_BACKBONE_REL,
         details,
         suggested_fix:
-          'Continue with /prd, then run /spec-design before /prd-to-tasks, /autopilot, or autonomous scheduler mode.',
+          'Continue with /prd-to-features, then run /spec-design before /feature-to-tasks, /autopilot, or autonomous scheduler mode.',
       }
     );
     return;
@@ -291,7 +316,7 @@ function checkBackboneReadiness() {
       path: SPEC_BACKBONE_REL,
       details,
       suggested_fix:
-        'Run /spec-design after /prd. Record Global Backbone Status complete, or minimal with explicit not_applicable areas; resolve blocked decisions before /prd-to-tasks.',
+        'Run /spec-design after /prd-to-features. Record Global Backbone Status complete, or minimal with explicit not_applicable areas; resolve blocked decisions before /feature-to-tasks.',
     }
   );
 }
@@ -404,6 +429,7 @@ function isFoundationOnlyTaskQueue() {
   if (!index || typeof index !== 'object' || Array.isArray(index) || !Array.isArray(index.tasks)) return false;
   if (index.tasks.length === 0) return false;
 
+  let scopedFoundationRecords = 0;
   for (const entry of index.tasks) {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return false;
     if (typeof entry.id !== 'string' || !TASK_ID_RE.test(entry.id)) return false;
@@ -415,10 +441,14 @@ function isFoundationOnlyTaskQueue() {
     const taskRead = readJson(rel);
     if (!taskRead.ok || !taskRead.value || typeof taskRead.value !== 'object' || Array.isArray(taskRead.value)) return false;
     if (taskRead.value.id !== entry.id) return false;
-    if (taskRead.value.feature !== 'FT-000') return false;
+    if (taskRead.value.feature === FOUNDATION_SCOPE) {
+      scopedFoundationRecords += 1;
+    } else if (options.scope !== FOUNDATION_SCOPE) {
+      return false;
+    }
   }
 
-  return true;
+  return scopedFoundationRecords > 0;
 }
 
 function extractBackboneAreaMatrixSection(text) {
@@ -476,7 +506,7 @@ function checkTaskReadiness() {
   if (!indexRead.ok) {
     addFinding('error', 'TASK_INDEX_INVALID', indexRead.message, {
       path: TASK_INDEX_REL,
-      suggested_fix: 'Create a valid JSON task index or run mb-init/prd-to-tasks.',
+      suggested_fix: 'Create a valid JSON task index or run mb-init/feature-to-tasks.',
     });
     return;
   }
@@ -495,7 +525,7 @@ function checkTaskReadiness() {
     addFinding(severity, 'TASK_INDEX_EMPTY', 'No task records yet. This is valid for a fresh skeleton.', {
       path: TASK_INDEX_REL,
       suggested_fix: options.strict
-        ? 'Create task records via /prd-to-tasks FT-XXX after /write-prd and /prd.'
+        ? 'Create task records via /feature-to-tasks FT-XXX after /write-prd and /prd-to-features.'
         : undefined,
     });
     addQueueSummary([], []);
@@ -504,11 +534,22 @@ function checkTaskReadiness() {
 
   const { records, invalidEntries } = loadTaskRecords(index.tasks);
   const orderedRecords = [...records.values()];
+  const activeRecords = options.scope === FOUNDATION_SCOPE
+    ? orderedRecords.filter((record) => record.task.feature === FOUNDATION_SCOPE)
+    : orderedRecords;
 
-  checkTasksFromUnclarifiedFeatures(orderedRecords);
+  if (options.scope === FOUNDATION_SCOPE && activeRecords.length === 0) {
+    addFinding('error', 'TASK_SCOPE_EMPTY', `No indexed ${FOUNDATION_SCOPE} task records exist in the requested strict scope.`, {
+      path: TASK_INDEX_REL,
+      details: { scope: FOUNDATION_SCOPE },
+      suggested_fix: 'Run /foundation-to-tasks, then rerun mb-doctor --strict --scope FT-000.',
+    });
+  }
+
+  checkTasksFromUnclarifiedFeatures(activeRecords);
   checkFoundationReadiness(orderedRecords, records);
 
-  for (const record of orderedRecords) {
+  for (const record of activeRecords) {
     checkFoundationWave(record);
     checkReadyDependencies(record, records);
     checkInProgressProtocol(record);
@@ -521,11 +562,11 @@ function checkTaskReadiness() {
     checkSingleCardHandoffCompleteness(record);
   }
 
-  checkFailedTaskClosure(orderedRecords);
-  checkT2FeatureSemanticCompletion(orderedRecords);
-  checkFailedDependentsBlocked(orderedRecords);
-  checkQueueState(orderedRecords, records, invalidEntries);
-  addQueueSummary(orderedRecords, invalidEntries);
+  checkFailedTaskClosure(activeRecords);
+  checkT2FeatureSemanticCompletion(activeRecords);
+  checkFailedDependentsBlocked(activeRecords);
+  checkQueueState(activeRecords, records, invalidEntries);
+  addQueueSummary(activeRecords, invalidEntries);
 }
 
 function loadTaskRecords(entries) {
@@ -667,12 +708,12 @@ function checkFoundationReadiness(orderedRecords, records) {
 
   const productRecords = orderedRecords.filter((record) => record.task.feature !== 'FT-000');
 
-  if (productRecords.length && gate.task.status !== 'done') {
+  if (options.scope !== FOUNDATION_SCOPE && productRecords.length && gate.task.status !== 'done') {
     addFinding(severity, 'FOUNDATION_GATE_TASK_INVALID', `${gate.rel}: foundation gate task is not done.`, {
       path: gate.rel,
       task_id: anchors.gateTask,
       details: { status: gate.task.status },
-      suggested_fix: 'Finish /execute, /verify, and /mb-sync for the foundation gate task before product feature execution.',
+      suggested_fix: 'Finish /exe, /verify, and /mb-sync for the foundation gate task before product feature execution.',
     });
   }
 
@@ -1008,7 +1049,7 @@ function checkSddSpecLinkage(record) {
       feature_spec_design_links: featureSpec?.links.existing ?? [],
       missing_feature_spec_design_links: featureSpec?.links.missing ?? [],
     },
-    suggested_fix: `Rerun /prd-to-tasks ${featureId ?? 'FT-<NNN>'} to repair/reconcile feature specs and task cards, or run /spec-auto for autonomous design; then add relevant SDD spec links to source_artifacts, normative_inputs, constraints, invariants, or verification_targets.`,
+    suggested_fix: `Rerun /feature-to-tasks ${featureId ?? 'FT-<NNN>'} to repair/reconcile feature specs and task cards, or run /spec-auto for autonomous design; then add relevant SDD spec links to source_artifacts, normative_inputs, constraints, invariants, or verification_targets.`,
   });
 }
 
@@ -1042,11 +1083,12 @@ function checkSingleCardHandoffCompleteness(record) {
   const runtimeContext = isPlainObject(task.runtime_context) ? task.runtime_context : null;
   const hasTouchedFiles =
     Array.isArray(task.touched_files) && task.touched_files.some((value) => nonEmptyString(value));
-  const hasAllowedWriteScope =
-    Array.isArray(runtimeContext?.allowed_write_scope)
-    && runtimeContext.allowed_write_scope.some((value) => nonEmptyString(value));
-  if (!hasTouchedFiles && !hasAllowedWriteScope) {
-    issues.push('touched_files or runtime_context.allowed_write_scope must ground execution scope');
+  const writeBoundary = runtimeContext?.write_boundary ?? runtimeContext?.allowed_write_scope;
+  const hasWriteBoundary =
+    Array.isArray(writeBoundary)
+    && writeBoundary.some((value) => nonEmptyString(value));
+  if (!hasTouchedFiles && !hasWriteBoundary) {
+    issues.push('touched_files or runtime_context.write_boundary must describe the expected change surface');
   }
 
   const hasGateCommand =
@@ -1067,7 +1109,7 @@ function checkSingleCardHandoffCompleteness(record) {
     task_id: id,
     details: { issues },
     suggested_fix:
-      'Repair the indexed task card through /prd-to-tasks or /foundation-to-tasks; keep optional evidence-driven fields empty when no grounded value exists.',
+      'Repair the indexed task card through /feature-to-tasks or /foundation-to-tasks; use touched_files as advisory non-exhaustive hints and write_boundary only for a deliberate hard boundary.',
   });
 }
 
@@ -1076,6 +1118,8 @@ function isConcreteHandoffValue(value) {
   return !/^(?:tbd|todo|none|n\/a|not[_ -]?applicable|<[^>]+>|\{\{[^}]+\}\})$/i.test(value.trim());
 }
 function checkFeatureClarificationReadiness() {
+  if (options.scope === FOUNDATION_SCOPE) return;
+
   const severity = options.strict ? 'error' : 'warning';
   const { features } = getFeatureClarificationIndex();
 
@@ -1101,7 +1145,7 @@ function checkFeatureClarificationReadiness() {
       addFinding(severity, 'FEATURE_CLARIFICATION_PENDING', `${feature.rel}: feature clarification is ${feature.status}.`, {
         path: feature.rel,
         details: { feature: feature.id, status: feature.status },
-        suggested_fix: `Run /clarify-feature ${feature.id} until critical ambiguity is resolved before /prd-to-tasks.`,
+        suggested_fix: `Run /feature-doctor ${feature.id} until critical ambiguity is resolved before /feature-to-tasks.`,
       });
     }
   }
@@ -1117,6 +1161,7 @@ function checkTasksFromUnclarifiedFeatures(records) {
   for (const record of records) {
     const featureId = typeof record.task.feature === 'string' ? record.task.feature.trim() : '';
     if (!FT_ID_RE.test(featureId)) continue;
+    if (featureId === FOUNDATION_SCOPE) continue;
 
     const featureDocs = byId.get(featureId);
     let reason;
@@ -1163,7 +1208,7 @@ function checkTasksFromUnclarifiedFeatures(records) {
           feature_paths: group.featurePaths,
           tasks: group.tasks,
         },
-        suggested_fix: `Complete /clarify-feature ${group.featureId} before generating or running task records for that feature.`,
+        suggested_fix: `Complete /feature-doctor ${group.featureId} before generating or running task records for that feature.`,
       }
     );
   }
@@ -1798,7 +1843,7 @@ function addQueueSummary(records, invalidEntries) {
 
   addFinding('info', 'TASK_QUEUE_SUMMARY', 'Task queue summary.', {
     path: TASK_INDEX_REL,
-    details: counts,
+    details: { ...counts, scope: options.scope ?? 'all' },
   });
 }
 
