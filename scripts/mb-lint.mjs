@@ -441,8 +441,23 @@ function checkPrdMetadata(rel, text, fm) {
     }
   }
 
-  if (stripYamlQuotes(fm.clarification_status) === 'complete' && !hasSectionHeading(text, 'Clarifications')) {
-    errors.push(`${rel}: clarification_status complete requires a 'Clarifications' section`);
+  if (stripYamlQuotes(fm.clarification_status) === 'complete') {
+    const unresolvedMarkers = [
+      ['NEEDS CLARIFICATION', /\bNEEDS CLARIFICATION\b/i],
+      ['TBD', /\bTBD\b/i],
+      ['TODO', /\bTODO\b/i],
+      ['???', /\?\?\?/],
+    ];
+
+    for (const [label, pattern] of unresolvedMarkers) {
+      if (pattern.test(text)) {
+        errors.push(`${rel}: clarification_status complete cannot contain unresolved marker '${label}'`);
+      }
+    }
+
+    if (hasSectionHeading(text, 'Unresolved Blockers')) {
+      errors.push(`${rel}: clarification_status complete cannot contain an 'Unresolved Blockers' section`);
+    }
   }
 }
 

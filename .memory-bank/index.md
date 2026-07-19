@@ -23,6 +23,7 @@ status: active
 - [.memory-bank/roles/orchestrator.md](roles/orchestrator.md): Orchestrator role contract.
 - [.memory-bank/roles/general.md](roles/general.md): General role contract for one-agent execution.
 - [.memory-bank/roles/worker.md](roles/worker.md): Worker role contracts.
+- [.memory-bank/prd.md](prd.md): Clarified Product Requirements Document for the current one-SPA pilot.
 - [.memory-bank/product.md](product.md): Продукт (C4 L1).
 - [.memory-bank/requirements.md](requirements.md): Требования + RTM.
 - [.memory-bank/epics/](epics/): Эпики (C4 L2).

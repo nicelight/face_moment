@@ -4,6 +4,14 @@ status: active
 ---
 # Changelog
 
+## [2026-07-18] One-SPA pilot PRD clarification
+- Completed the one-SPA pilot PRD clarification against the ratified
+  Constitution and current Product Brief.
+- Recorded the final Promo/QR, ingest-deduplication, diagnostics, retention,
+  access and acceptance decisions directly in the normative PRD sections.
+- Updated `mb-lint` so a complete PRD is validated by the absence of unresolved
+  markers/blockers rather than by requiring a historical Clarifications section.
+
 ## [2026-07-17] Project Constitution ratification
 - Ratified project governance as `medium` with KISS and an explicit
   `DO NOT Overengineering` principle.
