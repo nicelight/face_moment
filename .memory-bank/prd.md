@@ -40,8 +40,9 @@ constitution_checked: true
 
 ### Readiness and verification context
 
-- [.memory-bank/spec-backbone.md](spec-backbone.md): pre-PRD SDD state; remains
-  blocked until this PRD is clarified and `/spec-init` is run.
+- [.memory-bank/spec-backbone.md](spec-backbone.md): pre-PRD framing and
+  decomposition handoff; global architecture readiness remains pending
+  `/spec-design`.
 - [.memory-bank/spec-index.md](spec-index.md): registry of current and planned
   canonical specs.
 - [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md): existing
@@ -57,6 +58,18 @@ scope. `IDEA_*` documents supply accepted behavior and constraints where they do
 not conflict with the Product Brief. Historical ideas, post-pilot candidates and
 items explicitly labelled as recommendations are not converted into pilot
 acceptance gates.
+
+## Clarifications
+
+- Clarification status is complete for the one-SPA pilot. The resolved scope,
+  actors, behavior, data semantics, non-goals, and acceptance contract are
+  expressed in the normative PRD sections below.
+- Remaining site/hardware selection and post-pilot commercial questions do not
+  change current actors, core scenarios, feature boundaries, or acceptance and
+  must not be converted into pilot requirements without a new product decision.
+- Source precedence and superseded `IDEA_*` defaults are recorded in
+  [.memory-bank/spec-backbone.md](spec-backbone.md) for decomposition and later
+  SDD work.
 
 ## Product Summary
 

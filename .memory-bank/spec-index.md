@@ -1,7 +1,7 @@
 ---
 description: Pure SDD spec registry and planned-spec index.
 status: active
-last_updated: 2026-07-17
+last_updated: 2026-07-20
 source_of_truth:
   - .memory-bank/spec-index.md
 ---
@@ -18,25 +18,27 @@ source_of_truth:
 |---|---|---|---|---|
 | governance | [.memory-bank/constitution.md](constitution.md) | active | Top governing policy. | /constitution |
 | invariants | [.memory-bank/invariants.md](invariants.md) | active | Global MUST/NEVER rules grounded in ratified governance decisions. | /constitution, /spec-init, or /spec-design |
-| glossary | [.memory-bank/glossary.md](glossary.md) | planned | Shared vocabulary when needed. | /spec-init or /spec-design |
+| glossary | [.memory-bank/glossary.md](glossary.md) | draft | Shared vocabulary when needed. | /spec-init or /spec-design |
+| architecture | [.memory-bank/architecture/system-architecture.md](architecture/system-architecture.md) | draft | Compact architecture hub; global decisions remain pending `/spec-design`. | /spec-design |
 | contract | [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md) | draft | Lightweight responsibility/scope notes for task boundaries. | /spec-init or /spec-design |
-| testing | [.memory-bank/testing/index.md](testing/index.md) | planned | Verification strategy and quality gates. | /prd or /spec-design |
+| state | [.memory-bank/states/lifecycle-map.md](states/lifecycle-map.md) | draft | Decomposition-level lifecycle hints; exact state design remains pending. | /spec-init or /spec-design |
+| testing | [.memory-bank/testing/index.md](testing/index.md) | active | Baseline verification strategy and quality gates; canonical design remains pending. | /spec-design |
 
 ## Planned Specs
 | Area | Expected path | Needed by | Notes |
 |---|---|---|---|
-| user_scenarios | .memory-bank/user-scenarios.md | /prd, /spec-design | Create only when scenario evidence exists or gaps must be explicit. |
-| core_domain | .memory-bank/domains/core-domain.md | /prd, /spec-design | Create only when domain model affects decomposition or shared design. |
-| boundary_hints | .memory-bank/contracts/boundary-map.md | /prd, /spec-design | Seeded lightweight template; fill only evidence-backed responsibility/scope notes, no endpoint/OpenAPI details. |
-| lifecycle_hints | .memory-bank/states/lifecycle-map.md | /prd, /spec-design | Create only when lifecycles affect feature boundaries. |
-| system_architecture | .memory-bank/architecture/system-architecture.md | /spec-design | Candidate architecture hub; fill only when selected or needed by /spec-design. |
-| interface_contract_specs | .memory-bank/contracts/*, .memory-bank/testing/*, and .memory-bank/runbooks/* | /spec-design, /foundation-to-tasks, /prd-to-tasks | Generate/update Interface Specification and only applicable Component/API/Event/Data contracts, protocol/agent/tool I/O, boundary compatibility, evidence/redaction, safety/security, testing, runbook, or verification contracts. Data Contract defines payloads crossing a boundary. |
-| data_specs | .memory-bank/domains/* and .memory-bank/states/* | /spec-design, /prd-to-tasks | Generate/update Data Specification for internal models, DB schemas, storage/persistence/migrations, internal data formats, validation/serialization rules, lifecycle, retention, seed, or runtime data paths. |
+| user_scenarios | .memory-bank/user-scenarios.md | /spec-design or decomposition repair | Current clarified PRD is sufficient for decomposition; create only if later scenario pressure needs a separate reviewed artifact. |
+| core_domain | .memory-bank/domains/core-domain.md | /spec-design | Current PRD owns product concepts; create only when shared design needs a canonical domain spec. |
+| boundary_hints | .memory-bank/contracts/boundary-map.md | /spec-design | Existing draft router; fill only evidence-backed responsibility/scope notes, no endpoint/OpenAPI details. |
+| lifecycle_hints | .memory-bank/states/lifecycle-map.md | /spec-design | Existing decomposition-level map; refine only when canonical lifecycle design is required. |
+| system_architecture | .memory-bank/architecture/system-architecture.md | /spec-design | Existing draft architecture hub; fill only through `/spec-design`. |
+| interface_contract_specs | .memory-bank/contracts/*, .memory-bank/testing/*, and .memory-bank/runbooks/* | /spec-design, /foundation-to-tasks, /feature-to-tasks | Generate/update only applicable Component/API/Event/Data contracts, protocol/agent/tool I/O, boundary compatibility, evidence/redaction, safety/security, testing, runbook, or verification contracts. A Data Contract defines payloads crossing a boundary. |
+| data_specs | .memory-bank/domains/* and .memory-bank/states/* | /spec-design, /feature-to-tasks | Generate/update internal domain, storage, schema, migration, validation/serialization, lifecycle, retention, seed, or runtime-data specs only when applicable. |
 | foundation_substrate_specs | .memory-bank/architecture/*, .memory-bank/contracts/*, .memory-bank/domains/*, .memory-bank/states/*, .memory-bank/testing/*, .memory-bank/runbooks/* | /foundation-to-tasks | Apply Architecture, Interfaces/Contracts, and Data lenses to the walking-skeleton proof path. Generate only applicable subject-based substrate contracts/specs. Product-level detail reuses or extends those paths later. |
-| subject_feature_concerns | .memory-bank/contracts/*, .memory-bank/domains/*, .memory-bank/states/*, .memory-bank/testing/*, .memory-bank/runbooks/*, or .memory-bank/guides/* | /prd-to-tasks | Discover existing canonical specs first; create only missing subject-based concerns and link exact paths from features/tasks. |
+| subject_feature_concerns | .memory-bank/contracts/*, .memory-bank/domains/*, .memory-bank/states/*, .memory-bank/testing/*, .memory-bank/runbooks/*, or .memory-bank/guides/* | /feature-to-tasks | Discover existing canonical specs first; create only missing subject-based concerns and link exact paths from features/tasks. |
 
 ## Broken / Missing Links
-- TBD
+- None known at this pre-PRD framing boundary.
 
 ## Update Rules
 - Keep this file as index/registry only: types, canonical paths, statuses,
