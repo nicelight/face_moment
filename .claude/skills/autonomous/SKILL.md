@@ -14,14 +14,16 @@ status: active
 Orchestrate the existing Product/Design, tasking, review, readiness, and queue
 execution contracts to one explicit end-to-end terminal state. This command
 owns Product/Design phase sequencing, review budgets, and the outer run result.
-It delegates task scheduler transitions and queue recovery to canonical
-`/autopilot`; every child skill owns its outcome and local tactics.
+It owns the bounded FT-000 Foundation execution phase, then delegates the
+prepared product task scheduler and queue recovery to canonical `/autopilot`;
+every child skill owns its outcome and local tactics.
 </objective>
 
 <input_contract>
 Use when an explicit Product Brief, PRD/delta, or existing clarified project
 state authorizes unattended work. Use `/autopilot` instead when the reviewed
-JSON queue already exists.
+product JSON queue already exists and the Foundation gate is already closed or
+truthfully `not_required`.
 
 Preflight:
 - `.memory-bank/` exists, otherwise route `/mb-init`;
@@ -61,20 +63,22 @@ state, not a second task registry.
   `.memory-bank/workflows/tier-policy.md`,
   `.memory-bank/workflows/execute-loop.md`, and
   `.memory-bank/workflows/mb-sync.md`.
-- Canonical queue execution is sequential under the installed `/autopilot`
-  contract.
+- Canonical queue execution is sequential.
 - `--experimental-parallel` remains opt-in and uses only existing autonomy-policy
   isolation rules. Never infer independence from advisory `touched_files`.
 - Queue/task metadata comes only from indexed JSON task records. Preserve task
   schema, IDs, lifecycle `planned|ready|in_progress|blocked|done|failed`, tier,
   waves, Foundation dependencies, and hard runtime scopes.
-- `/autopilot` owns promotion, `ready -> in_progress`, final
-  `done|failed|blocked` decisions, dependent block/unblock, queue state, and
-  queue terminal evaluation. `/autonomous` must not restage that algorithm or
+- During the Foundation phase, `/autonomous` is the explicit scheduler owner
+  only for indexed `feature: "FT-000"` records. After the Foundation gate is
+  `done`, `/autopilot` is the scheduler owner only for product records. Neither
+  phase may adopt or mutate the other phase's tasks.
+- `/autonomous` must not restage `/autopilot`'s product-queue algorithm or
   reinterpret its task transitions. `/exe`, `/verify`, `/red-verify`, and
   `/mb-sync` keep the ownership defined by tier policy.
-- `/autopilot` writes every task closure/failure/blocking decision, status, and
-  evidence link to the authoritative `.task.json` before any sync boundary.
+- The active scheduler writes every task closure/failure/blocking decision,
+  status, and evidence link to the authoritative `.task.json` before any sync
+  boundary.
 - `/mb-sync` reconciles already-written state once per wave unless an explicit
   current-wave durable-state dependency requires an early sync; it never
   chooses closure or promotion.
@@ -141,11 +145,12 @@ contract proves it already complete:
    - `/spec-auto --all`.
 3. Foundation when `Foundation Required: true`:
    - `/foundation-to-tasks`;
-   - lint plus `/mb-doctor --strict --scope FT-000` for the FT-000 queue;
-   - execute the FT-000 queue through canonical
-     `/autopilot --scope FT-000`, including its recovery, tier, wave-boundary,
-     and nested-result routing contract;
-   - continue only when the named final gate task is `done`.
+   - lint plus `/mb-doctor --strict` for the FT-000 queue;
+   - execute the bounded FT-000 phase under `## Foundation execution and
+     resume` below; do not invoke `/autopilot` and do not select or mutate a
+     product task;
+   - continue only when every required FT-000 task, including the named final
+     gate task, is `done` and the post-boundary gates pass.
    When Foundation is not required, require truthful `not_required` anchors and
    create no FT-000 queue.
 4. Product tasking:
@@ -178,29 +183,31 @@ completed `repair -> re-review` cycles per surface.
 
 Missing/failing lint or doctor uses `HALT_QUALITY_GATES`.
 
-## Scheduler delegation and resume
+## Foundation execution and resume
 
-Use the installed `/autopilot` command as the only detailed task scheduler:
-transient `--scope FT-000` for a real Foundation queue and default full-queue
-scope for the later product queue. Reuse the existing
-`AUTONOMOUS-RUN` status, checkpoint, decision log, budgets, JSON records, and
-task protocols; do not reset attempts, review counters, blockers, or durable
-child evidence between phases.
+`/autonomous` directly owns only indexed FT-000 records in this phase. Follow
+`/foundation-to-tasks`, tier policy, autonomy policy, and the existing
+`/mb-sync` boundary; never invoke `/autopilot` or mutate a product task.
 
-Before the first scheduler phase, resume Product/Design work from the run plan,
-review coverage/counters, decision log, and authoritative artifacts. Do not add
-Product/Design values to `/autopilot`'s scheduler-specific stage vocabulary.
-Once queue execution begins, `/autopilot` owns recovery-first reconciliation,
-promotion/selection, child-stage checkpointing, lifecycle decisions, wave
-boundaries, no-ready routing, and queue success evaluation.
+Before new work, reconcile every FT-000 `in_progress` task from its
+authoritative record and current-attempt protocol/handoff/verdict. Resume the
+first incomplete required child action without replaying a possibly completed
+unsafe side effect; ambiguity or conflicting product-task ownership uses the
+existing exact halt contract.
 
-A successful `/autopilot --scope FT-000` phase records
-`Foundation queue result: SUCCESS`, its final-gate evidence, and the exact next
-Product/Design action while outer `STATE` remains `RUNNING`; it never writes
-end-to-end `STATE: SUCCESS`. Reconcile the named Foundation gate and proceed
-without replaying Foundation work. On resume, this phase result, the run plan,
-and authoritative Foundation state distinguish the completed scheduler phase
-from final product success.
+With no unresolved FT-000 task and a current strict-doctor pass, execute the
+remaining FT-000 dependency order sequentially under tier policy until the
+named final gate is `done`. Foundation resume uses the outer run plan and task
+protocols; the `/autopilot` checkpoint remains inactive and outer `STATE`
+remains `RUNNING` until product handoff.
+
+## Product scheduler delegation and resume
+
+After the Foundation gate is `done`, delegate the reviewed, strict-ready product
+queue to installed `/autopilot`, the only detailed product scheduler. Reuse the
+existing run state and durable evidence without resetting counters, attempts,
+or blockers. Initialize `/autopilot`'s checkpoint only at this handoff; do not
+add Product/Design/Foundation values to its stage vocabulary.
 
 Any `/autopilot` `HALT_*` stops `/autonomous` with the same state, reason,
 evidence, owner, and exact resume route. Do not replace it with a generic halt.

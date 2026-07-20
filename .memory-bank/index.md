@@ -23,11 +23,15 @@ status: active
 - [.memory-bank/roles/orchestrator.md](roles/orchestrator.md): Orchestrator role contract.
 - [.memory-bank/roles/general.md](roles/general.md): General role contract for one-agent execution.
 - [.memory-bank/roles/worker.md](roles/worker.md): Worker role contracts.
-- [.memory-bank/prd.md](prd.md): Clarified Product Requirements Document for the current one-SPA pilot.
-- [.memory-bank/product.md](product.md): Продукт (C4 L1).
-- [.memory-bank/requirements.md](requirements.md): Требования + RTM.
-- [.memory-bank/epics/](epics/): Эпики (C4 L2).
-- [.memory-bank/features/](features/): Фичи (C4 L3).
+- [.memory-bank/prd.md](prd.md): Clarified Product Requirements Document for the current one-СПА pilot.
+- [.memory-bank/product.md](product.md): Face Moment one-СПА pilot product
+  identity, value, flow, constraints and non-goals (C4 L1).
+- [.memory-bank/requirements.md](requirements.md): stable `REQ-*` requirements
+  and `REQ -> Epic -> Feature -> Test` traceability.
+- [.memory-bank/epics/index.md](epics/index.md): router for the three product
+  epics (C4 L2).
+- [.memory-bank/features/index.md](features/index.md): router for the eleven product
+  features (C4 L3).
 - [.memory-bank/behavior-specs/](behavior-specs/): Optional JSON behavior examples linked from feature docs and task `source_artifacts`.
 - [.memory-bank/tasks/index.json](tasks/index.json): Authoritative JSON task record index.
 - [.memory-bank/schemas/task.schema.json](schemas/task.schema.json): JSON schema for task records.
@@ -49,3 +53,14 @@ status: active
 - [.memory-bank/runbooks/](runbooks/): Runbooks и operational procedures.
 - [.memory-bank/testing/index.md](testing/index.md): Testing strategy.
 - [.memory-bank/skills/index.md](skills/index.md): Skill registry.
+
+## Product Decomposition
+
+- [.memory-bank/epics/EP-001.md](epics/EP-001.md): fresh searchable
+  commercial-photo inventory.
+- [.memory-bank/epics/EP-002.md](epics/EP-002.md): automatic participant Promo
+  and QR continuation.
+- [.memory-bank/epics/EP-003.md](epics/EP-003.md): explainable diagnostics,
+  annotation and Calibration.
+- [.memory-bank/features/index.md](features/index.md): feature-level outcomes,
+  acceptance, failure behavior and SDD gate routing.

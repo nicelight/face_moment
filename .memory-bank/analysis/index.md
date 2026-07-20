@@ -14,7 +14,7 @@ Latest report: [.memory-bank/analysis/brainstorming/BR-003.md](brainstorming/BR-
 
 ## Product Brief
 
-- [.memory-bank/analysis/product-brief.md](product-brief.md): Draft Product Brief для закрытого one-SPA pilot.
+- [.memory-bank/analysis/product-brief.md](product-brief.md): Draft Product Brief для закрытого one-СПА pilot.
 - Status: draft
 - Decision: proceed
 - Source artifacts:

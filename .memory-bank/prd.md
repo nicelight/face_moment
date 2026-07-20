@@ -12,7 +12,7 @@ constitution_checked: true
 ### Primary and governing sources
 
 - [.memory-bank/analysis/product-brief.md](analysis/product-brief.md): current
-  Product Brief and scope contract for the one-SPA pilot.
+  Product Brief and scope contract for the one-СПА pilot.
 - [.memory-bank/constitution.md](constitution.md): top governing policy;
   Constitution gate passed for this draft, and no amendment candidate was
   found.
@@ -61,7 +61,7 @@ acceptance gates.
 
 ## Clarifications
 
-- Clarification status is complete for the one-SPA pilot. The resolved scope,
+- Clarification status is complete for the one-СПА pilot. The resolved scope,
   actors, behavior, data semantics, non-goals, and acceptance contract are
   expressed in the normative PRD sections below.
 - Remaining site/hardware selection and post-pilot commercial questions do not
@@ -73,7 +73,7 @@ acceptance gates.
 
 ## Product Summary
 
-Face Moment is a controlled one-SPA smoke pilot that tests whether fresh
+Face Moment is a controlled one-СПА smoke pilot that tests whether fresh
 professional JPEG photographs can become searchable in time for a fully
 automatic, sensor-triggered Promo experience at the participant's exit. The
 display must find four personal low-quality teaser photographs, show a fully
@@ -81,7 +81,7 @@ visible and scannable QR code, and continue the same search session on the
 participant's phone without a new selfie.
 
 The pilot ends at a verified phone continuation page. Payment, actual original
-download and public use by ordinary SPA visitors are post-pilot context, not
+download and public use by ordinary СПА visitors are post-pilot context, not
 current delivery or acceptance scope.
 
 The same pilot includes a developer-only investigation and calibration contour
@@ -97,7 +97,7 @@ face-match threshold and individual input quality gates.
    in under 15 minutes from `batch.confirmed_at`.
 3. Show a fully visible and scannable QR in under 10 seconds from
    `reference_series_ready_at` in at least 19 of 20 controlled attempts.
-4. Preserve SPA, `visit_date`, teaser and `N` consistently within the same
+4. Preserve СПА, `visit_date`, teaser and `N` consistently within the same
    search/Promo session when it is continued on the phone.
 5. Validate that, in at least 19 of the 20 controlled attempts, every displayed
    teaser and every unique photograph counted in `N` belongs to at least one
@@ -110,9 +110,9 @@ face-match threshold and individual input quality gates.
 
 ## Non-goals
 
-- Public rollout to ordinary SPA visitors or production-readiness claims based
+- Public rollout to ordinary СПА visitors or production-readiness claims based
   on the 20-attempt smoke run.
-- Deployment to 10-15 SPA in the current pilot.
+- Deployment to 10-15 СПА in the current pilot.
 - Payment provider integration, receipt, refund, actual original delivery or
   repeated paid download.
 - Sale of individual photographs; the post-pilot direction is one fixed price
@@ -130,7 +130,7 @@ face-match threshold and individual input quality gates.
 - Tracking or identity deduplication across reference frames, automatic identity
   clustering or cross-pipeline person linking.
 - ANN search, Redis, Celery/RQ/Arq, Kafka, multiple priority queues, Kubernetes,
-  distributed scheduling, GPU-first deployment or one inference server per SPA.
+  distributed scheduling, GPU-first deployment or one inference server per СПА.
 - Multi-model ensemble in participant-facing search, automatic serving-pipeline
   switching or mandatory online dual-benchmark mode.
 - Automatic application of calibration recommendations, multidimensional joint
@@ -156,14 +156,14 @@ face-match threshold and individual input quality gates.
 - Authenticates in the web application.
 - Creates and confirms JPEG batches immediately after a completed shooting
   series.
-- Selects the SPA and authoritative `visit_date`, reviews accepted/rejected
+- Selects the СПА and authoritative `visit_date`, reviews accepted/rejected
   files and observes processing/searchable status for their own batches; the
   photographer has no diagnostic-page access.
 
-### Face Moment / SPA operator
+### Face Moment / СПА operator
 
 - Observes batch readiness, failures and Promo operation.
-- Explicitly sets the active working `visit_date` for the pilot SPA in the
+- Explicitly sets the active working `visit_date` for the pilot СПА in the
   server-side application before automatic attempts use that date for search.
 - May open a sanitized attempt summary containing outcome, stage timeline,
   latency and issue tags, but cannot access reference images/crops, participant
@@ -181,7 +181,7 @@ face-match threshold and individual input quality gates.
 
 ### System actors
 
-- `SpaPromoClient`: local or remote display/capture client bound to one SPA by a
+- `SpaPromoClient`: local or remote display/capture client bound to one СПА by a
   client token.
 - Passage sensor and camera: trigger and capture the reference series.
 - Backend, `BackgroundPhotoWorker` and `RealtimeFaceService`: ingest/control,
@@ -196,7 +196,7 @@ pilot actor or blocker.
 
 - **FR-ING-01** — The pilot MUST accept commercial photographs only through an
   authenticated direct web uploader over HTTPS and only as ready JPEG files.
-- **FR-ING-02** — The photographer MUST create a batch for one SPA and one
+- **FR-ING-02** — The photographer MUST create a batch for one СПА and one
   authoritative working `visit_date`; multiple batches on the same day are
   allowed.
 - **FR-ING-03** — Before confirmation, the server MUST validate format and image
@@ -207,7 +207,7 @@ pilot actor or blocker.
   `visit_date`.
 - **FR-ING-05** — JPEG uniqueness MUST be enforced by
   `(spa_id, visit_date, checksum_sha256)` across all batches. When the same file
-  is uploaded again for the same SPA and `visit_date`, the second uploaded copy
+  is uploaded again for the same СПА and `visit_date`, the second uploaded copy
   MUST be deleted, classified visibly as a duplicate and otherwise ignored: it
   MUST NOT enter the confirmed manifest population or create a new `photo_id`,
   object, processing job, searchable result, teaser candidate or contribution
@@ -227,22 +227,22 @@ pilot actor or blocker.
 
 ### B. Face processing and scoped search
 
-- **FR-SRCH-01** — The one-SPA pilot MUST use one selected and pre-warmed serving
+- **FR-SRCH-01** — The one-СПА pilot MUST use one selected and pre-warmed serving
   pipeline for participant-facing search. SFace and Buffalo M MUST retain their
   native detector/preprocessing/alignment paths and may be compared on pilot
   data without combining their participant-facing results.
 - **FR-SRCH-02** — Every embedding and face record MUST belong to an immutable
   pipeline revision. Search MUST NOT compare incompatible revisions.
 - **FR-SRCH-03** — Search MUST use exact pgvector cosine search after filtering
-  by serving pipeline revision, SPA and authoritative `visit_date`; an optional
+  by serving pipeline revision, СПА and authoritative `visit_date`; an optional
   time window may be used only when its clock/timezone quality is confirmed.
 - **FR-SRCH-04** — A match MUST pass both the configured query-face quality gate
-  and the calibrated reference threshold for the SPA, pipeline code and query
+  and the calibrated reference threshold for the СПА, pipeline code and query
   source. A top-1/top-2 margin MUST NOT be used.
 - **FR-SRCH-05** — The serving reference threshold MUST be calibrated and
   registerable/editable before the controlled acceptance run.
 - **FR-SRCH-06** — The operator MUST explicitly set the active working
-  `visit_date` for the SPA in the server-side application. Every automatic
+  `visit_date` for the СПА in the server-side application. Every automatic
   sensor-triggered attempt MUST use that date until the operator changes it;
   `SpaPromoClient` MUST NOT override it. If no active date is set, search MUST
   not run and the condition MUST be recorded diagnostically.
@@ -289,7 +289,7 @@ pilot actor or blocker.
 - **FR-UX-03** — The QR MUST continue the same short-lived session on the phone
   without another selfie or participant login step implied by the current
   immediate-continuation flow.
-- **FR-UX-04** — The phone landing MUST show the same session's SPA,
+- **FR-UX-04** — The phone landing MUST show the same session's СПА,
   `visit_date`, one of the four low-quality teasers, `N`, and an active
   `Перейти к покупке` button.
 - **FR-UX-05** — The Promo display MUST use the truthful copy `Ваши фотографии
@@ -453,7 +453,7 @@ pilot actor or blocker.
 ### Architecture and maintainability constraints
 
 - **NFR-ARCH-01** — The pilot runs on one central CPU-only server in the Russian
-  Federation with one pilot SPA and no external cloud face-recognition API.
+  Federation with one pilot СПА and no external cloud face-recognition API.
 - **NFR-ARCH-02** — The simple baseline is backend + one sequential
   `BackgroundPhotoWorker` + one synchronous `RealtimeFaceService`, PostgreSQL +
   pgvector and private MinIO/S3-compatible storage.
@@ -470,12 +470,12 @@ pilot actor or blocker.
 
 ### Core concepts
 
-- **SPA** — pilot venue with a name, timezone, operator-selected active working
+- **СПА** — pilot venue with a name, timezone, operator-selected active working
   `visit_date`, active serving pipeline and calibrated reference threshold.
 - **Batch** — photographer-confirmed immutable manifest of commercial JPEGs for
-  one SPA and authoritative `visit_date`; it is distinct from a reference
+  one СПА and authoritative `visit_date`; it is distinct from a reference
   series.
-- **Photo** — commercial image linked to its batch/SPA/date and private original,
+- **Photo** — commercial image linked to its batch/СПА/date and private original,
   preview and thumbnail objects; `(spa_id, visit_date, checksum_sha256)` is its
   logical ingest-uniqueness key, while pHash supports teaser diversity only.
 - **Pipeline revision** — immutable identity of detector, recognizer, weights,
@@ -488,7 +488,7 @@ pilot actor or blocker.
   buffer used to select up to five independent query detections.
 - **Selected detection** — one quality-ranked face occurrence used for a search;
   it is not proof of a unique physical person.
-- **Promo/search session** — short-lived context binding SPA, authoritative
+- **Promo/search session** — short-lived context binding СПА, authoritative
   `visit_date`, four teaser IDs, `session_result_photo_ids`, `N`, QR token and
   expiry state. The QR may be opened for the first time within 30 minutes of
   `qr_issued_at`; an opened browser session expires after 60 minutes without
@@ -512,7 +512,7 @@ pilot actor or blocker.
 - Confirmed batch `visit_date` is authoritative for commercial-photo search
   scope; EXIF `captured_at` is secondary metadata.
 - An automatic attempt uses the server-side active working `visit_date` selected
-  by the operator for its SPA; the client token selects the SPA but neither the
+  by the operator for its СПА; the client token selects the СПА but neither the
   client clock nor the latest batch silently selects the date.
 - A photo is searchable only through a `ready` state for the current compatible
   serving pipeline revision.
@@ -535,7 +535,7 @@ pilot actor or blocker.
 ### Photographer flow
 
 1. Authenticate and create a batch.
-2. Select the SPA and confirm authoritative `visit_date`.
+2. Select the СПА and confirm authoritative `visit_date`.
 3. Upload ready JPEGs over HTTPS.
 4. Review accepted/rejected files and warnings.
 5. Confirm the immutable manifest.
@@ -552,7 +552,7 @@ pilot actor or blocker.
 5. On success, the display presents four no-watermark teasers and a scannable QR
    within the performance budget.
 6. The participant scans QR and immediately opens the same session on a phone,
-   seeing SPA, date, one teaser, `N` and a `Перейти к покупке` button that links
+   seeing СПА, date, one teaser, `N` and a `Перейти к покупке` button that links
    to the separately delivered main selfie-search/purchase page.
 7. The display returns to advertising after its independent display duration;
    the QR session remains usable until its own expiry.
@@ -600,7 +600,7 @@ payment/fiscal providers, external observability stores and message brokers.
   confirmation and shown explicitly.
 - Mixed EXIF dates produce a warning but do not rewrite authoritative
   `visit_date` or auto-split the batch.
-- A duplicate JPEG in any later batch for the same SPA and `visit_date` is
+- A duplicate JPEG in any later batch for the same СПА and `visit_date` is
   deleted after checksum detection, reported as a duplicate and excluded from
   the accepted manifest, metric population, processing, search, teaser and `N`.
 - A missing active working `visit_date` prevents search and produces diagnostic
@@ -633,14 +633,14 @@ payment/fiscal providers, external observability stores and message brokers.
 
 ### Controlled pilot setup
 
-- One selected SPA, one configured `SpaPromoClient`, the 43-inch/16:9/1920x1080
+- One selected СПА, one configured `SpaPromoClient`, the 43-inch/16:9/1920x1080
   baseline and validated camera/sensor/lighting geometry at 3-5 metres.
 - A selected serving pipeline is pre-warmed; its reference threshold and input
   quality gates are calibrated before the run.
 - The operator has explicitly set the active working `visit_date`, and it
   matches the confirmed commercial-photo batches intended for the run.
 - Every tester expected in a run has at least four searchable commercial
-  photographs in the authoritative SPA/date scope.
+  photographs in the authoritative СПА/date scope.
 - The 20-attempt set includes the current best-effort group flow; exact attempt
   composition may be fixed in the verification plan without promising full
   group-member coverage.
@@ -657,7 +657,7 @@ payment/fiscal providers, external observability stores and message brokers.
   confirmed as containing at least one pilot participant represented by a
   processed selected detection. Any unrelated included photograph fails that
   attempt; failure to cover every unique person in a group does not.
-- **AC-04** — Every completed phone continuation shows the correct SPA,
+- **AC-04** — Every completed phone continuation shows the correct СПА,
   authoritative `visit_date`, a teaser belonging to that same session and the
   same session's `N`; its `Перейти к покупке` button navigates to the configured
   main selfie-search/purchase page.
@@ -701,18 +701,18 @@ payment/fiscal providers, external observability stores and message brokers.
 - **AC-16** — The Promo display says `Ваши фотографии найдены — откройте по
   QR-коду` and does not claim that download is already available in the pilot.
 - **AC-17** — Re-uploading a JPEG with the same SHA-256 in another batch for the
-  same SPA and `visit_date` deletes the second copy, reports it as a duplicate
+  same СПА and `visit_date` deletes the second copy, reports it as a duplicate
   and leaves the accepted manifest population, `photo_id` set, jobs, search
   results, teaser selection and `N` unchanged.
 
 The smoke run validates the pilot path only. It does not demonstrate public
-production readiness, target 10-15-SPA capacity or complete group coverage.
+production readiness, target 10-15-СПА capacity or complete group coverage.
 
 ## Verification Strategy
 
 1. **Static and unit verification**
    - configured build/typecheck and relevant unit tests;
-   - batch manifest/checksum/idempotency, same-SPA/date cross-batch duplicate
+   - batch manifest/checksum/idempotency, same-СПА/date cross-batch duplicate
      deletion and metric-population rules;
    - pipeline-revision isolation, threshold gates, pHash-only ranking and `N`
      union/deduplication;

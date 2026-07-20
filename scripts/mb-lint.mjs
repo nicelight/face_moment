@@ -46,6 +46,9 @@ const FEATURE_ID_RE = /^FT-[0-9]{3,}$/;
 const ARCHITECTURE_SPINE_REL = '.memory-bank/architecture/system-architecture.md';
 const ARCHITECTURE_DECISION_ANCHOR_RE = /^AD-[0-9]{3,}$/;
 const RETIRED_ARCHITECTURE_DECISION_RE = /\b(retired|replaced|superseded|deprecated)\b/i;
+const INDEX_ROUTER_EXEMPT_DIRS = new Set([
+  '.memory-bank/templates/protocols',
+]);
 const ARCHITECTURE_REF_PATH_RE =
   /(?:\.\/)?\.memory-bank\/(?:architecture|contracts|adrs)\/[^\s"'`),\]}]+/gi;
 const INDEX_TOP_LEVEL_KEYS = new Set(['version', 'tasks']);
@@ -62,6 +65,10 @@ const RUNTIME_CONTEXT_ARRAY_FIELDS = [
   'allowed_write_scope',
   'forbidden_scope',
   'stop_conditions',
+];
+const WRITE_BOUNDARY_PATH_FIELDS = [
+  'write_boundary',
+  'allowed_write_scope',
 ];
 const LEGACY_TASK_RISK_KEYS = new Set(['risk', 'risk.level', 'risk_level', 'riskLevel']);
 const REQUIRED_TASK_FIELDS = [
@@ -486,7 +493,7 @@ function checkIndexRouters() {
     const mdCount = mdFiles.length;
 
     const relDir = normalizeRel(path.relative(ROOT, dir));
-    if (mdCount > 3 && !hasIndex) {
+    if (mdCount > 3 && !hasIndex && !INDEX_ROUTER_EXEMPT_DIRS.has(relDir)) {
       warnings.push(`${relDir}: has ${mdCount} md files but no index.md router`);
     }
 
@@ -537,6 +544,39 @@ function checkOptionalStringArrayField(rel, object, field, label = field) {
     if (typeof item !== 'string') {
       errors.push(`${rel}: '${label}[${index}]' must be a string`);
     }
+  });
+}
+
+function writeBoundaryPathIssue(value) {
+  if (value.length === 0) return 'entry is empty';
+  if (value !== value.trim()) return 'entry or a path segment has leading/trailing whitespace';
+  if (/[\u0000-\u001F\u007F]/u.test(value)) return 'ASCII control characters are forbidden';
+  if (value.startsWith('/') || /^[A-Za-z]:/.test(value)) return 'absolute or drive-qualified paths are forbidden';
+  if (value.includes('\\')) return 'use POSIX / separators, not backslash';
+  if (value.includes('//')) return 'empty path segments are forbidden';
+  if (/[*?]/u.test(value)) return 'entries are literal paths; * and ? wildcards are forbidden';
+
+  const normalized = value.endsWith('/') ? value.slice(0, -1) : value;
+  const segments = normalized.split('/');
+  if (segments.some((segment) => segment === '.' || segment === '..')) {
+    return "'.' and '..' path segments are forbidden";
+  }
+  if (segments.some((segment) => segment !== segment.trim())) {
+    return 'entry or a path segment has leading/trailing whitespace';
+  }
+  return null;
+}
+
+function checkOptionalWriteBoundaryPaths(rel, object, field) {
+  if (!hasOwn(object, field) || !Array.isArray(object[field])) return;
+
+  object[field].forEach((item, index) => {
+    if (typeof item !== 'string') return;
+    const issue = writeBoundaryPathIssue(item);
+    if (!issue) return;
+    errors.push(
+      `${rel}: 'runtime_context.${field}[${index}]' must be a literal project-root-relative POSIX path (${issue})`
+    );
   });
 }
 
@@ -608,6 +648,9 @@ function checkOptionalTaskRuntimeContext(rel, task) {
 
   for (const field of RUNTIME_CONTEXT_ARRAY_FIELDS) {
     checkOptionalStringArrayField(rel, runtimeContext, field, `runtime_context.${field}`);
+  }
+  for (const field of WRITE_BOUNDARY_PATH_FIELDS) {
+    checkOptionalWriteBoundaryPaths(rel, runtimeContext, field);
   }
 }
 

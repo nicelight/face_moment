@@ -32,7 +32,7 @@ status: active
 5) `/prd-to-features` (fills L1–L3)
 6) `/review-feat-plan` for high-risk, large, or autonomous-boundary work; optional/recommended for small manual flows
 7) `/spec-design` (mandatory; minimal is valid for local/simple feature-set pressure)
-8) If foundation is required, run `/foundation-to-tasks`, `/mb-doctor --strict --scope FT-000`, then execute/verify `FT-000` tasks until the final foundation gate is `done`
+8) If foundation is required, run `/foundation-to-tasks`, `/mb-doctor --strict`, then execute/verify `FT-000` tasks until the final foundation gate is `done`
 9) Pick one top feature; use `/feature-doctor FT-001` only for explicit feature blockers
 10) `/feature-to-tasks FT-001` (resolves feature design concerns through subject-based canonical specs and creates IMPL plan + complete `TASK-NNN-TN-FT-NNN-WN` records for this feature)
 11) Run `/review-tasks-plan FT-001`, then run `/mb-doctor` at the
@@ -62,23 +62,29 @@ trigger another task-plan review.
 1) `/autonomous`
 2) it completes Product/Design, applicable Foundation planning, product tasking,
 and required fresh-context reviews through their installed child contracts
-3) every real strict-ready queue is delegated to canonical `/autopilot`:
-transient `--scope FT-000` for Foundation and default full-queue scope for
-product execution; `/autonomous` does not copy its recovery, selection,
-task-stage, wave-boundary, or no-ready algorithm
-4) `/autopilot` owns task lifecycle transitions and queue recovery;
+3) `/autonomous` directly owns the bounded FT-000 phase through the existing
+`/foundation-to-tasks -> /mb-doctor --strict -> /exe + /verify -> /mb-sync`
+workflow until the final gate is `done`; it never invokes `/autopilot` for
+Foundation and never mutates product tasks in that phase
+4) Foundation resume uses the outer run plan plus authoritative FT-000 task
+records/protocols; `/autopilot` scheduler stages begin only at product handoff
+5) after Foundation completion, delegate the reviewed strict-ready product queue
+to canonical `/autopilot`; `/autonomous` does not copy its product-queue
+recovery, selection, task-stage, wave-boundary, or no-ready algorithm
+6) `/autopilot` owns product task lifecycle transitions and queue recovery;
 `tier-policy.md` owns tier gates and failure handling; `autonomy-policy.md` owns
 the durable checkpoint, budgets, hard stops, and terminal vocabulary;
 `mb-sync.md` owns boundary reconciliation only
-5) `/autonomous` preserves any scheduler halt unchanged and reports final
+7) `/autonomous` preserves any scheduler halt unchanged and reports final
 end-to-end `SUCCESS` only after the product queue and all outer gates pass
 
 ## Autonomous executor only
 If JSON task records already exist and `/review-tasks-plan FT-<NNN>` already
-approved every task-linked product feature, use:
+approved every task-linked product feature, and the Foundation gate is already
+`not_required` or its named gate task is `done`, use:
 - `/autopilot`
 
-`/autopilot` must run the matching-scope strict doctor before task selection and
+`/autopilot` must run the strict doctor before task selection and
 after the wave-boundary `/mb-sync` before promotion.
 
 Codex (manual execution, tier-routed minimal context):

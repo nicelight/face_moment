@@ -11,11 +11,32 @@ status: active
 - Parallel task execution is experimental and disabled unless the run was
   explicitly invoked with `--experimental-parallel`.
 
+## Phase ownership
+- `/autonomous` owns Product/Design sequencing and the bounded Foundation
+  execution phase. During that phase it may promote/select/close only indexed
+  `feature: "FT-000"` records; product records remain untouched.
+- `/autopilot` owns only the reviewed, strict-ready product queue after the
+  Foundation is `not_required` or its named gate task is `done`. It may read
+  FT-000 gate/dependency evidence but must not execute or mutate an FT-000
+  record.
+- Foundation execution is not delegated to `/autopilot` and introduces no
+  scope flag, persisted mode, second queue, registry, schema, lifecycle, or
+  protocol family.
+- If product execution creates an approved FT-000 foundation-extension task,
+  `/autopilot` halts with the existing exact evidence/owner/resume contract;
+  `/autonomous` resumes its Foundation phase and returns to product execution
+  only after the extension gate and readiness gates pass.
+
 ## Experimental parallel execution
 - Record the opt-in in `.protocols/AUTONOMOUS-RUN/status.md`.
 - Never use advisory `touched_files` as proof that tasks are disjoint.
 - Parallel candidates require non-empty, deliberately hard, pairwise-disjoint
-  `runtime_context.write_boundary` values and isolated worktrees/sandboxes.
+  `runtime_context.write_boundary` values under the normalized segment rule in
+  `tier-policy.md`, plus isolated worktrees/sandboxes.
+- Lexical disjointness is necessary, not sufficient. The opt-in does not
+  require concurrency; if existing durable checkpoint/recovery, filesystem
+  aliasing, or external-output isolation cannot be proved without new workflow
+  state, keep the canonical sequential execution.
 - T3 tasks and tasks that write shared/governing state, package manifests,
   lockfiles, CI, or global configuration remain sequential.
 - If isolation or non-overlap cannot be proved, fall back to sequential without
@@ -27,24 +48,25 @@ status: active
   checkpoint for `/autonomous` and `/autopilot`; it is not authoritative task
   state or a second task registry.
 - Keep the checkpoint compact and linked to authoritative indexed task records.
-  It records:
+  When active, it records:
   - current task, or `none` during a run-level stage;
   - current stage, using the scheduler-owned vocabulary defined by
     `/autopilot`;
   - last durable child verdict or handoff path;
   - next action.
 - The scheduler checkpoint becomes active when `/autopilot` queue execution
-  begins. Before `/autonomous` enters its first scheduler phase, Product/Design
-  resume is owned by the existing run plan, review coverage/counters, decision
-  log, and authoritative artifacts; do not invent non-scheduler stage values.
-- When `/autonomous` continues after a completed Foundation queue, retain the
-  last scheduler checkpoint as durable history and record the exact outer next
-  action without rewriting `current stage` to a Product/Design value.
+  begins. Before `/autonomous` enters its product scheduler phase,
+  Product/Design/Foundation resume is owned by the existing run plan, review
+  coverage/counters, decision log, authoritative artifacts, FT-000 task records,
+  and their task protocols. The scheduler checkpoint block may be absent or
+  explicitly inactive; do not invent non-scheduler stage values.
+- Initialize the scheduler checkpoint only at the product handoff, after the
+  Foundation gate is closed and product review/readiness gates pass.
 - Update the checkpoint immediately before a child stage and again after its
   durable handoff or verdict is written. Do not advance it from transient
   conversation state alone.
 - `next action` names the exact unfinished scheduler action. Set it to `none`
-  only after the applicable full-queue terminal result is durably recorded.
+  only after the terminal result is durably recorded.
   Never overwrite an unfinished `red-verify`, `closure`, or `wave-boundary`
   checkpoint with `selection` merely because no task is currently
   `in_progress`.
@@ -84,13 +106,11 @@ status: active
 
 ## Required gates
 - latest `/review-tasks-plan FT-<NNN>` verdict must be `APPROVE` for every
-  task-linked product feature in the active queue scope; scoped FT-000
-  execution has no product-feature review target and must not mutate
-  out-of-scope product records
-- mandatory matching-scope strict doctor before autonomous/autopilot task
-  selection, after `/mb-sync` before promotion, and before final success:
-  `/mb-doctor --strict --scope FT-000` for the nested Foundation queue and
-  full `/mb-doctor --strict` for product/full-queue execution
+  task-linked product feature in the product queue; FT-000 uses its dedicated
+  `/foundation-to-tasks` plus strict-doctor handoff instead
+- mandatory `/mb-doctor --strict` before `/autonomous` selects/promotes FT-000
+  work, before `/autopilot` selects/promotes product work, after `/mb-sync`
+  before further promotion, and before final success
 - tier-appropriate verification per TASK:
   - T0/T1: compact evidence may be enough
   - Scheduler mode T2: full protocol, applicable task/spec gates, and `/verify` PASS are required before scheduler marks the task done; per-task `/red-verify` is not required
@@ -120,20 +140,18 @@ status: active
   `HALT_*` state together with its reason, owner, and resume route; never
   overwrite it with `HALT_DEPENDENCY_DEADLOCK`.
 - Use `HALT_DEPENDENCY_DEADLOCK` only for genuine dependency-only graph
-  exhaustion: every unfinished record in the active queue scope is non-runnable
+  exhaustion: every unfinished record owned by the active phase is non-runnable
   solely because its task dependencies are unfinished.
 
-## Run state and nested queue result
+## Run state
 - `STATE: RUNNING` is the only non-terminal run state. It means the outer
   `/autonomous` or standalone `/autopilot` run still has an authorized next
   action.
-- Standalone/full-queue `/autopilot` writes its final result to `STATE`.
-- When `/autonomous` invokes `/autopilot --scope FT-000`, a successful scoped
-  scheduler phase records `Foundation queue result: SUCCESS`, the named final
-  gate/evidence, and the exact outer next action while `STATE` remains
-  `RUNNING`. This is phase evidence, not a new terminal state.
-- Any scoped scheduler `HALT_*` becomes the outer `STATE` unchanged with its
-  reason, owner, evidence, and resume route.
+- `/autonomous` keeps `STATE: RUNNING` throughout Product/Design and Foundation;
+  closing the Foundation gate never writes an intermediate `SUCCESS`.
+- `/autopilot` writes the terminal product-queue result to `STATE`; in an outer
+  `/autonomous` run, that result is accepted only with the end-to-end gates
+  required by `/autonomous`.
 
 ## Terminal states
 - `SUCCESS`

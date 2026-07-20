@@ -8,7 +8,7 @@
 серверную ОС, базовую настройку, Docker, рекомендации по CPU isolation, storage,
 backup, hardware и display/kiosk с рекламой.
 
-Первый pilot — one-SPA smoke test с тестировщиками. Топология на 10–15 SPA
+Первый pilot — one-СПА smoke test с тестировщиками. Топология на 10–15 СПА
 является target capacity после pilot, а
 payment/download originals — post-pilot product flow.
 
@@ -27,7 +27,7 @@ payment/download originals — post-pilot product flow.
 ### Правило для разработчиков и AI-агентов
 
 Серверную архитектуру нельзя усложнять Redis, Celery, RQ, Kafka,
-распределённым scheduler, Kubernetes, отдельными inference-серверами в каждом SPA,
+распределённым scheduler, Kubernetes, отдельными inference-серверами в каждом СПА,
 GPU-инфраструктурой или внешним monitoring stack только потому, что они типичны
 для похожих систем.
 
@@ -50,7 +50,7 @@ GPU-инфраструктурой или внешним monitoring stack тол
 First pilot profile:
 
 - один центральный CPU-only сервер в РФ;
-- одна пока не выбранная SPA и один `SpaPromoClient`;
+- одна пока не выбранная СПА и один `SpaPromoClient`;
 - один Promo display с автоматическим sensor-triggered capture;
 - выбранная группа тестировщиков;
 - preview и QR continuation без payment/download.
@@ -62,8 +62,8 @@ HDMI центрального сервера или на отдельном remo
 Target capacity после pilot:
 
 - один центральный сервер в РФ;
-- 10-15 SPA;
-- 150-200 коммерческих фотографий в день на один SPA;
+- 10-15 СПА;
+- 150-200 коммерческих фотографий в день на один СПА;
 - суммарно 1 500-3 000 фотографий в день;
 - 45 000-90 000 фотографий за 30 дней;
 - хранение истории минимум один месяц;
@@ -77,14 +77,14 @@ Target capacity после pilot:
 - один `BackgroundPhotoWorker`;
 - один `RealtimeFaceService`;
 - выбранный serving face pipeline; второй pipeline — только для benchmark или
-  post-pilot multi-SPA режима;
+  post-pilot multi-СПА режима;
 - сервис выдачи preview и QR continuation;
 - KDE Plasma и один локальный `SpaPromoClient` на подключённом HDMI-мониторе.
 
 Выдача paid originals через signed URLs добавляется после pilot.
 
 Центральный сервер по HDMI может обслуживать только один физически подключённый
-экран. При расширении в других SPA работают отдельные `SpaPromoClient` с камерой,
+экран. При расширении в других СПА работают отдельные `SpaPromoClient` с камерой,
 удалённым датчиком движения и экраном. Каждый client постоянно получает видеопоток,
 хранит короткий кольцевой буфер, по сигналу датчика формирует настраиваемую
 reference-серию и отправляет её синхронным HTTPS request в
@@ -98,9 +98,9 @@ reference-серию и отправляет её синхронным HTTPS req
 
 **Почему принято:** централизованная схема упрощает развёртывание, обновление
 моделей, мониторинг, резервное копирование и поддержку 10-15 объектов. Текущий
-объём не требует отдельного inference-сервера в каждом SPA. Одинаковый
+объём не требует отдельного inference-сервера в каждом СПА. Одинаковый
 request/response contract сохраняет простую топологию для локального HDMI-display
-и удалённых SPA без отдельного event transport.
+и удалённых СПА без отдельного event transport.
 
 ---
 
@@ -162,7 +162,7 @@ session, а cooldown независимо ограничивает следую�
 **Почему принято:** web-приложение проще обновлять централизованно, чем отдельное
 desktop-приложение. Результат нужен только инициировавшему его display, поэтому
 синхронный request/response проще отдельного event channel и не требует
-маршрутизации событий между SPA.
+маршрутизации событий между СПА.
 
 ### 2.2 Поведение при нескольких лицах
 
@@ -256,7 +256,7 @@ restart: unless-stopped
 
 - автоматический вход пользователя `display` через SDDM;
 - user-level systemd service для запуска Chromium;
-- Chromium на весь экран с display URL данного SPA;
+- Chromium на весь экран с display URL данного СПА;
 - Chromium запускается с включённым штатным sandbox; флаг `--no-sandbox`
   запрещён;
 - `Restart=always` и короткая задержка перезапуска браузера;
@@ -405,7 +405,7 @@ backlog, а не заранее.
 45 000-90 000 фото в месяц
 ~~~
 
-Это target-capacity оценка для 10–15 SPA, а не storage gate первого pilot.
+Это target-capacity оценка для 10–15 СПА, а не storage gate первого pilot.
 Оценка только для originals:
 
 | Средний размер | 45 000 фото | 90 000 фото |
@@ -418,11 +418,11 @@ backlog, а не заранее.
 Дополнительно нужны preview, thumbnails, БД, временные файлы, логи и свободное
 место для стабильной работы.
 
-2 TB больше не считается гарантированно достаточным объёмом для 10-15 SPA.
+2 TB больше не считается гарантированно достаточным объёмом для 10-15 СПА.
 Стартовый ориентир — не менее 4 TB usable primary storage с уточнением после
 измерения реального среднего размера фотографии.
 
-**Почему принято:** прежняя оценка 2 TB относилась к одному SPA. Центральный
+**Почему принято:** прежняя оценка 2 TB относилась к одному СПА. Центральный
 сервер увеличивает месячный объём до 15 раз.
 
 ### 5.2 Object storage
@@ -454,13 +454,13 @@ Backup originals и PostgreSQL должен находиться на друго
 Diagnostic data не включается в долгоживущий backup из-за 90-day lifecycle.
 
 **Почему принято:** центральный сервер является единой точкой хранения для
-10-15 SPA; отказ одного NVMe не должен уничтожить все коммерческие оригиналы.
+10-15 СПА; отказ одного NVMe не должен уничтожить все коммерческие оригиналы.
 
 ---
 
 ## 6. Hardware
 
-Target deployment reference для 10–15 SPA:
+Target deployment reference для 10–15 СПА:
 
 ~~~text
 Intel Core i5-13400 или CPU не слабее
@@ -475,9 +475,9 @@ ONNX Runtime / OpenVINO / OpenCV / InsightFace
 ~~~
 
 32 GB RAM допустимы для раннего прототипа, но не фиксируются как целевая
-production-конфигурация на 10-15 SPA.
+production-конфигурация на 10-15 СПА.
 
-Для one-SPA pilot точные CPU, RAM и storage подтверждаются benchmark и sizing;
+Для one-СПА pilot точные CPU, RAM и storage подтверждаются benchmark и sizing;
 4 TB не является обязательным pilot gate.
 
 ### 6.1 Display/capture baseline первого pilot
@@ -538,7 +538,7 @@ qr_fully_visible_at
 - объём diagnostic storage и число bundles, ожидающих 90-day deletion.
 
 Рекомендуется рассчитывать p50/p95/p99 в PostgreSQL через `percentile_cont` за
-выбранный период и добавлять разрезы по SPA, pipeline и query source только при
+выбранный период и добавлять разрезы по СПА, pipeline и query source только при
 диагностической необходимости.
 
 Не требуется отдельный Prometheus/Grafana stack для MVP.
@@ -551,7 +551,7 @@ qr_fully_visible_at
 
 ## 8. Что входит в MVP сервера и display
 
-1. Один центральный сервер и одна pilot SPA.
+1. Один центральный сервер и одна pilot СПА.
 2. Kubuntu 26.04 LTS с KDE Plasma.
 3. Пользователь `facemoment` для SSH, `sudo` и Docker без autologin.
 4. Непривилегированный пользователь `display` с autologin и Chromium sandbox.
@@ -593,7 +593,7 @@ qr_fully_visible_at
 ## 9. Что осознанно не входит в MVP сервера и display
 
 - публичный rollout на обычных посетителях;
-- deployment сразу на 10–15 SPA;
+- deployment сразу на 10–15 СПА;
 - payment, receipt, refund и actual original download;
 - tracking и дедупликация физических людей между frames;
 - гарантия полного group coverage;
@@ -607,7 +607,7 @@ qr_fully_visible_at
 - pause/resume background processing;
 - `reference_mode` и `ResourceManager`;
 - динамическая приоритизация CPU;
-- отдельный inference-сервер в каждом SPA;
+- отдельный inference-сервер в каждом СПА;
 - GPU-инфраструктура;
 - полноценный kiosk mode;
 - оплата и скачивание на promo display;
@@ -644,7 +644,7 @@ bottleneck. Их добавление увеличит стоимость раз
 
 ### 11.1 Один центральный сервер
 
-Отказ сервера влияет на все SPA. Обязательны мониторинг диска,
+Отказ сервера влияет на все СПА. Обязательны мониторинг диска,
 автоматический restart процессов и документированный recovery procedure.
 
 ### 11.2 Локальная графическая сессия
@@ -667,7 +667,7 @@ HDMI-мониторе, но не должно останавливать Docker-
 
 ### 11.5 Storage exhaustion
 
-Центральный сервер хранит данные всех SPA. Необходимо контролировать свободное
+Центральный сервер хранит данные всех СПА. Необходимо контролировать свободное
 место primary storage, backup storage, diagnostic bundles, БД, временных файлов
 и логов.
 
@@ -682,7 +682,7 @@ search. Это принято для pilot, но требует явного UX,
 ## 12. Финальная инфраструктурная формула
 
 ~~~text
-один central server + одна pilot SPA
+один central server + одна pilot СПА
 +
 Kubuntu 26.04 LTS и два пользователя: facemoment + display
 +
@@ -724,7 +724,7 @@ percentiles остаются рекомендациями
 никаких Redis/Celery/priority/pause/Kubernetes/GPU на старте
 ~~~
 
-10–15 SPA остаются target capacity после успешного pilot и не являются его
+10–15 СПА остаются target capacity после успешного pilot и не являются его
 acceptance gate.
 
 Главный принцип:

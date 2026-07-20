@@ -4,8 +4,16 @@ status: active
 ---
 # Changelog
 
-## [2026-07-18] One-SPA pilot PRD clarification
-- Completed the one-SPA pilot PRD clarification against the ratified
+## [2026-07-20] СПА terminology synchronization
+- Updated the human-readable venue term from Latin spelling to Cyrillic `СПА`
+  across current project Markdown documents.
+- Preserved ASCII machine identifiers such as `spa_id`, `spa_client_token` and
+  `SpaPromoClient`; changed the illustrative folder placeholder to `spa_code`.
+- Reconciled PRD, Product Brief, requirements, epics, features, supporting
+  discovery records and Memory Bank routers without changing product meaning.
+
+## [2026-07-18] One-СПА pilot PRD clarification
+- Completed the one-СПА pilot PRD clarification against the ratified
   Constitution and current Product Brief.
 - Recorded the final Promo/QR, ingest-deduplication, diagnostics, retention,
   access and acceptance decisions directly in the normative PRD sections.

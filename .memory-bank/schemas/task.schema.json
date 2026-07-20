@@ -62,6 +62,7 @@
     },
     "touched_files": {
       "type": "array",
+      "description": "Advisory, expected, non-exhaustive change surface confirmed by executor preflight.",
       "items": {
         "type": "string"
       }
@@ -139,24 +140,44 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "write_boundary": {
+          "type": "array",
+          "description": "Optional hard boundary of literal project-root-relative POSIX paths; omit unless evidence justifies one.",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!/)(?![A-Za-z]:)(?!.*//)(?!\\.{1,2}(?:/|$))(?!.*\\/\\.{1,2}(?:/|$))(?!.*[\\\\*?\\u0000-\\u001F\\u007F])(?!\\s)(?!.*\\/\\s)(?!.*\\s(?:/|$))[^/]+(?:/[^/]+)*/?$"
+          }
+        },
         "allowed_write_scope": {
           "type": "array",
+          "description": "Deprecated alias for write_boundary; do not emit in new task cards.",
           "items": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!/)(?![A-Za-z]:)(?!.*//)(?!\\.{1,2}(?:/|$))(?!.*\\/\\.{1,2}(?:/|$))(?!.*[\\\\*?\\u0000-\\u001F\\u007F])(?!\\s)(?!.*\\/\\s)(?!.*\\s(?:/|$))[^/]+(?:/[^/]+)*/?$"
           }
         },
         "forbidden_scope": {
           "type": "array",
+          "description": "Hard paths or areas that execution must not change.",
           "items": {
             "type": "string"
           }
         },
         "stop_conditions": {
           "type": "array",
+          "description": "Hard conditions that require execution to stop and hand off.",
           "items": {
             "type": "string"
           }
         }
+      },
+      "not": {
+        "required": [
+          "write_boundary",
+          "allowed_write_scope"
+        ]
       }
     },
     "source_artifacts": {

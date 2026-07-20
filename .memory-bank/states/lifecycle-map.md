@@ -1,5 +1,5 @@
 ---
-description: Preliminary decomposition-level lifecycle hints for the Face Moment one-SPA pilot.
+description: Preliminary decomposition-level lifecycle hints for the Face Moment one-СПА pilot.
 status: draft
 last_updated: 2026-07-20
 ---
@@ -15,9 +15,9 @@ owned by `/spec-design`.
 
 - Before confirmation, uploaded candidates may be validated, accepted,
   rejected, or classified as duplicates.
-- Confirmation freezes the accepted manifest and `confirmed_at` for one SPA and
+- Confirmation freezes the accepted manifest and `confirmed_at` for one СПА and
   authoritative `visit_date`.
-- Pre-confirmation rejects and same-SPA/date checksum duplicates never enter the
+- Pre-confirmation rejects and same-СПА/date checksum duplicates never enter the
   confirmed population or downstream photo/job/search result lifecycle.
 
 Sources: [IDEA_INGEST.md](../../IDEA_INGEST.md) and
@@ -59,7 +59,7 @@ Sources: [IDEA_APP.md](../../IDEA_APP.md) and
 
 ## Promo, QR, And Browser Session
 
-- Issuing a Promo result binds SPA, authoritative `visit_date`, four teaser IDs,
+- Issuing a Promo result binds СПА, authoritative `visit_date`, four teaser IDs,
   `session_result_photo_ids`, `N`, and QR expiry context.
 - Result-display expiry returns the display to advertising without expiring the
   personalized session.

@@ -17,9 +17,11 @@ last_updated: 2026-07-20
 - [.memory-bank/constitution.md](constitution.md): governing project policy and
   KISS/bounded-autonomy constraints.
 - [.memory-bank/analysis/product-brief.md](analysis/product-brief.md): accepted
-  one-SPA pilot scope and outcome contract.
+  one-СПА pilot scope and outcome contract.
 - [.memory-bank/prd.md](prd.md): clarified actors, requirements, domain model,
   scenarios, lifecycles, constraints, risks, and acceptance criteria.
+- [.memory-bank/glossary.md](glossary.md): canonical project vocabulary and
+  distinctions that must survive design decomposition.
 - [.memory-bank/invariants.md](invariants.md): current cross-cutting Promo/QR
   and decomposition invariants.
 - [IDEA_APP.md](../IDEA_APP.md): evidence for accepted application topology,
@@ -42,8 +44,9 @@ last_updated: 2026-07-20
 ## Decomposition Inputs
 - User scenarios: authoritative in PRD `Users / Actors` and `UX / Interaction
   Flow`; no separate scenario artifact is needed for decomposition.
-- Domain model: PRD `Data / Domain Model` is sufficient; the three `IDEA_*`
-  inputs add evidence without replacing later canonical design.
+- Domain model: PRD `Data / Domain Model` and
+  [.memory-bank/glossary.md](glossary.md) are sufficient; the `IDEA_*` inputs add
+  evidence without replacing later canonical design.
 - Constraints: sufficient in the Constitution, PRD non-functional requirements,
   and [.memory-bank/invariants.md](invariants.md).
 - Non-goals: authoritative in the PRD `Non-goals` section.
@@ -94,7 +97,8 @@ new product assumption to derive requirements, epics, or features.
 ## Handoff To /prd-to-features
 - Ready: yes
 - Required reads: `.memory-bank/constitution.md`, `.memory-bank/prd.md`,
-  `.memory-bank/invariants.md`, `.memory-bank/spec-backbone.md`,
+  `.memory-bank/glossary.md`, `.memory-bank/invariants.md`,
+  `.memory-bank/spec-backbone.md`,
   `.memory-bank/spec-index.md`, `.memory-bank/contracts/boundary-map.md`, and
   `.memory-bank/states/lifecycle-map.md`.
 - Stop conditions: required PRD clarification markers regress; governing sources

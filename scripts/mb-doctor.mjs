@@ -23,8 +23,8 @@ const TASK_ID_FORMAT = 'TASK-NNN-TN-FT-NNN-WN';
 const TASK_ID_RE = /^TASK-[0-9]{3}-T[0-3]-FT-[0-9]{3}-W[0-9]+$/;
 const FOUNDATION_TASK_ID_FORMAT = 'TASK-NNN-TN-FT-000-WN';
 const FOUNDATION_TASK_ID_RE = /^TASK-[0-9]{3}-T[0-3]-FT-000-W[0-9]+$/;
-const FOUNDATION_SCOPE = 'FT-000';
 const FOUNDATION_GATE_PENDING = 'pending_foundation_to_tasks';
+const UNRESOLVED_FOUNDATION_STATUSES = new Set(['planned', 'ready', 'in_progress', 'blocked']);
 const VALID_STATUSES = new Set(['planned', 'ready', 'in_progress', 'blocked', 'done', 'failed']);
 const VALID_TIERS = new Set(['T0', 'T1', 'T2', 'T3']);
 const VALID_CLARIFICATION_STATUSES = new Set(['pending', 'complete', 'blocked']);
@@ -64,9 +64,7 @@ if (options.help) {
 
 if (options.errors.length) {
   for (const message of options.errors) {
-    addFinding('error', 'CLI_INVALID_ARGUMENT', message, {
-      suggested_fix: 'Use --strict, optional --scope FT-000, optional --json, or --help.',
-    });
+    addFinding('error', 'CLI_INVALID_ARGUMENT', message, { suggested_fix: 'Use only --strict and/or --json.' });
   }
   finish();
 }
@@ -84,39 +82,19 @@ function parseArgs(args) {
     strict: false,
     json: false,
     help: false,
-    scope: null,
     errors: [],
   };
 
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index];
+  for (const arg of args) {
     if (arg === '--strict') {
       parsed.strict = true;
     } else if (arg === '--json') {
       parsed.json = true;
-    } else if (arg === '--scope') {
-      const value = args[index + 1];
-      if (!value || value.startsWith('-')) {
-        parsed.errors.push('--scope requires FT-000.');
-      } else {
-        index += 1;
-        if (parsed.scope !== null) {
-          parsed.errors.push('--scope may be provided only once.');
-        } else if (value !== FOUNDATION_SCOPE) {
-          parsed.errors.push(`Unsupported scope: ${value}. Only ${FOUNDATION_SCOPE} is allowed.`);
-        } else {
-          parsed.scope = value;
-        }
-      }
     } else if (arg === '--help' || arg === '-h') {
       parsed.help = true;
     } else {
       parsed.errors.push(`Unknown flag: ${arg}`);
     }
-  }
-
-  if (parsed.scope !== null && !parsed.strict) {
-    parsed.errors.push('--scope FT-000 is valid only with --strict.');
   }
 
   return parsed;
@@ -126,13 +104,11 @@ function printHelp() {
   console.log(`mb-doctor
 
 Usage:
-  node scripts/mb-doctor.mjs [--strict] [--scope FT-000] [--json]
+  node scripts/mb-doctor.mjs [--strict] [--json]
 
 Flags:
-  --strict         Require an executable autonomous/autopilot task queue.
-  --scope FT-000   In strict mode, evaluate FT-000 readiness while retaining
-                   global lint/schema/dependency safety checks.
-  --json           Emit stable machine-readable JSON findings.
+  --strict  Require an executable autonomous/autopilot task queue.
+  --json    Emit stable machine-readable JSON findings.
 `);
 }
 
@@ -429,7 +405,6 @@ function isFoundationOnlyTaskQueue() {
   if (!index || typeof index !== 'object' || Array.isArray(index) || !Array.isArray(index.tasks)) return false;
   if (index.tasks.length === 0) return false;
 
-  let scopedFoundationRecords = 0;
   for (const entry of index.tasks) {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return false;
     if (typeof entry.id !== 'string' || !TASK_ID_RE.test(entry.id)) return false;
@@ -441,14 +416,10 @@ function isFoundationOnlyTaskQueue() {
     const taskRead = readJson(rel);
     if (!taskRead.ok || !taskRead.value || typeof taskRead.value !== 'object' || Array.isArray(taskRead.value)) return false;
     if (taskRead.value.id !== entry.id) return false;
-    if (taskRead.value.feature === FOUNDATION_SCOPE) {
-      scopedFoundationRecords += 1;
-    } else if (options.scope !== FOUNDATION_SCOPE) {
-      return false;
-    }
+    if (taskRead.value.feature !== 'FT-000') return false;
   }
 
-  return scopedFoundationRecords > 0;
+  return true;
 }
 
 function extractBackboneAreaMatrixSection(text) {
@@ -534,22 +505,11 @@ function checkTaskReadiness() {
 
   const { records, invalidEntries } = loadTaskRecords(index.tasks);
   const orderedRecords = [...records.values()];
-  const activeRecords = options.scope === FOUNDATION_SCOPE
-    ? orderedRecords.filter((record) => record.task.feature === FOUNDATION_SCOPE)
-    : orderedRecords;
 
-  if (options.scope === FOUNDATION_SCOPE && activeRecords.length === 0) {
-    addFinding('error', 'TASK_SCOPE_EMPTY', `No indexed ${FOUNDATION_SCOPE} task records exist in the requested strict scope.`, {
-      path: TASK_INDEX_REL,
-      details: { scope: FOUNDATION_SCOPE },
-      suggested_fix: 'Run /foundation-to-tasks, then rerun mb-doctor --strict --scope FT-000.',
-    });
-  }
-
-  checkTasksFromUnclarifiedFeatures(activeRecords);
+  checkTasksFromUnclarifiedFeatures(orderedRecords);
   checkFoundationReadiness(orderedRecords, records);
 
-  for (const record of activeRecords) {
+  for (const record of orderedRecords) {
     checkFoundationWave(record);
     checkReadyDependencies(record, records);
     checkInProgressProtocol(record);
@@ -562,11 +522,11 @@ function checkTaskReadiness() {
     checkSingleCardHandoffCompleteness(record);
   }
 
-  checkFailedTaskClosure(activeRecords);
-  checkT2FeatureSemanticCompletion(activeRecords);
-  checkFailedDependentsBlocked(activeRecords);
-  checkQueueState(activeRecords, records, invalidEntries);
-  addQueueSummary(activeRecords, invalidEntries);
+  checkFailedTaskClosure(orderedRecords);
+  checkT2FeatureSemanticCompletion(orderedRecords);
+  checkFailedDependentsBlocked(orderedRecords);
+  checkQueueState(orderedRecords, records, invalidEntries);
+  addQueueSummary(orderedRecords, invalidEntries);
 }
 
 function loadTaskRecords(entries) {
@@ -670,9 +630,17 @@ function checkFoundationWave(record) {
 
 function checkFoundationReadiness(orderedRecords, records) {
   const foundationAbs = path.join(ROOT, FOUNDATION_REL);
-  if (!isFile(foundationAbs)) return;
-
   const severity = options.strict ? 'error' : 'warning';
+
+  if (!isFile(foundationAbs)) {
+    addFinding(severity, 'FOUNDATION_ANCHORS_INVALID', `${FOUNDATION_REL}: a non-empty indexed task queue requires an explicit Foundation decision.`, {
+      path: FOUNDATION_REL,
+      details: { issue: 'foundation_file_missing' },
+      suggested_fix: 'Run /spec-design to record the accepted Foundation decision and current Gate Anchors before unattended execution.',
+    });
+    return;
+  }
+
   const text = fs.readFileSync(foundationAbs, 'utf8').replace(/\r\n/g, '\n');
   const anchors = parseFoundationAnchors(text);
   const issues = validateFoundationAnchors(anchors);
@@ -687,8 +655,36 @@ function checkFoundationReadiness(orderedRecords, records) {
     return;
   }
 
-  if (anchors.required !== true) return;
-  if (anchors.gateTask === FOUNDATION_GATE_PENDING) return;
+  const foundationRecords = orderedRecords.filter((record) => record.task.feature === 'FT-000');
+  const productRecords = orderedRecords.filter((record) => record.task.feature !== 'FT-000');
+
+  if (anchors.required === false) {
+    if (!foundationRecords.length) return;
+
+    addFinding(severity, 'FOUNDATION_GATE_TASK_INVALID', `${FOUNDATION_REL}: Foundation is not required, but indexed FT-000 records still exist.`, {
+      path: FOUNDATION_REL,
+      details: {
+        gate_task: anchors.gateTask,
+        foundation_tasks: foundationRecords.map((record) => ({
+          id: record.id,
+          path: record.rel,
+          status: record.task.status,
+        })),
+      },
+      suggested_fix:
+        'Reconcile the accepted Foundation decision through /spec-design; use /foundation-to-tasks --verify-existing only when existing-baseline evidence is the authoritative route.',
+    });
+    return;
+  }
+
+  if (anchors.gateTask === FOUNDATION_GATE_PENDING) {
+    addFinding(severity, 'FOUNDATION_GATE_TASK_INVALID', `${FOUNDATION_REL}: required Foundation still has a pending final gate.`, {
+      path: FOUNDATION_REL,
+      details: { gate_task: anchors.gateTask },
+      suggested_fix: 'Run /foundation-to-tasks to create/reconcile the FT-000 queue and replace the pending anchor with its concrete final gate task ID.',
+    });
+    return;
+  }
 
   const gate = records.get(anchors.gateTask);
   if (!gate || gate.task.feature !== 'FT-000') {
@@ -706,15 +702,47 @@ function checkFoundationReadiness(orderedRecords, records) {
     return;
   }
 
-  const productRecords = orderedRecords.filter((record) => record.task.feature !== 'FT-000');
+  if (gate.task.status === 'failed') {
+    addFinding(severity, 'FOUNDATION_GATE_TASK_INVALID', `${gate.rel}: the named final foundation gate has failed.`, {
+      path: gate.rel,
+      task_id: anchors.gateTask,
+      details: { status: gate.task.status },
+      suggested_fix:
+        'Reconcile a valid replacement final gate through /foundation-to-tasks, then resume the /autonomous-owned FT-000 phase.',
+    });
+    return;
+  }
 
-  if (options.scope !== FOUNDATION_SCOPE && productRecords.length && gate.task.status !== 'done') {
+  if (productRecords.length && gate.task.status !== 'done') {
     addFinding(severity, 'FOUNDATION_GATE_TASK_INVALID', `${gate.rel}: foundation gate task is not done.`, {
       path: gate.rel,
       task_id: anchors.gateTask,
       details: { status: gate.task.status },
       suggested_fix: 'Finish /exe, /verify, and /mb-sync for the foundation gate task before product feature execution.',
     });
+  }
+
+  if (productRecords.length && gate.task.status === 'done') {
+    const unresolvedFoundationRecords = foundationRecords
+      .filter((record) => record.id !== anchors.gateTask)
+      .filter((record) => UNRESOLVED_FOUNDATION_STATUSES.has(record.task.status));
+
+    if (unresolvedFoundationRecords.length) {
+      addFinding(severity, 'FOUNDATION_GATE_TASK_INVALID', `${FOUNDATION_REL}: product tasks exist while FT-000 work remains unresolved.`, {
+        path: FOUNDATION_REL,
+        task_id: anchors.gateTask,
+        details: {
+          gate_task: anchors.gateTask,
+          unresolved_foundation_tasks: unresolvedFoundationRecords.map((record) => ({
+            id: record.id,
+            path: record.rel,
+            status: record.task.status,
+          })),
+        },
+        suggested_fix:
+          'Return to the /autonomous-owned Foundation phase and resolve planned, ready, in_progress, or blocked FT-000 work before /autopilot.',
+      });
+    }
   }
 
   const missing = productRecords
@@ -1118,8 +1146,6 @@ function isConcreteHandoffValue(value) {
   return !/^(?:tbd|todo|none|n\/a|not[_ -]?applicable|<[^>]+>|\{\{[^}]+\}\})$/i.test(value.trim());
 }
 function checkFeatureClarificationReadiness() {
-  if (options.scope === FOUNDATION_SCOPE) return;
-
   const severity = options.strict ? 'error' : 'warning';
   const { features } = getFeatureClarificationIndex();
 
@@ -1161,7 +1187,6 @@ function checkTasksFromUnclarifiedFeatures(records) {
   for (const record of records) {
     const featureId = typeof record.task.feature === 'string' ? record.task.feature.trim() : '';
     if (!FT_ID_RE.test(featureId)) continue;
-    if (featureId === FOUNDATION_SCOPE) continue;
 
     const featureDocs = byId.get(featureId);
     let reason;
@@ -1843,7 +1868,7 @@ function addQueueSummary(records, invalidEntries) {
 
   addFinding('info', 'TASK_QUEUE_SUMMARY', 'Task queue summary.', {
     path: TASK_INDEX_REL,
-    details: { ...counts, scope: options.scope ?? 'all' },
+    details: counts,
   });
 }
 

@@ -8,9 +8,9 @@
 Этот документ фиксирует продуктовую концепцию, принятые архитектурные решения,
 границы первого pilot и post-pilot направление продукта.
 
-Если не указано иное, `pilot MVP` означает одну SPA и контролируемые проходы
+Если не указано иное, `pilot MVP` означает одну СПА и контролируемые проходы
 тестировщиков. Целевая платформа на
-10–15 SPA и paid flow не являются gate первого pilot.
+10–15 СПА и paid flow не являются gate первого pilot.
 
 Используются четыре статуса:
 
@@ -42,7 +42,7 @@
 
 ### 1.1 Продуктовая проблема
 
-Главная проблема Face Moment — привлечь внимание посетителя SPA к возможности
+Главная проблема Face Moment — привлечь внимание посетителя СПА к возможности
 купить сделанные во время посещения фотографии. Основной носитель проблемы —
 фотограф: без своевременного персонального контакта с посетителем потенциальный
 покупатель может не узнать о готовых снимках и фотограф теряет продажу.
@@ -53,13 +53,13 @@
 ### 1.2 Сквозной путь первого pilot
 
 ~~~text
-фотограф снимает разных посетителей SPA
+фотограф снимает разных посетителей СПА
 → через authenticated web app загружает готовые JPEG и подтверждает batch
 → система обрабатывает фотографии и делает их доступными для поиска
 → sensor автоматически запускает reference-серию при проходе тестировщиков
 → Promo показывает четыре low-quality фотографии без watermark и QR
 → QR открывает на телефоне уже найденную session без повторного selfie
-→ landing показывает SPA, дату, один teaser и число N фотографий результата
+→ landing показывает СПА, дату, один teaser и число N фотографий результата
 ~~~
 
 Payment, фактическое скачивание и standalone selfie-search не входят в первый
@@ -68,14 +68,14 @@ pilot. Post-pilot paid product продаёт за одну фиксирован
 
 ### 1.3 Масштаб
 
-- первый pilot: одна пока не выбранная SPA, один `SpaPromoClient` и ограниченная
+- первый pilot: одна пока не выбранная СПА, один `SpaPromoClient` и ограниченная
   группа тестировщиков;
 
 Целевая capacity после pilot:
 
 - один центральный сервер в РФ;
-- 10–15 SPA;
-- 150–200 коммерческих фотографий в день на один SPA;
+- 10–15 СПА;
+- 150–200 коммерческих фотографий в день на один СПА;
 - суммарно 1 500–3 000 фотографий в день;
 - 45 000–90 000 фотографий за 30 дней;
 - хранение истории минимум один месяц;
@@ -88,7 +88,7 @@ pilot. Post-pilot paid product продаёт за одну фиксирован
 +
 автоматическая reference-серия создаёт до пяти query detections
 +
-система выполняет поиск только внутри нужного SPA и периода
+система выполняет поиск только внутри нужного СПА и периода
 +
 Promo показывает четыре teaser-фотографии и QR
 +
@@ -128,11 +128,11 @@ population и failure semantics определены в `IDEA_INGEST.md`.
 
 Этот сценарий не входит в первый pilot.
 
-1. Клиент открывает общую ссылку или ссылку с уже заданным SPA/визитом.
-2. Выбирает SPA и дату, если они не заданы ссылкой.
+1. Клиент открывает общую ссылку или ссылку с уже заданным СПА/визитом.
+2. Выбирает СПА и дату, если они не заданы ссылкой.
 3. Загружает селфи или делает live-selfie.
 4. Система проверяет качество лица.
-5. `RealtimeFaceService` создаёт embedding активным pipeline данного SPA.
+5. `RealtimeFaceService` создаёт embedding активным pipeline данного СПА.
 6. Выполняется точный поиск среди embeddings той же `pipeline_revision`.
 7. Поиск ограничивается `spa_id` и датой, визитом или временным окном.
 8. Клиент получает low-quality preview без watermark и состав полного пакета.
@@ -147,7 +147,7 @@ population и failure semantics определены в `IDEA_INGEST.md`.
    уникальные teaser-фотографии.
 5. Display показывает low-quality previews без watermark и QR.
 6. QR открывает уже найденную session без нового selfie.
-7. Landing показывает SPA, `visit_date`, один teaser, `N` уникальных
+7. Landing показывает СПА, `visit_date`, один teaser, `N` уникальных
    `photo_id` результата и post-pilot CTA полного пакета.
 
 Group flow поддерживается текущим best-effort алгоритмом. Один физический
@@ -180,7 +180,7 @@ Group flow поддерживается текущим best-effort алгори�
    - detector: SCRFD из model pack;
    - recognizer: Buffalo M.
 
-Для каждого SPA в админке выбирается обслуживающий pipeline.
+Для каждого СПА в админке выбирается обслуживающий pipeline.
 
 **Почему принято:** SFace является лёгким CPU-вариантом, а Buffalo M используется как более сильный кандидат и benchmark baseline. Реальное решение между ними принимается на данных проекта.
 
@@ -266,7 +266,7 @@ Embeddings сравниваются только внутри одной `pipeli
 
 #### `active_only`
 
-Production-режим: фотография обрабатывается только обслуживающим pipeline SPA.
+Production-режим: фотография обрабатывается только обслуживающим pipeline СПА.
 
 #### `dual_benchmark`
 
@@ -288,7 +288,7 @@ detection, preprocessing и embedding extraction на одной фотогра�
 действительно требуется менять pipeline без окна неполной выдачи. Базовый MVP
 может работать с одной заранее выбранной serving revision.
 
-Для SPA хранятся:
+Для СПА хранятся:
 
 ~~~text
 serving_pipeline_revision
@@ -398,7 +398,7 @@ calibrated_at
 UNIQUE(spa_id, pipeline_code, query_source)
 ~~~
 
-Threshold хранится на уровне типа модели и SPA, а не на уровне
+Threshold хранится на уровне типа модели и СПА, а не на уровне
 `pipeline_revision_id`. Наличие `calibration_id` и `calibrated_at` означает, что
 данная комбинация `spa_id + pipeline_code + query_source` откалибрована и может
 использоваться для serving. Если калибровки нет, переключение блокируется, а
@@ -486,11 +486,11 @@ UNIQUE(photo_id, pipeline_revision_id, face_index)
 ~~~text
 query embedding
 → WHERE pipeline_revision_id = serving pipeline
-→ WHERE spa_id = selected SPA
+→ WHERE spa_id = selected СПА
 → WHERE visit_date = подтверждённая рабочая дата batch
 → optional: WHERE captured_at входит в подтверждённый time window
 → точное cosine distance по оставшимся векторам
-→ фильтр по calibrated threshold для SPA, pipeline code и query source
+→ фильтр по calibrated threshold для СПА, pipeline code и query source
 → сортировка
 → группировка по photo_id
 → preview
@@ -501,7 +501,7 @@ query embedding
 timezone подтверждены. Обычные B-tree индексы используются для `spa_id`,
 `visit_date`, `captured_at`, `photo_id` и `pipeline_revision_id`.
 
-**Почему принято:** даже при 10–15 SPA запрос ограничен одним SPA и коротким периодом. Exact search проще, детерминирован и не теряет recall, а ANN пока не решает измеримой проблемы.
+**Почему принято:** даже при 10–15 СПА запрос ограничен одним СПА и коротким периодом. Exact search проще, детерминирован и не теряет recall, а ANN пока не решает измеримой проблемы.
 
 ### 6.2 Условия принятия совпадения
 
@@ -521,7 +521,7 @@ post-pilot матрица калибруется отдельно для:
 - Buffalo M selfie;
 - Buffalo M reference-camera.
 
-Значения редактируются отдельно для каждого SPA в админке. Threshold не
+Значения редактируются отдельно для каждого СПА в админке. Threshold не
 привязывается к `pipeline_revision_id`.
 
 ### 6.3 Top-1 / top-2 margin не используется
@@ -550,12 +550,12 @@ camera и хранит короткий кольцевой буфер. Сигн�
 reference-кадры посетителя или найденные для него фотографии. Видео состоит из
 двух визуальных фаз:
 
-1. короткий импульс появления произвольной фотографии, снятой в SPA;
+1. короткий импульс появления произвольной фотографии, снятой в СПА;
 2. следующая за импульсом длинная спокойная анимация поиска фотографий по
    картотеке.
 
 `preChime` синхронизируется с начальным импульсом `prePromo`. Произвольная
-SPA-фотография является локальным promo asset и не выбирается из текущей
+СПА-фотография является локальным promo asset и не выбирается из текущей
 клиентской выдачи.
 
 Финальный `Chime` в этот момент не звучит. После успешного формирования четырёх
@@ -700,7 +700,7 @@ cooldown либо сразу после полного неуспешного п
 Для формирования четырёх фотографий используются три понятия:
 
 - `matched_candidates` — все фотографии текущего reference-лица, которые
-  находятся в нужном SPA и периоде, принадлежат serving pipeline revision,
+  находятся в нужном СПА и периоде, принадлежат serving pipeline revision,
   прошли calibrated face-match threshold и имеют готовый preview;
 - `diverse_candidates` — предпочтительный глобальный pool визуально различных
   фотографий; каждое из максимум пяти reference-лиц может добавить в него до
@@ -930,7 +930,7 @@ PostgreSQL и MinIO, не добавляя broker, coordinator или новый
 
 ~~~text
 validate image
-→ select FaceEngine for SPA
+→ select FaceEngine for СПА
 → detect and quality check
 → create query embedding
 → exact pgvector search
@@ -942,9 +942,9 @@ validate image
 
 ### 8.2 Постоянно загруженные модели
 
-В первом one-SPA pilot RealtimeFaceService обязан заранее загрузить и прогреть
+В первом one-СПА pilot RealtimeFaceService обязан заранее загрузить и прогреть
 только выбранный serving pipeline. Одновременная загрузка SFace и Buffalo M
-нужна лишь для online `dual_benchmark` или target deployment, где разные SPA
+нужна лишь для online `dual_benchmark` или target deployment, где разные СПА
 используют разные pipelines.
 
 **Почему принято:** загрузка модели по первому запросу создаёт непредсказуемую
@@ -953,7 +953,7 @@ validate image
 
 ### 8.3 Контракт SpaPromoClient
 
-Локальный HDMI-display центрального сервера и отдельные клиенты остальных SPA
+Локальный HDMI-display центрального сервера и отдельные клиенты остальных СПА
 используют один логический контракт `SpaPromoClient`:
 
 ~~~text
@@ -999,13 +999,13 @@ requirements. Истечение `RESULT_DISPLAY_SECONDS` возвращает d
 reference detections. Полностью видимый и сканируемый QR должен появиться менее
 чем через 10 секунд от `reference_series_ready_at`.
 
-QR landing продолжает ту же session без повторного selfie и показывает SPA,
+QR landing продолжает ту же session без повторного selfie и показывает СПА,
 `visit_date`, одну из четырёх low-quality teaser-фотографий, `N` из
 `session_result_photo_ids` и post-pilot CTA полного пакета. Payment и actual
 download в pilot отсутствуют.
 
 `spa_client_token` является простым секретом клиента. Сервер хранит отображение
-`token_hash -> spa_id`, определяет SPA только по token и не доверяет `spa_id` из
+`token_hash -> spa_id`, определяет СПА только по token и не доверяет `spa_id` из
 request body. Token передаётся в HTTP authorization header, не помещается в URL
 и не записывается в application logs.
 
@@ -1062,7 +1062,7 @@ advertising
 
 Это не durable job queue и не требует Redis.
 
-**Почему принято:** reference-запрос полезен только несколько секунд. Сохранять устаревшие запросы в надёжной внешней очереди бессмысленно; ограниченная очередь нужна только для кратковременного столкновения запросов от разных SPA.
+**Почему принято:** reference-запрос полезен только несколько секунд. Сохранять устаревшие запросы в надёжной внешней очереди бессмысленно; ограниченная очередь нужна только для кратковременного столкновения запросов от разных СПА.
 
 ## 9. Метрики p50/p95/p99
 
@@ -1115,7 +1115,7 @@ Pilot acceptance:
 ### 9.2 Рекомендуемые percentiles
 
 Рекомендуется рассчитывать p50/p95/p99 в PostgreSQL через `percentile_cont` за
-выбранный период и, когда это полезно, отдельно по SPA, pipeline и query source.
+выбранный период и, когда это полезно, отдельно по СПА, pipeline и query source.
 
 Не требуется отдельный Prometheus/Grafana stack для MVP.
 
@@ -1142,7 +1142,7 @@ Pilot acceptance:
 
 ## 10. Benchmark моделей
 
-SFace и Buffalo M сравниваются на размеченных реальных данных SPA.
+SFace и Buffalo M сравниваются на размеченных реальных данных СПА.
 
 Нужны:
 
@@ -1161,7 +1161,7 @@ selfie-search и не входят в dataset/gate первого pilot.
 - влияние качества и размера лица.
 
 Результат принятой калибровки получает `calibration_id` и записывает type-level
-thresholds для конкретного SPA и query source через админку. Отдельная запись на
+thresholds для конкретного СПА и query source через админку. Отдельная запись на
 каждую pipeline revision не создаётся.
 
 **Почему принято:** threshold и выбор модели нельзя надёжно определить по публичным benchmark-ам. Решение должно учитывать реальные камеры, освещение и фотографии проекта.
@@ -1192,7 +1192,7 @@ Selfie capture, calibration selfies и standalone selfie-search не входя�
 
 ## 12. Граница и acceptance первого pilot
 
-Pilot является техническим smoke test на одной SPA-площадке с выбранной группой
+Pilot является техническим smoke test на одной СПА-площадке с выбранной группой
 тестировщиков. Публичный rollout не входит в текущий scope.
 
 Acceptance run содержит 20 ожидаемо успешных попыток; одни тестировщики могут
@@ -1203,7 +1203,7 @@ Acceptance run содержит 20 ожидаемо успешных попыт�
 
 - минимум 19 из 20 попыток дают полностью видимый и сканируемый QR менее чем за
   10 секунд от `reference_series_ready_at`;
-- landing каждой завершённой попытки правильно показывает SPA, `visit_date` и
+- landing каждой завершённой попытки правильно показывает СПА, `visit_date` и
   согласованные с той же session teaser и `N`;
 - для каждой попытки сохраняется diagnostic bundle.
 
@@ -1217,17 +1217,17 @@ Acceptance run содержит 20 ожидаемо успешных попыт�
 ### 13.1 Минимальная админка
 
 - authenticated direct JPEG batch upload с checksum и повторной отправкой;
-- привязка к SPA и дате;
+- привязка к СПА и дате;
 - базовый статус originals, preview и `photo_pipeline_states`;
-- выбор serving pipeline для SPA;
-- редактирование thresholds для каждого SPA.
+- выбор serving pipeline для СПА;
+- редактирование thresholds для каждого СПА.
 
 ### 13.2 Threshold settings
 
 Для первого pilot обязательны откалиброванные reference threshold выбранного
 serving pipeline и простой способ его зарегистрировать или изменить.
 
-Post-pilot администратор выбирает SPA и может изменить четыре type-level
+Post-pilot администратор выбирает СПА и может изменить четыре type-level
 значения:
 
 - SFace для `selfie`;
@@ -1301,14 +1301,14 @@ reference match (selfie — post-pilot)
 
 **Почему принято:** отсутствие watermark является явным product decision, а
 originals относятся к paid flow. Ограничение области поиска ускоряет exact
-search. Простой client token привязывает display к SPA без более сложной
+search. Простой client token привязывает display к СПА без более сложной
 configuration scheme.
 
 ---
 
 ## 15. Что входит в MVP приложения
 
-1. Одна pilot SPA и ограниченная группа тестировщиков.
+1. Одна pilot СПА и ограниченная группа тестировщиков.
 2. Authenticated direct JPEG batch upload с authoritative `visit_date`.
 3. PostgreSQL + pgvector exact search и MinIO без внешней публикации.
 4. `photo_pipeline_states` как источник searchable state.
@@ -1323,7 +1323,7 @@ configuration scheme.
    identity clustering и гарантии покрытия каждого человека.
 10. Promo только при наличии четырёх уникальных фотографий: low-quality previews
     без watermark и QR continuation.
-11. Phone landing с SPA, `visit_date`, teaser, `N` и post-pilot CTA без
+11. Phone landing с СПА, `visit_date`, teaser, `N` и post-pilot CTA без
     payment/download.
 12. Diagnostic bundles для каждой попытки с retention 90 дней.
 13. Метрики `reference_ready_to_qr`, realtime queue и
@@ -1352,7 +1352,7 @@ configuration scheme.
 ## 16. Что осознанно не входит в MVP приложения
 
 - публичный rollout на обычных посетителях;
-- deployment сразу на 10–15 SPA;
+- deployment сразу на 10–15 СПА;
 - standalone selfie/live-selfie search;
 - payment, receipt, refund и actual download originals;
 - продажа отдельных фотографий;
@@ -1392,7 +1392,7 @@ configuration scheme.
 
 ### 18.1 Одновременные realtime-запросы
 
-В первом pilot источник один. После расширения 10–15 SPA смогут отправлять
+В первом pilot источник один. После расширения 10–15 СПА смогут отправлять
 reference/selfie запросы одновременно; риск контролируется bounded in-memory
 queue, deadline и метрикой queue wait.
 
@@ -1408,7 +1408,7 @@ queue, deadline и метрикой queue wait.
 
 Значения нельзя брать только из документации моделей; они калибруются по доле
 запросов без результата и количеству найденных фотографий на данных проекта
-отдельно по SPA, pipeline code и query source и редактируются в админке.
+отдельно по СПА, pipeline code и query source и редактируются в админке.
 
 ### 18.5 Переключение pipeline
 
@@ -1425,7 +1425,7 @@ diagnostics и интерпретации acceptance; полное group coverag
 ## 19. Финальная архитектурная формула приложения
 
 ~~~text
-одна pilot SPA
+одна pilot СПА
 +
 Python/FastAPI backend
 +
@@ -1453,7 +1453,7 @@ SFace и Buffalo M с родным preprocessing
 +
 pipeline-specific face records и photo_pipeline_states
 +
-type-level thresholds для каждого SPA
+type-level thresholds для каждого СПА
 +
 никаких Redis/Celery/priority/pause/ANN/clustering/margin
 +

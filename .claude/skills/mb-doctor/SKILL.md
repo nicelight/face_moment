@@ -25,42 +25,34 @@ Use the repository-provided script:
 ```bash
 node scripts/mb-doctor.mjs
 node scripts/mb-doctor.mjs --strict
-node scripts/mb-doctor.mjs --strict --scope FT-000
 node scripts/mb-doctor.mjs --json
 node scripts/mb-doctor.mjs --strict --json
-node scripts/mb-doctor.mjs --strict --scope FT-000 --json
 ```
 
 If the repository exposes another documented wrapper for the same script, use that wrapper.
 
-`--scope FT-000` is valid only with `--strict`; another scope, a missing scope
-value, or any argument other than `--strict`, `--scope FT-000`, `--json`,
-`--help`, or `-h` produces `CLI_INVALID_ARGUMENT` before readiness checks run.
-When `--help` or `-h` is present, the script prints help and exits without
-running readiness checks.
+Any argument other than `--strict`, `--json`, `--help`, or `-h` produces the
+`CLI_INVALID_ARGUMENT` error before readiness checks run. When `--help` or `-h`
+is present, the script prints help and exits without running readiness checks.
 
 ## Modes
 - Default mode: health report for humans and interactive work. A fresh skeleton with an empty `.memory-bank/tasks/index.json` is valid and reports `TASK_INDEX_EMPTY` as `info`.
 - Strict mode: post-queue executable-readiness gate for every `FT-000`
   foundation queue and for autonomous/autopilot product queues. Empty
   `.memory-bank/tasks/index.json` is an error because there is no executable task queue.
-- Strict Foundation scope: `--strict --scope FT-000` evaluates task/protocol/
-  evidence/queue readiness only for indexed FT-000 records while retaining
-  global `mb-lint`, schema/index, Foundation-anchor, and dependency safety. It
-  permits the named Foundation gate to remain unfinished while that scoped queue
-  is being executed, and does not let out-of-scope product readiness findings
-  block or authorize product execution.
 - JSON mode: machine-readable report for schedulers and agents.
 
 Default mode may emit warnings for incomplete scheduler readiness evidence that should be fixed before unattended execution. These warnings do not invalidate KISS manual closure. Strict mode promotes those readiness gaps to errors where autonomous/autopilot progression would be unsafe.
+Every non-empty indexed queue requires the current `.memory-bank/foundation.md`
+decision; a missing or incomplete decision is a warning in default mode and an
+error in `--strict`. Empty-index behavior is unchanged.
 
 After `/spec-init` PASS, `.memory-bank/spec-backbone.md` may correctly have `Pre-PRD Spec Status: ready_for_prd` while Global Backbone Status is still absent, `blocked`, or otherwise incomplete. In default mode, report this as "prepared for `/prd-to-features`; Global Backbone Status intentionally pending until `/spec-design`" rather than a fix-now problem. The machine-readable finding code may remain `SPEC_BACKBONE_NOT_READY`; the meaning is downstream task/autonomous readiness, not failure of `/spec-init`.
 
-Use `--strict --scope FT-000` after `/foundation-to-tasks` before any scoped
-`FT-000` execution. Use full `--strict` before default product/full-queue
-`/autopilot` or the product scheduler phase of `/autonomous`. Use the matching
-scope before each task-selection pass and after each `/mb-sync` before
-promoting dependents or declaring success. When the last task of a T2 product feature closes, the
+Use `--strict` after `/foundation-to-tasks` before the `/autonomous`-owned
+`FT-000` phase, before the product-only `/autopilot`, before each applicable
+task-selection pass, and after each `/mb-sync` before promoting dependents or
+declaring success. When the last task of a T2 product feature closes, the
 scheduler must run feature-level `/red-verify --feature FT-<ID>` and record
 semantic-pass before that wave-boundary sync/strict-doctor gate.
 
@@ -70,17 +62,26 @@ manual `T0` / `T1` work. Run it for `T3`, autonomous/autopilot or handoff
 freshness, and complex `T2`/foundation/dependency/stale-doc/risky-link
 cases.
 
-Status transitions have two modes. In scheduler mode, `/autopilot` and `/autonomous` own closure/failure/blocking decisions. T2 task closure requires full protocol, applicable spec gates, and `VERDICT: PASS`; per-task `/red-verify` is not required. T2 feature completion separately requires feature-level `/red-verify --feature FT-<ID>` with `SEMANTIC_VERDICT: semantic-pass` recorded in the feature doc. T3 task closure requires `VERDICT: PASS`, per-task `SEMANTIC_VERDICT: semantic-pass`, and exact `HUMAN_CHECKPOINT: done`. In manual mode, T0/T1 may close in `/exe` with compact evidence when explicit top-level owner fast-lane conditions are met, or through `/verify PASS` when independent verification is requested; T2 may close when full protocol plus applicable task/spec gates are satisfied, only with explicit closure ownership; T3 requires per-task `/red-verify` `SEMANTIC_VERDICT: semantic-pass` before final closure. Full `/mb-sync` runs at the wave boundary.
+Status transitions have two modes. In scheduler mode, `/autonomous` owns only
+FT-000 Foundation closure/failure/blocking decisions and `/autopilot` owns only
+product-task decisions after the Foundation gate closes. T2 task closure
+requires full protocol, applicable spec gates, and `VERDICT: PASS`; per-task
+`/red-verify` is not required. T2 feature completion separately requires
+feature-level `/red-verify --feature FT-<ID>` with
+`SEMANTIC_VERDICT: semantic-pass` recorded in the feature doc. T3 task closure
+requires `VERDICT: PASS`, per-task `SEMANTIC_VERDICT: semantic-pass`, and exact
+`HUMAN_CHECKPOINT: done`. In manual mode, T0/T1 may close in `/exe` with compact
+evidence when explicit top-level owner fast-lane conditions are met, or through
+`/verify PASS` when independent verification is requested; T2 may close when
+full protocol plus applicable task/spec gates are satisfied, only with explicit
+closure ownership; T3 requires per-task `/red-verify`
+`SEMANTIC_VERDICT: semantic-pass` before final closure. Full `/mb-sync` runs at
+the wave boundary.
 
 ## Required checks
 `mb-doctor` must check only readiness-critical conditions:
 
 - `mb-lint` passes first. A lint error is a doctor error.
-- With `--strict --scope FT-000`, global lint/schema/index, Foundation anchors,
-  and dependency references remain checked, while task readiness, queue state,
-  protocols, closure evidence, and feature clarification/semantic completion
-  are evaluated only for FT-000 records. A missing scoped record is
-  `TASK_SCOPE_EMPTY`.
 - In `--strict`, `.memory-bank/constitution.md`, `.memory-bank/index.md`,
   `.memory-bank/spec-index.md`, and `.memory-bank/spec-backbone.md` exist, and
   both index files mention `constitution.md`. Any missing file or missing
@@ -97,15 +98,22 @@ Status transitions have two modes. In scheduler mode, `/autopilot` and `/autonom
   semantics.
 - `W0` is valid only for tasks with `feature: "FT-000"`. Non-`FT-000` product
   tasks must not use `W0`.
-- When `.memory-bank/foundation.md` exists, its `## Gate Anchors` contract is
-  parseable:
+- Every non-empty indexed queue has `.memory-bank/foundation.md` with a
+  parseable current `## Gate Anchors` contract:
   - `Foundation Required: true|false`
   - `Foundation Requirement: REQ-000`
   - `Foundation Pseudo-Feature: FT-000`
   - `Foundation Gate Task: pending_foundation_to_tasks|TASK-<NNN>-T<N>-FT-000-W<N>|not_required`
-- When foundation is required and a concrete final foundation gate task is named,
-  it exists, is indexed, has `feature: "FT-000"`, and every non-`FT-000` product
-  task depends on it directly or transitively.
+- `Foundation Required: true` is not executable-ready while the gate anchor is
+  `pending_foundation_to_tasks`; a concrete gate exists, is indexed, has
+  `feature: "FT-000"`, and is not `failed`.
+- A foundation-only queue may pass with an open concrete final gate when the
+  normal queue/status checks permit continued FT-000 execution.
+- Once product records exist, the concrete final gate is `done`, no other
+  `FT-000` record remains `planned|ready|in_progress|blocked`, and every product
+  task depends on the gate directly or transitively.
+- `Foundation Required: false` uses `Foundation Gate Task: not_required` and has
+  no indexed `FT-000` records.
 - Task dependencies reference known task IDs and do not create cycles or execution deadlock.
 - Task status, dependency, and tier policy allow safe scheduler decisions.
 - `in_progress` `T0` / `T1` tasks have a `.protocols/<TASK_ID>/` directory.
@@ -171,8 +179,6 @@ Errors block autonomous/autopilot progression:
 - `TASKS_FROM_UNCLARIFIED_FEATURE` in `--strict`
 - `TASK_INDEX_INVALID`
 - `TASK_INDEX_EMPTY` in `--strict`
-- `TASK_SCOPE_EMPTY` for `--strict --scope FT-000` without an indexed FT-000
-  record
 - `TASK_RECORD_MISSING`
 - `TASK_RECORD_INVALID`
 - `TASK_W0_NON_FOUNDATION`

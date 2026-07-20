@@ -97,8 +97,7 @@ sources. `/mb-sync` does not run full `node scripts/mb-lint.mjs` or
 
 In scheduler flow, `/autonomous` or `/autopilot` is the sole owner that runs
 authoritative post-sync lint and then `/mb-doctor --strict` before promotion or
-success, using `--scope FT-000` while the active scheduler scope is Foundation.
-In manual flow, the named explicit top-level caller/owner runs the
+success. In manual flow, the named explicit top-level caller/owner runs the
 applicable post-sync lint/doctor before its next handoff. A bare skeleton or
 task-local manual T0/T1 closure does not gain a new full sync, lint, or strict
 doctor requirement.

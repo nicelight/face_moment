@@ -21,7 +21,7 @@ type: product-brief
 ## 1. One-liner
 
 Face Moment автоматически находит профессиональные фотографии участников
-one-SPA pilot, показывает четыре персональных teaser на Promo display и
+one-СПА pilot, показывает четыре персональных teaser на Promo display и
 переносит найденную session на телефон по QR без повторного selfie.
 
 ## 2. Target Users
@@ -29,13 +29,13 @@ one-SPA pilot, показывает четыре персональных teaser
 - Участник pilot — тестировщик пользовательского сценария.
 - Фотограф — загружает свежие готовые JPEG и получает новый канал контакта с
   потенциальным покупателем.
-- Оператор Face Moment/SPA — контролирует batches, searchable readiness, Promo и
+- Оператор Face Moment/СПА — контролирует batches, searchable readiness, Promo и
   диагностику.
 - Разработчик приложения — расследует attempts и browser/server logs, размечает
   результаты и подбирает thresholds/quality gates.
-- После pilot: посетитель SPA как покупатель полного пакета фотографий.
+- После pilot: посетитель СПА как покупатель полного пакета фотографий.
 
-Экономический заказчик будущего продукта пока является гипотезой: SPA, фотограф
+Экономический заказчик будущего продукта пока является гипотезой: СПА, фотограф
 или их коммерческое партнёрство.
 
 ## 3. Problem
@@ -55,13 +55,13 @@ one-SPA pilot, показывает четыре персональных teaser
   context.
 
 Все варианты требуют больше инициативы посетителя и хуже используют момент его
-выхода из SPA.
+выхода из СПА.
 
 ## 5. Value Proposition
 
 - Участник сразу видит свои фотографии и продолжает session одним QR scan.
 - Фотограф своевременно привлекает внимание потенциального покупателя.
-- SPA получает автоматический Promo без полноценного touchscreen kiosk.
+- СПА получает автоматический Promo без полноценного touchscreen kiosk.
 - Команда получает воспроизводимые diagnostics для настройки камеры, pipeline,
   thresholds, UX и latency.
 
@@ -76,7 +76,7 @@ authenticated JPEG batch upload
 → best-effort face search
 → четыре low-quality preview без watermark
 → QR continuation без повторного selfie
-→ phone landing с SPA, датой, teaser и N
+→ phone landing с СПА, датой, teaser и N
 ```
 
 Обрабатываются до пяти лучших face detections. Group flow поддерживается текущим
@@ -90,17 +90,17 @@ Post-pilot paid product продаёт весь найденный пакет з
 
 ## 7. MVP Scope
 
-- одна выбранная SPA и ограниченная группа тестировщиков;
+- одна выбранная СПА и ограниченная группа тестировщиков;
 - 43-inch landscape display, baseline 16:9 / 1920×1080;
 - automatic sensor-triggered capture с дистанции 3–5 метров;
-- authenticated direct web upload готовых JPEG с подтверждением SPA,
+- authenticated direct web upload готовых JPEG с подтверждением СПА,
   authoritative `visit_date` и batch manifest;
-- background processing и exact face search в пределах SPA, даты и совместимой
+- background processing и exact face search в пределах СПА, даты и совместимой
   pipeline revision;
 - best-effort group processing до пяти detections без tracking/clustering;
 - Promo при наличии четырёх уникальных подходящих фотографий;
 - четыре low-quality preview и QR без watermark;
-- QR continuation page без нового selfie: SPA, дата, teaser, `N` и post-pilot
+- QR continuation page без нового selfie: СПА, дата, teaser, `N` и post-pilot
   CTA полного пакета;
 - diagnostic bundle каждой попытки с retention 90 дней;
 - developer-only `Attempts`, `Log Explorer` и `Calibration` в существующем
@@ -125,7 +125,7 @@ Post-pilot paid product продаёт весь найденный пакет з
 
 - Минимум 19 из 20 попыток показывают полностью видимый и сканируемый QR менее
   чем за 10 секунд от `reference_series_ready_at`.
-- Landing каждой завершённой попытки правильно показывает SPA, `visit_date` и
+- Landing каждой завершённой попытки правильно показывает СПА, `visit_date` и
   согласованные с той же session teaser и `N`.
 - Для каждой попытки создан diagnostic bundle.
 - Не менее 95% JPEG подтверждённых batches становятся searchable менее чем за
@@ -136,13 +136,13 @@ Post-pilot paid product продаёт весь найденный пакет з
 
 ## 10. Constraints
 
-- один центральный CPU-only сервер в РФ и одна pilot SPA;
+- один центральный CPU-only сервер в РФ и одна pilot СПА;
 - без external cloud face-recognition API;
 - capture запускается автоматически, без действия участника;
 - только участники pilot и 90-day diagnostics;
 - no-watermark policy для всех preview; originals в pilot не выдаются;
 - PostgreSQL/MinIO не публикуются наружу, public boundary использует HTTPS;
-- поиск ограничен SPA, датой/периодом и совместимой pipeline revision;
+- поиск ограничен СПА, датой/периодом и совместимой pipeline revision;
 - архитектура усложняется только после измеримого bottleneck.
 
 ## 11. Assumptions
@@ -150,7 +150,7 @@ Post-pilot paid product продаёт весь найденный пакет з
 - У каждого тестировщика заранее есть минимум четыре searchable фотографии.
 - Фотограф загружает JPEG сразу после законченной съёмочной серии.
 - Serving pipeline и reference threshold откалиброваны до acceptance run.
-- Конкретные camera, lens, sensor и lighting выбираются после обследования SPA.
+- Конкретные camera, lens, sensor и lighting выбираются после обследования СПА.
 
 ## 12. Risks
 
@@ -164,7 +164,7 @@ Post-pilot paid product продаёт весь найденный пакет з
 
 ## 13. Open Questions
 
-- Какая SPA и геометрия прохода выбраны для pilot?
+- Какая СПА и геометрия прохода выбраны для pilot?
 - Какие camera, lens, passage sensor и lighting проходят validation?
 - Какие final QR/browser TTL и expired-session UX используются?
 - Какая field validation обязательна перед запуском на реальных посетителях?
@@ -176,7 +176,7 @@ Post-pilot paid product продаёт весь найденный пакет з
 
 ## 14. PRD Input Summary
 
-PRD описывает только one-SPA pilot и заканчивается проверенным QR
+PRD описывает только one-СПА pilot и заканчивается проверенным QR
 continuation. Обязательные решения: automatic Promo, authenticated JPEG upload,
 четыре no-watermark teaser, continuation без selfie, текущий best-effort group
 algorithm, 90-day diagnostics и performance acceptance `19/20 under 10s`.
