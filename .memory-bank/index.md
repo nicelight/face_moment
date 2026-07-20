@@ -38,7 +38,7 @@ status: active
 - [.memory-bank/workflows/index.md](workflows/index.md): Workflow router and tier/execution/sync policies.
 
 - [.memory-bank/spec-index.md](spec-index.md): Pure SDD spec registry and planned-spec index.
-- [.memory-bank/spec-backbone.md](spec-backbone.md): Pre-PRD framing status and global backbone state for `/prd` and `/spec-design`.
+- [.memory-bank/spec-backbone.md](spec-backbone.md): Pre-PRD framing status and global backbone state for `/write-prd` and `/spec-design`.
 - `.memory-bank/user-scenarios.md`: optional user scenarios and architecture implications when created by `/spec-init` or `/spec-design`.
 - [.memory-bank/glossary.md](glossary.md): Общий словарь терминов и доменных значений.
 - [.memory-bank/invariants.md](invariants.md): Глобальные MUST/NEVER правила.

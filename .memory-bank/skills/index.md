@@ -5,7 +5,43 @@ status: active
 # Skills
 
 ## Installed
-- cold-start
+<!-- BEGIN DEVRAILS INSTALLED SKILLS -->
+
+| Skill | Codex `.agents` | Claude `.claude` |
+| --- | --- | --- |
+| <code>add-tests</code> | yes | yes |
+| <code>autonomous</code> | yes | yes |
+| <code>autopilot</code> | yes | yes |
+| <code>brainstorm</code> | yes | yes |
+| <code>brief</code> | yes | yes |
+| <code>cold-start</code> | yes | yes |
+| <code>constitution</code> | yes | yes |
+| <code>context-manifest</code> | yes | yes |
+| <code>discuss</code> | yes | yes |
+| <code>exe</code> | yes | yes |
+| <code>feature-doctor</code> | yes | yes |
+| <code>feature-to-tasks</code> | yes | yes |
+| <code>fill</code> | yes | yes |
+| <code>find-skills</code> | yes | yes |
+| <code>foundation-to-tasks</code> | yes | yes |
+| <code>map-codebase</code> | yes | yes |
+| <code>mb-doctor</code> | yes | yes |
+| <code>mb-garden</code> | yes | yes |
+| <code>mb-init</code> | yes | yes |
+| <code>mb-sync</code> | yes | yes |
+| <code>prd-to-features</code> | yes | yes |
+| <code>red-verify</code> | yes | yes |
+| <code>review-feat-plan</code> | yes | yes |
+| <code>review-tasks-plan</code> | yes | yes |
+| <code>spec-auto</code> | yes | yes |
+| <code>spec-design</code> | yes | yes |
+| <code>spec-init</code> | yes | yes |
+| <code>verify</code> | yes | yes |
+| <code>write-prd</code> | yes | yes |
+
+Используй guidance ниже только для skill, отмеченного как `yes` в активной runtime surface.
+
+<!-- END DEVRAILS INSTALLED SKILLS -->
 
 ## When to use
 - Bootstrap skeleton: mb-init
