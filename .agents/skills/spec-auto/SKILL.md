@@ -28,8 +28,9 @@ Supported arguments:
 - clarified PRD, product, requirements, epics, and product features;
 - `.memory-bank/spec-backbone.md` and pure `.memory-bank/spec-index.md`;
 - a Global Backbone Status of `complete`, or valid `minimal` with explicit
-  `not_applicable` rationale; if missing, invoke/perform `/spec-design --all`
-  under the same unattended decision rules;
+  `not_applicable` rationale, plus positive integer `Planning Revision`; if
+  missing or invalid, invoke/perform `/spec-design --all` under the same
+  unattended decision rules;
 - `.memory-bank/foundation.md` with an explicit decision and, when foundation
   work is required, a closed Foundation Gate before product task handoff;
 - relevant canonical specs and accepted operator decisions.
@@ -42,17 +43,29 @@ argument. Exclude reserved `FT-000` from product feature targets.
 <hard_invariants>
 - `/spec-auto` does not ask the operator during the unattended run and never
   treats that as permission to choose for them.
-- It may apply only decisions already fixed by Constitution, clarified PRD,
-  accepted operator policy/decision, production baseline, ADR, or canonical
-  spec.
+- It may apply a material target decision only when already fixed by
+  Constitution, an explicit accepted operator decision or policy, an active
+  accepted ADR, an authoritative canonical spec, or clarified product sources.
+- Runtime observations, production code, and mapped baseline establish current
+  behavior, constraints, and compatibility or migration evidence only; they do
+  not authorize a new target architecture, contract, data ownership, or
+  migration route.
 - Do not invent external contracts, architecture boundaries, security posture,
   migrations, irreversible data behavior, Foundation sufficiency, or competing
   canonical-path resolution.
+- In post-PRD modes, inherit the accepted global architecture and material
+  module/slice map. Do not reopen, weaken, or replace them with a framework
+  recommendation, feature-local heuristic, or one-slice-per-feature mapping.
 - Keep spec-index a registry, use subject-based canonical paths, and do not
   create feature-owned design hubs, a coverage-map artifact, task records, or a
   new status/terminal state.
 - Preserve feature status vocabulary
   `spec_design_status: complete|not_required|blocked`.
+- `--init` preserves Global Backbone `Planning Revision`. Feature design changes
+  it only under the global-rule rule below and never uses task lifecycle state as
+  a freshness marker.
+- Current-state drift or baseline correction alone does not change Planning
+  Revision while the accepted target remains unchanged.
 </hard_invariants>
 
 <operator_decisions>
@@ -70,6 +83,13 @@ When a relevant ambiguity or branch is not already resolved authoritatively:
 Do not apply a recommendation, conservative/reversible default, or agent
 assumption as the missing operator decision. Non-decision implementation detail
 may still be chosen under the agent-discretion contract below.
+
+A difference between current state and an accepted target is not itself a
+blocking authority conflict. When the target and applicable compatibility or
+migration constraints yield one unambiguous route, record the delta and route
+in the existing owning artifact and continue without re-asking. Conflicting
+target authorities or an unresolved material reconciliation branch use the
+existing blocker above.
 </operator_decisions>
 
 <required_outputs>
@@ -113,8 +133,23 @@ Rules:
 - update Architecture Spine `AD-*` under the same KISS and evidence rules as
   `/spec-design` when shared-boundary, contract, state/data, runtime, security,
   or strict pressure requires executable global rules;
+- for evidenced runtime/state sensitivity, put any required initial-state,
+  safe-rerun, observable-result, and cleanup/isolation proof in the owning
+  canonical spec; do not add it to simple/stateless features;
+- when feature design durably changes an active global `AD-*` or another global
+  rule in a way that can change downstream planning, increment Global Backbone
+  `Planning Revision` exactly once under `/spec-design` rules; otherwise preserve
+  it;
 - carry relevant Architecture Spine, ADR, boundary, contract, and verification
   links into feature `spec_design_links`;
+- when the accepted target defines capability slices, preserve the applicable
+  owning slice/code root, semantic and write ownership, public boundary,
+  allowed/forbidden dependencies, cross-slice orchestration owner, and proof
+  path in the owning canonical specs; carry the directly relevant architecture
+  and boundary paths into feature `spec_design_links`;
+- if the accepted style requires capability slices but a feature depends on a
+  missing or materially ambiguous slice boundary, mark the feature `blocked`
+  and use the existing `/spec-design` resume route instead of choosing it;
 - update `.memory-bank/spec-index.md` only as registry/discovery routing.
 
 Set feature status:
@@ -152,6 +187,9 @@ For feature design, verify:
 - no relevant area remains planned, candidate, unknown, conflicting, or hidden
   behind an assumption when status is `complete`;
 - spec-index has one active path per concrete concern and no decision body;
+- an accepted capability-sliced target remains legible through the feature's
+  direct architecture/boundary links without changing global ownership or
+  treating a product feature as a slice;
 - blockers use existing statuses/terminal states and name the interactive
   resume route.
 
@@ -167,6 +205,10 @@ sources used, blockers, and one immediate next command:
 - successful `--init` -> `/prd-to-features`;
 - ready backbone with required foundation work not yet complete ->
   `/foundation-to-tasks` or continuation of its existing gate;
+- Planning Revision increased after indexed task generation ->
+  `/feature-to-tasks --all`, then `/review-tasks-plan --all`; previous product
+  task-plan approvals are stale, task statuses remain unchanged, and this branch
+  overrides the normal feature handoff;
 - successful one-feature design -> `/feature-to-tasks FT-<NNN>`;
 - successful `--all` -> `/feature-to-tasks --all`;
 - unresolved decision -> named interactive repair skill; no task handoff.

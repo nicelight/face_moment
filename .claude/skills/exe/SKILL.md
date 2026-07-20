@@ -30,6 +30,12 @@ Require and resolve:
 - behavior specs only when linked in `source_artifacts` and useful as
   non-authoritative examples.
 
+For a product task whose feature is not `FT-000`, also require a positive Global
+Backbone `Planning Revision` and the latest feature-specific
+`/review-tasks-plan` `APPROVE` report with exact standalone
+`REVIEWED_PLANNING_REVISION: <N>` equal to it. FT-000 keeps its dedicated
+Foundation gate and does not use product task-plan review.
+
 Use task `purpose`, `success_outcome`, `anti_goals`, `source_artifacts`,
 `normative_inputs`, `constraints`, `invariants`, `verification_targets`, and
 `runtime_context` when present. For T0/T1, do not load broad global planning
@@ -43,16 +49,27 @@ Point-of-use preflight must confirm:
 - no recorded blocker or unresolved required gate in the resolved task context;
 - success is observable from AC/REQ/spec/gates/verification targets;
 - task, feature, plan, backbone, and linked specs do not contradict;
+- for a product task, reviewed and current Planning Revision are equal;
 - T2/T3 direct canonical coverage is applicable and concrete enough to avoid
   guessing shape, rules, errors, and verification;
 - actual work fits the semantic outcome/AC/REQ/spec boundary, tier, deliberate
-  hard allowed/forbidden scopes, and stop conditions.
+  hard allowed/forbidden scopes, and stop conditions;
+- when linked rules define architecture boundaries, the tactic keeps state
+  changes and cross-module orchestration with their accepted owners, uses
+  required public boundaries, preserves source-of-truth and dependency
+  direction, creates no unaccepted cross-module contract or forbidden
+  command/write bypass, and honors linked orchestration-placement rules;
 - the tier-required existing protocol is coherent, or every missing protocol
   file can be initialized from its framework-owned template before task start.
 
 Stop before implementation if the task is missing/malformed, already
 `blocked|failed|done`, has unmet dependencies, lacks required T2/T3 context, is
 objectively contradictory, is unverifiable, or is materially under-tiered.
+
+If product planning revision evidence is missing, invalid, or mismatched, every
+previous product task-plan approval is stale. Leave all task statuses unchanged
+and route `/feature-to-tasks --all`, then `/review-tasks-plan --all`, the
+applicable doctor gate, and retry the selected task.
 
 For a selected `planned` task, write `planned -> ready` only when this preflight
 proves it runnable; otherwise leave it `planned` and stop. A selected `ready`
@@ -85,6 +102,10 @@ replay it.
   and inside hard scopes.
 - A non-empty `runtime_context.write_boundary` is hard. Never touch
   `forbidden_scope`; any needed widening or accidental violation stops work.
+- Limit architecture checks to direct task links and the actual change surface;
+  do not turn task execution into a broad repository architecture audit. A
+  tactic that needs or introduces a departure from an applicable linked rule
+  stops work.
 - Preserve unrelated user changes and do not edit generated package-local
   `skills/*/{agents,references,scripts}/shared-*` files.
 - Do not change tier in place; tier is embedded in task identity, file path,
@@ -107,6 +128,10 @@ before choosing or widening work.
 - Feature/task repair or tier rebuild routes to
   `/feature-to-tasks FT-<NNN>`; shared/global design routes to `/spec-design`;
   product clarification routes to `/feature-doctor FT-<NNN>`.
+- Current implementation drift that the task can handle inside its accepted
+  target and semantic boundary is evidence, not a new design choice. If work
+  requires changing accepted write authority, public boundary, source of truth,
+  orchestration owner, or dependency direction, route it to `/spec-design`.
 - Unattended/scheduler flow returns a blocker without choosing, keeps the task
   non-closed, and tells the scheduler to use
   `HALT_CLARIFICATION_REQUIRED` or `HALT_BLOCKING_QUESTIONS` with the exact
@@ -178,7 +203,8 @@ Implementation evidence must record:
 - task/spec outcome compliance;
 - exact commands, results, concise output/evidence paths, and unavailable-gate
   blockers;
-- linked boundary/spec rules followed and any drift discovered;
+- linked boundary/spec rules followed, including write owner and public
+  boundary when applicable, and any drift discovered;
 - next verification targets and recommended owner.
 
 Run task gates, applicable linked-spec verification targets, and the cheapest

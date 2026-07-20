@@ -27,11 +27,12 @@ status: active
 2. Принимай `<devrails-checkout>` только когда путь предоставлен оператором или
    `scripts/install-framework.mjs` уже можно проверить по известному пути.
    Never guess or invent `<devrails-checkout>`.
-3. Верни external bootstrap command, заменив оба placeholders проверенными,
-   shell-safe paths:
+3. Объясни, что route установит или обновит полный DevRails runtime command set
+   и создаст skeleton. Затем верни external bootstrap command, заменив оба
+   placeholders проверенными, shell-safe paths:
 
    ```bash
-   node <devrails-checkout>/scripts/install-framework.mjs --bootstrap-only --target <target-repo> --yes
+   node <devrails-checkout>/scripts/install-framework.mjs --bootstrap --target <target-repo> --yes
    ```
 
 4. Если доступный DevRails checkout неизвестен, остановись с честным blocker:
@@ -106,7 +107,8 @@ status: active
 - Product JSON task queue unattended: используй `/autopilot` только когда
   product records уже подготовлены, Foundation is `not_required` or its named
   final gate is `done` with no unresolved FT-000 work, every task-linked
-  product feature has latest `/review-tasks-plan FT-<NNN>` `APPROVE`, and strict
-  doctor passes. `/autopilot` never executes FT-000
+  product feature has latest `/review-tasks-plan FT-<NNN>` `APPROVE` for the
+  current positive Global Backbone Planning Revision, and strict doctor passes.
+  `/autopilot` never executes FT-000
 - full unattended (`PRD → done`): используй `/autonomous`
 </process>

@@ -35,10 +35,12 @@ Preflight:
   install, deployment, production write, secret read, or out-of-repo
   infrastructure change.
 
-If a required workflow is missing, halt before creating/reusing the run
-protocol or making any other durable write with `HALT_POLICY_VIOLATION`. Name
-every missing path in the reason. The repair owner is the external DevRails
-installer: from an available DevRails checkout run
+If a required workflow is missing, return `HALT_POLICY_VIOLATION` in the command
+response only, before creating/reusing the run protocol or making any other
+durable write. Name every missing path in the reason and state that no run
+protocol was started or changed; leave any existing
+`.protocols/AUTONOMOUS-RUN/*` untouched. The repair owner is the external
+DevRails installer: from an available DevRails checkout run
 `node scripts/install-framework.mjs --bootstrap --target <project-path> --yes --sync`,
 then resume `/autonomous`. Do not copy missing workflow rules inline.
 
@@ -91,10 +93,24 @@ state, not a second task registry.
 </hard_invariants>
 
 <operator_decisions>
-Unattended mode never answers a material operator branch. It may apply only a
-decision already fixed by Constitution, clarified PRD, accepted operator
-policy/decision, production baseline, ADR, canonical spec, task card, or other
-authoritative evidence.
+Unattended mode never answers a material operator branch. It may apply a
+material target decision only when it is already fixed by Constitution, an
+explicit accepted operator decision or policy, an active accepted ADR, an
+authoritative canonical spec, or clarified product sources.
+
+Runtime observations, production code, and mapped baseline may establish
+current behavior, constraints, and compatibility or migration evidence; they do
+not authorize a new target architecture, contract, data ownership, or migration
+route. Indexed task cards and workflow state remain authoritative for their
+existing task, lifecycle, scheduler, and verification fields; they are not
+independent sources of a new product or architecture target.
+
+A difference between current state and an accepted target is a reconciliation
+delta, not an authority conflict. If the accepted target and applicable
+constraints yield one unambiguous route, record it in the existing owning
+artifact and continue without re-asking. Conflicting target authorities or an
+unresolved material compatibility, migration, or irreversible-behavior branch
+must halt through the existing route below.
 
 When any child skill or scheduler step finds an unresolved product/design/
 contract/state/data/storage/security/compatibility/task-boundary/tier/
@@ -158,7 +174,8 @@ contract proves it already complete:
 4. Product tasking:
    - `/feature-to-tasks --all`;
    - fresh-context `/review-tasks-plan FT-<NNN>` separately for every
-     task-linked product feature until `APPROVE`, within review budget;
+     task-linked product feature until `APPROVE` records the current positive
+     Global Backbone Planning Revision, within review budget;
    - lint plus `/mb-doctor --strict` after the real product queue exists.
 5. Delegate the strict-ready product queue to default full-queue `/autopilot`.
 
@@ -235,6 +252,8 @@ Use `HALT_FAILURE_BUDGET` or `HALT_BUDGET_EXCEEDED` when exceeded.
 - every T3 closure has functional PASS, task semantic-pass, and exact human
   checkpoint;
 - every task-linked product feature has latest task-plan `APPROVE`;
+- every such approval records the current positive Global Backbone Planning
+  Revision;
 - latest lint and `/mb-doctor --strict` pass;
 - run protocol and authoritative task records agree.
 
@@ -251,8 +270,14 @@ Allowed terminal states remain exactly:
 </validation>
 
 <handoff_contract>
-Write the terminal state, reason, evidence paths, unresolved operator questions,
-and exact resume command to `.protocols/AUTONOMOUS-RUN/status.md`. On success,
-report the closed queue and final gate evidence; on halt, do not claim partial
-coverage as completion.
+After required-workflow preflight passes and the run protocol exists, record the
+terminal result in `.protocols/AUTONOMOUS-RUN/status.md`:
+- on halt, write the state, reason, evidence paths, any unresolved operator
+  questions, and exact resume command; do not claim partial coverage as
+  completion;
+- on success, write `SUCCESS` and report the closed queue and final gate
+  evidence.
+
+The missing-workflow branch above is response-only because that invocation
+neither creates, reuses, nor changes a run protocol.
 </handoff_contract>

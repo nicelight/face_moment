@@ -41,6 +41,10 @@ Read current:
 - only linked or otherwise necessary canonical specs and relevant doctor
   findings.
 
+Require Global Backbone `Planning Revision` to be a positive integer. A missing,
+zero, or invalid revision is a blocking design-readiness gap owned by
+`/spec-design`.
+
 For `--all`, repeat this bounded feature-scoped input set; do not collapse the
 queue into one broad reviewer prompt.
 </input_contract>
@@ -93,6 +97,11 @@ Use a feature-specific stage ID such as `S-TASKS-FT-001`. For `--all`, keep one
 independent report and verdict per feature; an optional summary must not replace
 them.
 
+Every feature report records the exact standalone marker
+`REVIEWED_PLANNING_REVISION: <N>` for the current Global Backbone Planning
+Revision, for both `APPROVE` and `REJECT`. `APPROVE` is valid only while this
+value equals the current positive Planning Revision.
+
 Cover:
 
 1. Structural integrity
@@ -113,6 +122,22 @@ Cover:
      canonical path per concrete concern; sufficient shape/rules/errors/
      verification block; relevant AD/boundary/contract links; no hub-only T2/T3
      design; persistence proof where applicable; no source contradictions.
+   - only when the accepted target defines modules or capability slices, verify
+     that each affected task makes its primary owning module/slice and code root
+     discoverable through the card and direct links, carries applicable public
+     boundary, semantic/write-owner, and forbidden-bypass rules, names one
+     orchestration owner for a cross-slice outcome, and has a credible proof
+     path. For a capability-sliced target, that owner must be one capability
+     slice; reject business
+     orchestration placed in an HTTP/UI/bot handler, generic utility/shared
+     helper, or composition root, and reject an orchestration slice invented
+     during task planning rather than accepted in the global architecture.
+     Reject when execution would have to invent a material boundary; do not
+     require slices from an accepted architecture that uses another primary
+     change unit.
+   - reject when an applicable linked architecture rule loses its existing
+     mechanical gate or required runtime reproducibility proof; require neither
+     without canonical evidence.
 4. Execution readiness
    - correct tier; every task status is legal and consistent with its lifecycle
      context and owner; `ready` is valid iff every dependency is `done` and no
@@ -121,7 +146,8 @@ Cover:
    - existing `in_progress|blocked|done|failed` records are reviewed for evidence and
      ownership consistency, never normalized or mutated by this skill;
      Foundation final gate `done` and linked when required; complete T2/T3
-     single-card handoff; hard runtime scope respected.
+     single-card handoff; hard runtime scope respected; no slice code root was
+     mechanically treated as a task hard write boundary.
 
 Verdicts:
 - `APPROVE`: all coverage groups pass. Non-blocking notes are allowed.
@@ -136,7 +162,8 @@ replace downstream `/mb-doctor --strict`.
 <validation>
 Before publishing the verdict, verify that every claim cites an inspected task,
 plan, spec, requirement, dependency, or doctor finding; the report uses only
-`APPROVE|REJECT`; and no reviewed durable state was mutated.
+`APPROVE|REJECT`; its reviewed revision marker exactly matches the current
+positive Planning Revision; and no reviewed durable state was mutated.
 </validation>
 
 <handoff_contract>
