@@ -38,8 +38,9 @@ Read current:
   task index, and Foundation decision when present;
 - target feature, implementation plan, all indexed target task records, and
   their dependency records;
-- only linked or otherwise necessary canonical specs and relevant doctor
-  findings.
+- direct canonical-spec routes and relevant doctor findings. Read full
+  architecture sources in the main context only when another review concern or
+  the architecture review requires it.
 
 Require Global Backbone `Planning Revision` to be a positive integer. A missing,
 zero, or invalid revision is a blocking design-readiness gap owned by
@@ -62,6 +63,9 @@ queue into one broad reviewer prompt.
   create a simulation artifact, field, report, status, or replacement queue.
 - Rubrics below are coverage criteria, not a mandatory reasoning order or an
   exhaustive limit on reviewer probes.
+- Obtain one bounded architecture review per reviewed feature from a fresh
+  Reviewer using the installed `/architecture-review` skill. If fresh
+  delegation is unavailable or fails, perform the same review locally.
 </hard_invariants>
 
 <operator_decisions>
@@ -83,9 +87,9 @@ already resolves the branch.
 
 <agent_discretion>
 The reviewer chooses reading order, search tools, working notes, additional
-adversarial probes, and verification depth proportional to risk. The four
-coverage groups may be explored in any useful order, but all must be addressed
-before the verdict.
+adversarial probes, verification depth, and when enough context exists to
+launch the architecture Reviewer. The four coverage groups may be explored in
+any useful order, but all must be addressed before the verdict.
 </agent_discretion>
 
 <required_outputs>
@@ -101,6 +105,16 @@ Every feature report records the exact standalone marker
 `REVIEWED_PLANNING_REVISION: <N>` for the current Global Backbone Planning
 Revision, for both `APPROVE` and `REJECT`. `APPROVE` is valid only while this
 value equals the current positive Planning Revision.
+
+When delegation is available, give one fresh `Reviewer` the target feature ID,
+product and relevant epic paths, implementation plan, task records, and
+discovered direct architecture/spec routes. Require it to read
+`.memory-bank/roles/reviewer.md` and the installed `/architecture-review` skill,
+then return its compact Reviewer report. If delegation is unavailable or fails,
+perform the same review locally. Include the resulting verdict and evidence in
+the main report; do not create a separate architecture-review artifact. For
+`--all`, repeat this once per feature. Avoid rereading the same full architecture
+sources unless needed to resolve a gap, conflict, or another coverage group.
 
 Cover:
 
@@ -122,22 +136,9 @@ Cover:
      canonical path per concrete concern; sufficient shape/rules/errors/
      verification block; relevant AD/boundary/contract links; no hub-only T2/T3
      design; persistence proof where applicable; no source contradictions.
-   - only when the accepted target defines modules or capability slices, verify
-     that each affected task makes its primary owning module/slice and code root
-     discoverable through the card and direct links, carries applicable public
-     boundary, semantic/write-owner, and forbidden-bypass rules, names one
-     orchestration owner for a cross-slice outcome, and has a credible proof
-     path. For a capability-sliced target, that owner must be one capability
-     slice; reject business
-     orchestration placed in an HTTP/UI/bot handler, generic utility/shared
-     helper, or composition root, and reject an orchestration slice invented
-     during task planning rather than accepted in the global architecture.
-     Reject when execution would have to invent a material boundary; do not
-     require slices from an accepted architecture that uses another primary
-     change unit.
-   - reject when an applicable linked architecture rule loses its existing
-     mechanical gate or required runtime reproducibility proof; require neither
-     without canonical evidence.
+   - integrate the architecture verdict and findings; reject a blocking accepted-boundary,
+     ownership, dependency, invariant, or proof-path finding, and resolve any
+     gap that can change the verdict.
 4. Execution readiness
    - correct tier; every task status is legal and consistent with its lifecycle
      context and owner; `ready` is valid iff every dependency is `done` and no
@@ -148,6 +149,12 @@ Cover:
      Foundation final gate `done` and linked when required; complete T2/T3
      single-card handoff; hard runtime scope respected; no slice code root was
      mechanically treated as a task hard write boundary.
+   - when accepted module/slice boundaries apply, confirm each affected task
+     card and its direct links make the primary owner/code root, public boundary,
+     semantic/write owner, forbidden bypasses, eligible cross-slice orchestration
+     owner when relevant, applicable forbidden technical placements, and proof
+     path directly discoverable; do not require slices from an accepted
+     architecture that uses another primary change unit.
 
 Verdicts:
 - `APPROVE`: all coverage groups pass. Non-blocking notes are allowed.

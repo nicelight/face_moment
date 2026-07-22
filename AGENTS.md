@@ -12,8 +12,11 @@ Planning/design priming:
 6. Read `.memory-bank/index.md` (table of contents)
 7. If no explicit top-level role is given, use ROLE: GENERAL and read `.memory-bank/roles/general.md`.
 8. If ROLE: ORCHESTRATOR, read `.memory-bank/roles/orchestrator.md`.
-9. If delegated worker, read `.memory-bank/roles/worker.md`.
-10. Read task/feature-specific docs
+9. If ROLE: ARCHITECT, read `.memory-bank/roles/architect.md`.
+10. If ROLE: Explorer, read `.memory-bank/roles/explorer.md`.
+11. If ROLE: Implementer, read `.memory-bank/roles/implementer.md`.
+12. If ROLE: Reviewer, read `.memory-bank/roles/reviewer.md`.
+13. Read task/feature-specific docs
 
 Manual execution priming for `/exe TASK-NNN-TN-FT-NNN-WN`:
 1. Read `AGENTS.md` (this guide)
@@ -39,15 +42,51 @@ The role is fixed and cannot be changed.
 Full role contracts live in:
 - `.memory-bank/roles/orchestrator.md`
 - `.memory-bank/roles/general.md`
-- `.memory-bank/roles/worker.md`
+- `.memory-bank/roles/architect.md`
+- `.memory-bank/roles/explorer.md`
+- `.memory-bank/roles/implementer.md`
+- `.memory-bank/roles/reviewer.md`
 
-## KISS / Avoid overengineering
-- Implement the simplest solution that fully satisfies current requirements and specs.
-- Prefer existing project patterns over new abstractions, layers, registries, frameworks, or workflow artifacts.
-- Do not design for hypothetical future scale, integrations, configurability, or reuse without a concrete current requirement.
-- Do not introduce enterprise architecture or additional process merely because it may be useful later.
-- Added complexity must be justified by an existing requirement, constraint, risk, or demonstrated duplication.
-- KISS does not permit skipping required correctness, security, compatibility, or verification gates.
+Delegated Explorer, Implementer, and Reviewer analyze the consequences of their
+work and report potential or evident problems.
+
+## KISS / Complexity and Requirement Gate
+
+- Use the simplest implementation that satisfies current accepted requirements.
+- A discovered risk, edge case or possible failure is not automatically a new
+  requirement.
+- Do not expand requirements, specifications or implementation scope merely to
+  prevent a theoretically possible problem.
+
+Before promoting a problem into a requirement or design decision, perform a
+brief internal assessment:
+
+- verify that the scenario is realistic in the current deployment;
+- estimate its likelihood, consequence and recoverability;
+- check whether restart, retry, re-upload, manual rerun or maintenance is enough;
+- compare the expected problem cost with implementation, testing, operational
+  and maintenance cost of the remedy.
+
+Decision rule:
+
+- remedy cost materially exceeds expected problem cost:
+  accept or defer the risk and do not generate a requirement;
+- problem is covered by an accepted requirement:
+  implement the cheapest sufficient remedy;
+- serious problem is not covered by an accepted requirement:
+  do not expand the target; ask the operator;
+- small local safeguard with negligible cost and no new state/lifecycle:
+  implementation discretion is allowed.
+
+An accepted requirement authorizes the required outcome, not an unnecessarily
+complex mechanism.
+
+Agent-generated reviews, specifications, brainstorm results and best-practice
+recommendations cannot authorize their own complexity.
+
+Do not report speculative observations that were rejected before becoming real
+candidates. Always report evidenced defects and any issue affecting the
+requested verdict.
 
 ## Communication
 
@@ -91,7 +130,7 @@ After finishing a meaningful unit of work:
 - The caller selects a concrete task. `/exe` prepares/reconciles its tier
   protocol and neutral current Execution Attempt before writing
   `ready -> in_progress`; it never selects queue work.
-- Delegation and worker reports follow `.memory-bank/roles/orchestrator.md` and `.memory-bank/roles/worker.md`.
+- Delegation follows `.memory-bank/roles/orchestrator.md`; each delegated agent follows its assigned role contract.
 - T0/T1 may use compact `.protocols/TASK-NNN-TN-FT-NNN-WN/run.md`; compact evidence can be enough.
 - Scheduler mode: T2 requires full protocol state, applicable task/spec gates, and `/verify` `VERDICT: PASS`; per-task `/red-verify` is not required for T2 task closure.
 - Scheduler mode: T2 feature completion requires `/red-verify --feature FT-<ID>` with `SEMANTIC_VERDICT: semantic-pass` after all feature tasks are implemented, recorded in the feature doc. Run it when the last T2 feature task closes, before the wave-boundary `/mb-sync` and strict doctor.

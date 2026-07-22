@@ -22,7 +22,10 @@ status: active
 - [.memory-bank/mbb/index.md](mbb/index.md): Правила ведения Memory Bank (MBB).
 - [.memory-bank/roles/orchestrator.md](roles/orchestrator.md): Orchestrator role contract.
 - [.memory-bank/roles/general.md](roles/general.md): General role contract for one-agent execution.
-- [.memory-bank/roles/worker.md](roles/worker.md): Worker role contracts.
+- [.memory-bank/roles/architect.md](roles/architect.md): Architect role contract.
+- [.memory-bank/roles/explorer.md](roles/explorer.md): Explorer role contract.
+- [.memory-bank/roles/implementer.md](roles/implementer.md): Implementer role contract.
+- [.memory-bank/roles/reviewer.md](roles/reviewer.md): Reviewer role contract.
 - [.memory-bank/prd.md](prd.md): Clarified Product Requirements Document for the current one-СПА pilot.
 - [.memory-bank/product.md](product.md): Face Moment one-СПА pilot product
   identity, value, flow, constraints and non-goals (C4 L1).

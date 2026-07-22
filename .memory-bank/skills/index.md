@@ -10,6 +10,7 @@ status: active
 | Skill | Codex `.agents` | Claude `.claude` |
 | --- | --- | --- |
 | <code>add-tests</code> | yes | yes |
+| <code>architecture-review</code> | yes | yes |
 | <code>autonomous</code> | yes | yes |
 | <code>autopilot</code> | yes | yes |
 | <code>brainstorm</code> | yes | yes |
@@ -24,6 +25,7 @@ status: active
 | <code>fill</code> | yes | yes |
 | <code>find-skills</code> | yes | yes |
 | <code>foundation-to-tasks</code> | yes | yes |
+| <code>kiss-architect</code> | yes | yes |
 | <code>map-codebase</code> | yes | yes |
 | <code>mb-doctor</code> | yes | yes |
 | <code>mb-garden</code> | yes | yes |
