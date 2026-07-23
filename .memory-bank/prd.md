@@ -31,8 +31,9 @@ constitution_checked: true
   decisions.
 - [IDEA_APP.md](../IDEA_APP.md): application behavior, current best-effort
   search algorithm, data concepts and accepted KISS architecture boundaries.
-- [IDEA_INGEST.md](../IDEA_INGEST.md): authoritative pilot batch-ingest and
-  `ingest_to_searchable` semantics.
+- [IDEA_INGEST.md](../IDEA_INGEST.md): historical ingest evidence; the current
+  per-photo admission and `ingest_to_searchable` rules in this PRD supersede
+  its grouping and confirmation model.
 - [IDEA_OS.md](../IDEA_OS.md): server, display, security and deployment
   boundaries; recommendations explicitly marked there are not pilot gates.
 - [IDEA_DEBUG.md](../IDEA_DEBUG.md): concise normative input for the first
@@ -67,6 +68,10 @@ acceptance gates.
 - Remaining site/hardware selection and post-pilot commercial questions do not
   change current actors, core scenarios, feature boundaries, or acceptance and
   must not be converted into pilot requirements without a new product decision.
+- The current operator decision supersedes any historical Batch/manifest/
+  confirmation model: each Photo is admitted independently under the selected
+  СПА/date, and readers may observe a partial current-day photo set while
+  uploads are still in progress.
 - Source precedence and superseded `IDEA_*` defaults are recorded in
   [.memory-bank/spec-backbone.md](spec-backbone.md) for decomposition and later
   SDD work.
@@ -85,16 +90,17 @@ download and public use by ordinary СПА visitors are post-pilot context, not
 current delivery or acceptance scope.
 
 The same pilot includes a developer-only investigation and calibration contour
-inside the existing backend: correlated attempts, browser/server log search,
-manual per-person/per-detection annotation and explainable recommendations for
-face-match threshold and individual input quality gates.
+inside the backend delivered by this project: correlated attempts,
+browser/server log search, manual per-person/per-detection annotation and
+explainable recommendations for face-match threshold and individual input
+quality gates.
 
 ## Goals
 
 1. Validate an automatic `ingest -> searchable -> capture -> Promo -> QR ->
    phone continuation` path without participant action before QR scanning.
-2. Make at least 95% of accepted JPEGs from confirmed pilot batches searchable
-   in under 15 minutes from `batch.confirmed_at`.
+2. Make at least 95% of independently accepted unique JPEGs searchable in under
+   15 minutes from their server-side `photo.accepted_at`.
 3. Show a fully visible and scannable QR in under 10 seconds from
    `reference_series_ready_at` in at least 19 of 20 controlled attempts.
 4. Preserve СПА, `visit_date`, teaser and `N` consistently within the same
@@ -122,8 +128,8 @@ face-match threshold and individual input quality gates.
   the expired-session redirect target; this pilot owns only the redirect and
   expired-session data-isolation contract.
 - Yandex Disk or any other external ingest channel, RAW processing, OAuth to a
-  photographer's cloud account, Telegram ingest or EXIF-based automatic batch
-  splitting.
+  photographer's cloud account, Telegram ingest or EXIF-based automatic
+  grouping.
 - Watermarks on Promo or phone previews.
 - Guarantee that every unique person in a group receives a detection slot or is
   represented in the result.
@@ -140,6 +146,9 @@ face-match threshold and individual input quality gates.
   observability datastore/stack in the first version.
 - Automatic tuning of capture-window, frame-interval, group-selection,
   CPU/thread or UI/QR timing parameters.
+- A separate backup, replication or primary-storage-loss recovery system. The
+  pilot accepts loss of persisted data if its only primary disk or server is
+  irrecoverably lost.
 
 ## Users / Actors
 
@@ -154,15 +163,15 @@ face-match threshold and individual input quality gates.
 ### Photographer
 
 - Authenticates in the web application.
-- Creates and confirms JPEG batches immediately after a completed shooting
-  series.
-- Selects the СПА and authoritative `visit_date`, reviews accepted/rejected
-  files and observes processing/searchable status for their own batches; the
-  photographer has no diagnostic-page access.
+- Selects the СПА and authoritative `visit_date`, then uploads ready JPEGs
+  independently without creating or confirming a Batch.
+- Sees accepted, rejected and duplicate outcomes per file and observes each
+  accepted photo's processing/searchable state; the photographer has no
+  diagnostic-page access.
 
 ### Face Moment / СПА operator
 
-- Observes batch readiness, failures and Promo operation.
+- Observes photo readiness, failures and Promo operation.
 - Explicitly sets the active working `visit_date` for the pilot СПА in the
   server-side application before automatic attempts use that date for search.
 - May open a sanitized attempt summary containing outcome, stage timeline,
@@ -196,34 +205,36 @@ pilot actor or blocker.
 
 - **FR-ING-01** — The pilot MUST accept commercial photographs only through an
   authenticated direct web uploader over HTTPS and only as ready JPEG files.
-- **FR-ING-02** — The photographer MUST create a batch for one СПА and one
-  authoritative working `visit_date`; multiple batches on the same day are
-  allowed.
-- **FR-ING-03** — Before confirmation, the server MUST validate format and image
-  decoding, calculate a checksum and show accepted and rejected files.
-- **FR-ING-04** — Confirmation MUST freeze the batch manifest and
-  `confirmed_at`; EXIF time, filename and upload time may support sorting,
-  diagnostics and warnings but MUST NOT silently replace the confirmed
-  `visit_date`.
+- **FR-ING-02** — Before uploading, the photographer MUST select one СПА and one
+  authoritative working `visit_date`; each JPEG is admitted independently
+  under that scope without a Batch, manifest or confirmation step.
+- **FR-ING-03** — For each completed upload, the server MUST validate format and
+  image decoding, calculate SHA-256 and show its accepted, rejected or duplicate
+  outcome independently of every other file.
+- **FR-ING-04** — The selected `visit_date` stored with each accepted Photo is
+  authoritative. EXIF time, filename and upload time may support sorting,
+  diagnostics and warnings but MUST NOT silently replace it.
 - **FR-ING-05** — JPEG uniqueness MUST be enforced by
-  `(spa_id, visit_date, checksum_sha256)` across all batches. When the same file
-  is uploaded again for the same СПА and `visit_date`, the second uploaded copy
-  MUST be deleted, classified visibly as a duplicate and otherwise ignored: it
-  MUST NOT enter the confirmed manifest population or create a new `photo_id`,
-  object, processing job, searchable result, teaser candidate or contribution
-  to `N`.
-- **FR-ING-06** — Accepted originals MUST be stored in private object storage;
-  photo records and serving-pipeline processing jobs MUST be created
-  idempotently.
-- **FR-ING-07** — The uploader MUST expose explicit file/batch states covering
+  `(spa_id, visit_date, checksum_sha256)`. When the same file is uploaded again
+  for the same СПА and `visit_date`, the new uploaded object MUST be deleted,
+  classified visibly as a duplicate and otherwise ignored: it MUST NOT create a
+  new `photo_id`, processing state, searchable result, teaser candidate or
+  contribution to `N`.
+- **FR-ING-06** — After a valid unique original exists in private object
+  storage, one short PostgreSQL transaction MUST create its Photo and serving-
+  pipeline `pending` state together, set server-side `photo.accepted_at`, and
+  commit independently of every other upload. A private object left without a
+  Photo by a crash before commit is an acceptable orphan and MUST NOT require a
+  distributed transaction.
+- **FR-ING-07** — The uploader MUST expose explicit per-photo states covering
   `pending`, `processing`, `searchable`, `no_faces` and `failed`; `searchable`
   corresponds to `photo_pipeline_states.status = ready` for the serving
   pipeline revision.
-- **FR-ING-08** — `ingest_to_searchable` MUST use all unique accepted JPEGs in
-  confirmed pilot manifests as its population. Files still `pending`,
-  `processing`, `failed` or `no_faces` after 15 minutes remain SLO breaches;
-  pre-confirmation rejects, checksum duplicates and non-serving jobs are
-  excluded. Photographer delay before confirmation is measured separately.
+- **FR-ING-08** — `ingest_to_searchable` MUST use all independently accepted
+  unique JPEGs as its population and measure each from `photo.accepted_at`.
+  Files still `pending`, `processing`, `failed` or `no_faces` after 15 minutes
+  remain SLO breaches; rejects, checksum duplicates and non-serving jobs are
+  excluded.
 
 ### B. Face processing and scoped search
 
@@ -299,8 +310,11 @@ pilot actor or blocker.
   does not implement or accept the target purchase flow.
 - **FR-UX-06** — Display duration, successful-capture cooldown, QR-session TTL
   and browser idle TTL MUST be independent settings. QR first-open TTL MUST be
-  30 minutes from `qr_issued_at`; after a successful first open, the browser
-  session MUST expire after 60 minutes without activity.
+  30 minutes from `qr_issued_at`. The pilot MUST use one session-wide browser
+  access context rather than independent per-device grants: every scan before
+  the first-open deadline opens or reuses that context. After a successful
+  first open, the shared context MUST expire after 60 minutes without explicit
+  participant navigation or action on any opened phone.
 - **FR-UX-07** — After result-display duration expires, the screen MUST return
   to advertising without implicitly invalidating an otherwise active QR
   session.
@@ -310,20 +324,22 @@ pilot actor or blocker.
   event and allow a fresh capture without starting the success cooldown.
 - **FR-UX-09** — On timeout or network error, the client MUST discard the stale
   request and retry only with a fresh reference capture.
-- **FR-UX-10** — When the QR first-open or browser idle TTL expires, only the
-  personalized Promo session becomes unavailable; the browser page MUST remain
-  functional and redirect to the main Face Moment page, where the visitor is
-  offered photo search and purchase through selfie upload. The redirect MUST
-  NOT expose the expired session's teaser, `N` or other personal result data.
-  The main selfie-search/purchase page is an existing or separately delivered
-  dependency; implementing or accepting that target is outside this pilot.
+- **FR-UX-10** — When the QR first-open or session-wide browser idle TTL
+  expires, only the personalized Promo session becomes unavailable; the
+  browser page MUST remain functional and redirect to the main Face Moment
+  page, where the visitor is offered photo search and purchase through selfie
+  upload. The redirect MUST NOT expose the expired session's teaser, `N` or
+  other personal result data. The main selfie-search/purchase page is a
+  separately delivered dependency; implementing or accepting that target is
+  outside this pilot.
 
-### E. Attempts and diagnostic bundles
+### E. Attempts and diagnostic evidence
 
 - **FR-DIAG-01** — Every accepted capture/search attempt, including unsuccessful
-  outcomes, MUST have one `diagnostic_session_id/correlation_id` connecting its
-  browser events, server processing, configuration, face-search decisions and
-  artifacts.
+  outcomes, MUST persist one core Attempt with a client-generated
+  `attempt_id/correlation_id` before inference. That identity connects browser
+  events, server processing, configuration, face-search decisions and artifacts
+  without requiring a separate empty diagnostic-anchor row.
 - **FR-DIAG-02** — The attempt timeline MUST expose capture/reference readiness,
   request/network, queue wait, inference, vector search, response, browser
   receipt, Promo render and full QR visibility so a `>=10 s` outcome can be
@@ -332,16 +348,18 @@ pilot actor or blocker.
   applied threshold and quality values, selected detections, repeated
   detections, candidate pools, selected teasers, `N`, outcome/status and issue
   tags.
-- **FR-DIAG-04** — The diagnostic bundle MUST link the source reference series,
-  normalized images, selected crops, camera/config metadata, detections,
+- **FR-DIAG-04** — Collected diagnostic evidence MUST link the source reference
+  series, normalized images, selected crops, camera/config metadata, detections,
   candidates, thresholds, selected IDs, timestamps, actually displayed Promo
-  screenshot and QR continuation event. A product flow that actually captures a
-  selfie MUST also retain that selfie as a diagnostic artifact; the current
+  screenshot and QR continuation event. A product flow that actually captures
+  a selfie MUST also retain that selfie as a diagnostic artifact; the current
   pilot has no selfie capture and therefore creates no selfie artifact.
 - **FR-DIAG-05** — Diagnostic images MUST be stored as protected artifacts, not
-  embedded in log records. An attempt MUST expose a redacted reproducibility
-  manifest with versions, parameters, timestamps and authorized artifact links;
-  an automatic replay runner is not required.
+  embedded in log records. Detailed evidence is attached best-effort by
+  `attempt_id`; a terminal Attempt without finalized evidence MUST remain
+  visible as `incomplete`. When evidence exists, the attempt MUST expose a
+  redacted reproducibility manifest with versions, parameters, timestamps and
+  authorized artifact links; an automatic replay runner is not required.
 - **FR-DIAG-06** — The `Attempts` page MUST support filtering by time, status,
   release, pipeline, latency and issue tags, opening a unified browser/server
   timeline and navigating to relevant logs/artifacts.
@@ -360,7 +378,7 @@ pilot actor or blocker.
 - **FR-DEV-02** — Developer-only `Log Explorer` MUST search structured
   browser/server logs by time, source, component, severity, release, message and
   correlation fields, and MUST navigate from a record to its related attempt.
-- **FR-DEV-03** — Log search MUST operate through the existing backend and
+- **FR-DEV-03** — Log search MUST operate through the project backend and
   PostgreSQL. The browser MUST NOT access PostgreSQL directly.
 - **FR-DEV-04** — Browser/server logging MUST be non-blocking for capture,
   search, Promo and QR. Log records MUST NOT contain images, embeddings,
@@ -386,6 +404,12 @@ pilot actor or blocker.
 - **FR-DEV-10** — Applying a recommendation MUST remain an explicit manual
   developer action; the precise operational mechanism and audit details belong
   to SDD.
+- **FR-DEV-11** — Developer-triggered Calibration MAY run on the single
+  `BackgroundPhotoWorker` and delay photo processing during debugging. No
+  preemption, priority scheduler or separate Calibration worker is required. A
+  Calibration run interrupted by worker restart MUST become `failed` or
+  `interrupted`, photo processing MUST resume, and the developer MAY rerun
+  Calibration manually.
 
 ## Non-functional Requirements
 
@@ -397,7 +421,9 @@ pilot actor or blocker.
 - **NFR-PERF-02** — Timeout or no-match without a completed QR is a failed
   attempt, not an excluded observation.
 - **NFR-PERF-03** — At least 95% of the metric population defined by FR-ING-08
-  MUST become searchable in `<15 min` from `batch.confirmed_at`.
+  MUST become searchable in `<15 min` from each Photo's server-side
+  `accepted_at`. Explicit developer Calibration may delay this metric during a
+  debugging interval without requiring scheduling machinery.
 - **NFR-PERF-04** — The system MUST retain stage timestamps sufficient for
   `reference_ready_to_qr`, trigger-to-preview, realtime queue wait and
   ingest-to-searchable diagnosis. Additional percentile cuts are optional until
@@ -417,11 +443,14 @@ pilot actor or blocker.
 - **NFR-REL-03** — Realtime processing MUST use a bounded, short-lived in-memory
   queue/deadline model; stale reference work is not durable and MUST NOT be
   replayed after restart.
-- **NFR-REL-04** — Background processing MUST be idempotent under at-least-once
-  execution without duplicate final face records.
-- **NFR-REL-05** — Free primary/backup space and diagnostic-retention cleanup
-  MUST be observable; a recovery procedure is required for the single-server
-  pilot.
+- **NFR-REL-04** — The PostgreSQL-backed photo-processing queue MUST survive
+  backend and worker restarts without losing its existing `pending` or
+  `processing` population. On worker startup, unfinished `processing` work MUST
+  return to `pending` and restart from the beginning; at-least-once execution
+  MUST NOT create duplicate final face records.
+- **NFR-REL-05** — Free primary-storage space and diagnostic-retention cleanup
+  MUST be observable; a recovery procedure for ordinary process, browser, host
+  and intact-volume restarts is required for the single-server pilot.
 
 ### Security, privacy and retention
 
@@ -436,10 +465,10 @@ pilot actor or blocker.
   access matrix: the operator may read only sanitized attempt outcome/timeline/
   latency/issue tags; the developer may access protected reference images/crops,
   names, annotations, detailed logs and Calibration. The photographer is limited
-  to their own batch/upload state and has no diagnostic-page access.
+  to their own uploaded-photo state and has no diagnostic-page access.
 - **NFR-DATA-01** — Technical browser/server logs MUST expire after 30 days.
 - **NFR-DATA-02** — Attempts and ordinary diagnostic bundles/artifacts MUST
-  expire after 90 days and MUST NOT enter long-lived backup.
+  expire after 90 days.
 - **NFR-DATA-03** — A manually promoted calibration case MAY be retained until
   explicit deletion, but only as a curated reproducible subset: selected source
   reference frames, required face crops or a selfie when one was actually
@@ -463,21 +492,17 @@ pilot actor or blocker.
 - **NFR-ARCH-04** — Exact pilot hardware, camera, lens, passage sensor, lighting,
   CPU affinity and thread limits are selected/validated against the actual site
   and are not fixed product gates beyond the stated display/capture baseline.
-- **NFR-ARCH-05** — Commercial originals and PostgreSQL MUST have a backup on a
-  different physical medium or server; MinIO on the same disk is not a backup.
-
 ## Data / Domain Model
 
 ### Core concepts
 
 - **СПА** — pilot venue with a name, timezone, operator-selected active working
   `visit_date`, active serving pipeline and calibrated reference threshold.
-- **Batch** — photographer-confirmed immutable manifest of commercial JPEGs for
-  one СПА and authoritative `visit_date`; it is distinct from a reference
-  series.
-- **Photo** — commercial image linked to its batch/СПА/date and private original,
-  preview and thumbnail objects; `(spa_id, visit_date, checksum_sha256)` is its
-  logical ingest-uniqueness key, while pHash supports teaser diversity only.
+- **Photo** — independently admitted commercial image linked directly to its
+  СПА, authoritative `visit_date`, server-side `accepted_at` and private
+  original, preview and thumbnail objects;
+  `(spa_id, visit_date, checksum_sha256)` is its logical ingest-uniqueness key,
+  while pHash supports teaser diversity only.
 - **Pipeline revision** — immutable identity of detector, recognizer, weights,
   preprocessing/alignment, normalization and embedding dimension.
 - **Photo pipeline state** — pipeline-specific `pending | processing | ready |
@@ -490,13 +515,16 @@ pilot actor or blocker.
   it is not proof of a unique physical person.
 - **Promo/search session** — short-lived context binding СПА, authoritative
   `visit_date`, four teaser IDs, `session_result_photo_ids`, `N`, QR token and
-  expiry state. The QR may be opened for the first time within 30 minutes of
-  `qr_issued_at`; an opened browser session expires after 60 minutes without
-  activity.
+  one session-wide browser-access state. The QR may open or reuse that context
+  within 30 minutes of `qr_issued_at`; after the first successful open, the
+  shared context expires after 60 minutes without explicit participant
+  activity on any opened phone.
 - **Attempt** — one correlated automatic capture/search/display execution,
   including unsuccessful outcomes and stage timestamps.
-- **Diagnostic bundle** — protected image artifacts plus a versioned manifest,
-  indexed events, decisions, configuration and display evidence for an attempt.
+- **Diagnostic evidence** — optional protected image artifacts plus a versioned
+  manifest, indexed events, decisions, configuration and display evidence linked
+  to a core Attempt. Absence or failed finalization is represented as
+  `incomplete`, not by a mandatory empty anchor row.
 - **Structured log record** — non-image browser/server event associated with a
   correlation ID where applicable.
 - **Annotation** — authorized ground truth associating a participant/person and
@@ -509,22 +537,22 @@ pilot actor or blocker.
 
 ### Authoritative relationships and lifecycle
 
-- Confirmed batch `visit_date` is authoritative for commercial-photo search
-  scope; EXIF `captured_at` is secondary metadata.
+- Each accepted Photo's photographer-selected `visit_date` is authoritative for
+  commercial-photo search scope; EXIF `captured_at` is secondary metadata.
 - An automatic attempt uses the server-side active working `visit_date` selected
   by the operator for its СПА; the client token selects the СПА but neither the
-  client clock nor the latest batch silently selects the date.
+  client clock nor the latest uploaded photo silently selects the date.
 - A photo is searchable only through a `ready` state for the current compatible
   serving pipeline revision.
 - Four teaser IDs are a subset of `session_result_photo_ids`; `N` is the count of
   the entire unique union.
-- Attempt/log/bundle identifiers must allow navigation without placing image or
-  secret payloads in logs.
-- Technical logs, normal attempt/bundle data and promoted calibration data have
+- Attempt/log/evidence identifiers must allow navigation without placing image
+  or secret payloads in logs.
+- Technical logs, normal attempt/evidence data and promoted calibration data have
   distinct retention rules defined by NFR-DATA-01..03.
 - Promoting a calibration case does not extend the lifetime of the entire
-  diagnostic bundle: only the curated subset named by NFR-DATA-03 survives the
-  ordinary 90-day deletion.
+  diagnostic evidence set: only the curated subset named by NFR-DATA-03
+  survives the ordinary 90-day deletion.
 - A selfie is a conditional diagnostic artifact: it is stored when a product
   flow actually captures one. The current pilot captures only the automatic
   reference series and selected face crops, so no separate selfie exists or is
@@ -534,12 +562,11 @@ pilot actor or blocker.
 
 ### Photographer flow
 
-1. Authenticate and create a batch.
-2. Select the СПА and confirm authoritative `visit_date`.
-3. Upload ready JPEGs over HTTPS.
-4. Review accepted/rejected files and warnings.
-5. Confirm the immutable manifest.
-6. Observe processing/searchable/no-face/failure states and correct failures.
+1. Authenticate and select the СПА plus authoritative `visit_date`.
+2. Upload ready JPEGs over HTTPS; each file is admitted independently.
+3. Observe accepted, rejected or duplicate outcome for each file.
+4. Observe every accepted Photo progress through
+   processing/searchable/no-face/failure state.
 
 ### Participant Promo and continuation flow
 
@@ -551,15 +578,18 @@ pilot actor or blocker.
    valid teasers or returns a non-success outcome.
 5. On success, the display presents four no-watermark teasers and a scannable QR
    within the performance budget.
-6. The participant scans QR and immediately opens the same session on a phone,
-   seeing СПА, date, one teaser, `N` and a `Перейти к покупке` button that links
-   to the separately delivered main selfie-search/purchase page.
+6. A participant scans QR and immediately opens the same session-wide browser
+   context on a phone, seeing СПА, date, one teaser, `N` and a `Перейти к
+   покупке` button that links to the separately delivered main
+   selfie-search/purchase page. Another scan before the 30-minute deadline
+   reuses the same context rather than creating an independent grant.
 7. The display returns to advertising after its independent display duration;
    the QR session remains usable until its own expiry.
-8. If the QR is opened after 30 minutes, or an opened browser session has been
-   idle for 60 minutes, the personalized result expires and the browser redirects
-   to the main Face Moment page offering photo search and purchase through selfie
-   upload, without carrying personal result data from the expired session.
+8. If the QR is opened after 30 minutes, or the shared browser context has had
+   no explicit participant activity on any opened phone for 60 minutes, the
+   personalized result expires and the browser redirects to the main Face
+   Moment page offering photo search and purchase through selfie upload,
+   without carrying personal result data from the expired session.
 
 ### Developer investigation and calibration flow
 
@@ -579,7 +609,7 @@ pilot actor or blocker.
   site-validation decision.
 - Chromium-based `SpaPromoClient`, running locally over HDMI or on a remote
   display computer after site selection; both use the same logical contract.
-- Existing backend/admin web application.
+- Backend/admin web application delivered by this project.
 - PostgreSQL with pgvector for metadata, state, exact vector search, structured
   logs and indexed diagnostic events.
 - MinIO/S3-compatible private object storage for originals, previews and
@@ -596,15 +626,18 @@ payment/fiscal providers, external observability stores and message brokers.
 
 ## Edge Cases / Failure Handling
 
-- Invalid, unsupported or undecodable files are rejected before batch
-  confirmation and shown explicitly.
+- Invalid, unsupported or undecodable files are rejected independently and
+  shown explicitly.
 - Mixed EXIF dates produce a warning but do not rewrite authoritative
-  `visit_date` or auto-split the batch.
-- A duplicate JPEG in any later batch for the same СПА and `visit_date` is
-  deleted after checksum detection, reported as a duplicate and excluded from
-  the accepted manifest, metric population, processing, search, teaser and `N`.
+  `visit_date` or automatically regroup uploads.
+- A duplicate JPEG uploaded again for the same СПА and `visit_date` is deleted
+  after checksum detection, reported as a duplicate and excluded from the
+  metric population, processing, search, teaser and `N`.
+- A crash after private-object upload but before the per-photo PostgreSQL commit
+  may leave one orphan object; losing that one admission is acceptable and the
+  photographer may upload the JPEG again.
 - A missing active working `visit_date` prevents search and produces diagnostic
-  evidence rather than falling back to a client clock or arbitrary batch date.
+  evidence rather than falling back to a client clock or arbitrary upload date.
 - `no_faces` is a distinct terminal processing state but breaches the 15-minute
   searchable SLO for its accepted JPEG population.
 - Sensor events arriving during capture/search or successful cooldown are
@@ -618,11 +651,13 @@ payment/fiscal providers, external observability stores and message brokers.
 - Missing optional audio/animation assets must have a silent/non-blocking
   fallback and must not prevent a valid QR result.
 - Logging/diagnostic ingestion failure must not block the critical capture,
-  search, Promo or QR path; evidence gaps must remain observable.
-- A QR first opened more than 30 minutes after `qr_issued_at`, or a browser
-  session idle for 60 minutes, invalidates the personalized result and redirects
-  to the main selfie-based search/purchase page. No teaser, `N` or other data
-  from the expired session is disclosed to the redirect target.
+  search, Promo or QR path; a terminal core Attempt without finalized evidence
+  must remain observable as `incomplete`.
+- A QR opened more than 30 minutes after `qr_issued_at`, or a session-wide
+  browser context with no explicit participant activity on any opened phone for
+  60 minutes, invalidates the personalized result and redirects to the main
+  selfie-based search/purchase page. No teaser, `N` or other data from the
+  expired session is disclosed to the redirect target.
 - Diagnostic retention expiry must remove ordinary protected artifacts after 90
   days. For a promoted calibration case it preserves only the curated subset in
   NFR-DATA-03; unselected frames and the Promo screenshot are still deleted.
@@ -638,7 +673,7 @@ payment/fiscal providers, external observability stores and message brokers.
 - A selected serving pipeline is pre-warmed; its reference threshold and input
   quality gates are calibrated before the run.
 - The operator has explicitly set the active working `visit_date`, and it
-  matches the confirmed commercial-photo batches intended for the run.
+  matches the independently accepted commercial photos intended for the run.
 - Every tester expected in a run has at least four searchable commercial
   photographs in the authoritative СПА/date scope.
 - The 20-attempt set includes the current best-effort group flow; exact attempt
@@ -661,18 +696,21 @@ payment/fiscal providers, external observability stores and message brokers.
   authoritative `visit_date`, a teaser belonging to that same session and the
   same session's `N`; its `Перейти к покупке` button navigates to the configured
   main selfie-search/purchase page.
-- **AC-05** — Every attempt, including the allowed failure, has a correlated
-  diagnostic bundle and stage timestamps.
-- **AC-06** — At least 95% of unique accepted JPEGs in confirmed pilot manifests
-  become searchable in `<15 min` from `batch.confirmed_at`, using the full
-  denominator/failure semantics of FR-ING-08.
+- **AC-05** — Every attempt, including the allowed failure, has one persisted
+  core Attempt/correlation identity and stage timestamps; missing or failed
+  detailed evidence is explicitly visible as `incomplete`.
+- **AC-06** — At least 95% of independently accepted unique JPEGs become
+  searchable in `<15 min` from their server-side `photo.accepted_at`, using the
+  full denominator/failure semantics of FR-ING-08.
 - **AC-07** — A QR is programmatically decodable and successfully scannable on
   representative real phones from the target screen/distance/brightness setup.
 
 ### Functional completion signals
 
-- **AC-08** — A photographer can authenticate, upload/validate/confirm a JPEG
-  batch and observe each accepted photo reach an explicit final/current state.
+- **AC-08** — A photographer can authenticate, select СПА and authoritative
+  `visit_date`, upload JPEGs without confirmation, see each independent
+  accepted/rejected/duplicate outcome and observe every accepted photo reach an
+  explicit current/final state.
 - **AC-09** — An operator can find a failed or slow attempt and see only its
   sanitized outcome, timeline, latency and issue tags; protected artifacts,
   names, annotations, detailed logs and Calibration are inaccessible to that
@@ -694,16 +732,18 @@ payment/fiscal providers, external observability stores and message brokers.
 - **AC-14** — Network/search failure leaves the display on local advertising,
   discards stale work and permits a fresh attempt without a success cooldown.
 - **AC-15** — Before the 30-minute first-open deadline the QR opens its matching
-  session; after that deadline, and after 60 minutes of browser inactivity, the
-  personalized result is inaccessible and the browser redirects to the main
-  selfie-based search/purchase page without leaking expired-session data. The
-  pilot verifies the redirect contract, not the target page's implementation.
+  session-wide browser context without creating per-device grants; after that
+  deadline, and after 60 minutes without explicit participant activity across
+  that context, the personalized result is inaccessible and the browser
+  redirects to the main selfie-based search/purchase page without leaking
+  expired-session data. The pilot verifies the redirect contract, not the
+  target page's implementation.
 - **AC-16** — The Promo display says `Ваши фотографии найдены — откройте по
   QR-коду` and does not claim that download is already available in the pilot.
-- **AC-17** — Re-uploading a JPEG with the same SHA-256 in another batch for the
-  same СПА and `visit_date` deletes the second copy, reports it as a duplicate
-  and leaves the accepted manifest population, `photo_id` set, jobs, search
-  results, teaser selection and `N` unchanged.
+- **AC-17** — Re-uploading a JPEG with the same SHA-256 for the same СПА and
+  `visit_date` deletes the new copy, reports it as a duplicate and leaves the
+  accepted-photo population, `photo_id` set, processing states, search results,
+  teaser selection and `N` unchanged.
 
 The smoke run validates the pilot path only. It does not demonstrate public
 production readiness, target 10-15-СПА capacity or complete group coverage.
@@ -712,17 +752,21 @@ production readiness, target 10-15-СПА capacity or complete group coverage.
 
 1. **Static and unit verification**
    - configured build/typecheck and relevant unit tests;
-   - batch manifest/checksum/idempotency, same-СПА/date cross-batch duplicate
-     deletion and metric-population rules;
+   - per-photo admission/checksum/idempotency, same-СПА/date duplicate deletion,
+     atomic `Photo + pending` creation and metric-population rules;
    - pipeline-revision isolation, threshold gates, pHash-only ranking and `N`
      union/deduplication;
    - attempt timing calculations, recommendation metrics and retention rules;
    - secret/redaction checks for structured logs.
 2. **Integration verification**
    - uploader -> object storage -> background processing -> searchable state;
+   - worker crash/restart -> the existing queued population remains durable,
+     unfinished work returns to `pending` and processing resumes from the
+     beginning;
    - sensor/client -> synchronous realtime service -> exact scoped search -> QR
      session;
-   - browser/server correlation -> Attempts/Log Explorer -> protected artifact;
+   - core Attempt/browser/server correlation -> Attempts/Log Explorer ->
+     optional protected evidence and explicit `incomplete` state;
    - annotation -> Calibration calculations -> manual-only application boundary.
 3. **Critical-flow e2e verification**
    - authenticated photographer journey;
@@ -730,7 +774,7 @@ production readiness, target 10-15-СПА capacity or complete group coverage.
    - phone continuation without selfie and valid-session purchase-button
      navigation to the separately delivered target page;
    - `<4` results, low quality, timeout, network loss, stale response, QR
-     first-open expiry and browser idle expiry;
+     first-open expiry and session-wide browser idle expiry;
    - developer investigation, annotation and calibration journeys.
 4. **Physical-site verification**
    - target distance, face size, motion blur, pose, lighting and exposure;

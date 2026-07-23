@@ -1,28 +1,36 @@
 # Face Moment: отладка и подбор параметров
 
-Обновлено: 2026-07-18
+Обновлено: 2026-07-23
 
 ## 1. Назначение
 
-Я хочу, чтобы в Face Moment был встроенный developer-only контур отладки. Его
-главный пользователь — разработчик приложения. Контур должен связывать
-browser-side и server-side logs с конкретной попыткой Promo/QR, помогать быстро
-находить источник ошибки или задержки и давать понятные рекомендации по
-face-match threshold и качеству входного лица. Это не отдельная monitoring или
-test-management система, а небольшая часть существующей админки.
+Я хочу, чтобы в Face Moment был встроенный контур отладки, полный интерфейс и
+protected content которого доступны только разработчику приложения. Контур должен
+связывать
+browser-side и server-side logs с конкретной попыткой Promo/QR, помогать находить
+источник ошибки или задержки и давать понятные рекомендации по face-match
+threshold и качеству входного лица. Это не отдельная monitoring или test-management
+система, а часть backend/admin application, создаваемого в этом проекте.
 
-Главной единицей расследования является attempt с единым
-`diagnostic_session_id/correlation_id`. Разработчик должен найти attempt по
-времени или идентификатору и увидеть всю её историю: browser events, server
-processing, фактически применённую конфигурацию, результаты face search,
-решения group algorithm и связанные diagnostic artifacts. Логи без связи с
-attempt не должны быть единственным способом расследования.
+Главной единицей расследования является core Attempt с client-generated
+`attempt_id/correlation_id`. Он создаётся до inference и является единственной
+обязательной correlation record: отдельный пустой diagnostic anchor не нужен.
+Разработчик должен найти Attempt по времени или идентификатору и увидеть её
+исход, stage timeline, применённую конфигурацию и все фактически собранные
+browser/server events, face-search decisions и protected artifacts. Отсутствие
+подробных evidence не скрывает terminal Attempt, а отображается как
+`incomplete`.
 
 ## 2. Attempts
 
 Страница `Attempts` показывает список попыток с фильтрами по времени, status,
 release, pipeline, latency и issue tags. Из списка разработчик открывает одну
 attempt и получает общий timeline browser и server.
+
+Оператор может видеть только sanitized outcome, stage timeline, latency и
+issue tags. Protected images/crops, имена, annotations, detailed logs и
+Calibration доступны только разработчику. Фотограф не имеет доступа к
+diagnostic pages.
 
 Timeline должен показывать capture, отправку request, network delay, queue wait,
 inference, vector search, формирование response, получение результата браузером,
@@ -37,17 +45,18 @@ detections, повторные detections одного человека, candida
 teaser-фотографии и итоговый `N`. Это должно позволять понять, почему group flow
 нашёл одних участников, пропустил других или повторно обработал одного человека.
 
-Diagnostic images не помещаются в log records. Они остаются в существующем
-diagnostic bundle и открываются из attempt detail по разрешённым ссылкам. Для
-воспроизведения сложного case attempt также показывает manifest с версиями,
-параметрами, timestamps и ссылками на связанные artifacts. Автоматический
-replay runner для этого не нужен.
+Detailed evidence сохраняются best-effort и не блокируют capture, search, Promo
+и QR. Diagnostic images не помещаются в log records; они хранятся как protected
+artifacts и открываются из Attempt detail по авторизованным ссылкам. Когда
+evidence собраны, Attempt также показывает redacted reproducibility manifest с
+версиями, параметрами, timestamps и ссылками на artifacts. Автоматический replay
+runner не нужен. Текущий pilot не снимает selfie и не создаёт selfie artifact.
 
 ## 3. Ручная разметка
 
 Разработчик вручную размечает результаты на уровне человека и detection. Для
 каждого detection можно вписать настоящее имя участника и отметить результат
-как `correct`, `wrong` или `missed`. Имена тестировщиков разрешено хранить в
+как `correct`, `wrong/false` или `missed`. Имена тестировщиков разрешено хранить в
 diagnostic annotations.
 
 Отдельный реестр участников, pseudonymous IDs, dataset catalog и сложное
@@ -60,21 +69,25 @@ result, и при расчёте рекомендаций по threshold и qual
 Страница `Log Explorer` предназначена для глобального поиска по structured
 browser/server logs. Разработчик должен фильтровать записи по времени, source,
 component, severity, release, message и correlation fields, а из найденной
-записи переходить к связанной attempt. Поиск работает через существующий backend
-и не открывает PostgreSQL непосредственно браузеру.
+записи переходить к связанной attempt. Поиск работает через backend,
+создаваемый в этом проекте, и не открывает PostgreSQL непосредственно
+браузеру.
 
-Searchable logs хранятся в существующем PostgreSQL. Для первой версии не нужны
+Searchable logs хранятся в PostgreSQL проекта. Для первой версии не нужны
 Grafana Faro/Loki, SigNoz, ClickStack, OpenSearch или другой отдельный
 observability datastore. 
 
 Browser logging и server logging должны использовать структурированные записи,
 но не должны замедлять или блокировать capture, search, Promo и QR. В logs нельзя
-сохранять изображения, embeddings, auth headers, cookies, tokens или другие крупные и чувствительные payloads. Session
-replay не нужен.
+сохранять images, embeddings, auth headers, cookies, tokens, request bodies или
+session replay.
 
-Technical browser/server logs хранятся 30 дней. Attempts и diagnostic bundles
-хранятся 90 дней. Отдельные полезные cases, вручную выбранные для calibration,
-вместе с их разметкой хранятся до явного удаления.
+Technical browser/server logs хранятся 30 дней. Core Attempts и ordinary
+diagnostic evidence хранятся 90 дней. Вручную promoted Calibration case
+может храниться до явного удаления, но только как curated subset: выбранные
+frames/crops, нужные versions/parameters, scores, annotations и имя участника.
+Остальная reference series, Promo screenshot и technical logs удаляются по
+обычным срокам.
 
 ## 5. Calibration
 
@@ -89,6 +102,7 @@ Buffalo M и для подбора face-match threshold. Система рабо
 вариант с большим числом correct matches. «Баланс» ищет компромисс между
 correct, false и missed results. «Минимум пропусков лиц» минимизирует missed
 results и при равенстве предпочитает вариант с меньшим числом false matches.
+Точная формула «Баланс» остаётся решением SDD.
 
 Каждая рекомендация показывает предлагаемое числовое значение threshold,
 количество `correct`, `false` и `missed`, precision, recall и размер размеченной
@@ -107,6 +121,12 @@ Calibration должна позволять сравнить результат�
 изменения parameter/config set. Для этого достаточно уже сохранённых versions,
 parameters, outcomes и annotations; отдельная experimentation platform не
 нужна.
+
+Calibration запускается только разработчиком во время отладки и может занять
+общий `BackgroundPhotoWorker`, временно задержав обработку фотографий. Если worker
+перезапущен, Calibration run становится `failed` или `interrupted`, photo processing
+возобновляется, а разработчик при необходимости запускает Calibration заново вручную.
+Preemption, priority scheduler, automatic reclaim и отдельный Calibration worker не нужны.
 
 ## 6. Граница первой версии
 

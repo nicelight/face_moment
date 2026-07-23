@@ -8,12 +8,12 @@ The recommendation preserves these accepted product constraints:
 
 | Constraint | Key rationale |
 |---|---|
-| Exactly five capability slices: `serving_control`, `inventory`, `processing`, `promo`, `diagnostics`. | Five is the smallest map that separates configuration, commercial ingest, ML work, participant results and protected evidence without turning technical layers into slices. |
-| Greenfield staff authentication and role enforcement. | No external backend or IdP exists, while photographer/operator/developer access differs materially. |
+| Five capability slices for the current pilot: `serving_control`, `inventory`, `processing`, `promo`, `diagnostics`. | Five is the smallest current map that separates configuration, commercial ingest, ML work, participant results and protected evidence without turning technical layers into slices; later accepted product scope may justify revisiting it. |
+| Greenfield staff authentication and role enforcement. | The project has no existing backend or IdP, while photographer/operator/developer access differs materially. |
 | Crash/restart behavior for every long-running role. | A one-server pilot needs predictable recovery from ordinary failures, but not distributed or zero-downtime guarantees. |
 | Idempotent PostgreSQL/MinIO operations without distributed transactions. | The two stores cannot share a transaction; simple retryable state transitions are sufficient. |
 | Client-generated attempt ID plus a separate display acknowledgement. | Server response proves result construction, while only the client can prove that four teasers and a scannable QR were actually visible. |
-| Multiple browser grants per QR ticket. | Several phones may scan the same display during the 30-minute grant-creation window; every grant retains an independent 60-minute idle TTL. |
+| One session-wide browser access state per QR ticket. | Scans during the 30-minute first-open window reuse the same Promo session and shared 60-minute idle state; per-device grant rows add state that the current pilot does not need. |
 | No backup in the MVP. | Loss of the only disk/server is an accepted data-loss event; recovery covers intact primary volumes and ordinary process/host restarts. |
 | Extension seams for selfie search, payment and original download. | Stable identifiers and ownership boundaries reduce future migration cost without creating unused MVP code. |
 
@@ -25,7 +25,7 @@ The recommendation preserves these accepted product constraints:
 | Slice map | Five capability packages, not five services. | Packages provide ownership and test seams at low runtime cost; a four-slice map would merge unrelated write invariants, while more slices would mostly represent technical layers. |
 | Runtime | `backend`, one `BackgroundPhotoWorker`, one `RealtimeFaceService`, plus the browser client. | Background throughput and realtime latency need process isolation; extra replicas or services provide little value for one СПА. |
 | Data | PostgreSQL/pgvector for state and exact search; private MinIO for binaries. | This is the accepted simple baseline; a broker, external vector database or media service would duplicate infrastructure. |
-| Internal communication | Direct typed Python calls and two explicit shared-transaction boundaries. | Visible calls are easier to debug than mediator/event-bus abstractions in a monolith. |
+| Internal communication | Direct typed Python calls and one short per-photo PostgreSQL transaction spanning `Photo + pending`. | This protects durable processing admission without Batch-level atomicity, mediator/event-bus abstractions or a generic Unit of Work. |
 | Realtime transport | One synchronous HTTPS request and one idempotent display acknowledgement. | The initiating display is the only result consumer; WebSocket/SSE reconnection state would not remove the need for the acknowledgement. |
 | Background queue | `photo_pipeline_states` in PostgreSQL, consumed by exactly one configured worker replica. | A row-state queue closes the current at-least-once requirement; advisory locks, fencing tokens and a broker protect concurrency that the deployment does not have. |
 | Search | Exact pgvector cosine search after pipeline/СПА/date filtering. | The pilot data set is bounded; ANN introduces recall and index-management risk before a measured bottleneck. |
@@ -81,10 +81,10 @@ tests/
 
 | Slice | Owned state and behavior | Public boundary | Excluded ownership | Boundary rationale |
 |---|---|---|---|---|
-| `serving_control` | СПА identity/timezone, active `visit_date`, active pipeline revision, threshold/quality settings, `settings_revision`, SpaPromoClient token lifecycle and manual change audit. | Read immutable `ServingContext`/`IngestTarget`; validate and apply a manual settings change. | Batches, processing state, attempts, sessions, detailed evidence and recommendations. | One write owner prevents participant or Calibration paths from silently changing serving scope. |
-| `inventory` | Draft candidates, Batch and immutable manifest, authoritative date, checksum duplicate decision, Photo identity/original key and photographer ownership. | Upload/review/discard/confirm Batch; expose immutable photo projections; authorize access to owned batches. | Pipeline state, embeddings/search, Promo sessions and diagnostics. | Commercial ingest immutability changes independently from ML retries and model revisions. |
-| `processing` | Pipeline catalog/compatibility, native FaceEngine adapters, photo processing states, previews/faces/embeddings, query quality, exact search and offline model evaluation. | Enqueue immutable photo input; report readiness; process one reference query under an explicit serving snapshot. | Batch confirmation, live settings reads, result/session assembly and recommendation application. | Background and realtime ML share preprocessing/revision invariants; a separate FaceEngine slice would only be a technical layer. |
-| `promo` | Attempt/result identity, applied snapshot, candidate/result sets, four teasers, `N`, QR ticket, browser grants, continuation and SpaPromoClient behavior. Future purchase/payment/entitlement state also stays here. | Execute a fresh attempt; accept display outcome; exchange QR ticket; read session-bound continuation. | Inventory/processing/settings writes and detailed diagnostic evidence. | Search result, QR and continuation form one participant-journey integrity boundary; future payment consumes the immutable result and does not justify a sixth slice. |
+| `serving_control` | СПА identity/timezone, active `visit_date`, active pipeline revision, threshold/quality settings, `settings_revision`, SpaPromoClient token lifecycle and manual change audit. | Read immutable `ServingContext`/`IngestTarget`; validate and apply a manual settings change. | Photos, processing state, attempts, sessions, detailed evidence and recommendations. | One write owner prevents participant or Calibration paths from silently changing serving scope. |
+| `inventory` | Independent Photo admission, photographer-selected СПА/date, checksum duplicate decision, Photo identity/`accepted_at`/original key and photographer ownership. | Admit one uploaded JPEG; return accepted/rejected/duplicate outcome; expose immutable photo projections and authorize access to owned uploads. | Pipeline state, embeddings/search, Promo sessions and diagnostics. | Per-photo admission removes Batch lifecycle while keeping commercial-photo identity separate from ML retries and model revisions. |
+| `processing` | Pipeline catalog/compatibility, native FaceEngine adapters, photo processing states, previews/faces/embeddings, query quality, exact search and offline model evaluation. | Create the serving-revision `pending` state during Photo admission; report readiness; process one reference query under an explicit serving snapshot. | Photo admission, live settings reads, result/session assembly and recommendation application. | Background and realtime ML share preprocessing/revision invariants; a separate FaceEngine slice would only be a technical layer. |
+| `promo` | Attempt/result identity, applied snapshot, candidate/result sets, four teasers, `N`, QR ticket, session-wide browser access state, continuation and SpaPromoClient behavior. Future purchase/payment/entitlement state also stays here. | Execute a fresh attempt; accept display outcome; exchange QR ticket; read session-bound continuation. | Inventory/processing/settings writes and detailed diagnostic evidence. | Search result, QR and continuation form one participant-journey integrity boundary; future payment consumes the immutable result and does not justify a sixth slice. |
 | `diagnostics` | Detailed events/artifacts, sanitized/developer views, logs, annotations, curated Calibration cases and recommendations. | Record best-effort evidence; search attempts/logs; authorize artifacts; annotate/evaluate/apply through owning boundaries. | Core result/session and direct settings mutation. | Evidence, annotation and Calibration share privacy/retention rules but remain outside participant success. |
 
 ## 5. Dependencies and transaction boundaries
@@ -102,16 +102,30 @@ diagnostics ──offline evaluation──> processing
 diagnostics ──manual apply──> serving_control
 ```
 
-Two shared PostgreSQL transactions are recommended because they reduce failure states without introducing distributed coupling:
+One shared PostgreSQL transaction is recommended per independently accepted
+Photo. `inventory` owns admission and calls the public `processing` command that
+creates the serving-revision `pending` state; the transaction commits `Photo +
+pending + accepted_at` together. It never waits for or groups other uploads.
 
-1. Batch confirmation freezes the manifest, creates Photos and inserts initial processing rows.
-2. Attempt creation/result publication creates the promo core record and its small diagnostic anchor row; detailed evidence remains best-effort after commit.
+MinIO is outside that transaction. A crash after object upload but before commit
+may leave one private orphan and lose that admission; this is an accepted risk
+and does not justify distributed transaction machinery.
 
-The shared database is recommended to permit published read projections while retaining one write owner per invariant. Foreign direct writes, a generic Unit-of-Work framework, an event bus and an outbox are not recommended for the MVP because direct calls and two documented transactions cover the current flows.
+Attempt creation is not a shared transaction. `promo` persists one core Attempt
+before inference. `diagnostics` attaches events and artifacts best-effort by
+`attempt_id`; a terminal Attempt without finalized evidence is projected as
+`incomplete`, so a separate diagnostic-anchor row is unnecessary.
+
+The shared database permits published read projections while retaining one
+write owner per invariant. Foreign direct writes, a generic Unit-of-Work
+framework, an event bus and an outbox are not recommended for the pilot.
 
 ## 6. Serving context and pipeline changes
 
-PostgreSQL is recommended as the source of truth for identities, state, settings, attempts, sessions, grants and structured evidence. MinIO is recommended as the source of truth only for binary bytes; committed PostgreSQL state determines whether an object is usable.
+PostgreSQL is recommended as the source of truth for identities, state,
+settings, attempts, sessions, session-wide browser access and structured
+evidence. MinIO is recommended as the source of truth only for binary bytes;
+committed PostgreSQL state determines whether an object is usable.
 
 Each attempt is recommended to copy this immutable serving snapshot:
 
@@ -145,21 +159,26 @@ Manual rollback to the prior pointer is recommended after a failed smoke. Automa
 
 ## 7. Ingest and PostgreSQL/MinIO consistency
 
-### Upload and confirmation
+### Independent photo upload and admission
 
 The recommended working-horse flow is:
 
-1. A draft candidate receives a unique opaque object key before upload.
-2. A completed MinIO PUT is decoded and validated for JPEG type, compressed bytes and decoded pixels.
-3. A stale `uploading` candidate becomes `failed/delete_pending`; the photographer reuploads instead of resuming an ambiguous partial request.
-4. Confirmation locks the draft Batch and reads one immutable active `IngestTarget(pipeline_revision_id)`.
-5. `UNIQUE(spa_id, visit_date, checksum_sha256)` remains the concurrency arbiter through `INSERT ... ON CONFLICT DO NOTHING RETURNING`.
-6. A losing duplicate keeps its visible outcome, creates no Photo/job and schedules deletion of only its unique upload key.
-7. Manifest, Photos and initial processing rows commit in one PostgreSQL transaction; accepted originals keep their original upload keys without MinIO move/copy.
+1. The authenticated browser streams an upload through the public HTTPS backend boundary; MinIO remains private and is never a browser endpoint.
+2. The backend assigns a unique opaque object key, writes the candidate to MinIO, then decodes and validates JPEG type, compressed bytes and decoded pixels and calculates SHA-256.
+3. The photographer-selected СПА and `visit_date` plus the current immutable `IngestTarget(pipeline_revision_id)` form the admission context for this file only.
+4. `UNIQUE(spa_id, visit_date, checksum_sha256)` is the concurrency arbiter through `INSERT ... ON CONFLICT DO NOTHING RETURNING`.
+5. A losing duplicate keeps its visible duplicate outcome, creates no Photo or processing state and schedules deletion of only its unique uploaded object.
+6. One short PostgreSQL transaction commits the new Photo, server-side `accepted_at` and serving-revision `pending` state; it never waits for another upload.
+7. The accepted original keeps its initial opaque key without a MinIO move/copy.
 
-This flow is recommended over a cross-store transaction emulator because retryable private orphans are harmless and simpler to clean.
+This flow is recommended over a cross-store transaction emulator because a
+private orphan or one lost admission during a crash is acceptable and simpler
+than coordinating PostgreSQL and MinIO.
 
-Valid unconfirmed drafts are recommended to remain until explicit confirmation/discard. Existing batch/storage views can expose stale drafts; an automatic draft TTL is deferred until storage pressure demonstrates a need.
+There is no Batch, manifest, draft-confirmation lifecycle or aggregate upload
+commit. Other readers may observe a partial set while the photographer is still
+uploading; search always uses all compatible `ready` photos already present for
+the active СПА/date.
 
 ### Derived objects and deletion
 
@@ -217,7 +236,10 @@ The server deadline remains shorter than the client timeout. A returned-late nat
 
 ### Backend and client
 
-Backend commands are recommended to be idempotent where a browser may retry. Ambiguous stale uploads become failed and reuploadable rather than receiving a resumable-upload state machine.
+Backend commands are recommended to be idempotent where a browser may retry. An
+interrupted upload has no durable resumable-upload lifecycle; the photographer
+simply retries the file, and the ordinary checksum rule handles an already
+completed first upload.
 
 After Chromium restart, SpaPromoClient is recommended to enter local `advertising`, discard personal result/frame state and avoid replaying search. A bounded IndexedDB outbox may retain only diagnostic metadata and `cooldown_until`; frames, tokens and personalized result data stay memory-only.
 
@@ -238,9 +260,11 @@ display_status: not_applicable | pending → confirmed | failed | unconfirmed
 
 `result_issued` is not counted as Promo success. Only an idempotent client acknowledgement after all four teasers are decoded and the QR is fully visible sets `display_status=confirmed`; an expired acknowledgement becomes `unconfirmed`.
 
-The core attempt and a small `collecting` diagnostic anchor are recommended in the same PostgreSQL transaction. Detailed events/artifacts remain direct best-effort writes; finalization marks the bundle `complete|incomplete`, and an old unfinished anchor can become `incomplete` during daily cleanup.
-
-This is recommended over `EvidenceSink` adapters, after-commit delivery state and reconciliation because one extra row in the already-required database transaction is cheap and guarantees an observable bundle anchor.
+The core Attempt itself is the durable diagnostic correlation point. Detailed
+events/artifacts remain direct best-effort writes. An active Attempt is shown as
+`collecting`; a terminal Attempt without finalized evidence is derived as
+`incomplete`. No empty diagnostic anchor, after-commit delivery state, outbox or
+reconciliation pass is recommended.
 
 Client acceptance latency is recommended to use only the client monotonic clock:
 
@@ -261,23 +285,23 @@ Server stages are recommended to store their own monotonic durations. Correlatio
 | Staff auth | Small `platform/auth` module with CLI provision/reset/deactivate, Argon2id/bcrypt, hashed opaque PostgreSQL sessions, one short absolute TTL, logout/revoke, CSRF and three roles. | These controls satisfy greenfield access separation; staff idle tracking, self-registration, OAuth/IAM and a policy engine add little pilot value. |
 | Artifact access | Backend-proxied previews/artifacts with authorization on every read. | One-server proxying is simpler than presigned-URL expiry coordination and prevents raw MinIO keys from escaping. |
 
-### QR ticket and browser grants
+### QR ticket and session-wide browser access
 
 The recommended exchange is intentionally conventional:
 
 ```text
 GET /q?ticket=<opaque ticket>
-→ backend validates ticket hash and 30-minute grant-creation window
-→ backend reuses this browser's active grant or creates an independent grant
-→ HttpOnly Secure SameSite=Lax cookie
+→ backend validates the ticket hash and 30-minute first-open window
+→ backend opens or reuses the Promo session's single browser access state
+→ backend sets the opaque ticket in an HttpOnly Secure SameSite=Lax cookie
 → 303 redirect to a clean token-free session URL
 ```
 
 The edge/application access log is recommended to omit the query string for this route, with `Cache-Control: no-store` and `Referrer-Policy: no-referrer`. This is preferred over URL-fragment + JavaScript POST exchange because the shorter flow has fewer client failure modes while retaining the important token protections.
 
-Every grant is recommended to store only a token hash and to enforce its own 60-minute idle TTL on personalized reads. Ordinary authenticated navigation/actions can update `last_seen`; asset loads and background polling provide no extension. A local phone timer clears rendered personal state at expiry, while the server remains authoritative on later reads.
+The Promo session stores one `qr_ticket_hash`, `browser_opened_at` and shared `browser_last_seen_at`; it has no per-device grant rows. Every scan before the 30-minute deadline may set the same session credential on another phone. Explicit participant navigation/actions from any opened phone update the shared `browser_last_seen_at`; asset loads and background polling provide no extension. After 60 minutes of session-wide inactivity, access expires for every opened phone. A local phone timer clears rendered personal state at expiry, while the server remains authoritative on later reads.
 
-Display teaser reads are recommended to use `spa_client_token` plus opaque attempt/session references. Phone teaser reads use the browser grant. Both paths remain `no-store` backend reads; presigned participant URLs are deferred until backend bandwidth becomes a measured problem.
+Display teaser reads are recommended to use `spa_client_token` plus opaque attempt/session references. Phone teaser reads use the session cookie. Both paths remain `no-store` backend reads; presigned participant URLs are deferred until backend bandwidth becomes a measured problem.
 
 ## 11. Diagnostics, retention and Calibration
 
@@ -294,7 +318,7 @@ Recommended retention:
 | Data | Retention | Rationale |
 |---|---|---|
 | Technical browser/server logs | 30 days | Enough operational history without indefinite privacy/storage cost. |
-| Ordinary attempts, diagnostic anchors and artifacts | 90 days | Matches the diagnostic product requirement and bounds protected-data exposure. |
+| Ordinary attempts and diagnostic artifacts | 90 days | Matches the diagnostic product requirement and bounds protected-data exposure. |
 | Manually promoted Calibration case | Until explicit deletion | Curated reproducibility has durable value; the full source bundle does not. |
 | Browser metadata outbox | Until acknowledged or a short local expiry | Metadata aids outage diagnosis; long-lived local personal data does not. |
 
@@ -302,7 +326,13 @@ One idempotent daily cleanup command is recommended, invoked by the existing Bac
 
 Promotion is recommended to copy only selected frames/crops, parameters, scores and annotations into a self-contained case. Unselected frames, Promo screenshot, ordinary logs and the whole attempt retain their normal expiry.
 
-Calibration work is recommended to reuse the existing worker below fresh photo processing. A crash may mark the run `failed`, after which the developer reruns it manually; automatic reclaim, chunk scheduling and priority machinery are deferred to measured workload pressure.
+Calibration work is recommended to reuse the existing
+`BackgroundPhotoWorker`. An explicitly started Calibration run may block photo
+processing for its full duration during debugging; this impact is accepted. If
+the worker restarts, the Calibration run becomes `failed|interrupted`, photo
+processing resumes, and the developer reruns Calibration manually. Preemption,
+priority scheduling, automatic Calibration reclaim and a separate worker are
+not recommended.
 
 Recommendation application remains an explicit audited call through `serving_control`. Automatic tuning is not recommended because a mistaken threshold changes participant-facing results.
 
@@ -356,10 +386,10 @@ Recommended minimum feature proofs:
 | Area | Evidence |
 |---|---|
 | `serving_control` | Client cannot override СПА/date; one immutable attempt snapshot; audited manual change. |
-| `inventory` | Immutable manifest; concurrent duplicate arbitration; losing-object cleanup. |
+| `inventory` | Independent Photo admission; concurrent duplicate arbitration; atomic `Photo + pending`; losing-object cleanup. |
 | `processing` | Restart-from-`processing`; bounded retries; one final face set/state. |
-| `promo` | Four unique teasers; correct full result/`N`; result vs display acknowledgement; grant expiry. |
-| `diagnostics` | Sanitized/developer role split; complete/incomplete bundle; promotion whitelist. |
+| `promo` | Four unique teasers; correct full result/`N`; result vs display acknowledgement; session-wide access expiry. |
+| `diagnostics` | Sanitized/developer role split; core Attempt with complete/incomplete evidence; promotion whitelist. |
 | Client | Local advertising restart; fresh-only retry; monotonic latency; real QR scan. |
 
 ## 15. Explicit deferrals
@@ -375,4 +405,25 @@ Recommended minimum feature proofs:
 | Presigned participant media delivery | Backend proxy becomes a measured bottleneck | Proxy authorization is simpler for one server. |
 | GPU, Kubernetes or external observability stack | Proven CPU/deployment/diagnostic limitation | They add operational surface without current evidence. |
 | Payment/selfie/download implementation | Full-version feature activation | Only stable identifiers and ownership seams have current value. |
-| Backup/replication/snapshots | A new operator durability decision | The current MVP explicitly accepts loss of the only disk/server. |
+| Backup/replication/snapshots | Before paid flow or public rollout, or after a new operator durability decision | The current pilot explicitly accepts loss of the only disk/server. |
+
+## 16. Accepted pilot risks
+
+The following risks are consciously accepted for the current pilot and do not
+authorize additional lifecycle, coordination or recovery machinery:
+
+- Irrecoverable loss of the only primary disk or server may destroy all
+  persisted data; the pilot has no backup, replication or snapshot guarantee.
+- A crash between the MinIO upload and the PostgreSQL commit may leave one
+  private orphan and may require that one photograph to be uploaded again.
+- While the photographer is still uploading, search and other readers may see
+  only the subset of compatible `ready` photos already stored for the active
+  СПА/date.
+- Ingest metrics observed during an unfinished upload period may temporarily be
+  incomplete or misleading; no Batch-level SLO coordination is required.
+- A developer-started Calibration run may occupy the single
+  `BackgroundPhotoWorker` and delay photo processing for the duration of that
+  debugging run. After interruption, the developer may rerun it manually.
+- A photograph uploaded under the wrong photographer-selected СПА or
+  `visit_date` has no special correction workflow in the pilot; the operator
+  accepts this risk because the remedy costs more than the expected problem.

@@ -10,9 +10,8 @@ status: active
   и явно отмеченные рекомендации.
 - [IDEA_OS.md](../IDEA_OS.md): Инфраструктурная концепция, topology display
   clients и deployment-рекомендации.
-- [IDEA_INGEST.md](../IDEA_INGEST.md): Batch-first поступление фотографий,
-  direct upload и импорт публичных ссылок Яндекс Диска из произвольных
-  аккаунтов фотографов.
+- [IDEA_INGEST.md](../IDEA_INGEST.md): историческая Batch-first ingest-концепция;
+  актуальные per-photo admission и direct-upload правила находятся в PRD.
 - [IDEA_DEBUG.md](../IDEA_DEBUG.md): Developer-only browser/server logging,
   investigation attempts и KISS-подбор face threshold/quality gates.
 
@@ -20,6 +19,7 @@ status: active
 
 - [.memory-bank/constitution.md](constitution.md): Project Constitution — top governing policy for agents.
 - [.memory-bank/mbb/index.md](mbb/index.md): Правила ведения Memory Bank (MBB).
+- [.memory-bank/roles/index.md](roles/index.md): Router for agent role contracts.
 - [.memory-bank/roles/orchestrator.md](roles/orchestrator.md): Orchestrator role contract.
 - [.memory-bank/roles/general.md](roles/general.md): General role contract for one-agent execution.
 - [.memory-bank/roles/architect.md](roles/architect.md): Architect role contract.

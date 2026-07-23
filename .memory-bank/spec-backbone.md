@@ -1,13 +1,19 @@
 ---
 description: Pre-PRD spec framing and global SDD backbone state.
-status: active
-last_updated: 2026-07-20
+status: draft
+last_updated: 2026-07-23
 ---
 # SDD Spec Backbone
 
+## Review Status
+- Acceptance: not_accepted
+- State: in_revision
+- Notes: The document is being reconciled with the accepted architecture source
+  and MUST NOT be treated as an approved Global Backbone.
+
 ## Pre-PRD Spec Status
 - Status: ready_for_prd
-- Last updated: 2026-07-20
+- Last updated: 2026-07-23
 - Notes: The clarified PRD and its governing inputs provide sufficient
   evidence for meaningful L1-L3 decomposition. This status does not approve
   architecture, Foundation Dev Path, or implementation tasking.
@@ -27,10 +33,11 @@ last_updated: 2026-07-20
 - [IDEA_APP.md](../IDEA_APP.md): evidence for accepted application topology,
   pipeline compatibility, exact-search/group semantics, process boundaries, and
   separation of requirements from recommendations and future candidates.
-- [IDEA_INGEST.md](../IDEA_INGEST.md): authoritative pilot batch boundary,
-  `visit_date`, manifest, idempotency, searchable-state, and SLO semantics.
-- [IDEA_DEBUG.md](../IDEA_DEBUG.md): authoritative first-version Attempts,
-  Log Explorer, annotation, calibration, retention, and sensitive-log boundary.
+- [IDEA_INGEST.md](../IDEA_INGEST.md): historical ingest evidence; current
+  per-photo admission, uniqueness, queue and SLO semantics come from the PRD.
+- [IDEA_DEBUG.md](../IDEA_DEBUG.md): supporting first-version evidence for
+  Attempts, Log Explorer, annotation, calibration, retention, and the
+  sensitive-log boundary under PRD precedence.
 
 ## Source Precedence
 
@@ -38,8 +45,9 @@ last_updated: 2026-07-20
   `Clarifications` sections. `IDEA_*` requirements and accepted decisions are
   evidence; recommendations and future candidates are not pilot gates.
 - When wording differs, the clarified PRD controls. Known superseded defaults
-  concern Promo copy, QR/browser TTL, absence of a separate pilot selfie,
-  cross-batch duplicate scope, and curated calibration retention.
+  concern Batch/manifest/confirmation, `batch.confirmed_at`, mandatory detailed
+  diagnostic bundles, an existing backend, Promo copy, QR/browser TTL, absence
+  of a separate pilot selfie, and curated calibration retention.
 
 ## Decomposition Inputs
 - User scenarios: authoritative in PRD `Users / Actors` and `UX / Interaction
@@ -77,12 +85,12 @@ new product assumption to derive requirements, epics, or features.
 | Area | Status | Authoritative source | Notes |
 |---|---|---|---|
 | architecture_style | blocked | - | Decide in `/spec-design`; KISS and single-server constraints are already fixed. |
-| source_of_truth | blocked | [.memory-bank/prd.md](prd.md), [IDEA_APP.md](../IDEA_APP.md), [IDEA_INGEST.md](../IDEA_INGEST.md) | Accepted truth hints exist; canonical ownership and transaction rules remain pending. |
+| source_of_truth | blocked | [.memory-bank/prd.md](prd.md), [IDEA_APP.md](../IDEA_APP.md) | Accepted truth hints exist; canonical ownership beyond the PRD-fixed per-photo admission remains pending. |
 | module_boundaries | blocked | [IDEA_APP.md](../IDEA_APP.md), [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md) | The high-level process split is accepted; canonical component/interface boundaries remain pending. |
 | user_scenarios | authoritative | [.memory-bank/prd.md](prd.md) | `Users / Actors` and `UX / Interaction Flow` are sufficient for decomposition. |
 | constraints | authoritative | [.memory-bank/constitution.md](constitution.md), [.memory-bank/prd.md](prd.md) | Pilot, security, performance, and KISS constraints are explicit. |
 | non_goals | authoritative | [.memory-bank/prd.md](prd.md) | Pilot exclusions and post-pilot context are explicit. |
-| domain_model | blocked | [.memory-bank/prd.md](prd.md), [IDEA_APP.md](../IDEA_APP.md), [IDEA_INGEST.md](../IDEA_INGEST.md), [IDEA_DEBUG.md](../IDEA_DEBUG.md) | Product concepts and accepted semantics are framed; formal domain/data design remains pending. |
+| domain_model | blocked | [.memory-bank/prd.md](prd.md), [IDEA_APP.md](../IDEA_APP.md), [IDEA_DEBUG.md](../IDEA_DEBUG.md) | Product concepts and accepted semantics are framed; formal domain/data design remains pending. |
 | data_flow | blocked | [.memory-bank/prd.md](prd.md), [IDEA_APP.md](../IDEA_APP.md) | End-to-end and process flows are known; canonical runtime/data-flow design remains pending. |
 | storage | blocked | [.memory-bank/prd.md](prd.md), [IDEA_APP.md](../IDEA_APP.md), [IDEA_DEBUG.md](../IDEA_DEBUG.md) | Product storage/retention constraints and accepted roles are known; exact ownership/schema remain pending. |
 | api_contracts | blocked | - | Decide applicable contracts in `/spec-design`. |
@@ -114,11 +122,12 @@ new product assumption to derive requirements, epics, or features.
   before creating any subject spec.
 
 ## Global Backbone Status
-- Status: pending
+- Status: blocked
+- Planning Revision: 0
 - Mode: pending
 - Architecture artifact strategy: pending
 - Not applicable areas:
   - Classification is intentionally pending `/spec-design`.
-- Notes: `/spec-init` approved product decomposition only. `/spec-design` still
-  owns global architecture, Foundation Dev Path, canonical SDD coverage, and
-  downstream tasking readiness.
+- Notes: This backbone document is not accepted and remains in revision.
+  `/spec-design` still owns its reconciliation, Foundation Dev Path, canonical
+  SDD coverage, and downstream tasking readiness.

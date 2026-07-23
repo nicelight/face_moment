@@ -1,12 +1,17 @@
 # Face Moment: приложение
 
 
-Обновлено: 2026-07-17
+Обновлено: 2026-07-24
 
 ## 0. Статус документа
 
 Этот документ фиксирует продуктовую концепцию, принятые архитектурные решения,
 границы первого pilot и post-pilot направление продукта.
+
+Продуктовые требования определяет `.memory-bank/prd.md`, а принятые
+архитектурные решения — `arch_vision.md`. При расхождении старой формулировки
+этого документа с данными источниками действуют более поздние PRD и
+`arch_vision.md`.
 
 Если не указано иное, `pilot MVP` означает одну СПА и контролируемые проходы
 тестировщиков. Целевая платформа на
@@ -54,7 +59,8 @@
 
 ~~~text
 фотограф снимает разных посетителей СПА
-→ через authenticated web app загружает готовые JPEG и подтверждает batch
+→ выбирает СПА и authoritative visit_date
+→ через authenticated HTTPS web app независимо загружает готовые JPEG
 → система обрабатывает фотографии и делает их доступными для поиска
 → sensor автоматически запускает reference-серию при проходе тестировщиков
 → Promo показывает четыре low-quality фотографии без watermark и QR
@@ -64,7 +70,9 @@
 
 Payment, фактическое скачивание и standalone selfie-search не входят в первый
 pilot. Post-pilot paid product продаёт за одну фиксированную сумму весь найденный
-пакет, после чего выдаёт originals через короткоживущие signed URLs.
+пакет. Future payment/entitlement остаётся внутренним модулем `promo`,
+`inventory` продолжает владеть originals, а способ их авторизованной выдачи
+выбирается при активации full-version scope.
 
 ### 1.3 Масштаб
 
@@ -114,9 +122,10 @@ Promo показывает четыре teaser-фотографии и QR
 
 Целевая метрика: `ingest_to_searchable_p95`.
 
-Для pilot она означает, что не менее 95% JPEG из подтверждённых batches
-становятся searchable менее чем за 15 минут от `batch.confirmed_at`; точная
-population и failure semantics определены в `IDEA_INGEST.md`.
+Для pilot она означает, что не менее 95% independently accepted unique JPEG
+становятся searchable менее чем за 15 минут от server-side
+`photo.accepted_at`; точная population и failure semantics определены в
+`IDEA_INGEST.md`.
 
 **Почему принято:** скорость inference не имеет значения, если коммерческие фотографии ещё не попали в поисковую базу. Эта метрика выявляет реальный bottleneck загрузки и фоновой обработки.
 
@@ -140,7 +149,8 @@ population и failure semantics определены в `IDEA_INGEST.md`.
 
 ### 2.2 Pilot Promo и QR continuation
 
-1. Фотограф заранее загружает и подтверждает batch.
+1. Фотограф выбирает СПА и authoritative `visit_date`, затем независимо
+   загружает готовые JPEG без Batch/manifest/confirmation.
 2. Тестировщик проходит через capture-zone.
 3. Sensor запускает автоматическую reference-серию без действия тестировщика.
 4. Система best-effort обрабатывает до пяти face detections и формирует четыре
@@ -299,7 +309,8 @@ processing_mode
 Переключение выполняется так:
 
 1. Админ выбирает новый pipeline как `pending`.
-2. PostgreSQL создаёт jobs для отсутствующих состояний и embeddings.
+2. PostgreSQL создаёт недостающие `pending` states для фотографий и pipeline
+   revisions.
 3. Пока идёт миграция, новые фотографии обрабатываются serving и pending pipelines.
 4. Coverage pending pipeline считается по состояниям `ready` и `no_faces`.
 5. После полного покрытия, успешного прогрева модели и наличия калибровки для
@@ -353,9 +364,9 @@ MVP может хранить только serving revision и фиксиров�
 ~~~text
 id
 spa_id
-batch_id
 captured_at
 visit_date
+accepted_at
 original_path
 preview_path
 thumbnail_path
@@ -364,6 +375,8 @@ height
 checksum_sha256
 perceptual_hash
 created_at
+
+UNIQUE(spa_id, visit_date, checksum_sha256)
 ~~~
 
 `perceptual_hash` (`pHash`) детерминированно рассчитывается для каждой
@@ -487,7 +500,7 @@ UNIQUE(photo_id, pipeline_revision_id, face_index)
 query embedding
 → WHERE pipeline_revision_id = serving pipeline
 → WHERE spa_id = selected СПА
-→ WHERE visit_date = подтверждённая рабочая дата batch
+→ WHERE visit_date = operator-selected active working date
 → optional: WHERE captured_at входит в подтверждённый time window
 → точное cosine distance по оставшимся векторам
 → фильтр по calibrated threshold для СПА, pipeline code и query source
@@ -795,13 +808,13 @@ Face-match threshold остаётся обязательным gate. Разно�
 Обычные фотографии обрабатывает один отдельный процесс:
 
 ~~~text
-забрать pending job из PostgreSQL
+забрать следующий pending state из PostgreSQL
 → загрузить original
 → создать preview и thumbnail
 → запустить нужный FaceEngine
 → сохранить photo_faces
 → обновить photo_pipeline_states
-→ перейти к следующей job
+→ перейти к следующему state
 ~~~
 
 Worker обрабатывает одну фотографию за раз. Внутри одной операции
@@ -811,102 +824,71 @@ thread limits являются deployment-рекомендацией из `IDEA_
 
 **Почему принято:** один последовательный worker устраняет конкуренцию нескольких inference-процессов и проще диагностируется. При 1 500–3 000 фото в день его достаточность сначала проверяется benchmark-ом.
 
-### 7.2 PostgreSQL как очередь фоновых jobs
+### 7.2 PostgreSQL как durable state queue
 
-**Статус: рекомендация.** Обязательная граница состоит в том, что background
-processing остаётся в PostgreSQL и не требует внешнего broker-а. Развитая job
-schema, автоматический recovery, fixed ordering и retry являются рекомендуемой
-production-профильной реализацией, а не требованием MVP.
-
-Рекомендуемая таблица:
-
-#### `photo_processing_jobs`
+`photo_pipeline_states` является и searchable truth, и очередью текущего
+serving pipeline:
 
 ~~~text
-id
 photo_id
 pipeline_revision_id
-job_type
-status: pending | processing | completed | failed
+status: pending | processing | ready | no_faces | failed
 attempts
-next_attempt_at
-locked_at
-locked_by
+searchable_at
 last_error
-created_at
-started_at
-finished_at
 
-UNIQUE(photo_id, pipeline_revision_id, job_type)
+UNIQUE(photo_id, pipeline_revision_id)
 ~~~
 
-Worker атомарно забирает одну job через транзакцию. Для развитого варианта
-рекомендуется `FOR UPDATE SKIP LOCKED`, возврат зависшей `processing` job в
-`pending` после timeout и ограниченное число retry. Более простой single-worker
-MVP может использовать обычный transactional claim и ручной повтор failed jobs.
+Единственный worker забирает следующий `pending` state одним коротким atomic
+UPDATE, переводит его в `processing` и увеличивает `attempts`. При startup старые
+`processing` возвращаются в `pending`, после чего работа начинается с начала.
+Начальный retry limit — три попытки.
 
-Для развитого варианта рекомендуется простое детерминированное правило выбора:
+Отдельная `photo_processing_jobs`, lease, `locked_by`, `claim_token`, fencing,
+`SKIP LOCKED` и claim-scoped object keys не нужны при одном worker replica.
 
-1. новые фотографии для serving pipeline;
-2. недостающие embeddings pending pipeline;
-3. `dual_benchmark` и массовая переобработка;
-4. ограниченная порция cleanup-задач.
-
-Это можно реализовать одним SQL `ORDER BY` без поля произвольного priority и без
-отдельных очередей. Fixed ordering не является обязательным, пока в MVP нет
-одновременного backlog разных классов jobs.
-
-**Почему принято:** PostgreSQL уже является обязательной частью проекта и
-достаточен для одного фонового consumer-а. Рекомендуемый фиксированный порядок
-не позволяет массовой переобработке заблокировать новые фотографии, но не
-требует внешнего broker-а, нескольких priority queues или scheduler-а.
+**Почему принято:** одна уже необходимая row-state модель закрывает durable
+admission, restart и at-least-once processing без второго lifecycle.
 
 ### 7.3 Что обрабатывает тот же worker
 
-**Статус: рекомендация.** При наличии соответствующих jobs тот же worker может
-выполнять:
+Тот же worker может последовательно выполнять:
 
 - первичную обработку фотографий;
-- пересчёт missing embeddings;
-- переобработку после смены pipeline;
-- `dual_benchmark` jobs;
-- периодическую очистку истёкших временных файлов и sessions.
+- developer-triggered Calibration во время отладки;
+- idempotent retention cleanup через отдельную явно запущенную команду.
 
-В MVP допустимо реализовать только первичную обработку. Backfill, переобработка,
-`dual_benchmark` и cleanup подключаются по фактической необходимости; отдельные
-workers и очереди для них заранее не создаются.
+Calibration может занять worker на полную длительность run и временно задержать
+Photo processing. После worker restart run становится `failed|interrupted`,
+Photo processing возобновляется, а разработчик запускает Calibration повторно
+вручную.
 
-**Почему принято:** если эти задачи появляются, один worker остаётся самым
-простым местом их выполнения и не требует параллельных очередей на текущем
-масштабе.
+Preemption, priority scheduling, automatic Calibration reclaim и отдельный
+Calibration worker не нужны.
 
 ### 7.4 Условие масштабирования background processing
 
-**Статус: рекомендация для следующего минимального шага, не требование MVP.**
-
-Второй PostgreSQL-worker разрешено добавить, если выполняется хотя бы одно условие:
+Второй PostgreSQL-worker рассматривается только если выполняется хотя бы одно
+условие:
 
 - `ingest_to_searchable_p95` устойчиво превышает целевое значение;
-- возраст самой старой pending job растёт во время обычной дневной нагрузки;
+- возраст самого старого pending state растёт во время обычной дневной нагрузки;
 - worker не успевает обработать суточный объём до следующего рабочего периода.
 
-Если второй consumer действительно нужен, рекомендуется использовать ту же
-таблицу и `SKIP LOCKED`; Redis/Celery для этого не требуются.
-
-**Почему принято:** схема допускает простое горизонтальное увеличение числа consumers, но не оплачивает эту сложность заранее.
+Появление второго replica требует отдельного решения по concurrency/claim
+contract. Текущий pilot не проектирует данную ветку заранее.
 
 ### 7.5 Идемпотентность worker
 
-**Принятое архитектурное решение:** jobs выполняются по модели at-least-once, но
-повтор одной комбинации `(photo_id, pipeline_revision_id, job_type)` должен
-приводить к тому же итоговому состоянию без дублирования результатов.
+Processing выполняется по модели at-least-once, но повтор одной комбинации
+`(photo_id, pipeline_revision_id)` должен приводить к тому же итоговому
+состоянию без дублирования результатов.
 
 Original и pipeline revision неизменяемы. Worker выполняет тяжёлую обработку вне
-транзакции, а затем одной PostgreSQL-транзакцией проверяет актуальный
-`locked_by = worker_id:claim_uuid`, полностью заменяет `photo_faces`, обновляет
-`photo_pipeline_states` в `ready | no_faces` и помечает job как `completed`.
-Повтор terminal job становится no-op; автоматический lease recovery остаётся
-рекомендацией.
+транзакции, а затем одной PostgreSQL-транзакцией полностью заменяет
+`photo_faces` и публикует `photo_pipeline_states` в
+`ready | no_faces | failed`. Повтор terminal state становится no-op.
 
 Preview и thumbnail сначала записываются в MinIO по детерминированному versioned
 key, после чего key публикуется в БД. Возможный orphan безопасно удаляется позже;
@@ -966,7 +948,9 @@ validate image
 → получить четыре previews + QR continuation URL/token + qr_expires_at
 → если доступен Chime-звук, воспроизвести Chime
 → заменить prePromo на Promo: grid 3x2 из четырёх фото, QR и текста
-  «Скачать можно на сайте или по QR-коду»
+  «Ваши фотографии найдены — откройте по QR-коду»
+→ после decode четырёх teasers и полной видимости QR отправить idempotent
+  display acknowledgement
 → показать результат в течение RESULT_DISPLAY_SECONDS
 → вернуться к локально закэшированной рекламе
 ~~~
@@ -980,13 +964,13 @@ low-quality изображениями; originals в первом pilot не в�
 ~~~text
 RESULT_DISPLAY_SECONDS=20
 CAPTURE_COOLDOWN_SECONDS=60
-QR_SESSION_TTL_SECONDS=900
-BROWSER_SESSION_IDLE_TTL_SECONDS=1800
+QR_SESSION_TTL_SECONDS=1800
+BROWSER_SESSION_IDLE_TTL_SECONDS=3600
 ~~~
 
-Значения являются стартовыми configurable defaults, а не неизменяемыми product
-requirements. Истечение `RESULT_DISPLAY_SECONDS` возвращает display к рекламе и
-не завершает QR session.
+Текущие pilot-значения QR first-open и browser idle TTL определены PRD.
+Истечение `RESULT_DISPLAY_SECONDS` возвращает display к рекламе и не завершает
+QR session.
 
 От момента получения reference-серии и до завершения поиска по всем выбранным
 лицам client не начинает новый capture. Cooldown запускается только после того,
@@ -1002,7 +986,10 @@ reference detections. Полностью видимый и сканируемы�
 QR landing продолжает ту же session без повторного selfie и показывает СПА,
 `visit_date`, одну из четырёх low-quality teaser-фотографий, `N` из
 `session_result_photo_ids` и post-pilot CTA полного пакета. Payment и actual
-download в pilot отсутствуют.
+download в pilot отсутствуют. Все сканирования в первые 30 минут используют
+одну session-wide browser access state без отдельных per-device grants. После
+первого открытия общий browser context истекает через 60 минут без явной
+активности участника на любом открытом телефоне.
 
 `spa_client_token` является простым секретом клиента. Сервер хранит отображение
 `token_hash -> spa_id`, определяет СПА только по token и не доверяет `spa_id` из
@@ -1048,31 +1035,35 @@ advertising
 возвращается прямо в `advertising`. `Chime` и `Promo` не запускаются, cooldown
 не начинается, а новый capture разрешается сразу после завершения поиска.
 
-### 8.5 Concurrency и короткая очередь в памяти
+### 8.5 Concurrency без realtime queue
 
 Стартовая конфигурация RealtimeFaceService:
 
 - один процесс;
 - inference concurrency: 1;
-- ограниченная FIFO-очередь в памяти;
+- concurrent request получает `busy`;
 - deadline для каждого запроса;
 - устаревшие reference-запросы не обрабатываются;
 - при перезапуске сервиса `SpaPromoClient` повторяет запрос только со свежим
   reference-кадром.
 
-Это не durable job queue и не требует Redis.
+Durable либо in-memory waiter queue не создаётся.
 
-**Почему принято:** reference-запрос полезен только несколько секунд. Сохранять устаревшие запросы в надёжной внешней очереди бессмысленно; ограниченная очередь нужна только для кратковременного столкновения запросов от разных СПА.
+**Почему принято:** в pilot один display client уже игнорирует overlapping
+triggers. Ожидание в очереди только уменьшило бы оставшийся deadline и добавило
+stale-work semantics без практической пользы.
 
 ## 9. Метрики p50/p95/p99
 
-Для проверки pilot достаточно сохранять данные для четырёх базовых показателей:
-`reference_ready_to_qr_p95`, `trigger_to_preview_p95`,
-`realtime_queue_wait_p95` и `ingest_to_searchable_p95`.
+Для проверки pilot достаточно сохранять данные для трёх базовых показателей:
+`reference_ready_to_qr_p95`, `trigger_to_preview_p95` и
+`ingest_to_searchable_p95`, а также число ответов `busy`.
 
 Product acceptance anchor — `reference_series_ready_at`; sensor-triggered
 interval остаётся end-to-end diagnostic metric и не заменяет этот критерий.
-Детальная телеметрия ниже является рекомендацией.
+Client измеряет acceptance interval собственными monotonic elapsed values;
+cross-machine wall-clock subtraction не используется. Детальная телеметрия ниже
+является рекомендацией.
 
 ### 9.1 Рекомендуемые realtime timestamps
 
@@ -1081,6 +1072,7 @@ interval остаётся end-to-end diagnostic metric и не заменяет 
 ~~~text
 sensor_triggered_at
 reference_series_ready_at
+reference_series_ready_elapsed_ms
 request_sent_at
 received_at
 processing_started_at
@@ -1090,6 +1082,7 @@ response_finished_at
 response_received_at
 promo_fully_visible_at: nullable
 qr_fully_visible_at: nullable
+qr_fully_visible_elapsed_ms: nullable
 displayed_at: nullable
 status
 spa_id
@@ -1100,12 +1093,12 @@ query_source
 Из них рассчитываются:
 
 - `network_to_server_ms`;
-- `queue_wait_ms`;
 - `inference_ms`;
 - `vector_search_ms`;
 - `server_total_ms`;
 - `trigger_to_preview_ms`;
-- `reference_ready_to_qr_ms = qr_fully_visible_at - reference_series_ready_at`.
+- `reference_ready_to_qr_ms =
+  qr_fully_visible_elapsed_ms - reference_series_ready_elapsed_ms`.
 
 Pilot acceptance:
 
@@ -1127,16 +1120,16 @@ Pilot acceptance:
 
 - `trigger_to_preview_p50/p95/p99`;
 - `reference_ready_to_qr_p50/p95/p99`;
-- `realtime_queue_wait_p50/p95/p99`;
 - `inference_p50/p95/p99`;
 - `vector_search_p50/p95/p99`;
 - `ingest_to_searchable_p50/p95/p99`;
-- oldest pending background job;
-- доля rejected/expired realtime requests;
+- oldest pending background state;
+- доля `busy`/expired realtime requests;
 - coverage serving pipeline по `ready + no_faces`;
 - доля `pending | processing | failed` по pipeline revision.
 
-**Почему принято:** разделение этапов показывает реальный источник задержки: сеть, ожидание свободного сервиса, inference, поиск или background backlog.
+**Почему принято:** разделение этапов показывает реальный источник задержки:
+сеть, inference, поиск или background backlog без фиктивной realtime queue.
 
 ---
 
@@ -1168,24 +1161,37 @@ thresholds для конкретного СПА и query source через ад�
 
 ---
 
-## 11. Diagnostic sessions первого pilot
+## 11. Core Attempt и diagnostic evidence первого pilot
 
-Каждая capture/search попытка получает один
-`diagnostic_session_id/correlation_id`, связывающий:
+Client создаёт UUID `attempt_id` при принятии idle sensor trigger. Core Attempt
+сохраняется до inference и связывает обязательные outcome, applied snapshot и
+stage timestamps.
 
-- исходную reference-серию;
-- нормализованные изображения и выбранные face crops;
-- camera/config metadata и pipeline revision;
-- detections, quality values, candidates, thresholds и выбранные `photo_id`;
-- timestamps всех этапов;
-- screenshot фактически показанного Promo и QR continuation event;
-- technical outcome/status и issue tags.
+Processing и display outcomes разделены:
 
-Изображения хранятся в object storage, manifest и индексируемые события — в
-PostgreSQL. Diagnostic route отделён от Promo/QR flow.
+~~~text
+processing_status: client_offline | accepted → searching
+                   → result_issued | no_success | interrupted | deadline | internal_failure
 
-Diagnostic bundle автоматически удаляется через 90 дней. Отдельный полезный
-case можно вручную перенести в calibration/benchmark dataset.
+display_status: not_applicable | pending → confirmed | failed | unconfirmed
+~~~
+
+`result_issued` не считается успешным Promo. `display_status=confirmed`
+устанавливается только после idempotent acknowledgement клиента, когда все
+четыре teasers декодированы и QR полностью видим.
+
+Detailed events и protected artifacts присоединяются best-effort по
+`attempt_id`. Они могут включать reference frames, normalized images, crops,
+camera/config metadata, detections, candidates, thresholds, выбранные
+`photo_id`, Promo screenshot и QR continuation event. Отсутствующий или
+незавершённый evidence set отображается как `incomplete` и не блокирует
+participant flow.
+
+Technical logs хранятся 30 дней, ordinary core Attempts и diagnostic artifacts —
+90 дней. Вручную promoted Calibration case сохраняет до явного удаления только
+curated subset: выбранные frames/crops, versions/parameters, scores, annotations
+и participant name. Whole Attempt, unselected reference series, Promo screenshot
+и ordinary logs сохраняют обычный expiry.
 
 Selfie capture, calibration selfies и standalone selfie-search не входят в
 первый pilot. Они требуют отдельного post-pilot scope.
@@ -1205,7 +1211,9 @@ Acceptance run содержит 20 ожидаемо успешных попыт�
   10 секунд от `reference_series_ready_at`;
 - landing каждой завершённой попытки правильно показывает СПА, `visit_date` и
   согласованные с той же session teaser и `N`;
-- для каждой попытки сохраняется diagnostic bundle.
+- для каждой принятой попытки сохраняется core Attempt; отсутствие detailed
+  evidence явно отображается как `incomplete`;
+- успешный Promo подтверждён отдельным idempotent display acknowledgement.
 
 Этот run подтверждает техническую работоспособность, но не полное покрытие
 каждого человека в группе.
@@ -1216,8 +1224,8 @@ Acceptance run содержит 20 ожидаемо успешных попыт�
 
 ### 13.1 Минимальная админка
 
-- authenticated direct JPEG batch upload с checksum и повторной отправкой;
-- привязка к СПА и дате;
+- authenticated independent JPEG upload через HTTPS backend boundary;
+- выбор СПА и authoritative `visit_date`;
 - базовый статус originals, preview и `photo_pipeline_states`;
 - выбор serving pipeline для СПА;
 - редактирование thresholds для каждого СПА.
@@ -1250,15 +1258,14 @@ pipeline блокируется и админка предлагает заре�
 - UI control для `active_only` / `dual_benchmark`;
 - coverage каждой pipeline revision по `ready + no_faces`;
 - запуск reprocess missing states/embeddings;
-- просмотр и повтор failed jobs;
+- просмотр и повтор failed states;
 - состояния моделей: missing/loading/warming/ready/error.
 
 ### 13.4 Рекомендуемая техническая диагностика
 
-- p50/p95/p99 queue wait, inference и trigger-to-preview;
-- число expired/rejected requests;
-- текущая длина in-memory realtime queue;
-- oldest background job;
+- p50/p95/p99 inference, vector search и trigger-to-preview;
+- число `busy`/expired requests;
+- oldest background state;
 - ingest-to-searchable p50/p95/p99;
 - фактический CPU set RealtimeFaceService;
 - число разрешённых inference threads.
@@ -1291,8 +1298,11 @@ reference match (selfie — post-pilot)
 
 - только low-quality preview без watermark на Promo и phone landing;
 - originals в pilot не выдаются; после pilot они доступны только после оплаты;
-- post-pilot originals выдаются через короткоживущие signed download URLs через
-  публичный HTTPS endpoint backend;
+- future purchase/payment/entitlement остаётся внутренним модулем `promo`;
+- `inventory` продолжает владеть originals и выдаёт их только после
+  promo-owned entitlement check;
+- backend proxy остаётся стартовой delivery boundary; presigned participant
+  URLs рассматриваются только после измеримого bandwidth bottleneck;
 - TTL для QR/search sessions;
 - все запросы имеют rate limit;
 - каждый `SpaPromoClient` аутентифицируется своим простым
@@ -1309,7 +1319,8 @@ configuration scheme.
 ## 15. Что входит в MVP приложения
 
 1. Одна pilot СПА и ограниченная группа тестировщиков.
-2. Authenticated direct JPEG batch upload с authoritative `visit_date`.
+2. Authenticated independent JPEG upload после выбора СПА и authoritative
+   `visit_date`, без Batch/manifest/confirmation.
 3. PostgreSQL + pgvector exact search и MinIO без внешней публикации.
 4. `photo_pipeline_states` как источник searchable state.
 5. Один PostgreSQL-backed `BackgroundPhotoWorker` и один синхронный
@@ -1325,25 +1336,26 @@ configuration scheme.
     без watermark и QR continuation.
 11. Phone landing с СПА, `visit_date`, teaser, `N` и post-pilot CTA без
     payment/download.
-12. Diagnostic bundles для каждой попытки с retention 90 дней.
-13. Метрики `reference_ready_to_qr`, realtime queue и
+12. Core Attempt каждой принятой попытки и best-effort diagnostic evidence с
+    явным `incomplete`; ordinary Attempt/evidence retention — 90 дней.
+13. Отдельный idempotent display acknowledgement после decode четырёх teasers и
+    полной видимости QR.
+14. Метрики `reference_ready_to_qr`, `busy` и
     `ingest_to_searchable`, а также acceptance run из 20 попыток.
-14. Benchmark SFace и Buffalo M на reference-camera данных pilot; selfie samples
+15. Benchmark SFace и Buffalo M на reference-camera данных pilot; selfie samples
     только post-pilot.
 
 ### 15.1 Рекомендуется после минимального MVP
 
 - standalone selfie/live-selfie search;
-- payment полного пакета по фиксированной цене, receipt/refund и signed download
-  originals;
+- payment полного пакета по фиксированной цене, receipt/refund и
+  entitlement-checked original delivery внутри принятых ownership boundaries;
 - Яндекс Диск и другие external ingest channels;
 - публичная field validation и rollout;
 - `dual_benchmark` как online-режим;
 - serving/pending migration и backfill;
-- fixed ordering разных классов jobs;
-- автоматический recovery зависших jobs и retry;
-- benchmark, backfill и cleanup в одном worker;
-- масштабирование consumers через `SKIP LOCKED`;
+- backfill и online `dual_benchmark` после отдельной необходимости;
+- второй worker только после отдельного concurrency/claim design;
 - coverage/model-state/pending controls в админке;
 - богатые p50/p95/p99 разрезы, CPU sets и thread-limit diagnostics.
 
@@ -1382,7 +1394,7 @@ configuration scheme.
 | Текущее решение | Когда разрешено пересмотреть | Следующий минимальный шаг |
 |---|---|---|
 | Exact pgvector search | vector_search_p95 становится значимой частью SLA после фильтрации | исследовать HNSW на реальном наборе |
-| PostgreSQL jobs | PostgreSQL polling/locking подтверждённо ограничивает throughput | рассмотреть простой broker |
+| `photo_pipeline_states` как singleton worker queue | oldest pending age или ingest SLO доказывают недостаточный throughput одного worker | сначала измерить и оптимизировать текущий worker; затем отдельно спроектировать concurrency второго replica |
 | До пяти независимых face detections из настраиваемой reference-серии без tracking/fusion | измерения показывают, что текущая обработка не выполняет цели pilot | сначала скорректировать capture window и quality ranking; затем отдельно проверить fusion |
 | Нет identity clustering | появляется подтверждённая продуктовая задача идентичности между визитами | проектировать clustering отдельно |
 
@@ -1393,8 +1405,9 @@ configuration scheme.
 ### 18.1 Одновременные realtime-запросы
 
 В первом pilot источник один. После расширения 10–15 СПА смогут отправлять
-reference/selfie запросы одновременно; риск контролируется bounded in-memory
-queue, deadline и метрикой queue wait.
+reference/selfie запросы одновременно. В текущем contract занятой singleton
+RealtimeFaceService отвечает `busy`; queue либо второй instance проектируются
+только после измеримого throughput/availability failure.
 
 ### 18.2 Задержка загрузки коммерческих фотографий
 
@@ -1422,6 +1435,21 @@ queue, deadline и метрикой queue wait.
 не попасть в search. Это принято для pilot и должно быть явно отражено в UX,
 diagnostics и интерпретации acceptance; полное group coverage не обещается.
 
+### 18.7 Принятые риски pilot
+
+- необратимая потеря единственного primary disk/server уничтожает persisted
+  data; backup/replication/snapshot guarantee отсутствует;
+- crash между MinIO upload и per-photo PostgreSQL commit может оставить один
+  private orphan и потребовать повторной загрузки одной фотографии;
+- пока фотограф продолжает upload, search видит только уже готовый compatible
+  subset активных СПА/date;
+- aggregate ingest metrics незавершённого upload-периода могут быть временно
+  неполными или вводящими в заблуждение;
+- developer-triggered Calibration может занять общий worker и задержать Photo
+  processing;
+- фотография под ошибочно выбранными СПА или `visit_date` не получает
+  специальный correction workflow.
+
 ## 19. Финальная архитектурная формула приложения
 
 ~~~text
@@ -1429,23 +1457,29 @@ diagnostics и интерпретации acceptance; полное group coverag
 +
 Python/FastAPI backend
 +
+пять capability packages текущего pilot:
+serving_control + inventory + processing + promo + diagnostics
++
 PostgreSQL + pgvector exact search
 +
 MinIO/S3-compatible storage
 +
-одна PostgreSQL-таблица фоновых jobs
+photo_pipeline_states как durable singleton worker queue
 +
 один последовательный BackgroundPhotoWorker
 +
-один синхронный RealtimeFaceService
+один синхронный RealtimeFaceService: один slot + busy + deadline
 +
-синхронный HTTP SpaPromoClient с простым spa_client_token
+синхронный HTTP SpaPromoClient с client-generated attempt_id,
+простым spa_client_token и отдельным display acknowledgement
 +
 best-effort group search без tracking и гарантии полного покрытия
 +
 четыре low-quality preview без watermark + QR continuation
 +
-diagnostic bundles с retention 90 дней
+одна session-wide browser access state без per-device grants
++
+core Attempt + best-effort diagnostic evidence + явный incomplete
 +
 facemoment для администрирования + непривилегированный display с Chromium sandbox
 +
@@ -1457,8 +1491,7 @@ type-level thresholds для каждого СПА
 +
 никаких Redis/Celery/priority/pause/ANN/clustering/margin
 +
-развитые jobs, pending management, CPU diagnostics и богатые percentiles
-остаются рекомендациями
+никаких backup/replication/snapshot guarantees в pilot
 ~~~
 
 Главный принцип:

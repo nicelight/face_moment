@@ -29,7 +29,7 @@ one-СПА pilot, показывает четыре персональных tea
 - Участник pilot — тестировщик пользовательского сценария.
 - Фотограф — загружает свежие готовые JPEG и получает новый канал контакта с
   потенциальным покупателем.
-- Оператор Face Moment/СПА — контролирует batches, searchable readiness, Promo и
+- Оператор Face Moment/СПА — контролирует readiness фотографий, Promo и
   диагностику.
 - Разработчик приложения — расследует attempts и browser/server logs, размечает
   результаты и подбирает thresholds/quality gates.
@@ -62,15 +62,15 @@ one-СПА pilot, показывает четыре персональных tea
 - Участник сразу видит свои фотографии и продолжает session одним QR scan.
 - Фотограф своевременно привлекает внимание потенциального покупателя.
 - СПА получает автоматический Promo без полноценного touchscreen kiosk.
-- Команда получает воспроизводимые diagnostics для настройки камеры, pipeline,
-  thresholds, UX и latency.
+- Команда получает correlated diagnostics с явными evidence gaps для настройки
+  камеры, pipeline, thresholds, UX и latency.
 
 ## 6. Product Concept
 
 Первый pilot проверяет контур:
 
 ```text
-authenticated JPEG batch upload
+authenticated independent JPEG upload for selected СПА/date
 → searchable inventory
 → automatic sensor-triggered reference series
 → best-effort face search
@@ -93,8 +93,9 @@ Post-pilot paid product продаёт весь найденный пакет з
 - одна выбранная СПА и ограниченная группа тестировщиков;
 - 43-inch landscape display, baseline 16:9 / 1920×1080;
 - automatic sensor-triggered capture с дистанции 3–5 метров;
-- authenticated direct web upload готовых JPEG с подтверждением СПА,
-  authoritative `visit_date` и batch manifest;
+- authenticated direct web upload готовых JPEG после выбора СПА и
+  authoritative `visit_date`, с независимым результатом для каждого файла и
+  без Batch/manifest/confirmation;
 - background processing и exact face search в пределах СПА, даты и совместимой
   pipeline revision;
 - best-effort group processing до пяти detections без tracking/clustering;
@@ -102,9 +103,10 @@ Post-pilot paid product продаёт весь найденный пакет з
 - четыре low-quality preview и QR без watermark;
 - QR continuation page без нового selfie: СПА, дата, teaser, `N` и post-pilot
   CTA полного пакета;
-- diagnostic bundle каждой попытки с retention 90 дней;
-- developer-only `Attempts`, `Log Explorer` и `Calibration` в существующем
-  backend/PostgreSQL согласно `IDEA_DEBUG.md`;
+- core Attempt каждой принятой попытки; подробные protected diagnostic evidence
+  присоединяются best-effort, а их отсутствие отображается как `incomplete`;
+- developer-only `Attempts`, `Log Explorer` и `Calibration` через backend и
+  PostgreSQL, создаваемые в этом проекте;
 - failure mode с локальной рекламой и diagnostic event;
 - controlled acceptance run из 20 попыток.
 
@@ -127,10 +129,10 @@ Post-pilot paid product продаёт весь найденный пакет з
   чем за 10 секунд от `reference_series_ready_at`.
 - Landing каждой завершённой попытки правильно показывает СПА, `visit_date` и
   согласованные с той же session teaser и `N`.
-- Для каждой попытки создан diagnostic bundle.
-- Не менее 95% JPEG подтверждённых batches становятся searchable менее чем за
-  15 минут от `batch.confirmed_at`; задержка фотографа до подтверждения измеряется
-  отдельно.
+- Для каждой принятой попытки создан core Attempt с correlation ID и stage
+  timestamps; отсутствие подробных evidence видно как `incomplete`.
+- Не менее 95% независимо принятых unique JPEG становятся searchable менее чем
+  за 15 минут от server-side `photo.accepted_at`.
 
 Метрики доказывают работоспособность smoke-pilot.
 
@@ -143,6 +145,10 @@ Post-pilot paid product продаёт весь найденный пакет з
 - no-watermark policy для всех preview; originals в pilot не выдаются;
 - PostgreSQL/MinIO не публикуются наружу, public boundary использует HTTPS;
 - поиск ограничен СПА, датой/периодом и совместимой pipeline revision;
+- `Photo` и её serving-pipeline `pending` state принимаются одной короткой
+  PostgreSQL transaction; существующая queue переживает restart backend/worker;
+- Calibration может выполняться на общем `BackgroundPhotoWorker`, временно
+  задерживать ingest и после interruption перезапускается разработчиком вручную;
 - архитектура усложняется только после измеримого bottleneck.
 
 ## 11. Assumptions
@@ -157,16 +163,22 @@ Post-pilot paid product продаёт весь найденный пакет з
 - group algorithm может повторно выбрать одного человека и пропустить другого;
 - motion blur, pose, lighting и размер лица могут сорвать поиск;
 - поздний upload лишает Promo актуальных снимков;
+- поиск может временно видеть неполный набор фотографий выбранных СПА/date, пока
+  фотограф продолжает upload;
+- crash между object upload и per-photo DB commit может оставить orphan object
+  и потерять admission одной фотографии; повторный upload считается достаточным;
+- Calibration во время debugging может временно ухудшить ingest SLO;
 - отсутствие watermark облегчает копирование teaser, хотя low-quality ограничивает
   их коммерческую ценность;
 - один сервер и один realtime process создают latency/availability risk;
+- необратимая потеря единственного primary disk/server уничтожит persisted data;
+  отдельный backup в pilot не создаётся;
 - 20 попыток недостаточны для публичного production rollout.
 
 ## 13. Open Questions
 
 - Какая СПА и геометрия прохода выбраны для pilot?
 - Какие camera, lens, passage sensor и lighting проходят validation?
-- Какие final QR/browser TTL и expired-session UX используются?
 - Какая field validation обязательна перед запуском на реальных посетителях?
 - Кто является экономическим заказчиком post-pilot продукта?
 - Какие package threshold, payment, receipt/refund и download rules применяются
@@ -179,7 +191,8 @@ Post-pilot paid product продаёт весь найденный пакет з
 PRD описывает только one-СПА pilot и заканчивается проверенным QR
 continuation. Обязательные решения: automatic Promo, authenticated JPEG upload,
 четыре no-watermark teaser, continuation без selfie, текущий best-effort group
-algorithm, 90-day diagnostics и performance acceptance `19/20 under 10s`.
+algorithm, core Attempt с best-effort diagnostic evidence, 90-day retention
+ordinary attempt/evidence и performance acceptance `19/20 under 10s`.
 Developer logging, attempt investigation, manual annotation и explainable
 parameter recommendations определены в `IDEA_DEBUG.md` и также являются входом
 PRD. Payment и originals остаются post-pilot context.

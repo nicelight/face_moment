@@ -36,8 +36,6 @@ flowchart LR
 
         postgres[("PostgreSQL + pgvector<br/>domain state, jobs, exact vectors,<br/>events, logs, annotations")]
         minio[("Private MinIO / S3 storage<br/>originals, previews, thumbnails,<br/>protected diagnostic artifacts")]
-        backup[("Backup на другом физическом носителе / сервере")]
-
         edge --> backend
         edge --> realtime
 
@@ -50,8 +48,6 @@ flowchart LR
         realtime -->|"read previews / write diagnostics"| minio
         realtime --> face_engine
 
-        postgres --> backup
-        minio --> backup
     end
 
     photographer -->|"HTTPS JPEG upload + admin"| edge

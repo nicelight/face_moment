@@ -4,6 +4,17 @@ status: active
 ---
 # Changelog
 
+## [2026-07-22] Pilot durability and QR-session simplification
+- Removed backup as a pilot requirement and recorded accepted data loss after
+  irreversible loss of the only primary disk/server.
+- Corrected the greenfield boundary: the backend/admin application is delivered
+  by this project; no existing backend or external IdP is assumed.
+- Simplified QR continuation to one session-wide browser access state with no
+  per-device grant records while retaining the 30-minute first-open and
+  60-minute shared idle limits.
+- Clarified that browser JPEG upload crosses the HTTPS backend boundary and
+  private MinIO is never a browser endpoint.
+
 ## [2026-07-20] СПА terminology synchronization
 - Updated the human-readable venue term from Latin spelling to Cyrillic `СПА`
   across current project Markdown documents.

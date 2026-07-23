@@ -6,7 +6,7 @@
 
 Этот документ фиксирует инфраструктурную часть концепции: центральный сервер,
 серверную ОС, базовую настройку, Docker, рекомендации по CPU isolation, storage,
-backup, hardware и display/kiosk с рекламой.
+hardware и display/kiosk с рекламой.
 
 Первый pilot — one-СПА smoke test с тестировщиками. Топология на 10–15 СПА
 является target capacity после pilot, а
@@ -97,7 +97,7 @@ reference-серию и отправляет её синхронным HTTPS req
 источник истины.
 
 **Почему принято:** централизованная схема упрощает развёртывание, обновление
-моделей, мониторинг, резервное копирование и поддержку 10-15 объектов. Текущий
+моделей, мониторинг и поддержку 10-15 объектов. Текущий
 объём не требует отдельного inference-сервера в каждом СПА. Одинаковый
 request/response contract сохраняет простую топологию для локального HDMI-display
 и удалённых СПА без отдельного event transport.
@@ -397,7 +397,7 @@ backlog, а не заранее.
 
 ---
 
-## 5. Storage и backup
+## 5. Storage
 
 ### 5.1 Расчёт центрального объёма
 
@@ -446,15 +446,16 @@ Diagnostic objects автоматически удаляются через 90 �
 измеряется отдельно и учитывается при sizing pilot storage. Полезный case можно
 вручную перенести в calibration/benchmark dataset.
 
-### 5.4 Резервная копия
+### 5.4 Durability boundary первого pilot
 
-Backup originals и PostgreSQL должен находиться на другом физическом носителе
-или сервере. MinIO на одном диске не является резервной копией.
+Отдельные backup, replication и восстановление после необратимой потери
+единственного primary disk/server не входят в первый pilot. Потеря persisted
+данных при таком отказе принята оператором как допустимый риск. Recovery
+охватывает обычные process/browser/host restarts и intact primary volumes.
 
-Diagnostic data не включается в долгоживущий backup из-за 90-day lifecycle.
-
-**Почему принято:** центральный сервер является единой точкой хранения для
-10-15 СПА; отказ одного NVMe не должен уничтожить все коммерческие оригиналы.
+**Почему принято:** стоимость отдельного backup contour для smoke pilot выше
+практической ценности; durability пересматривается перед paid flow или public
+rollout.
 
 ---
 
@@ -466,7 +467,6 @@ Target deployment reference для 10–15 СПА:
 Intel Core i5-13400 или CPU не слабее
 64 GB RAM рекомендуется для центрального сервера
 не менее 4 TB usable NVMe для primary storage
-отдельное backup storage
 Kubuntu 26.04 LTS
 PostgreSQL + pgvector
 MinIO
@@ -534,7 +534,7 @@ qr_fully_visible_at
 - доля `pending | processing | failed` по pipeline revision;
 - фактический CPU set `RealtimeFaceService`;
 - число разрешённых inference threads;
-- свободное место primary storage и backup storage;
+- свободное место primary storage;
 - объём diagnostic storage и число bundles, ожидающих 90-day deletion.
 
 Рекомендуется рассчитывать p50/p95/p99 в PostgreSQL через `percentile_cont` за
@@ -574,7 +574,6 @@ qr_fully_visible_at
 18. Acceptance `<10 s` от `reference_series_ready_at` до fully visible QR для
     минимум 19 из 20 попыток.
 19. Автоматическое восстановление Chromium/display после сбоя.
-20. Отдельное backup storage для коммерческих originals и PostgreSQL.
 
 ### 8.1 Рекомендуется после базового запуска
 
@@ -668,8 +667,7 @@ HDMI-мониторе, но не должно останавливать Docker-
 ### 11.5 Storage exhaustion
 
 Центральный сервер хранит данные всех СПА. Необходимо контролировать свободное
-место primary storage, backup storage, diagnostic bundles, БД, временных файлов
-и логов.
+место primary storage, diagnostic bundles, БД, временных файлов и логов.
 
 ### 11.6 Best-effort group selection
 
@@ -691,8 +689,6 @@ Kubuntu 26.04 LTS и два пользователя: facemoment + display
 PostgreSQL + pgvector
 +
 MinIO/S3-compatible storage
-+
-отдельное backup storage
 +
 один BackgroundPhotoWorker
 +

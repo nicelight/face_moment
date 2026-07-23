@@ -1,7 +1,7 @@
 ---
 description: Канонический словарь терминов со специальным значением в Face Moment.
 status: active
-last_updated: 2026-07-20
+last_updated: 2026-07-23
 ---
 # Glossary
 
@@ -24,16 +24,15 @@ last_updated: 2026-07-20
 |---|---|---|
 | `Photo` / коммерческая фотография | Готовый JPEG фотографа для поиска и будущей продажи. Логическая ingest-уникальность задаётся `(spa_id, visit_date, checksum_sha256)`. | Reference frame, face crop, Promo screenshot или другим diagnostic artifact. |
 | Original / preview | Original — приватный полноразмерный JPEG фотографа; preview — производное low-quality изображение без watermark для Promo/phone landing. В pilot original не выдаётся участнику. | Diagnostic image или teaser selection: teaser ссылается на выбранный preview, а не задаёт новый тип файла. |
-| `Batch` | Контейнер ingest для готовых коммерческих JPEG одной СПА и одной подтверждённой рабочей даты; после confirmation его manifest и `confirmed_at` неизменяемы. В один день допустимо несколько batches. | `Reference series`, которая снимается display client во время попытки поиска. |
-| Confirmed batch manifest | Зафиксированный при confirmation список принятых уникальных JPEG. Pre-confirmation rejects и checksum duplicates в него не входят. | Предварительным списком upload-файлов до validation и confirmation. |
-| `visit_date` | Подтверждённая business date коммерческих фотографий и authoritative дневной scope поиска. | EXIF `captured_at`, upload time, client clock или именем файла. |
-| Active working `visit_date` | Выбранная оператором server-side дата, которую используют автоматические attempts данной СПА, пока оператор её не изменит. | Автоматически выбранной датой последнего batch или значением из request body `SpaPromoClient`. |
+| `visit_date` | Выбранная фотографом business date, сохраняемая с каждой independently accepted Photo и задающая authoritative дневной scope поиска. | EXIF `captured_at`, upload time, client clock или именем файла. |
+| `photo.accepted_at` | Server-side время atomic admission одной Photo вместе с её serving-pipeline `pending` state; начало её `ingest_to_searchable` interval. | Временем object upload, EXIF `captured_at` или окончанием загрузки других файлов. |
+| Active working `visit_date` | Выбранная оператором server-side дата, которую используют автоматические attempts данной СПА, пока оператор её не изменит. | Автоматически выбранной датой последней загруженной Photo или значением из request body `SpaPromoClient`. |
 | `captured_at` | Вторичное время съёмки из EXIF для сортировки, diagnostics и, при подтверждённых clock/timezone, дополнительного time window. | Authoritative `visit_date`; `captured_at` не может молча её заменить. |
 | `pipeline_code` | Тип face pipeline, сейчас `opencv_sface` или `insightface_buffalo_m`. Threshold хранится на уровне СПА, `pipeline_code` и `query_source`. | `pipeline_revision_id`. |
 | `query_source` | Происхождение query face: `reference` для display camera или `selfie` для post-pilot selfie flow. Pilot-serving требует калибровки `reference`. | Источником commercial photos или ingest channel. |
 | Pipeline revision | Неизменяемая compatibility identity detector, recognizer, весов, preprocessing/alignment, normalization и embedding dimension. Embeddings сравниваются только внутри одной revision. | Названием/типом модели (`pipeline_code`) или изменяемым serving choice СПА. |
 | Serving pipeline | Одна выбранная и pre-warmed pipeline revision, которая обслуживает participant-facing поиск данной СПА. | Benchmark-сравнением двух pipelines или multi-model ensemble. |
-| Photo pipeline state | Состояние пары photo + pipeline revision: `pending`, `processing`, `ready`, `no_faces` или `failed`. `ready` означает наличие searchable face records; `no_faces` — успешное завершение обработки без лиц. | Общим состоянием batch или background job. |
+| Photo pipeline state | Состояние пары photo + pipeline revision: `pending`, `processing`, `ready`, `no_faces` или `failed`. `ready` означает наличие searchable face records; `no_faces` — успешное завершение обработки без лиц. | Состоянием группы upload-файлов или самого background worker. |
 | `searchable` | Фото доступно exact search через `ready` state совместимой serving revision. Для успеха `ingest_to_searchable` также должен быть готов preview. | Terminal `no_faces`: он завершает processing, но не делает JPEG searchable и остаётся SLO breach. |
 | `Photo face` | Одно лицо, обнаруженное конкретной pipeline revision на конкретной коммерческой фотографии. Результаты разных pipelines являются независимыми records. | Person identity или связью одного физического человека между кадрами/pipelines. |
 | pHash diversity | Ранжирование уже threshold-valid фотографий по Hamming distance perceptual hashes для визуально разнообразного Promo. | SHA-256 ingest uniqueness или face-match gate; pHash не допускает слабый match в результат. |
@@ -44,7 +43,7 @@ last_updated: 2026-07-20
 
 | Термин | Значение в Face Moment | Не путать с |
 |---|---|---|
-| Reference series | Sensor-triggered набор кадров из постоянного video stream и ring buffer в настроенном pre/post-trigger окне. Из него выбираются query detections. | Photographer `Batch` или standalone selfie; selfie в текущем pilot не снимается. |
+| Reference series | Sensor-triggered набор кадров из постоянного video stream и ring buffer в настроенном pre/post-trigger окне. Из него выбираются query detections. | Набором коммерческих upload-файлов или standalone selfie; selfie в текущем pilot не снимается. |
 | Selected detection | Каноническое название одной quality-ranked face occurrence из reference series, независимо запускающей поиск. В discovery docs также встречаются `query detection`, `reference detection` и `face candidate`; всего выбирается не более пяти. | Уникальным физическим человеком: один человек может дать несколько selected detections. |
 | Best-effort group search | Обработка до пяти selected detections без tracking, identity clustering и cross-frame person deduplication. Результат может содержать нескольких людей, но полное покрытие группы не гарантируется. | Обещанием отдельного slot для каждого участника. |
 | Promo candidate pools | `matched_candidates` — threshold-valid scoped matches текущей detection с готовым preview; `diverse_candidates` — глобально предпочтённые по pHash diversity; `fallback_candidates` — threshold-valid резерв; `reserved_photo_ids` не допускает повтор одной фотографии при обработке следующих detections. | `session_result_photo_ids`: candidate pools выбирают четыре teasers, а session result хранит полный unique union matches. |
@@ -59,26 +58,26 @@ last_updated: 2026-07-20
 
 | Термин | Значение в Face Moment | Не путать с |
 |---|---|---|
-| Promo/search session | Короткоживущий персональный context, связывающий СПА, authoritative `visit_date`, четыре teaser IDs, `session_result_photo_ids`, `N`, QR token и expiry state. | `Attempt`, browser session или diagnostic bundle. |
+| Promo/search session | Короткоживущий персональный context, связывающий СПА, authoritative `visit_date`, четыре teaser IDs, `session_result_photo_ids`, `N`, QR token и одну session-wide browser access state без отдельных grants на устройство. | `Attempt`, отдельной browser identity или diagnostic evidence. |
 | QR continuation | Открытие на телефоне той же Promo/search session без повторного selfie и без переноса истёкших персональных данных. | Новым standalone selfie search. |
 | Attempt | Одна принятая автоматическая capture/search/display execution со stage timestamps и outcome, включая unsuccessful outcome. Игнорируемый sensor event во время занятого состояния не создаёт новую attempt. | Только successful Promo или QR session. |
 | `RESULT_DISPLAY_SECONDS` / result display duration | Время показа успешного Promo на display; после него экран возвращается к рекламе. | QR lifetime: завершение показа не инвалидирует QR session. |
 | `CAPTURE_COOLDOWN_SECONDS` / successful-capture cooldown | Период запрета нового capture, который начинается только после фактического показа успешного Promo. | Capture/search lock и failure path: при неуспехе свежий capture разрешается сразу после завершения обработки. |
 | `QR_SESSION_TTL_SECONDS` / QR first-open TTL | Окно первого открытия QR: 30 минут от `qr_issued_at`. | Browser idle TTL после успешного первого открытия. |
-| `BROWSER_SESSION_IDLE_TTL_SECONDS` / browser session idle TTL | 60 минут без активности уже открытой phone session. | Result display duration или QR first-open TTL. |
+| `BROWSER_SESSION_IDLE_TTL_SECONDS` / browser session idle TTL | 60 минут без явной активности участника во всём открытом session-wide browser context; активность любого открытого телефона обновляет общий `last_seen_at`. | Независимым per-device TTL, result display duration или QR first-open TTL. |
 
 ## Diagnostics And Calibration
 
 | Термин | Значение в Face Moment | Не путать с |
 |---|---|---|
 | `diagnostic_session_id` / `correlation_id` | Один логический correlation identifier попытки, связывающий browser events, server stages, configuration, search decisions, logs и artifacts. Точное имя поля может быть унифицировано в SDD. | Promo/search session token или participant identity. |
-| Diagnostic bundle | Защищённые image artifacts попытки плюс versioned manifest, indexed events, decisions, configuration, timestamps и evidence фактически показанного Promo/QR. Ordinary bundle хранится 90 дней. | Structured logs: изображения и крупные/sensitive payloads в log records запрещены. |
+| Diagnostic evidence | Best-effort protected artifacts, manifest, indexed events, decisions, configuration, timestamps и display/QR evidence, связанные с core Attempt. Отсутствующий или незавершённый evidence set отображается как `incomplete`; ordinary evidence хранится 90 дней. | Core Attempt, который обязателен для каждой принятой попытки, или structured logs, где images и sensitive payloads запрещены. |
 | Structured log record | Неблокирующее browser/server событие, связанное с correlation ID там, где это применимо. Technical logs хранятся 30 дней и не содержат images, embeddings, auth headers, cookies, tokens, request bodies или session replay. | Diagnostic artifact или долговременный calibration dataset. |
 | `Attempts` | Role-scoped UI для поиска попыток и investigation по attempt-level timeline, parameters, decisions, logs и artifacts; operator получает sanitized subset, developer — полный разрешённый detail. | `Log Explorer`, который ищет отдельные log records глобально. |
 | `Log Explorer` | Developer-only UI глобального поиска structured browser/server logs через backend/PostgreSQL с переходом к связанной attempt. | Прямым browser-доступом к PostgreSQL или отдельным observability datastore. |
 | Annotation | Developer-only ground truth на уровне person/detection с разрешённым именем pilot participant и outcome `correct`, `wrong/false` или `missed`. Exact normalized storage vocabulary остаётся за SDD. | Автоматическим identity cluster или общей записью имени в technical logs. |
-| Promoted calibration case | Вручную выбранный воспроизводимый subset attempt: нужные source frames/crops, фактически снятый selfie при его наличии, versions/parameters, scores и annotations. Хранится до явного удаления. | Продлением retention всего diagnostic bundle: прочая reference series, Promo screenshot и technical logs удаляются по обычным срокам. |
-| `Calibration` | Developer-only UI, использующий annotated attempts для сравнения pipelines/releases/config sets и расчёта объяснимых recommendations. | Автоматическим изменением serving settings или отдельной experimentation platform. |
+| Promoted calibration case | Вручную выбранный воспроизводимый subset attempt: нужные source frames/crops, фактически снятый selfie при его наличии, versions/parameters, scores и annotations. Хранится до явного удаления. | Продлением retention всего diagnostic evidence set: прочая reference series, Promo screenshot и technical logs удаляются по обычным срокам. |
+| `Calibration` | Developer-only UI, использующий annotated attempts для сравнения pipelines/releases/config sets и расчёта объяснимых recommendations. Run может занять общий `BackgroundPhotoWorker`; после interruption разработчик запускает его повторно вручную. | Автоматическим изменением serving settings, отдельной experimentation platform или отдельным Calibration worker. |
 | Calibration recommendation | Объяснимое предложение threshold или одного quality gate, рассчитанное по annotated attempts. Оно никогда не меняет serving settings автоматически. | Автоматическим optimizer или совместным подбором нескольких quality gates. |
 | `Best face match` | Threshold profile, минимизирующий false matches; при равенстве предпочитает больше correct matches. | `Balance` или `Minimum missed faces`. |
 | `Balance` | Threshold profile компромисса между correct, false и missed. Точная формула намеренно остаётся решением SDD. | Уже утверждённой численной формулой. |
@@ -91,7 +90,7 @@ last_updated: 2026-07-20
 | `reference_series_ready_at` | Момент, когда sensor-triggered reference series уже сформирована и готова к realtime processing. | `sensor_triggered_at`; задержка capture до готовности не входит в основной `<10 s` acceptance interval. |
 | `qr_fully_visible_at` | Момент, когда QR полностью отрисован на display и готов к сканированию. | Временем server response или началом Promo transition. |
 | `reference_ready_to_qr` | `qr_fully_visible_at - reference_series_ready_at`; основной realtime acceptance interval pilot. Gate: `<10_000 ms` минимум в 19 из 20 controlled attempts. | `trigger_to_preview`, который остаётся end-to-end diagnostic metric. |
-| `ingest_to_searchable` | Для каждого unique accepted JPEG confirmed manifest: от `batch.confirmed_at` до готового preview и `ready` state serving revision. `pending`, `processing`, `failed` и `no_faces` после 15 минут остаются breaches; rejects, duplicates и non-serving jobs исключены. | Задержкой фотографа от съёмки до confirmation. |
+| `ingest_to_searchable` | Для каждой independently accepted unique Photo: от `photo.accepted_at` до готового preview и `ready` state serving revision. `pending`, `processing`, `failed` и `no_faces` после 15 минут остаются breaches; rejects, duplicates и non-serving jobs исключены. | Задержкой фотографа от съёмки до upload или временем обработки группы файлов. |
 
 ## Source Basis
 
@@ -103,8 +102,8 @@ last_updated: 2026-07-20
   pipeline terminology.
 - [IDEA_DEBUG.md](../IDEA_DEBUG.md): attempts, logs, annotations and Calibration
   terminology.
-- [IDEA_INGEST.md](../IDEA_INGEST.md): batch, `visit_date`, manifest and
-  searchable metric semantics.
+- [IDEA_INGEST.md](../IDEA_INGEST.md): historical ingest evidence; current
+  per-photo admission and metric semantics come from the PRD.
 - [IDEA_OS.md](../IDEA_OS.md): display topology, OS-user boundary and deployment
   terminology.
 
@@ -114,7 +113,8 @@ last_updated: 2026-07-20
   выбранном face occurrence, и не заменять его словом «человек».
 - Всегда уточнять, идёт ли речь о четырёх teaser IDs или о полном
   `session_result_photo_ids`/`N`.
-- Не использовать `batch`, `reference series`, `attempt`, Promo/search session,
-  browser session и diagnostic bundle как взаимозаменяемые понятия.
+- Не использовать commercial upload set, `reference series`, core Attempt,
+  Promo/search session, browser session и diagnostic evidence как
+  взаимозаменяемые понятия.
 - В человекочитаемом тексте использовать `СПА`. Машинные identifiers, включая
   `spa_id`, `spa_client_token` и `SpaPromoClient`, сохраняют ASCII-написание.

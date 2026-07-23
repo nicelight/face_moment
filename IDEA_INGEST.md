@@ -1,179 +1,188 @@
 # Face Moment: поступление фотографий
 
-Обновлено: 2026-07-17
+Обновлено: 2026-07-24
 
 ## 0. Статус и граница первого pilot
 
-Документ описывает как обязательный ingest первого pilot, так и
-post-pilot направления. Для первого pilot действует более позднее решение:
+Документ описывает актуальный ingest-контур первого one-СПА pilot. Продуктовые
+требования определяет `.memory-bank/prd.md`, а принятые архитектурные решения —
+`arch_vision.md`.
 
-- одна СПА и тестировщики;
-- только authenticated direct web upload фотографом;
-- только готовые JPEG;
-- Яндекс Диск и другие external channels не являются pilot/MVP gate.
+В pilot:
 
-Термин `batch` ниже относится к коммерческим фотографиям фотографа и не означает
-`reference_series`, которую `SpaPromoClient` снимает для поиска.
+- фотограф загружает только готовые JPEG через authenticated HTTPS web app;
+- перед загрузкой фотограф выбирает СПА и authoritative `visit_date`;
+- каждый JPEG принимается независимо;
+- Batch, manifest, confirmation и aggregate upload commit отсутствуют;
+- MinIO, PostgreSQL и внутренние service ports не доступны браузеру напрямую;
+- Яндекс Диск, photographer cloud OAuth, RAW и другие external ingest channels
+  остаются post-pilot направлениями.
 
-## 1. Основная идея
+## 1. Независимый per-photo flow
 
-В первом pilot фотографии поступают только через authenticated web uploader
-Face Moment. Импорт публичных папок Яндекс Диска сохраняется как post-pilot
-направление.
+Для каждого выбранного JPEG выполняется отдельный flow:
 
-Pilot использует минимальную сущность batch:
+```text
+authenticated HTTPS upload через backend
+→ private object с уникальным opaque key в MinIO
+→ decode и проверка JPEG, compressed bytes и decoded pixels
+→ SHA-256
+→ проверка UNIQUE(spa_id, visit_date, checksum_sha256)
+→ один короткий PostgreSQL commit:
+  Photo + accepted_at + serving-pipeline pending state
+→ независимый accepted | rejected | duplicate outcome
+```
 
-~~~text
-batch_id
+Фотограф не подтверждает группу файлов. Завершение одного upload не зависит от
+остальных выбранных файлов, а другой reader может увидеть уже готовую часть
+фотографий, пока загрузка продолжается.
+
+## 2. Authoritative scope
+
+Фотограф выбирает:
+
+```text
 spa_id
 visit_date
-timezone
-confirmed_at
-~~~
+```
 
-`source_type=direct_upload` можно считать фиксированным значением и не выводить в
-pilot UI. `public_url` добавляется только вместе с post-pilot Yandex flow.
+Значения сохраняются с каждой принятой Photo. EXIF `captured_at`, filename,
+upload time и browser clock не могут молча заменить выбранный `visit_date`.
+`captured_at` остаётся вторичной метаданной для сортировки, diagnostics и
+optional time window только после проверки clock/timezone quality.
 
-Один batch содержит подтверждённый manifest готовых коммерческих JPEG одного СПА
-и одной рабочей даты после законченной съёмочной серии. В один день разрешено
-несколько batches.
+Фотография, ошибочно загруженная под неверными СПА или `visit_date`, не получает
+специальный correction workflow в pilot. Риск принят оператором.
 
-Подтверждённый `visit_date` является authoritative business date для дневного
-search scope. EXIF `captured_at`, имя файла и время upload используются для
-сортировки, диагностики и предупреждений, но не могут самостоятельно изменить
-`visit_date`.
+## 3. Валидация JPEG
 
-## 2. Канал первого pilot
+Backend проверяет каждый файл независимо:
 
-1. Фотограф проходит authentication.
-2. После законченной съёмочной серии создаёт batch.
-3. Выбирает СПА и подтверждает `visit_date`.
-4. Загружает готовые JPEG по HTTPS.
-5. Сервер проверяет формат и декодирование, вычисляет checksum и показывает
-   принятые и отклонённые файлы.
-6. Фотограф подтверждает batch.
-7. Система фиксирует неизменяемый manifest и `confirmed_at`.
-8. Originals сохраняются в MinIO.
-9. Идемпотентно создаются `photos` и jobs для serving pipeline.
-10. UI показывает processing/searchable status и явные failures.
+- разрешённый JPEG media type;
+- максимальный размер compressed payload;
+- успешный decode;
+- ограничения width/height и decoded pixels;
+- корректность EXIF orientation;
+- вычисление SHA-256 по принятому byte contract.
 
-Повторная отправка одного файла не создаёт новую фотографию, если checksum и
-контекст batch совпадают.
+Invalid или undecodable файл получает `rejected` и не создаёт Photo либо
+processing state.
 
-## 3. Рабочая дата и EXIF
+## 4. Уникальность и повторная загрузка
 
-Для будущего folder-based ingest можно рекомендовать единый формат имени:
+Логическая уникальность:
 
-~~~text
-FM__<spa_code>__<YYYY-MM-DD>__<BATCH_NO>
-~~~
+```text
+UNIQUE(spa_id, visit_date, checksum_sha256)
+```
 
-Например:
+Практический arbiter — database constraint через
+`INSERT ... ON CONFLICT DO NOTHING RETURNING`.
 
-~~~text
-FM__DA__2026-07-08__01
-~~~
+При duplicate:
 
-Название полезно для навигации и проверки, но окончательные `spa_id` и
-`visit_date` всегда берутся из подтверждённой формы.
+- новая Photo не создаётся;
+- `pending` state не создаётся;
+- duplicate не входит в ingest SLO population, search, teaser или `N`;
+- удаляется только новый object с уникальным key;
+- ранее принятая Photo остаётся без изменений.
 
-Полезно разделять:
+Повторная загрузка после browser/network interruption использует тот же обычный
+flow. Отдельный resumable-upload lifecycle не нужен.
 
-- `visit_date` — подтверждённую рабочую дату СПА;
-- `captured_at` — время съёмки из EXIF, если оно доступно.
+## 5. PostgreSQL и MinIO
 
-При нескольких EXIF-датах pilot uploader показывает warning, но не меняет
-подтверждённую рабочую дату. EXIF summary не является readiness gate. Ручное или
-автоматическое разделение mixed-date folders на несколько batches остаётся
-post-pilot возможностью: часы камеры могут быть настроены неверно, а съёмка может
-продолжаться после полуночи.
+MinIO PUT не входит в PostgreSQL transaction. После успешной object upload одна
+короткая database transaction создаёт:
 
-## 4. Post-pilot candidate: импорт публичной папки Яндекс Диска
+```text
+Photo
+photo.accepted_at
+photo_pipeline_state(status = pending, serving pipeline revision)
+```
 
-Этот flow не входит в первый pilot, не влияет на его готовность и не должен
-добавлять `public_url`, Yandex API или folder snapshotting в pilot
-implementation.
+Crash между MinIO PUT и database commit может оставить один private orphan и
+потерять admission одной фотографии. Повторная загрузка считается достаточным
+восстановлением; outbox, distributed transaction и reconciliation workflow для
+данного окна не требуются.
 
-Фотографы смогут продолжать использовать собственные аккаунты:
+Accepted original сохраняет первоначальный opaque key без move/copy.
 
-1. Создать отдельную папку для одного СПА и одной рабочей даты.
-2. Загрузить готовые фотографии и дождаться синхронизации.
-3. Создать публичную ссылку с разрешённым скачиванием.
-4. Вставить ссылку в Face Moment, выбрать СПА и рабочую дату.
-5. Проверить состав и EXIF-сводку и подтвердить импорт.
+## 6. Background processing и recovery
 
-Публичные папки можно читать через Yandex Disk REST API без доступа к аккаунту
-фотографа:
+`photo_pipeline_states` одновременно хранит searchable state и образует
+PostgreSQL-backed очередь единственного `BackgroundPhotoWorker`:
 
-~~~text
-GET /v1/disk/public/resources
-GET /v1/disk/public/resources/download
-~~~
+```text
+pending → processing → ready | no_faces | failed
+```
 
-Рекомендуемая последовательность:
+- `ready` означает готовые preview и searchable face records совместимой
+  pipeline revision;
+- `no_faces` — terminal processing outcome без searchable лица;
+- при startup старые `processing` возвращаются в `pending`;
+- обработка после crash начинается с начала;
+- final transaction полностью заменяет face set и публикует terminal state;
+- bounded retry limit предотвращает бесконечный poison-file loop.
 
-1. Получить полный список файлов с учётом pagination.
-2. Показать количество, общий размер, типы файлов и EXIF-даты.
-3. После подтверждения зафиксировать список `resource_id`, путей, размеров и
-   доступных checksum.
-4. Скачать каждый файл отдельно и потоково сохранить в MinIO.
-5. Повторно вычислить SHA-256 и проверить декодирование изображения.
-6. Создать фотографии и processing jobs.
+Lease, `claim_token`, fencing, `SKIP LOCKED`, отдельная jobs table и несколько
+worker replicas не входят в текущую модель.
 
-Фиксация списка помогает не смешивать подтверждённый batch с файлами,
-добавленными позднее. Повторный import можно сделать идемпотентным по
-`resource_id` и checksum.
+## 7. Ingest SLO
 
-Для первой версии этого post-pilot канала проще ориентироваться на готовые к
-продаже JPEG. RAW и прочие типы можно показывать в сводке как неподдерживаемые и
-не передавать в face-processing.
+Метрика рассчитывается отдельно для каждой independently accepted unique Photo:
 
-## 5. Наблюдения по реальным папкам
+```text
+start = photo.accepted_at
+success = preview готов AND serving-pipeline state = ready
+duration = searchable_at - photo.accepted_at
+```
 
-Проверка публичных папок 2026-07-11 показала:
+Цель pilot: не менее 95% population становятся searchable менее чем за
+15 минут.
 
-- [«Да 0707»](https://disk.yandex.ru/d/lIiZOWw-YFnAYA): 367 файлов, среди них
-  365 JPEG и 2 CR2; EXIF всех файлов указывает на 2026-07-07;
-- [«Да 0709»](https://disk.yandex.ru/d/pquPDBkHJnGZ8g): 453 JPEG; 438 файлов
-  имеют EXIF-даты 2026-07-08, 14 — 2026-07-09, один файл не содержит даты.
+Population:
 
-Пример подтверждает полезность будущего Yandex flow, но не задаёт требований
-первого pilot. Название папки и cloud timestamps помогают ориентироваться, а
-рабочую дату всё равно подтверждает фотограф.
+- входят все independently accepted unique JPEG;
+- `pending`, `processing`, `failed` и `no_faces` после 15 минут считаются breach;
+- rejected, checksum duplicates и non-serving processing states исключаются.
 
-## 6. MVP первого pilot
+Незавершённый период загрузки может временно давать неполные или вводящие в
+заблуждение aggregate metrics. Batch-level SLO coordination не требуется.
+Developer-triggered Calibration может занять общий worker и временно задержать
+processing; отдельный scheduler ради этого не создаётся.
 
-- authenticated photographer web uploader;
-- direct multi-file upload готовых JPEG;
-- обязательный выбор СПА и authoritative `visit_date`;
-- validation и явный список повреждённых или неподдерживаемых файлов;
-- подтверждение и фиксация manifest batch;
-- checksum и идемпотентная повторная отправка;
-- originals в MinIO;
-- идемпотентное создание `photos` и serving processing jobs;
-- UI-статусы `pending | processing | searchable | no_faces | failed`, где
-  `searchable` соответствует `photo_pipeline_states.status = ready`;
-- измерение `ingest_to_searchable`.
+## 8. Наблюдаемость фотографа и оператора
 
-Яндекс Диск, другие external channels, RAW processing, OAuth, Telegram bot и
-EXIF-based auto-split являются post-pilot направлениями.
+Фотографу достаточно видеть:
 
-## 7. Семантика `ingest_to_searchable`
+- `accepted | rejected | duplicate`;
+- текущий `pending | processing | ready | no_faces | failed`;
+- понятную причину reject/failure;
+- возможность повторно загрузить файл.
 
-Population метрики — все уникальные JPEG из manifest подтверждённых pilot
-batches. Rejected до подтверждения файлы и checksum-дубликаты в population не
-входят.
+Оператору дополнительно нужны backlog, oldest pending age, processing failures,
+ingest SLO и свободное место primary storage. Отдельный message broker или
+observability datastore для данных показателей не нужен.
 
-~~~text
-start = batch.confirmed_at
-success = preview готов
-          AND photo_pipeline_states.status = ready
-          для serving_pipeline_revision
-duration = searchable_at - batch.confirmed_at
-target = не менее 95% принятых JPEG становятся searchable < 15 минут
-~~~
+## 9. Durability boundary
 
-`pending`, `processing`, `failed` и `no_faces` через 15 минут остаются в
-denominator как SLO breach, а не исключаются молча. Backfill, benchmark и
-non-serving pipeline jobs в метрику не входят. Задержка фотографа
-`captured_at → batch.confirmed_at` измеряется отдельно.
+Очередь уже принятых `pending`/`processing` фотографий должна переживать обычный
+restart backend/worker и продолжать обработку.
+
+Отдельные backup, replication, snapshots и восстановление после необратимой
+потери единственного primary disk/server в pilot отсутствуют. Потеря persisted
+data при таком отказе является принятым риском.
+
+## 10. Post-pilot направления
+
+После отдельного product decision могут появиться:
+
+- external ingest channels;
+- resumable upload для доказанно больших или нестабильных загрузок;
+- дополнительные worker replicas с новой concurrency-моделью;
+- отдельная durability policy для paid flow/public rollout.
+
+Стабильные `photo_id`, original ownership в `inventory`, serving-compatible
+pipeline state и per-photo uniqueness сохраняют достаточный extension seam без
+реализации будущих механизмов в pilot.

@@ -1,7 +1,7 @@
 ---
 description: Глобальные инварианты и запреты проекта (MUST/NEVER).
 status: active
-last_updated: 2026-07-20
+last_updated: 2026-07-23
 source_of_truth:
   - .memory-bank/invariants.md
 ---
@@ -13,9 +13,12 @@ source_of_truth:
   измеримые latency и стабильность контура Promo/QR.
 - Подтверждать новые acceptance gates текущим Product Brief или явным решением
   владельца продукта.
-- Считать подтверждённый фотографом batch `visit_date` authoritative business
-  scope коммерческих фотографий; EXIF, имя файла и upload time не могут
-  молча заменить его.
+- Считать выбранный фотографом и сохранённый с каждой accepted Photo
+  `visit_date` authoritative business scope коммерческой фотографии; EXIF, имя
+  файла и upload time не могут молча заменить его.
+- Создавать Photo и её serving-pipeline `pending` state одним per-photo commit;
+  существующая PostgreSQL-backed очередь MUST переживать restart backend/worker,
+  а незавершённая `processing` работа возвращаться в `pending`.
 - Обрабатывать и сравнивать embeddings только внутри совместимой immutable
   `pipeline_revision`, сохраняя native detector/preprocessing/alignment каждого
   face pipeline.
@@ -43,9 +46,9 @@ source_of_truth:
 
 - Эти правила основаны на ratified
   [.memory-bank/constitution.md](constitution.md), clarified
-  [.memory-bank/prd.md](prd.md), [IDEA_APP.md](../IDEA_APP.md),
-  [IDEA_INGEST.md](../IDEA_INGEST.md) и [IDEA_DEBUG.md](../IDEA_DEBUG.md); при
-  конфликте действует precedence из
+  [.memory-bank/prd.md](prd.md), [IDEA_APP.md](../IDEA_APP.md) и
+  [IDEA_DEBUG.md](../IDEA_DEBUG.md); `IDEA_INGEST.md` сохраняется как
+  historical evidence, а при конфликте действует precedence из
   [.memory-bank/spec-backbone.md](spec-backbone.md).
 - Ссылайся на этот файл из архитектурных, контрактных и execution docs, если
   правило является cross-cutting.

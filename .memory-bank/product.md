@@ -1,7 +1,7 @@
 ---
 description: Product definition (C4 L1) for the Face Moment one-СПА pilot.
 status: draft
-last_updated: 2026-07-20
+last_updated: 2026-07-23
 ---
 # Face Moment Product
 
@@ -41,7 +41,7 @@ hypothesis and is not a current actor.
 ## Primary Flow
 
 ```text
-authenticated JPEG batch upload and confirmation
+authenticated independent JPEG upload for selected СПА/date
 -> compatible background processing
 -> searchable inventory
 -> automatic sensor-triggered reference series
@@ -50,9 +50,11 @@ authenticated JPEG batch upload and confirmation
 -> same-session phone continuation
 ```
 
-Every accepted attempt also produces correlated diagnostic evidence. Authorized
-developers may annotate that evidence and use it for explainable Calibration;
-recommendations never update serving settings automatically.
+Every accepted attempt produces one core Attempt/correlation timeline. Detailed
+diagnostic evidence is attached best-effort and remains visibly `incomplete`
+when absent or unfinished. Authorized developers may annotate collected
+evidence and use it for explainable Calibration; recommendations never update
+serving settings automatically.
 
 ## Success Contract
 
@@ -60,12 +62,13 @@ recommendations never update serving settings automatically.
   fully visible, scannable QR in less than 10 seconds from
   `reference_series_ready_at`.
 - The same accepted attempts contain no unrelated teaser or `photo_id` in `N`.
-- At least 95% of unique accepted JPEGs in confirmed pilot manifests become
-  searchable in less than 15 minutes from `batch.confirmed_at`.
+- At least 95% of independently accepted unique JPEGs become searchable in less
+  than 15 minutes from their server-side `photo.accepted_at`.
 - Valid phone continuation preserves the same СПА, authoritative `visit_date`,
   teaser and `N`; expired sessions disclose no personalized result data.
-- Each accepted attempt retains evidence sufficient to localize its outcome and
-  stage latency.
+- Each accepted attempt retains a core correlation identity and stage timestamps
+  sufficient to localize its outcome and latency; missing detailed evidence is
+  explicit.
 
 ## Constraints
 
@@ -80,6 +83,10 @@ recommendations never update serving settings automatically.
 - KISS baseline: backend, one sequential `BackgroundPhotoWorker`, one
   synchronous `RealtimeFaceService`, PostgreSQL/pgvector and private
   MinIO/S3-compatible storage.
+- Each unique Photo and serving `pending` state are committed atomically per
+  photo; the PostgreSQL-backed queue retains unfinished work across restart.
+- Developer Calibration may occupy the shared `BackgroundPhotoWorker`; an
+  interrupted run is rerun manually after photo processing resumes.
 - Infrastructure complexity is added only after evidence of a current
   requirement failure or measured bottleneck.
 - Diagnostic logging is non-blocking and excludes images, embeddings, secrets,
@@ -98,6 +105,8 @@ recommendations never update serving settings automatically.
   GPU-first deployment or an external observability stack without evidence.
 - Automatic application of Calibration recommendations or a general-purpose
   experimentation platform.
+- Backup, replication or recovery after irreversible loss of the only primary
+  disk/server; the controlled pilot accepts that data-loss risk.
 
 ## Canonical Inputs
 

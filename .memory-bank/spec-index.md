@@ -1,7 +1,7 @@
 ---
 description: Pure SDD spec registry and planned-spec index.
 status: active
-last_updated: 2026-07-20
+last_updated: 2026-07-23
 source_of_truth:
   - .memory-bank/spec-index.md
 ---
@@ -18,7 +18,7 @@ source_of_truth:
 |---|---|---|---|---|
 | governance | [.memory-bank/constitution.md](constitution.md) | active | Top governing policy. | /constitution |
 | invariants | [.memory-bank/invariants.md](invariants.md) | active | Global MUST/NEVER rules grounded in ratified governance decisions. | /constitution, /spec-init, or /spec-design |
-| glossary | [.memory-bank/glossary.md](glossary.md) | active | Canonical Face Moment vocabulary and disambiguation rules. | /spec-init or /spec-design |
+| glossary | [.memory-bank/glossary.md](glossary.md) | active | Canonical Face Moment vocabulary and disambiguation rules. | /brief, /spec-init, or /spec-design |
 | architecture | [.memory-bank/architecture/system-architecture.md](architecture/system-architecture.md) | draft | Compact architecture hub; global decisions remain pending `/spec-design`. | /spec-design |
 | contract | [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md) | draft | Lightweight responsibility/scope notes for task boundaries. | /spec-init or /spec-design |
 | state | [.memory-bank/states/lifecycle-map.md](states/lifecycle-map.md) | draft | Decomposition-level lifecycle hints; exact state design remains pending. | /spec-init or /spec-design |
