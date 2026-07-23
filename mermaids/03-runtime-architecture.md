@@ -23,8 +23,9 @@ flowchart LR
     subgraph server["Центральный CPU-only сервер в РФ"]
         edge["HTTPS public boundary<br/>reverse proxy / rate limits"]
         backend["Backend + web UI<br/>upload, admin, QR landing,<br/>Attempts, Log Explorer, Calibration"]
-        worker["1 × BackgroundPhotoWorker<br/>последовательная обработка"]
-        realtime["1 × RealtimeFaceService<br/>sync HTTP, inference concurrency = 1,<br/>bounded in-memory queue + deadline"]
+        worker["1 × BackgroundPhotoWorker<br/>Photo processing + debug Calibration"]
+        realtime["1 × RealtimeFaceService<br/>one inference slot + busy + deadline"]
+        packages["Shared modular-monolith packages<br/>serving_control | inventory | processing<br/>promo | diagnostics + platform/auth"]
 
         subgraph engines["FaceEngine adapters"]
             face_engine["FaceEngine interface<br/>выбор compatible serving revision"]
@@ -34,14 +35,17 @@ flowchart LR
             face_engine --> buffalo
         end
 
-        postgres[("PostgreSQL + pgvector<br/>domain state, jobs, exact vectors,<br/>events, logs, annotations")]
+        postgres[("PostgreSQL + pgvector<br/>domain state, photo_pipeline_states,<br/>exact vectors, Attempts, evidence")]
         minio[("Private MinIO / S3 storage<br/>originals, previews, thumbnails,<br/>protected diagnostic artifacts")]
         edge --> backend
         edge --> realtime
 
+        backend -.-> packages
+        worker -.-> packages
+        realtime -.-> packages
         backend --> postgres
         backend --> minio
-        worker -->|"claim jobs / publish states"| postgres
+        worker -->|"claim pending / publish terminal state"| postgres
         worker -->|"read original / write derivatives"| minio
         worker --> face_engine
         realtime -->|"scope + exact cosine search"| postgres
@@ -51,19 +55,23 @@ flowchart LR
     end
 
     photographer -->|"HTTPS JPEG upload + admin"| edge
-    client -->|"sync HTTPS request<br/>Authorization: spa_client_token"| edge
+    client -->|"sync HTTPS request<br/>attempt_id + spa_client_token"| edge
     edge -->|"4 preview URLs + QR session"| client
+    client -->|"idempotent display acknowledgement"| edge
     participant_phone -->|"HTTPS QR continuation"| edge
 
-    rules["KISS boundaries:<br/>no Redis/broker, no ANN, no Kubernetes,<br/>no GPU-first, no external face API"]
+    rules["KISS boundaries:<br/>no realtime waiter queue, no Redis/broker, no ANN,<br/>no extra workers, no backup guarantee"]
     rules -.-> backend
 ```
 
 ## Ключевые границы
 
 - `BackgroundPhotoWorker` и `RealtimeFaceService` разделены из-за разных latency и lifecycle требований.
+- Пять capability slices являются package ownership, а не отдельными services.
+- Realtime не ставит запросы в waiter queue: занятый slot возвращает `busy`.
 - Serving pipeline заранее загружается и прогревается; второй pipeline нужен только при доказанной необходимости benchmark-а.
 - PostgreSQL, MinIO и внутренние service ports не публикуются наружу.
 - Локальный HDMI client и будущий remote client используют один `SpaPromoClient` contract.
 
-Источники: [IDEA_OS.md](../IDEA_OS.md), [IDEA_APP.md](../IDEA_APP.md), [PRD](../.memory-bank/prd.md).
+Источники: [Architecture](../arch_vision.md), [IDEA_OS.md](../IDEA_OS.md),
+[IDEA_APP.md](../IDEA_APP.md), [PRD](../.memory-bank/prd.md).

@@ -2,7 +2,7 @@
 
 ## 1. Scope and reliability target
 
-This document describes an advisory greenfield architecture for one СПА, one CPU-only server and one display client. The target is a practical working horse: normal process/browser crashes recover automatically, background work safely restarts from the beginning, maintenance downtime is acceptable, and rare native hangs may require a manual restart.
+This document describes an advisory greenfield architecture for one СПА, one CPU-only server and one display client. The repository has no working application or backend yet; every runtime/component named below is a target to be implemented. The target is a practical working horse: normal process/browser crashes recover automatically, background work safely restarts from the beginning, maintenance downtime is acceptable, and rare native hangs may require a manual restart.
 
 The recommendation preserves these accepted product constraints:
 
@@ -27,7 +27,7 @@ The recommendation preserves these accepted product constraints:
 | Data | PostgreSQL/pgvector for state and exact search; private MinIO for binaries. | This is the accepted simple baseline; a broker, external vector database or media service would duplicate infrastructure. |
 | Internal communication | Direct typed Python calls and one short per-photo PostgreSQL transaction spanning `Photo + pending`. | This protects durable processing admission without Batch-level atomicity, mediator/event-bus abstractions or a generic Unit of Work. |
 | Realtime transport | One synchronous HTTPS request and one idempotent display acknowledgement. | The initiating display is the only result consumer; WebSocket/SSE reconnection state would not remove the need for the acknowledgement. |
-| Background queue | `photo_pipeline_states` in PostgreSQL, consumed by exactly one configured worker replica. | A row-state queue closes the current at-least-once requirement; advisory locks, fencing tokens and a broker protect concurrency that the deployment does not have. |
+| Background queue | `photo_pipeline_states` in PostgreSQL, consumed by exactly one configured worker replica. | A row-state queue closes the current at-least-once requirement; advisory locks, fencing tokens and a broker protect concurrency excluded from the target pilot topology. |
 | Search | Exact pgvector cosine search after pipeline/СПА/date filtering. | The pilot data set is bounded; ANN introduces recall and index-management risk before a measured bottleneck. |
 | Documentation shape | A small `split-core-docs` set: system architecture, boundary map and applicable lifecycle/security contracts. | A document per edge case creates drift, while one giant document hides the few important contracts. |
 | Reliability | Automatic recovery from crashes, restart-from-scratch jobs and manual recovery for rare hangs. | Enterprise split-brain, zero-downtime and automated hang recovery cost more than their pilot value. |
@@ -322,11 +322,11 @@ Recommended retention:
 | Manually promoted Calibration case | Until explicit deletion | Curated reproducibility has durable value; the full source bundle does not. |
 | Browser metadata outbox | Until acknowledged or a short local expiry | Metadata aids outage diagnosis; long-lived local personal data does not. |
 
-One idempotent daily cleanup command is recommended, invoked by the existing BackgroundPhotoWorker or a simple host timer. A durable scheduler and separate retention service are not recommended.
+One idempotent daily cleanup command is recommended, invoked by the planned BackgroundPhotoWorker or a simple host timer. A durable scheduler and separate retention service are not recommended.
 
 Promotion is recommended to copy only selected frames/crops, parameters, scores and annotations into a self-contained case. Unselected frames, Promo screenshot, ordinary logs and the whole attempt retain their normal expiry.
 
-Calibration work is recommended to reuse the existing
+Calibration work is recommended to reuse the planned shared
 `BackgroundPhotoWorker`. An explicitly started Calibration run may block photo
 processing for its full duration during debugging; this impact is accepted. If
 the worker restarts, the Calibration run becomes `failed|interrupted`, photo

@@ -17,8 +17,9 @@ source_of_truth:
   `visit_date` authoritative business scope коммерческой фотографии; EXIF, имя
   файла и upload time не могут молча заменить его.
 - Создавать Photo и её serving-pipeline `pending` state одним per-photo commit;
-  существующая PostgreSQL-backed очередь MUST переживать restart backend/worker,
-  а незавершённая `processing` работа возвращаться в `pending`.
+  PostgreSQL-backed очередь MUST сохранять свою `pending`/`processing`
+  population при restart backend/worker, а незавершённая `processing` работа
+  должна возвращаться в `pending`.
 - Обрабатывать и сравнивать embeddings только внутри совместимой immutable
   `pipeline_revision`, сохраняя native detector/preprocessing/alignment каждого
   face pipeline.

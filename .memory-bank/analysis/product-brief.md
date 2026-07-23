@@ -146,7 +146,7 @@ Post-pilot paid product продаёт весь найденный пакет з
 - PostgreSQL/MinIO не публикуются наружу, public boundary использует HTTPS;
 - поиск ограничен СПА, датой/периодом и совместимой pipeline revision;
 - `Photo` и её serving-pipeline `pending` state принимаются одной короткой
-  PostgreSQL transaction; существующая queue переживает restart backend/worker;
+  PostgreSQL transaction; будущая queue должна переживать restart backend/worker;
 - Calibration может выполняться на общем `BackgroundPhotoWorker`, временно
   задерживать ingest и после interruption перезапускается разработчиком вручную;
 - архитектура усложняется только после измеримого bottleneck.

@@ -1,8 +1,10 @@
 # Face Moment diagrams
 
-Эта папка содержит шесть обзорных Mermaid-диаграмм для быстрого понимания текущего one-СПА pilot.
+Эта папка содержит шесть обзорных Mermaid-диаграмм для быстрого понимания
+текущего one-СПА pilot.
 
-> Статус: диаграммы описывают актуальный нормативный дизайн проекта. Они не утверждают, что все показанные компоненты уже реализованы в коде.
+> Статус: диаграммы визуализируют принятые product и architecture contracts.
+> Они не утверждают, что показанные компоненты уже реализованы в коде.
 
 ## Граница текущего pilot
 
@@ -21,11 +23,18 @@
 
 ## Канонические источники
 
-При расхождении документов используется следующий приоритет:
+При расхождении product behavior определяет PRD, а architecture mechanics —
+`arch_vision.md`:
 
 1. [`.memory-bank/constitution.md`](../.memory-bank/constitution.md)
-2. [`.memory-bank/analysis/product-brief.md`](../.memory-bank/analysis/product-brief.md)
-3. [`.memory-bank/prd.md`](../.memory-bank/prd.md)
-4. [`IDEA_APP.md`](../IDEA_APP.md), [`IDEA_INGEST.md`](../IDEA_INGEST.md), [`IDEA_OS.md`](../IDEA_OS.md), [`IDEA_DEBUG.md`](../IDEA_DEBUG.md)
+2. [`.memory-bank/prd.md`](../.memory-bank/prd.md)
+3. [`arch_vision.md`](../arch_vision.md)
+4. [`.memory-bank/glossary.md`](../.memory-bank/glossary.md) и
+   [`.memory-bank/invariants.md`](../.memory-bank/invariants.md)
+5. [`IDEA_APP.md`](../IDEA_APP.md), [`IDEA_INGEST.md`](../IDEA_INGEST.md),
+   [`IDEA_OS.md`](../IDEA_OS.md), [`IDEA_DEBUG.md`](../IDEA_DEBUG.md)
 
-Термины на диаграммах следуют [`.memory-bank/glossary.md`](../.memory-bank/glossary.md): `Batch`, `reference series`, `attempt`, Promo/search session и browser session — разные сущности.
+Термины на диаграммах следуют
+[`.memory-bank/glossary.md`](../.memory-bank/glossary.md): `Photo`, `reference
+series`, core `Attempt`, Promo/search session и session-wide browser access —
+разные сущности.

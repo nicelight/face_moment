@@ -215,3 +215,201 @@ proxy или отдельного решения при активации full-
 - `git diff --check` — passed.
 - `node scripts/mb-lint.mjs` — passed with non-blocking warnings about missing
   epic/feature `lifecycle` fields and glossary `source_of_truth`.
+
+  
+
+  --- 
+  
+ ----------------------------------------
+  ВТорой проход и сбор файндингов 
+ ---------------------------------------- 
+
+## 1. Проблемы в arch_vision.md
+
+  ### P1 — Не замкнуты process boundaries и dependency direction
+
+  Одновременно заявлены direct in-process calls и три отдельных
+  процесса, но не зафиксировано, куда HTTPS edge направляет realtime
+  request и какой процесс исполняет promo orchestration:
+  arch_vision.md:24, arch_vision.md:39.
+
+  Дополнительно граф содержит явный цикл:
+
+  promo -> diagnostics -> promo
+
+  Он виден в arch_vision.md:94. При буквальной реализации через Python
+  imports это даст circular dependency либо скрытую orchestration-
+  логику.
+
+  Минимальная коррекция:
+
+  - явно выбрать routing: /realtime сразу в RealtimeFaceService, а
+    acknowledgement/QR/staff UI — в backend;
+
+  - назвать, какие slices композируются каждым entrypoint;
+  - разорвать цикл одним узким typed port для diagnostic sink и
+    published read projection — без event bus;
+
+  - явно определить, как processing получает immutable Photo/original
+    projection от inventory.
+
+  ### P1 — Core Attempt может потеряться в offline-сценарии
+
+  Client создаёт attempt_id при принятии sensor trigger, но сервер
+  создаёт Attempt только при получении запроса. Local IndexedDB outbox
+  описан как необязательный: arch_vision.md:244. Это не гарантирует core
+  Attempt после offline + Chromium restart и расходится с требованием
+  сохранять каждую принятую попытку в .memory-bank/prd.md:338.
+
+  Самая дешёвая коррекция — обязательный bounded local outbox только для
+  минимального attempt envelope: attempt_id, monotonic timestamps,
+  client_offline/failure outcome. Без frames, tokens и персонального
+  результата. Server upsert должен уметь создать отсутствующий offline
+  Attempt.
+
+  ### P1 — Не определён terminal transition display acknowledgement
+
+  Указано, что просроченный acknowledgement превращает pending в
+  unconfirmed, но не определены deadline, событие перехода и поведение
+  позднего ack: arch_vision.md:252.
+
+  Без этого display_status=pending может остаться навсегда, а Promo
+  success и acceptance-метрики будут недостоверны.
+
+  Достаточно зафиксировать:
+
+  - ack_deadline_at;
+  - поздний ack не подтверждает Promo;
+  - unconfirmed может вычисляться при чтении или выставляться
+    существующим cleanup — отдельный scheduler не нужен.
+
+  ### P2 — Rejected upload оставляет неописанный MinIO object
+
+  Сначала candidate записывается в MinIO, затем декодируется и
+  валидируется; удаление явно предусмотрено только для duplicate:
+  arch_vision.md:166. Для invalid/undecodable файла cleanup отсутствует
+  и в IDEA_INGEST.md:57.
+
+  Нужен idempotent delete candidate object при любом штатном rejected
+  outcome. Редкий crash-orphan при этом может остаться принятым риском.
+
+  ### P2 — Retry limit worker не замкнут в state machine
+
+  Алгоритм одновременно говорит о публикации failed и о трёх retry, но
+  не определяет переход при ошибке и поведение restart, когда attempts
+  >= 3: arch_vision.md:214.
+
+  Следует явно зафиксировать:
+
+  processing error + attempts < 3 -> pending
+  processing error + attempts >= 3 -> failed
+  startup processing + attempts >= 3 -> failed
+
+  Иначе poison-file может остаться вечным pending или продолжить crash-
+  loop.
+
+  ### P2 — Переключение pipeline не проверяет готовность inventory
+
+  Pointer меняется до warmup/smoke, но validate target revision не
+  включает наличие compatible ready states для текущих СПА/date:
+  arch_vision.md:147.
+
+  Если pilot действительно живёт на одной заранее выбранной revision,
+  это не blocker. Если ручное переключение входит в эксплуатацию,
+  достаточно добавить precondition: target revision, calibration и
+  нужное inventory coverage готовы до изменения pointer. Автоматический
+  backfill/orchestration для этого не нужен.
+
+  ## 2. Расхождения остальных документов с arch_vision.md
+
+  ### P1 — Архитектурный source of truth не канонизирован
+
+  Сейчас одновременно существуют несовместимые утверждения:
+
+  - arch_vision.md сам называет себя advisory recommendation;
+  - Constitution требует хранить durable knowledge в .memory-
+    bank/: .memory-bank/constitution.md:40;
+
+  - Global Backbone остаётся blocked, ownership и architecture style
+    обозначены открытыми: .memory-bank/spec-backbone.md:70;
+
+  - canonical .memory-bank/architecture/system-architecture.md:7
+    практически полностью TBD;
+
+  - NEED_UPDATE.md:6 всё ещё говорит, что proposal не принят;
+  - отсутствует .memory-bank/foundation.md, хотя архитектура определяет
+    Foundation Required: true: arch_vision.md:368.
+
+  Это главный documentation blocker. Global Backbone не следует просто
+  помечать готовым вручную, но /spec-design уже должен потреблять
+  arch_vision.md как принятый архитектурный вход, а не повторно
+  открывать все решения.
+
+  ### P1 — Boundary Map назначает ownership процессам
+
+  .memory-bank/contracts/boundary-map.md:26 назначает владельцами
+  backend, worker, service, PostgreSQL и MinIO. В arch_vision.md
+  владельцами состояния являются пять capability slices, а процессы —
+  только runtime boundaries.
+
+  Особенно расходятся:
+
+  - Photo admission: должен владеть inventory, не backend;
+  - active date/settings: serving_control;
+  - pipeline/search: processing;
+  - Attempt/result/session: promo;
+  - detailed evidence: diagnostics.
+
+  ### P1 — Normative docs продолжают требовать realtime queue
+
+  arch_vision.md требует один slot, busy и отсутствие waiter queue:
+  arch_vision.md:229.
+
+  Но очередь всё ещё присутствует в:
+
+  - .memory-bank/prd.md:343 — queue wait;
+  - .memory-bank/prd.md:443 — bounded in-memory queue;
+  - .memory-bank/features/FT-007.md:22;
+  - IDEA_DEBUG.md:35;
+  - IDEA_OS.md:380 и его обязательных метриках.
+
+  queue wait нужно убрать из обязательной timeline/acceptance модели и
+  заменить на busy count и, при необходимости, локальное время захвата
+  inference slot, которое для singleton обычно равно нулю.
+
+  ### P2 — IDEA_OS.md заметно устарел
+
+  Подтверждённые противоречия:
+  - raw diagnostic series/bundles описаны как обычное обязательное
+    хранение, без чёткой best-effort границы и curated promotion:
+    IDEA_OS.md:439.
+
+  Кроме того, Kubuntu/KDE, «ровно два OS users» и запрет headless-
+  топологии являются дополнительными архитектурными решениями, которых
+  нет в arch_vision.md. Их следует либо оформить как deployment
+  recommendations, либо явно принять в архитектурный источник.
+
+  ### P2 — Служебные handoff/review документы уже не соответствуют
+  текущим файлам
+
+  - NEED_UPDATE.md:16 требует обновить Product Brief, хотя это уже
+    сделано.
+
+  - FINDINGS_24_07_ARCHITECTURE.md:115 всё ещё утверждает, что
+    IDEA_APP.md Batch-first и использует lease/jobs, хотя текущий
+    IDEA_APP.md уже прямо отвергает это.
+
+  - .memory-bank/index.md:7 называет текущий IDEA_INGEST.md историческим
+    Batch-first документом, хотя тот уже описывает актуальный per-photo
+    flow.
+
+  Их нужно refresh/archive, иначе следующий агент повторит уже
+  выполненную синхронизацию.
+
+  В целом хорошо согласованы IDEA_APP.md, IDEA_INGEST.md, Product Brief,
+  product/requirements и большая часть feature decomposition.
+  arch_impr1.md корректно помечен advisory и прямых конфликтов не
+  создаёт. CAMERA_OPTIONS.md совместим с отложенным hardware selection.
+
+  Проверки: mb-lint и mb-doctor проходят; doctor ожидаемо сообщает
+  SPEC_BACKBONE_NOT_READY. Файлы я не изменял.

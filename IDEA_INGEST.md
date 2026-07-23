@@ -8,6 +8,9 @@
 требования определяет `.memory-bank/prd.md`, а принятые архитектурные решения —
 `arch_vision.md`.
 
+Работающего ingest/backend пока нет. Flow, состояния и границы ниже описывают
+target design для будущей реализации.
+
 В pilot:
 
 - фотограф загружает только готовые JPEG через authenticated HTTPS web app;
