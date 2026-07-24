@@ -4,6 +4,17 @@ status: active
 ---
 # Changelog
 
+## [2026-07-24] Wave W0 — verified Foundation completion
+- Reconciled scheduler-owned `done` closure for both indexed FT-000 tasks:
+  TASK-001 has functional `PASS`, `semantic-pass` and
+  `HUMAN_CHECKPOINT: done`; the TASK-002 final gate has independent
+  `VERDICT: PASS`.
+- Advanced only the already-decided `REQ-000` and FT-000 lifecycle surfaces
+  from `planned` to `verified`; the global Planning Revision remains `2`.
+- Linked the functional, semantic and final-gate verification reports plus the
+  REQ-000/Foundation evidence map from the owning Foundation, feature and RTM
+  surfaces. No findings, fixes, follow-ups or product tasks were created.
+
 ## [2026-07-24] Foundation executable-baseline queue
 - Added `REQ-000` and the reserved `FT-000` pseudo-feature for the accepted
   greenfield executable baseline.

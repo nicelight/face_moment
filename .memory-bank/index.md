@@ -50,11 +50,12 @@ status: active
 
 - [.memory-bank/spec-index.md](spec-index.md): Pure SDD spec registry and planned-spec index.
 - [.memory-bank/spec-backbone.md](spec-backbone.md): accepted complete global
-  SDD backbone at Planning Revision 2 and current Foundation handoff.
+  SDD backbone at Planning Revision 2 and verified Foundation handoff.
 - [.memory-bank/foundation.md](foundation.md): Accepted Foundation Dev Path,
-  substrate scope and concrete Foundation gate.
+  verified substrate scope, concrete Foundation gate and completion evidence.
 - [.memory-bank/features/FT-000-foundation.md](features/FT-000-foundation.md):
-  reserved executable-baseline pseudo-feature and tasking links.
+  verified reserved executable-baseline pseudo-feature, tasking and evidence
+  links.
 - `.memory-bank/user-scenarios.md`: optional user scenarios and architecture implications when created by `/spec-init` or `/spec-design`.
 - [.memory-bank/glossary.md](glossary.md): Общий словарь терминов и доменных значений.
 - [.memory-bank/invariants.md](invariants.md): Глобальные MUST/NEVER правила.

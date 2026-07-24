@@ -6,8 +6,8 @@ status: active
 
 ## Foundation pseudo-feature
 
-- [FT-000](FT-000-foundation.md): Minimum executable walking skeleton; not a
-  product feature.
+- [FT-000](FT-000-foundation.md): Verified minimum executable walking skeleton;
+  not a product feature.
 
 ## EP-001 — Fresh Searchable Inventory
 

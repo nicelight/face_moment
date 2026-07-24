@@ -36,8 +36,9 @@ Target authority was applied in this order:
 4. `IDEA_*` files as overview/discovery evidence under the precedence declared
    in the PRD.
 
-There is no as-is runtime/code authority because the repository contains no
-working application, backend, worker or deployed runtime.
+At Planning Revision `2` there was no as-is runtime/code authority. The
+subsequent verified Foundation implements that accepted design but does not
+revise its planning authority or advance the Planning Revision.
 
 ## Backbone Area Matrix
 
@@ -56,7 +57,7 @@ working application, backend, worker or deployed runtime.
 | event_message_contracts | not_applicable | [system architecture](architecture/system-architecture.md) | No event broker/message protocol is part of the accepted pilot. |
 | agent_io_contracts | not_applicable | [.memory-bank/prd.md](prd.md) | No agent/tool I/O is a product or runtime boundary. |
 | security_safety | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md), [.memory-bank/prd.md](prd.md) | Private stores, HTTPS, greenfield staff roles, owner-scoped deletion and protected evidence are fixed. |
-| deployment | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/foundation.md](foundation.md) | One future Compose deployment and minimum executable walking skeleton with build, typecheck, start, test and smoke gates are explicit. |
+| deployment | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/foundation.md](foundation.md) | The verified Compose walking skeleton provides the explicit build, typecheck, start, test and smoke substrate; production deployment remains outside Foundation. |
 | risks | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/prd.md](prd.md) | Accepted pilot risks and deferred-complexity triggers are explicit. |
 | open_questions | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/prd.md](prd.md) | No material global question remains. Site hardware/client transport and the `Balance` formula are explicitly routed feature-level deferrals with named revisit points. |
 
@@ -86,17 +87,62 @@ hub.
 - Foundation Decision Status: accepted
 - Foundation Required: true
 - Foundation Gate Task: TASK-002-T2-FT-000-W0
-- Reason: the accepted target needs one executable release, three server roles,
-  one storage/migration baseline and a project-native
-  build/typecheck/start/test path; none exists in current state.
+- Foundation Gate Status: done
+- Foundation Lifecycle: verified
+- Reason: at the decision boundary, the accepted target needed one executable
+  release, three server roles, one storage/migration baseline and a
+  project-native build/typecheck/start/test path, while none existed.
 - Scope guard: Foundation establishes substrate only. Product Photo, Attempt,
   Promo, diagnostics and inventory behavior remains in FT-001..FT-012.
+
+## Feature Design Blockers
+
+These feature-level questions do not reopen the accepted global architecture,
+Foundation decision or Planning Revision `2`. They prevent only the affected
+feature from reaching an executable task handoff.
+
+### FT-003 — Site device integration
+
+- Exact question: Which single site-selected camera/sensor integration and
+  client app-shell route implements the accepted logical `SpaPromoClient`
+  contract?
+- Alternatives and impact: browser-native device access uses a versioned
+  Service Worker app shell; bridge-only hardware uses one narrow client adapter
+  serving the same bundle. Building both routes or a generic device-plugin
+  framework is forbidden. The selected hardware also fixes the concrete
+  camera/sensor transport and physical proof path.
+- Affected artifacts/features: FT-003 and its capture-interface tasks; the
+  logical realtime boundary and FT-004..FT-006 behavior remain unchanged.
+- Decision owner and repair route: operator/site technical owner selects the
+  pilot hardware and one route through `/feature-doctor FT-003`, then reruns
+  `/spec-auto FT-003`.
+
+### FT-011 — `Balance` calibration objective
+
+- Exact question: What deterministic objective and tie-break order defines the
+  `Balance` threshold profile across correct, false and missed outcomes?
+- Alternatives and impact: an accepted balanced score or an explicit weighted
+  error objective may satisfy the named trade-off, but they can recommend
+  different thresholds on the same annotated sample. The choice fixes the
+  calculation and its repeatable verification; no agent default is
+  authoritative.
+- Affected artifacts/features: FT-011 threshold recommendation calculation and
+  verification only; annotation semantics, other two named profiles and
+  manual-only setting application remain fixed.
+- Decision owner and repair route: product owner/operator, informed by the
+  application developer's calibration needs, decides through
+  `/feature-doctor FT-011`, then reruns `/spec-auto FT-011`.
 
 ## Handoff
 
 - Global backbone is ready at Planning Revision `2`.
-- The minimum FT-000 queue exists and names
-  `TASK-002-T2-FT-000-W0` as its final gate.
-- Run `/mb-doctor --strict` next.
-- Do not generate product feature tasks until the named FT-000 Foundation gate
-  is `done`.
+- The minimum FT-000 queue is complete and
+  `TASK-002-T2-FT-000-W0` is the scheduler-closed final gate with independent
+  `VERDICT: PASS`.
+- Product-wide task handoff remains blocked by FT-003 and FT-011. Run
+  `/feature-doctor FT-003`, then `/feature-doctor FT-011`, and rerun
+  `/spec-auto` for the repaired features; do not run
+  `/feature-to-tasks --all` until both feature statuses are `complete`.
+- The top-level scheduler runs `node scripts/mb-lint.mjs` and then
+  `/mb-doctor --strict` before any product-task promotion or next success
+  handoff.

@@ -1,7 +1,7 @@
 {
   "id": "TASK-001-T3-FT-000-W0",
   "title": "Implement the executable walking skeleton",
-  "status": "in_progress",
+  "status": "done",
   "wave": "W0",
   "feature": "FT-000",
   "reqs": [
@@ -59,6 +59,29 @@
       "artifacts": [
         ".tasks/TASK-001-T3-FT-000-W0/verifier-20260724-XV0Sdo/",
         ".tasks/TASK-001-T3-FT-000-W0/runtime-smoke-20260724T172705Z-569935/"
+      ]
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "summary": "Fresh adversarial semantic review found no actionable finding or surviving concern.",
+      "protocol": ".protocols/TASK-001-T3-FT-000-W0/red-verification.md",
+      "report": ".tasks/TASK-001-T3-FT-000-W0/TASK-001-T3-FT-000-W0-S-RED-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "human-checkpoint",
+      "verdict": "done",
+      "summary": "Operator supplied the exact required T3 checkpoint marker on 2026-07-24."
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Autonomous Foundation scheduler closed TASK-001 after functional PASS, semantic-pass, and the exact human checkpoint.",
+      "evidence": [
+        ".protocols/TASK-001-T3-FT-000-W0/verification.md",
+        ".protocols/TASK-001-T3-FT-000-W0/red-verification.md",
+        ".tasks/TASK-001-T3-FT-000-W0/TASK-001-T3-FT-000-W0-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-001-T3-FT-000-W0/TASK-001-T3-FT-000-W0-S-RED-VERIFY-final-report-docs-01.md"
       ]
     }
   ],

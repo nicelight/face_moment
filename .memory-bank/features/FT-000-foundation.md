@@ -1,7 +1,7 @@
 ---
 description: Foundation pseudo-feature for the minimum executable Face Moment baseline.
 status: active
-lifecycle: planned
+lifecycle: verified
 last_updated: 2026-07-24
 source_of_truth:
   - .memory-bank/features/FT-000-foundation.md
@@ -80,5 +80,18 @@ fake-engine/storage/restart probes.
 - Implementation: [TASK-001-T3-FT-000-W0](../tasks/TASK-001-T3-FT-000-W0.task.json).
 - Final gate: [TASK-002-T2-FT-000-W0](../tasks/TASK-002-T2-FT-000-W0.task.json).
 
-The lifecycle remains `planned` until tier-routed execution and verification
-write authoritative task evidence and closure state.
+## Verified outcome
+
+- [TASK-001-T3-FT-000-W0](../tasks/TASK-001-T3-FT-000-W0.task.json) is `done`
+  with functional `PASS`, `semantic-pass` and `HUMAN_CHECKPOINT: done`;
+  see its
+  [functional report](../../.tasks/TASK-001-T3-FT-000-W0/TASK-001-T3-FT-000-W0-S-VERIFY-final-report-docs-01.md)
+  and
+  [semantic report](../../.tasks/TASK-001-T3-FT-000-W0/TASK-001-T3-FT-000-W0-S-RED-VERIFY-final-report-docs-01.md).
+- [TASK-002-T2-FT-000-W0](../tasks/TASK-002-T2-FT-000-W0.task.json) is `done`
+  with independent `VERDICT: PASS`; see its
+  [verification report](../../.tasks/TASK-002-T2-FT-000-W0/TASK-002-T2-FT-000-W0-S-VERIFY-final-report-docs-01.md)
+  and
+  [REQ-000/Foundation evidence map](../../.tasks/TASK-002-T2-FT-000-W0/req-foundation-evidence-map.md).
+- The accepted executable substrate is therefore verified. No product behavior
+  was added and no finding, fix or follow-up task remains.

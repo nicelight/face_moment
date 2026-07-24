@@ -1,7 +1,7 @@
 {
   "id": "TASK-002-T2-FT-000-W0",
   "title": "Prove the final Foundation gate",
-  "status": "planned",
+  "status": "done",
   "wave": "W0",
   "feature": "FT-000",
   "reqs": [
@@ -45,7 +45,28 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Independent T2 verification reran every required gate and proved the full isolated Foundation outcome, restart persistence, idempotent delete, owned cleanup and unchanged operator/default resources without repair.",
+      "protocol": ".protocols/TASK-002-T2-FT-000-W0/verification.md",
+      "report": ".tasks/TASK-002-T2-FT-000-W0/TASK-002-T2-FT-000-W0-S-VERIFY-final-report-docs-01.md",
+      "artifacts": [
+        ".tasks/TASK-002-T2-FT-000-W0/verifier-20260724T190500Z/"
+      ]
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Autonomous Foundation scheduler closed the final gate after full T2 protocol, all applicable task/spec gates, and independent VERDICT: PASS.",
+      "evidence": [
+        ".protocols/TASK-002-T2-FT-000-W0/verification.md",
+        ".tasks/TASK-002-T2-FT-000-W0/TASK-002-T2-FT-000-W0-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-002-T2-FT-000-W0/verifier-20260724T190500Z/"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/foundation.md",
     ".memory-bank/features/FT-000-foundation.md",

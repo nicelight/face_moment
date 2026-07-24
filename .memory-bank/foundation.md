@@ -10,28 +10,30 @@ last_updated: 2026-07-24
 - Foundation Requirement: REQ-000
 - Foundation Pseudo-Feature: FT-000
 - Foundation Gate Task: TASK-002-T2-FT-000-W0
+- Foundation Lifecycle: verified
+- Foundation Gate Status: done
 
 ## Decision Evidence
 
 The accepted target requires one release with backend, worker and realtime
-roles, one PostgreSQL/Alembic stream, private MinIO and an HTTPS edge. Current
-state has no application code, package/build manifest, Compose definition,
-database schema, migration, entrypoint or project-native
-build/typecheck/start/test command. Product features therefore cannot start
-with a reproducible executable baseline; a separate minimum Foundation queue
-is required.
+roles, one PostgreSQL/Alembic stream, private MinIO and an HTTPS edge. At the
+Foundation decision boundary, the repository had no application code,
+package/build manifest, Compose definition, database schema, migration,
+entrypoint or project-native build/typecheck/start/test command. Product
+features therefore could not start with a reproducible executable baseline,
+which required the separate minimum Foundation queue now verified below.
 
 Foundation establishes substrate only. Photo admission, processing, Promo,
 diagnostics and Photo Inventory Operations remain product-feature behavior.
-Current-state absence is evidence for the required walking skeleton; it does
-not define or override the accepted target architecture.
+That initial absence was evidence for the walking skeleton; the verified
+Foundation does not define or override the accepted target architecture.
 
 ## Minimal Work Path
-- Build command: `docker compose build` (planned target; Foundation makes it runnable).
+- Build command: `docker compose build`.
 - Typecheck command:
   `docker compose run --rm --no-deps backend python -m mypy src/face_moment`;
   `mypy` is a dev/test dependency configured in the project `pyproject.toml`.
-- Start command: `docker compose up --build` (planned target single-server composition).
+- Start command: `docker compose up --build` (single-server composition).
 - Primary entrypoint: one release image with separately invocable `backend`,
   `BackgroundPhotoWorker` and `RealtimeFaceService` roles; concrete Python
   module names remain implementation discretion.
@@ -73,9 +75,23 @@ not define or override the accepted target architecture.
 - [TASK-002-T2-FT-000-W0](tasks/TASK-002-T2-FT-000-W0.task.json) is the only
   final Foundation gate and depends on TASK-001. It verifies the completed
   baseline without repairing source or runtime configuration.
-- Both tasks use reserved wave `W0`. Their planning state does not claim
-  Foundation completion; the named gate must pass its tier-routed execution
-  and verification lifecycle before product task design.
+- Both tasks use reserved wave `W0` and are scheduler-closed `done`.
+
+## Completion Evidence
+
+- [TASK-001-T3-FT-000-W0](tasks/TASK-001-T3-FT-000-W0.task.json) records the
+  independent functional `PASS`, adversarial `semantic-pass`, exact
+  `HUMAN_CHECKPOINT: done` and scheduler closure. The durable reports are the
+  [functional verification report](../.tasks/TASK-001-T3-FT-000-W0/TASK-001-T3-FT-000-W0-S-VERIFY-final-report-docs-01.md)
+  and
+  [semantic verification report](../.tasks/TASK-001-T3-FT-000-W0/TASK-001-T3-FT-000-W0-S-RED-VERIFY-final-report-docs-01.md).
+- [TASK-002-T2-FT-000-W0](tasks/TASK-002-T2-FT-000-W0.task.json) records the
+  independent final-gate `VERDICT: PASS` and scheduler closure. The
+  [verification report](../.tasks/TASK-002-T2-FT-000-W0/TASK-002-T2-FT-000-W0-S-VERIFY-final-report-docs-01.md)
+  and
+  [REQ-000/Foundation evidence map](../.tasks/TASK-002-T2-FT-000-W0/req-foundation-evidence-map.md)
+  ground every accepted exit target.
+- Foundation W0 is verified with no findings, fixes or follow-up tasks.
 
 ## Foundation Exit Criteria
 - minimal path passes
