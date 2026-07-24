@@ -109,8 +109,9 @@ delete/restore, два глобальных admin actions и прямые recent
   operator/developer — любые Photo в доступной СПА;
 - project-wide `restore all soft deleted` и подтверждённый fixed-snapshot
   `hard delete ALL softed media` через общий worker с ожиданием, progress и
-  restart-resume; purge не прерывает уже идущий upload и сохраняет core
-  Attempts и diagnostic evidence;
+  restart-resume; purge блокирует restore snapshot members до завершения, не
+  прерывает уже идущий upload и сохраняет Promo sessions, core Attempts и
+  diagnostic evidence, а клиенты пропускают отсутствующую media;
 - отдельные per-СПА `new`, `unprocessed`, `processed` и `failed` counters за
   1/5/60 минут с polling каждые пять секунд;
 - background processing и exact face search в пределах СПА, даты и совместимой
@@ -120,11 +121,14 @@ delete/restore, два глобальных admin actions и прямые recent
 - четыре low-quality preview и QR без watermark;
 - QR continuation page без нового selfie: СПА, дата, teaser, `N` и post-pilot
   CTA полного пакета;
-- core Attempt каждой принятой попытки; подробные protected diagnostic evidence
-  присоединяются best-effort, а их отсутствие отображается как `incomplete`;
+- core Attempt каждого server-admitted request; подробные protected diagnostic
+  evidence присоединяются best-effort, и их отсутствие у существующего server
+  Attempt отображается как `incomplete`; client-only offline event может не
+  оставить server record;
 - developer-only `Attempts`, `Log Explorer` и `Calibration` через backend и
   PostgreSQL, создаваемые в этом проекте;
-- failure mode с локальной рекламой и diagnostic event;
+- failure mode с локальной рекламой, best-effort diagnostic event и коротким
+  неблокирующим сообщением при неудачной связи с сервером;
 - controlled acceptance run из 20 попыток.
 
 ## 8. Non-goals
@@ -146,18 +150,22 @@ delete/restore, два глобальных admin actions и прямые recent
 
 - Минимум 19 из 20 попыток показывают полностью видимый и сканируемый QR менее
   чем за 10 секунд от `reference_series_ready_at`.
-- Landing каждой завершённой попытки правильно показывает СПА, `visit_date` и
-  согласованные с той же session teaser и `N`.
-- Для каждой принятой попытки создан core Attempt с correlation ID и stage
-  timestamps; отсутствие подробных evidence видно как `incomplete`.
+- Landing каждой завершённой попытки правильно показывает СПА, `visit_date`,
+  доступный teaser и issued `N`; hard-purged media пропускается без invalidation
+  session или пересчёта `N`.
+- Для каждого server-admitted request создан core Attempt с correlation ID и
+  stage timestamps; client-only offline attempt остаётся best-effort, а
+  отсутствие подробных evidence видно как `incomplete`.
 - Не менее 95% независимо принятых unique JPEG становятся searchable менее чем
   за 15 минут от server-side `photo.accepted_at`.
-- Role-scoped soft delete немедленно исключает Photo из search, participant
-  media и statistics; restore возвращает сохранённое состояние без повторного
-  upload/processing.
+- Role-scoped soft delete немедленно исключает Photo из новых search/results и
+  statistics, но не ломает уже выданную session; restore возвращает сохранённое
+  состояние без повторного upload/processing.
 - Один подтверждённый global hard purge возобновляет fixed snapshot после
-  process restart, показывает completed/total progress, удаляет Photo-owned и
-  связанный Promo state, но сохраняет core Attempts и diagnostic evidence.
+  process restart, запрещает restore его members до завершения, показывает
+  completed/total progress и удаляет Photo-owned media/state, сохраняя Promo
+  sessions, core Attempts и diagnostic evidence; отсутствующая media
+  пропускается клиентами.
 - Per-СПА counters за 1/5/60 минут соответствуют принятым определениям и
   обновляются polling каждые пять секунд.
 
@@ -230,14 +238,16 @@ delete/restore, два глобальных admin actions и прямые recent
 PRD описывает только one-СПА pilot и заканчивается проверенным QR
 continuation. Обязательные решения: automatic Promo, authenticated JPEG upload,
 четыре no-watermark teaser, continuation без selfie, текущий best-effort group
-algorithm, core Attempt с best-effort diagnostic evidence, 90-day retention
-ordinary attempt/evidence и performance acceptance `19/20 under 10s`.
+algorithm, core Attempt для server-admitted request с best-effort offline/
+diagnostic evidence, 90-day retention ordinary attempt/evidence и performance
+acceptance `19/20 under 10s`.
 Developer logging, attempt investigation, manual annotation и explainable
 parameter recommendations определены в `IDEA_DEBUG.md` и также являются входом
 PRD. Photo Inventory Operations включают role-scoped time-range soft
 delete/restore, global restore-all, fixed-snapshot resumable hard purge с
-Attempt/evidence retention и per-СПА 1/5/60-minute statistics с five-second
-polling. Payment и originals остаются post-pilot context.
+Promo session/Attempt/evidence retention, restore rejection для snapshot members
+и per-СПА 1/5/60-minute statistics с five-second polling. Payment и originals
+остаются post-pilot context.
 
 ## 15. Decision
 

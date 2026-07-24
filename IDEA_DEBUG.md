@@ -1,6 +1,6 @@
 # Face Moment: отладка и подбор параметров
 
-Обновлено: 2026-07-23
+Обновлено: 2026-07-24
 
 Работающего backend/admin application пока нет. Документ описывает target
 developer diagnostics contour для будущей реализации.
@@ -35,11 +35,12 @@ issue tags. Protected images/crops, имена, annotations, detailed logs и
 Calibration доступны только разработчику. Фотограф не имеет доступа к
 diagnostic pages.
 
-Timeline должен показывать capture, отправку request, network delay, queue wait,
-inference, vector search, формирование response, получение результата браузером,
-отрисовку Promo и момент полной видимости QR. Если attempt не уложилась в десять
-секунд, разработчик должен сразу видеть, какой этап создал задержку, и иметь
-возможность перейти к относящимся к этапу logs.
+Timeline должен показывать capture, отправку request, network delay,
+singleton-slot acquisition/`busy`, inference, vector search, формирование
+response, получение результата браузером, отрисовку Promo и момент полной
+видимости QR. Если attempt не уложилась в десять секунд, разработчик должен
+сразу видеть, какой этап создал задержку, и иметь возможность перейти к
+относящимся к этапу logs.
 
 В detail attempt должны быть видны release, serving pipeline revision,
 фактически применённый face threshold, quality values и другие параметры,

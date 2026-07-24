@@ -63,11 +63,12 @@ observe per-СПА 1/5/60-minute processing statistics. Authorized
 operator/developer settings also provide project-wide restore-all and confirmed
 hard-purge operations.
 
-Every accepted attempt produces one core Attempt/correlation timeline. Detailed
-diagnostic evidence is attached best-effort and remains visibly `incomplete`
-when absent or unfinished. Authorized developers may annotate collected
-evidence and use it for explainable Calibration; recommendations never update
-serving settings automatically.
+Every request admitted by the server produces one core Attempt/correlation
+timeline. Client-only offline metadata and detailed diagnostic evidence are
+attached best-effort; an offline trigger may have no durable Attempt, while
+missing evidence for a server Attempt remains visibly `incomplete`. Authorized
+developers may annotate collected evidence and use it for explainable
+Calibration; recommendations never update serving settings automatically.
 
 ## Success Contract
 
@@ -78,14 +79,17 @@ serving settings automatically.
 - At least 95% of independently accepted unique JPEGs become searchable in less
   than 15 minutes from their server-side `photo.accepted_at`.
 - Valid phone continuation preserves the same СПА, authoritative `visit_date`,
-  teaser and `N`; expired sessions disclose no personalized result data.
-- Each accepted attempt retains a core correlation identity and stage timestamps
-  sufficient to localize its outcome and latency; missing detailed evidence is
-  explicit.
-- Soft-deleted Photos immediately leave search, participant media access and
-  queue statistics, can be restored without reprocessing, and can be removed by
-  one confirmed resumable project-wide purge that retains core Attempts and
-  diagnostic evidence.
+  available teaser and issued `N`; hard-purged media is skipped without session
+  invalidation or `N` recalculation, and expired sessions disclose no
+  personalized result data.
+- Each server-admitted request retains a core correlation identity and stage
+  timestamps sufficient to localize its outcome and latency; missing detailed
+  evidence is explicit and client-only offline attempts remain best-effort.
+- Soft-deleted Photos immediately leave new search/result formation and queue
+  statistics but remain usable by already issued sessions. They can be restored
+  without reprocessing and removed by one confirmed resumable project-wide purge
+  that retains sessions, core Attempts and diagnostic evidence; existing clients
+  skip missing hard-purged media.
 - Per-СПА `new`, `unprocessed`, `processed` and transition-based `failed`
   counters for 1, 5 and 60 minutes refresh by five-second polling.
 

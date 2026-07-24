@@ -42,7 +42,7 @@ constitution_checked: true
 ### Readiness and verification context
 
 - [.memory-bank/spec-backbone.md](spec-backbone.md): accepted global SDD
-  backbone at Planning Revision 2; architecture planning is complete and the
+  backbone at Planning Revision 3; architecture planning is complete and the
   Foundation Gate remains pending `/foundation-to-tasks`.
 - [.memory-bank/spec-index.md](spec-index.md): registry of current and planned
   canonical specs.
@@ -92,16 +92,23 @@ acceptance gates.
   is used; if neither value is available, the effective time is 01:00 on
   `visit_date`.
 - Soft deletion preserves the Photo and all related stored data but immediately
-  excludes the Photo from search, participant media access and queue
-  statistics. Restore makes the preserved Photo active again.
+  excludes the Photo from new search/result formation and queue statistics.
+  An already issued Promo/session continues using the referenced media while it
+  exists; soft delete does not invalidate or rebuild that session. Restore makes
+  the preserved Photo active again.
 - Admin settings provide project-wide `hard delete ALL softed media` and
   `restore all soft deleted` actions. Hard deletion requires confirmation and
   uses one resumable global purge run with progress, without a per-photo
   `purge_pending` state or a separate purge jobs table.
 - The global hard purge waits for the shared worker's current operation, then
   deletes the fixed confirmed set of soft-deleted Photos and their media, face
-  data, pipeline state and related Promo result/session data. Core Attempts and
-  diagnostic evidence are retained under their ordinary retention rules.
+  data and pipeline state. Existing Promo sessions, core Attempts and diagnostic
+  evidence are retained. UI/device loading skips a hard-purged media item
+  without invalidating the session, replacing the Photo or recalculating its
+  historical `N`.
+- Restore and restore-all reject Photos already included in a non-terminal
+  confirmed hard-purge snapshot. They become irrelevant once the purge reaches
+  `completed`; the fixed snapshot never changes silently.
 - Queue statistics are scoped per СПА, expose 1-, 5- and 60-minute windows for
   `new`, `unprocessed`, `processed` and `failed`, and refresh by five-second
   polling without WebSocket or SSE.
@@ -338,13 +345,18 @@ pilot actor or blocker.
   expose a partial or stale participant result.
 - **FR-UX-02** — A successful Promo MUST show exactly four low-quality teaser
   photographs without watermark and a high-contrast, fully visible, scannable
-  QR code on the 43-inch landscape, 16:9, logical 1920x1080 baseline.
+  QR code on the 43-inch landscape, 16:9, logical 1920x1080 baseline. The client
+  MUST send an idempotent display acknowledgement only after all four teasers
+  are decoded and the QR is fully visible. If the result-display window ends
+  without confirmation, `display_status=unconfirmed` is derived on read; no
+  scheduler or acknowledgement outbox is required.
 - **FR-UX-03** — The QR MUST continue the same short-lived session on the phone
   without another selfie or participant login step implied by the current
   immediate-continuation flow.
 - **FR-UX-04** — The phone landing MUST show the same session's СПА,
-  `visit_date`, one of the four low-quality teasers, `N`, and an active
-  `Перейти к покупке` button.
+  `visit_date`, an available low-quality teaser when one remains, the issued
+  `N`, and an active `Перейти к покупке` button. Media hard-purged after
+  issuance is skipped without invalidating or rebuilding the session.
 - **FR-UX-05** — The Promo display MUST use the truthful copy `Ваши фотографии
   найдены — откройте по QR-коду`. On the valid phone landing, `Перейти к
   покупке` MUST navigate to the separately delivered main Face
@@ -362,8 +374,13 @@ pilot actor or blocker.
   session.
 - **FR-UX-08** — If fewer than four valid unique teasers are produced, or a
   camera/sensor/network/processing failure prevents success, the client MUST
-  return to local advertising, omit the final Promo/Chime, create a diagnostic
-  event and allow a fresh capture without starting the success cooldown.
+  return to local advertising, omit the final Promo/Chime, create a best-effort
+  diagnostic event and allow a fresh capture without starting the success
+  cooldown. For a server-communication failure, it MUST also show the small
+  non-blocking text `Попытка связи с сервером была не успешна в hh:mm:ss` for
+  5–10 seconds in the easiest non-obstructive location, bottom-left by default.
+  The timestamp uses client-local failure time; a newer message MAY replace the
+  current one immediately, including before five seconds.
 - **FR-UX-09** — On timeout or network error, the client MUST discard the stale
   request and retry only with a fresh reference capture.
 - **FR-UX-10** — When the QR first-open or session-wide browser idle TTL
@@ -377,15 +394,18 @@ pilot actor or blocker.
 
 ### E. Attempts and diagnostic evidence
 
-- **FR-DIAG-01** — Every accepted capture/search attempt, including unsuccessful
-  outcomes, MUST persist one core Attempt with a client-generated
-  `attempt_id/correlation_id` before inference. That identity connects browser
-  events, server processing, configuration, face-search decisions and artifacts
-  without requiring a separate empty diagnostic-anchor row.
+- **FR-DIAG-01** — Every capture/search request admitted by the server,
+  including unsuccessful domain outcomes, MUST persist one core Attempt with a
+  client-generated `attempt_id/correlation_id` before inference. That identity
+  connects browser events, server processing, configuration, face-search
+  decisions and artifacts without requiring a separate empty diagnostic-anchor
+  row. A client-only offline trigger MAY be delivered through a short-lived
+  metadata outbox and server upsert, but this is best-effort and is not
+  guaranteed to produce a durable Attempt.
 - **FR-DIAG-02** — The attempt timeline MUST expose capture/reference readiness,
-  request/network, queue wait, inference, vector search, response, browser
-  receipt, Promo render and full QR visibility so a `>=10 s` outcome can be
-  localized to a stage.
+  request/network, singleton-slot acquisition or `busy`, inference, vector
+  search, response, browser receipt, Promo render and full QR visibility so a
+  `>=10 s` outcome can be localized to a stage.
 - **FR-DIAG-03** — Attempt detail MUST show release, serving pipeline revision,
   applied threshold and quality values, selected detections, repeated
   detections, candidate pools, selected teasers, `N`, outcome/status and issue
@@ -465,13 +485,18 @@ pilot actor or blocker.
   to soft-delete and restore any Photo in an accessible СПА.
 - **FR-INV-03** — Soft deletion MUST preserve the Photo record, stored media,
   face data, pipeline state and other related data while immediately excluding
-  the Photo from participant-facing search, media access and queue statistics.
+  the Photo from new participant-facing search/result formation and queue
+  statistics. An already issued Promo/session MUST continue using its referenced
+  Photo/media while the media exists; soft delete MUST NOT invalidate or rebuild
+  that session.
 - **FR-INV-04** — Restoring a soft-deleted Photo MUST make the preserved Photo
   active again without re-upload or reprocessing and MUST return it to search,
   media access and statistics according to its preserved state and timestamps.
 - **FR-INV-05** — Admin settings MUST provide two project-wide actions:
   `hard delete ALL softed media` and `restore all soft deleted`. The restore-all
-  action MUST restore every currently soft-deleted Photo across all СПА.
+  action MUST restore every currently soft-deleted Photo across all СПА except
+  Photos already included in a non-terminal confirmed hard-purge snapshot;
+  restore of those snapshot members MUST be rejected until the purge completes.
 - **FR-INV-06** — `hard delete ALL softed media` MUST require explicit
   confirmation and then operate on a fixed snapshot of every soft-deleted Photo
   across the project. While it runs, its UI MUST be replaced by a progress view
@@ -481,9 +506,11 @@ pilot actor or blocker.
   `Начну удаление, как только закончится процесс {human-readable process name}`.
 - **FR-INV-08** — For every Photo in the confirmed purge snapshot, hard deletion
   MUST remove its Photo record, original/preview/thumbnail media, detected-face
-  data, photo-pipeline state and any Promo result/session containing the Photo.
-  Core Attempts and diagnostic evidence MUST NOT be removed by this action and
-  continue to follow their ordinary retention rules.
+  data and photo-pipeline state. Existing Promo results/sessions, core Attempts
+  and diagnostic evidence MUST NOT be removed or rebuilt by this action. A
+  UI/device client loading an existing session MUST skip unavailable
+  hard-purged media and continue with remaining items; the issued `N` remains
+  historical and is not recalculated.
 - **FR-INV-09** — One global purge run MUST resume after a backend or worker
   restart until its confirmed snapshot is complete. It MUST NOT introduce a
   per-photo `purge_pending` lifecycle or a separate purge jobs table. An upload
@@ -514,9 +541,9 @@ pilot actor or blocker.
   `accepted_at`. Explicit developer Calibration may delay this metric during a
   debugging interval without requiring scheduling machinery.
 - **NFR-PERF-04** — The system MUST retain stage timestamps sufficient for
-  `reference_ready_to_qr`, trigger-to-preview, realtime queue wait and
-  ingest-to-searchable diagnosis. Additional percentile cuts are optional until
-  justified.
+  `reference_ready_to_qr`, trigger-to-preview, singleton-slot acquisition/
+  `busy` and ingest-to-searchable diagnosis. Additional percentile cuts are
+  optional until justified.
 - **NFR-PERF-05** — At least 19 of the same 20 controlled attempts MUST satisfy
   both the latency/QR gate and the full-session correctness gate. A foreign
   teaser or any unrelated `photo_id` included in `N` makes that attempt fail the
@@ -529,9 +556,10 @@ pilot actor or blocker.
 - **NFR-REL-02** — Chromium/display MUST recover automatically after browser or
   network failure and continue local advertising while the server is
   unavailable.
-- **NFR-REL-03** — Realtime processing MUST use a bounded, short-lived in-memory
-  queue/deadline model; stale reference work is not durable and MUST NOT be
-  replayed after restart.
+- **NFR-REL-03** — Realtime processing MUST use one inference slot and one
+  server deadline without a waiter queue. A concurrent admitted request receives
+  typed `busy`; stale reference work is not durable and MUST NOT be replayed
+  after restart.
 - **NFR-REL-04** — The PostgreSQL-backed photo-processing queue MUST survive
   backend and worker restarts without losing its existing `pending` or
   `processing` population. On worker startup, unfinished `processing` work MUST
@@ -654,10 +682,13 @@ pilot actor or blocker.
 - A photo is searchable only through a `ready` state for the current compatible
   serving pipeline revision.
 - A soft-deleted Photo and all its related data remain stored but are inactive
-  for search, participant media access and statistics. Restore reactivates that
-  preserved state. Hard purge physically removes Photo-owned data and related
-  Promo result/session data while leaving the core Attempt and diagnostic
-  evidence governed by their independent retention lifecycle.
+  for new search/result formation and statistics. An already issued
+  Promo/session may continue reading its referenced media. Restore reactivates
+  the preserved state. Hard purge physically removes Photo-owned data but leaves
+  existing Promo sessions, the core Attempt and diagnostic evidence under their
+  independent lifecycles. Missing hard-purged media is skipped during
+  UI/device loading; the session is not invalidated or rebuilt and its issued
+  `N` is not recalculated.
 - Four teaser IDs are a subset of `session_result_photo_ids`; `N` is the count of
   the entire unique union.
 - Attempt/log/evidence identifiers must allow navigation without placing image
@@ -691,7 +722,8 @@ pilot actor or blocker.
 2. An authorized operator/developer selects Photos by СПА, `visit_date` and
    capture-time range and soft-deletes or restores them.
 3. In admin settings, an authorized user may restore every soft-deleted Photo
-   across the project.
+   across the project except members of a confirmed non-terminal hard-purge
+   snapshot.
 4. To permanently remove all soft-deleted Photos across the project, confirm
    the hard-purge action.
 5. If the shared worker is busy, observe the human-readable current-operation
@@ -720,6 +752,9 @@ pilot actor or blocker.
    personalized result expires and the browser redirects to the main Face
    Moment page offering photo search and purchase through selfie upload,
    without carrying personal result data from the expired session.
+9. A server-communication failure returns to advertising and briefly shows
+   `Попытка связи с сервером была не успешна в hh:mm:ss`; a newer
+   notice may replace it.
 
 ### Developer investigation and calibration flow
 
@@ -778,12 +813,17 @@ payment/fiscal providers, external observability stores and message brokers.
   contract breach.
 - Fewer than four unique valid teasers, low-quality query faces, no-match,
   timeout, camera/sensor/network/processing failure or stale response must not
-  show a partial/stale Promo and must produce diagnostic evidence.
+  show a partial/stale Promo. For a server-admitted request, its core Attempt
+  must record the terminal outcome; detailed evidence remains best-effort. A
+  client-only network failure produces only a best-effort diagnostic event and
+  may leave no server record.
 - Missing optional audio/animation assets must have a silent/non-blocking
   fallback and must not prevent a valid QR result.
 - Logging/diagnostic ingestion failure must not block the critical capture,
-  search, Promo or QR path; a terminal core Attempt without finalized evidence
-  must remain observable as `incomplete`.
+  search, Promo or QR path; a terminal server-side core Attempt without
+  finalized evidence must remain observable as `incomplete`. A client-only
+  offline trigger may have no durable Attempt because its metadata delivery is
+  best-effort.
 - A QR opened more than 30 minutes after `qr_issued_at`, or a session-wide
   browser context with no explicit participant activity on any opened phone for
   60 minutes, invalidates the personalized result and redirects to the main
@@ -792,15 +832,19 @@ payment/fiscal providers, external observability stores and message brokers.
 - Diagnostic retention expiry must remove ordinary protected artifacts after 90
   days. For a promoted calibration case it preserves only the curated subset in
   NFR-DATA-03; unselected frames and the Promo screenshot are still deleted.
-- Soft-deleted Photos remain stored but are absent from search, participant
-  media access and all four queue-statistic counters. Restoring them makes them
-  eligible for those views again using their preserved states and timestamps.
+- Soft-deleted Photos remain stored but are absent from new search/result
+  formation and all four queue-statistic counters. Already issued sessions keep
+  using their referenced media while it exists. Restoring a Photo makes it
+  eligible for new results again using its preserved state and timestamps.
 - Hard purge waits without preemption when the shared worker is busy and
   exposes the current operation by a human-readable name. A process restart
   resumes the same confirmed snapshot and progress.
-- Hard-purging a Photo removes any Promo result/session containing it but
-  preserves the related core Attempt and diagnostic evidence, including their
-  independent retention schedule.
+- Hard-purging a Photo preserves existing Promo results/sessions, the related
+  core Attempt and diagnostic evidence. A UI/device client skips the missing
+  media item and continues; no session invalidation, replacement selection or
+  `N` recalculation occurs.
+- Restore and restore-all reject a Photo that belongs to a confirmed
+  non-terminal hard-purge snapshot, so the destructive target set stays fixed.
 - Full primary storage, process/browser crash and central-server unavailability
   require observable degraded advertising behavior and documented recovery.
 
@@ -822,23 +866,27 @@ payment/fiscal providers, external observability stores and message brokers.
 
 ### Product and performance outcomes
 
-- **AC-01** — At least 19 of 20 controlled attempts produce four unique teasers
-  and a fully visible, scannable QR in `<10_000 ms` from
-  `reference_series_ready_at`.
+- **AC-01** — At least 19 of 20 controlled attempts both produce four unique
+  teasers and a fully visible, scannable QR in `<10_000 ms` from
+  `reference_series_ready_at` and satisfy the correctness rule in AC-03.
 - **AC-02** — No-match or timeout without a completed QR counts as a failed
   attempt.
-- **AC-03** — In at least 19 of the same 20 controlled attempts, all four teasers
-  and every unique `photo_id` in `session_result_photo_ids` are manually
-  confirmed as containing at least one pilot participant represented by a
-  processed selected detection. Any unrelated included photograph fails that
-  attempt; failure to cover every unique person in a group does not.
+- **AC-03** — For every attempt counted among the 19 joint AC-01 successes, all
+  four teasers and every unique `photo_id` in `session_result_photo_ids` are
+  manually confirmed as containing at least one pilot participant represented
+  by a processed selected detection. Any unrelated included photograph fails
+  that attempt; failure to cover every unique person in a group does not.
 - **AC-04** — Every completed phone continuation shows the correct СПА,
-  authoritative `visit_date`, a teaser belonging to that same session and the
-  same session's `N`; its `Перейти к покупке` button navigates to the configured
-  main selfie-search/purchase page.
-- **AC-05** — Every attempt, including the allowed failure, has one persisted
-  core Attempt/correlation identity and stage timestamps; missing or failed
-  detailed evidence is explicitly visible as `incomplete`.
+  authoritative `visit_date`, an available teaser belonging to that same
+  session and the same issued `N`; its `Перейти к покупке` button navigates to
+  the configured main selfie-search/purchase page. If referenced media was
+  hard-purged after issuance, the missing item is skipped without invalidating
+  the session or recalculating `N`.
+- **AC-05** — Every request admitted by the server, including the allowed
+  failure, has one persisted core Attempt/correlation identity and stage
+  timestamps; missing or failed detailed evidence is explicitly visible as
+  `incomplete`. Client-only offline attempts remain best-effort and may have no
+  durable server record.
 - **AC-06** — At least 95% of independently accepted unique JPEGs become
   searchable in `<15 min` from their server-side `photo.accepted_at`, using the
   full denominator/failure semantics of FR-ING-08.
@@ -871,6 +919,9 @@ payment/fiscal providers, external observability stores and message brokers.
   deletion.
 - **AC-14** — Network/search failure leaves the display on local advertising,
   discards stale work and permits a fresh attempt without a success cooldown.
+  A server-communication failure also shows
+  `Попытка связи с сервером была не успешна в hh:mm:ss` non-blockingly for
+  5–10 seconds; a newer notice may replace it immediately.
 - **AC-15** — Before the 30-minute first-open deadline the QR opens its matching
   session-wide browser context without creating per-device grants; after that
   deadline, and after 60 minutes without explicit participant activity across
@@ -886,8 +937,9 @@ payment/fiscal providers, external observability stores and message brokers.
   teaser selection and `N` unchanged.
 - **AC-18** — A photographer can select their own uploads by СПА,
   `visit_date` and capture-time range, soft-delete them, observe their immediate
-  exclusion from search/media/statistics, and restore them without re-upload or
-  reprocessing. An operator/developer can perform the same actions for any
+  exclusion from new search/result formation and statistics, and restore them
+  without re-upload or reprocessing. An already issued session keeps using the
+  referenced media. An operator/developer can perform the same actions for any
   authorized Photo.
 - **AC-19** — The 1-, 5- and 60-minute per-СПА counters match the definitions in
   FR-INV-10, omit soft-deleted Photos, reflect restored Photos from their
@@ -895,8 +947,10 @@ payment/fiscal providers, external observability stores and message brokers.
 - **AC-20** — After confirmation, one project-wide hard purge uses a fixed
   soft-deleted snapshot, waits for the shared worker with the required
   human-readable message, shows completed/total progress, survives a process
-  restart, and removes all snapshot Photo/media/face/pipeline and related Promo
-  result/session data while retaining core Attempts and diagnostic evidence.
+  restart, rejects restore of snapshot members until completion, and removes all
+  snapshot Photo/media/face/pipeline data while retaining existing Promo
+  results/sessions, core Attempts and diagnostic evidence. Existing clients
+  skip unavailable media without invalidating the session or recalculating `N`.
 
 The smoke run validates the pilot path only. It does not demonstrate public
 production readiness, target 10-15-СПА capacity or complete group coverage.
@@ -917,15 +971,18 @@ production readiness, target 10-15-СПА capacity or complete group coverage.
 2. **Integration verification**
    - uploader -> object storage -> background processing -> searchable state;
    - soft delete -> search/media/statistics exclusion -> restore;
-   - confirmed global purge snapshot -> shared-worker wait -> progress ->
-     restart/resume -> complete cleanup with Attempt/evidence retention;
+   - confirmed global purge snapshot -> restore rejection -> shared-worker wait
+     -> progress -> restart/resume -> complete Photo/media cleanup with
+     result/session/Attempt/evidence retention and missing-media skip;
    - worker crash/restart -> the existing queued population remains durable,
      unfinished work returns to `pending` and processing resumes from the
      beginning;
    - sensor/client -> synchronous realtime service -> exact scoped search -> QR
      session;
-   - core Attempt/browser/server correlation -> Attempts/Log Explorer ->
-     optional protected evidence and explicit `incomplete` state;
+   - server-admitted core Attempt/browser/server correlation -> Attempts/Log
+     Explorer -> optional protected evidence and explicit `incomplete` state;
+   - client-only offline failure -> non-blocking 5–10-second notice and
+     best-effort metadata delivery without durable-Attempt guarantee;
    - annotation -> Calibration calculations -> manual-only application boundary.
 3. **Critical-flow e2e verification**
    - authenticated photographer journey;
@@ -946,7 +1003,9 @@ production readiness, target 10-15-СПА capacity or complete group coverage.
    - retain the per-attempt outcome, `reference_ready_to_qr_ms`, phone-context
      consistency, ground-truth validation of all four teasers and every unique
      `photo_id` in `N`, and diagnostic evidence;
-   - evaluate AC-01..07 without silently removing no-match/timeout failures.
+   - evaluate AC-01..07 as per-attempt rows, requiring the same 19 attempts to
+     pass both latency/QR and correctness without silently removing
+     no-match/timeout failures.
 
 Evidence such as screenshots, traces, logs and videos belongs in task artifacts;
 the Memory Bank should retain links and conclusions rather than binary evidence.

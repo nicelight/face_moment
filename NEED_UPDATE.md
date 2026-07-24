@@ -1,7 +1,11 @@
 # Face Moment synchronization handoff
 
-Status: documentation synchronization complete; feature-plan review approved
+Status: historical synchronization handoff for Planning Revision 2; superseded
+by `.memory-bank/spec-backbone.md` Planning Revision 3.
 Scope: documentation only; no code, TASK records or implementation plans.
+
+This file is not a current source of truth. It preserves the prior handoff
+snapshot only.
 
 ## Current authority
 

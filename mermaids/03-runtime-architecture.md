@@ -73,8 +73,9 @@ flowchart LR
 - Serving pipeline заранее загружается и прогревается; второй pipeline нужен только при доказанной необходимости benchmark-а.
 - `inventory` владеет active/soft-deleted marker, direct PostgreSQL counters и
   одним resumable global purge run; worker ждёт текущую операцию без preemption.
-- Hard purge удаляет Photo/media/faces/pipeline и Promo result/session, но
-  сохраняет core Attempt и diagnostic evidence.
+- Hard purge удаляет Photo/media/faces/pipeline, но сохраняет Promo
+  result/session, core Attempt и diagnostic evidence; clients пропускают
+  отсутствующую media.
 - PostgreSQL, MinIO и внутренние service ports не публикуются наружу.
 - Локальный HDMI client и будущий remote client используют один `SpaPromoClient` contract.
 

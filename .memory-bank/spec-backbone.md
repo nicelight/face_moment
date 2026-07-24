@@ -10,12 +10,13 @@ last_updated: 2026-07-24
 - State: ready
 - Notes: Reconciled through `/spec-design` from the operator-accepted
   [architecture source](../arch_vision.md), selected
-  [architecture improvements](../arch_impr1.md) and clarified product sources.
-  No working application/backend/runtime exists yet.
+  [architecture improvements](../arch_impr1.md), clarified product sources and
+  the accepted KISS session/offline-attempt/purge decisions of 2026-07-24. No
+  working application/backend/runtime exists yet.
 
 ## Global Backbone Status
 - Status: complete
-- Planning Revision: 2
+- Planning Revision: 3
 - Mode: standard_architecture_scaffold
 - Architecture artifact strategy: split-core-docs
 - Not applicable areas:
@@ -23,8 +24,11 @@ last_updated: 2026-07-24
   - agent_io_contracts: not_applicable - the product has no agent/tool/model-I/O boundary.
 - Notes: The global architecture, ownership, lifecycle, storage, security,
   standard HTTP failure semantics, single-schema migration boundary and
-  Foundation decisions are explicit. Feature-level table/payload detail
-  remains owned by `/feature-to-tasks` and does not block the backbone.
+  Foundation decisions are explicit. Issued sessions survive Photo soft/hard
+  deletion with missing-media skip, client-only offline attempts are
+  best-effort, and restore of non-terminal purge snapshot members is rejected.
+  Feature-level table/payload detail remains owned by `/feature-to-tasks` and
+  does not block the backbone.
 
 ## Accepted Source Roles
 
@@ -58,7 +62,7 @@ working application, backend, worker or deployed runtime.
 | non_goals | authoritative | [.memory-bank/prd.md](prd.md), [system architecture](architecture/system-architecture.md) | Paid delivery, standalone selfie, distribution, speculative scale and extra lifecycle machinery are excluded. |
 | domain_model | authoritative | [.memory-bank/prd.md](prd.md), [lifecycle map](states/lifecycle-map.md), [.memory-bank/glossary.md](glossary.md) | Product entities, effective capture time, Photo visibility, purge, Attempt and session semantics are explicit. |
 | data_flow | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | Admission, search, Promo, Calibration and Photo Inventory orchestration have named owners. |
-| storage | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md), [lifecycle map](states/lifecycle-map.md) | PostgreSQL/MinIO authority, one schema/Base/Alembic stream, ownership-safe foreign-key/cascade limits, transaction limits, visibility, retention and restart semantics are explicit. |
+| storage | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md), [lifecycle map](states/lifecycle-map.md) | PostgreSQL/MinIO authority, one schema/Base/Alembic stream, ownership-safe foreign-key/cascade limits, transaction limits, issued-session media behavior, visibility, retention and restart semantics are explicit. |
 | api_contracts | authoritative | [boundary map](contracts/boundary-map.md) | Standard HTTP failure statuses, typed admitted-request outcomes, client control inputs and external HTTPS boundaries are fixed; concrete endpoint success payloads remain feature-owned. |
 | event_message_contracts | not_applicable | [system architecture](architecture/system-architecture.md) | No event broker/message protocol is part of the accepted pilot. |
 | agent_io_contracts | not_applicable | [.memory-bank/prd.md](prd.md) | No agent/tool I/O is a product or runtime boundary. |
@@ -98,10 +102,14 @@ reuse these subject paths or be added later only when
 
 ## Planning Revision Effect
 
-Planning Revision advanced once from `1` to `2` because the accepted standard
-HTTP failure/domain-outcome contract and single-schema migration/foreign-key
-rules affect global feature and task planning. The task index is empty, so no
-existing task status or task-plan review is made stale.
+Planning Revision advanced from `1` to `2` for the standard HTTP
+failure/domain-outcome contract and single-schema migration/foreign-key rules.
+It advanced from `2` to `3` for the operator-accepted KISS rules: soft delete
+does not invalidate an issued session, hard-purged media is skipped without
+rebuilding the session or `N`, client-only offline attempts are best-effort,
+and restore of non-terminal hard-purge snapshot members is rejected. These
+rules affect feature/task planning. The task index is empty, so no existing task
+status or task-plan review is made stale.
 
 ## Handoff
 

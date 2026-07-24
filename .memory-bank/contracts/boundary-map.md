@@ -19,9 +19,9 @@ describe existing code.
 | Owner | Public application boundary | Owned mutable state and transitions | Forbidden ownership | Allowed dependencies | Minimum credible proof |
 |---|---|---|---|---|---|
 | `serving_control` | Read immutable `ServingContext`/`IngestTarget`; validate and apply an audited manual change. | СПА/timezone, active `visit_date`, pipeline/settings revision, display token lifecycle and manual-change audit. | Photos, processing results, Attempts, sessions, evidence or Calibration recommendations. | Platform auth/infrastructure adapters only. | Client input cannot override СПА/date; one attempt sees one immutable snapshot. |
-| `inventory` | Admit one JPEG; query authorized Photos; soft-delete/restore; restore-all; start/read one global hard purge; read recent per-СПА counters. | Photo identity, uploader, authoritative date, effective capture time, accepted time, checksum/original reference, active marker, authorization and global purge orchestration/progress. | Pipeline transition rules, embeddings, Promo integrity, core Attempt or evidence retention. | Read `serving_control`; command `processing` and `promo`; platform auth/storage adapters. | Duplicate arbitration; owner-scoped visibility; fixed-snapshot purge recovery; exact counter definitions. |
+| `inventory` | Admit one JPEG; query authorized Photos; soft-delete/restore; restore-all; start/read one global hard purge; read recent per-СПА counters. | Photo identity, uploader, authoritative date, effective capture time, accepted time, checksum/original reference, active marker, authorization and global purge orchestration/progress. | Pipeline transition rules, embeddings, Promo integrity, core Attempt or evidence retention. | Read `serving_control`; command `processing`; platform auth/storage adapters. | Duplicate arbitration; owner-scoped visibility; fixed-snapshot purge recovery; exact counter definitions. |
 | `processing` | Create initial `pending`; report readiness; process Photo; exact compatible search; offline evaluate; clean Photo-derived state on inventory purge. | Pipeline catalog, processing state, derivatives/faces/embeddings, quality gates, exact-search and evaluation rules. | Photo admission/visibility, live setting mutation, Promo assembly or evidence retention. | Read Photo/serving projections; storage/model adapters. | Restart from `processing`, one final face set, compatible exact search and idempotent cleanup. |
-| `promo` | Execute fresh attempt; accept display outcome; exchange/read QR continuation; clean affected result/session on inventory purge. | Core Attempt, result/session, candidate union, teasers, `N`, QR ticket and session-wide browser access. | Photo/processing/settings mutation or detailed diagnostic evidence. | Read `serving_control`/`inventory`; command `processing`; best-effort command `diagnostics`. | Four unique teasers, correct `N`, explicit display acknowledgement and session expiry. |
+| `promo` | Execute fresh attempt; accept display outcome; exchange/read QR continuation; skip unavailable hard-purged media during an existing session read. | Core Attempt, result/session, candidate union, teasers, `N`, QR ticket and session-wide browser access. | Photo/processing/settings mutation or detailed diagnostic evidence. | Read `serving_control`/`inventory`; command `processing`; best-effort command `diagnostics`. | Four unique teasers, correct issued `N`, explicit display acknowledgement, session expiry and missing-media skip. |
 | `diagnostics` | Record/search authorized evidence/logs; annotate; run evaluation; request audited manual apply. | Detailed evidence/logs, access views, annotations, curated Calibration cases and recommendations. | Core Attempt/result/session or direct serving-setting change. | Read `promo`; command `processing` evaluation and `serving_control` apply. | Sanitized/developer split, visible incomplete evidence and promotion whitelist. |
 
 Shared PostgreSQL access does not grant shared write authority. A slice may read
@@ -41,9 +41,9 @@ transition.
   business ownership.
 - Foreign keys and `ON DELETE` behavior are deliberate per relation. Database
   cascade MUST NOT cross a capability ownership boundary. In particular,
-  deleting a Photo MUST NOT cascade into core Attempts or diagnostic evidence;
-  the inventory-owned hard-purge flow calls owner cleanup boundaries and
-  preserves those records.
+  deleting a Photo MUST NOT cascade into Promo sessions, core Attempts or
+  diagnostic evidence; the inventory-owned hard-purge flow calls only the
+  `processing` cleanup boundary and preserves those records.
 - Per-slice PostgreSQL schemas, database users/ACLs and independent migration
   pipelines are outside the accepted pilot.
 
@@ -106,9 +106,11 @@ No HTTP handler, shared helper or composition root owns this flow.
 `promo` is the orchestration owner:
 
 1. read immutable serving and active-Photo projections;
-2. call `processing` for one exact compatible reference search;
-3. persist core Attempt/result/session;
-4. write detailed diagnostics best-effort through `diagnostics`.
+2. persist the core Attempt and immutable serving snapshot for the
+   server-admitted request;
+3. call `processing` for one exact compatible reference search;
+4. persist the result/session when search succeeds;
+5. write detailed diagnostics best-effort through `diagnostics`.
 
 `promo` cannot make a Photo active or mutate pipeline/search rules.
 
@@ -127,15 +129,20 @@ developer-confirmed setting through its audited command.
 - photographer soft-delete/restore is restricted to `uploader_id`; an
   operator/developer may act on any Photo in an accessible СПА;
 - soft delete/restore changes only the inventory-owned active marker;
-  participant-facing search, participant media access and recent-statistics
-  reads must filter the marker;
-- restore-all clears the marker for every soft-deleted Photo in the project;
+  new participant-facing search/result formation and recent-statistics reads
+  must filter the marker, while an already issued session may continue reading
+  the referenced media while it exists;
+- restore-all clears the marker for every soft-deleted Photo in the project
+  except members of a confirmed non-terminal hard-purge snapshot; restore of
+  those members is rejected until completion;
 - hard purge starts one confirmed fixed-snapshot global run, waits for the
-  shared worker, then calls `processing` to remove derived state and `promo` to
-  remove every result/session containing the Photo before final Photo/media
-  removal;
-- no command is sent to `diagnostics`: core Attempts and diagnostic evidence
-  remain under their ordinary retention rules.
+  shared worker, then calls `processing` to remove derived state before final
+  Photo/media removal;
+- no purge command is sent to `promo` or `diagnostics`: existing sessions, core
+  Attempts and diagnostic evidence remain under their ordinary lifecycles.
+  UI/device session reads skip unavailable hard-purged media without
+  invalidating the session, selecting a replacement or recalculating issued
+  `N`.
 
 The global run is the only purge recovery state. It stores enough durable
 snapshot/progress identity to resume after restart but creates no per-photo
@@ -165,14 +172,16 @@ materialized counters are outside the pilot.
   `Начну удаление, как только закончится процесс {human-readable process name}`.
 - During execution, destructive settings are replaced by completed/total
   progress for the fixed snapshot.
+- Restore and restore-all reject snapshot members until the run reaches
+  `completed`.
 - Restart resumes the same run and may repeat idempotent cleanup.
 - An upload already in progress is not interrupted. Ordinary uploads may
   continue and accumulate normal `pending` work while purge occupies the
   worker.
-- Hard purge removes Photo, original/preview/thumbnail, faces, pipeline states
-  and affected Promo results/sessions. It preserves core Attempts and
-  diagnostic evidence; historical references may remain but deleted media is
-  unavailable.
+- Hard purge removes Photo, original/preview/thumbnail, faces and pipeline
+  states. It preserves existing Promo results/sessions, core Attempts and
+  diagnostic evidence; historical references and issued `N` may remain while
+  UI/device loading skips deleted media.
 
 ## Runtime Context Rules
 

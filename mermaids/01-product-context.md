@@ -57,8 +57,9 @@ flowchart LR
 - Оператор видит только sanitized attempt summary; protected artifacts и Calibration доступны разработчику.
 - Фотограф soft-delete/restore только свои uploads; оператор/разработчик могут
   действовать в доступных СПА, а global restore/purge охватывает весь проект.
-- Soft-deleted Photo отсутствует в search/media/statistics; hard purge сохраняет
-  core Attempt и diagnostic evidence.
+- Soft-deleted Photo отсутствует в новых search/results/statistics, но уже
+  выданная session продолжает использовать media. Hard purge сохраняет session,
+  core Attempt и diagnostic evidence; отсутствующая media пропускается.
 - Повторные QR scans используют один session-wide browser access context без
   per-device grants.
 

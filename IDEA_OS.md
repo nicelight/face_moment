@@ -1,6 +1,6 @@
 # Face Moment: сервер, ОС и display/kiosk
 
-Обновлено: 2026-07-17
+Обновлено: 2026-07-24
 
 ## 0. Статус документа
 
@@ -10,6 +10,11 @@ hardware и display/kiosk с рекламой.
 
 Работающего server-side приложения или backend пока нет. Описанные компоненты и
 deployment topology являются target design.
+
+Актуальные продуктовые требования определяет `.memory-bank/prd.md`. Для
+архитектуры `arch_impr1.md` имеет приоритет в HTTP/schema/migration refinements,
+затем действует `arch_vision.md`; этот файл остаётся subordinate
+overview/discovery evidence по порядку `.memory-bank/spec-backbone.md`.
 
 Первый pilot — one-СПА smoke test с тестировщиками. Топология на 10–15 СПА
 является target capacity после pilot, а
@@ -151,8 +156,8 @@ Promo-интерфейс реализуется как web-приложение,
 ~~~text
 RESULT_DISPLAY_SECONDS=20
 CAPTURE_COOLDOWN_SECONDS=60
-QR_SESSION_TTL_SECONDS=900
-BROWSER_SESSION_IDLE_TTL_SECONDS=1800
+QR_SESSION_TTL_SECONDS=1800
+BROWSER_SESSION_IDLE_TTL_SECONDS=3600
 ~~~
 
 Это стартовые configurable defaults. Истечение display duration не завершает QR
@@ -161,7 +166,10 @@ session, а cooldown независимо ограничивает следую�
 `SpaPromoClient` самостоятельно инициирует каждый поиск и получает результат тем
 же синхронным HTTP request/response. SSE и WebSocket не используются. При timeout
 или потере сети client отбрасывает устаревший request, продолжает показывать
-локально закэшированную рекламу и повторяет поиск только со свежим кадром.
+локально закэшированную рекламу, на 5–10 секунд показывает маленькое
+неблокирующее сообщение `Попытка связи с сервером была не успешна в
+hh:mm:ss` и повторяет поиск только со свежим кадром. Новое сообщение может
+сразу заменить предыдущее.
 
 **Почему принято:** web-приложение проще обновлять централизованно, чем отдельное
 desktop-приложение. Результат нужен только инициировавшему его display, поэтому
@@ -383,11 +391,10 @@ conditions, зависшие паузы и сложное восстановле
 
 ### 4.5 Условия масштабирования
 
-Перераспределение CPU или второй экземпляр `RealtimeFaceService` разрешены, если:
-
-- `realtime_queue_wait_p95` устойчиво превышает 2 секунды;
-- configured search deadline регулярно исчерпывается;
-- сервис регулярно отклоняет запросы из-за заполнения in-memory queue.
+Перераспределение CPU или второй экземпляр `RealtimeFaceService` разрешены, если
+configured search deadline регулярно исчерпывается или доля typed `busy`
+показывает измеримый дефицит единственного inference slot. Waiter queue в
+принятой topology отсутствует.
 
 Второй PostgreSQL-worker разрешено добавить, если выполняется хотя бы одно
 условие:
@@ -511,7 +518,7 @@ reference_ready_to_qr_ms =
 `reference_ready_to_qr_ms < 10_000`. `trigger_to_preview` остаётся отдельной
 end-to-end diagnostic metric и не подменяет этот anchor.
 
-Минимально обязательны также `realtime_queue_wait_p95`,
+Минимально обязательны также доля typed `busy`,
 `ingest_to_searchable_p95` и контроль свободного места. Один correlation ID
 связывает timestamps:
 
@@ -530,7 +537,7 @@ qr_fully_visible_at
 
 - `reference_ready_to_qr_p50/p95/p99`;
 - `trigger_to_preview_p50/p95/p99`;
-- `realtime_queue_wait_p50/p95/p99`;
+- singleton-slot acquisition time и доля typed `busy`;
 - `ingest_to_searchable_p50/p95/p99`;
 - oldest pending background job;
 - доля rejected/expired realtime requests;
@@ -631,7 +638,7 @@ bottleneck. Их добавление увеличит стоимость раз
 
 | Текущее решение | Когда разрешено пересмотреть | Следующий минимальный шаг |
 |---|---|---|
-| Один realtime instance, CPU profile подбирается benchmark-ом | queue wait p95 > 2 s, регулярный search deadline exhaustion или bounded queue rejection | скорректировать CPU sets; затем рассмотреть второй instance |
+| Один realtime instance, CPU profile подбирается benchmark-ом | измеримая доля `busy` или регулярный search deadline exhaustion | скорректировать CPU sets; затем рассмотреть второй instance |
 | Один background worker | растёт oldest pending job или ingest-to-searchable p95 | рекомендовать второй PostgreSQL consumer с `SKIP LOCKED` |
 | PostgreSQL jobs | PostgreSQL polling/locking подтверждённо ограничивает throughput | рассмотреть простой broker |
 | Один центральный сервер | доступность одного узла не соответствует требуемому SLA | добавить standby/репликацию |

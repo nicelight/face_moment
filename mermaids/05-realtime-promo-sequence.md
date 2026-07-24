@@ -30,8 +30,8 @@ sequenceDiagram
 
     alt inference slot занят
         API->>DB: processing_status = no_success<br/>issue_tag = busy
-        API-->>Edge: busy
-        Edge-->>Client: busy
+        API-->>Edge: 2xx typed outcome = busy
+        Edge-->>Client: 2xx busy
         Client->>Client: вернуться к локальной рекламе<br/>без success cooldown
     else inference slot свободен
         API->>DB: processing_status = searching
@@ -66,12 +66,17 @@ sequenceDiagram
             Backend-->>Edge: clean session URL + no-store content
             Edge-->>Phone: та же СПА + visit_date + teaser + N
             Note right of Client: result duration и cooldown<br/>независимы от QR/session TTL
-        else Меньше 4 teasers, low quality, no-match, deadline или error
-            API->>DB: processing_status = no_success / deadline / internal_failure
-            API-->>Edge: non-success
-            Edge-->>Client: non-success
+        else Меньше 4 teasers, low quality, no-match или deadline
+            API->>DB: processing_status = no_success / deadline
+            API-->>Edge: 2xx typed domain outcome
+            Edge-->>Client: 2xx non-success outcome
             Client->>Client: отбросить stale response<br/>вернуться к локальной рекламе
             Note right of Client: Chime и Promo не запускаются<br/>success cooldown отсутствует
+        else Internal/upstream technical failure
+            API->>DB: processing_status = internal_failure
+            API-->>Edge: 5xx
+            Edge-->>Client: 5xx
+            Client->>Client: вернуться к рекламе<br/>5–10 sec: Попытка связи с сервером<br/>была не успешна в hh:mm:ss
         end
     end
 
@@ -90,6 +95,8 @@ sequenceDiagram
 - Promo существует только при четырёх уникальных valid teasers; partial result запрещён.
 - Realtime waiter queue отсутствует; concurrent request получает `busy`.
 - Server response не доказывает показ Promo: нужен отдельный display acknowledgement.
+- Если display window завершился без acknowledgement, `unconfirmed` выводится
+  при чтении; отдельный scheduler не нужен.
 
 Источники: [Architecture](../arch_vision.md), [IDEA_APP.md](../IDEA_APP.md),
 [PRD](../.memory-bank/prd.md), [Glossary](../.memory-bank/glossary.md).

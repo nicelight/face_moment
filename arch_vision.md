@@ -107,7 +107,6 @@ Recommended runtime calls:
 inventory ──read ingest target──> serving_control
 inventory ──enqueue──> processing
 inventory ──hard-purge derived state──> processing
-inventory ──hard-purge affected results/sessions──> promo
 promo ──read──> serving_control
 promo ──search──> processing
 promo ──best-effort evidence──> diagnostics
@@ -132,7 +131,8 @@ before inference. `diagnostics` attaches events and artifacts best-effort by
 
 The shared database permits published read projections while retaining one
 write owner per invariant. Foreign direct writes, a generic Unit-of-Work
-framework, an event bus and an outbox are not recommended for the pilot.
+framework, an event bus and a server-side reliable-delivery outbox are not
+recommended for the pilot.
 
 All capability tables remain in one PostgreSQL schema and use one shared
 SQLAlchemy `Base/MetaData`, one Alembic configuration and one sequential
@@ -144,10 +144,14 @@ core Attempt or diagnostic evidence as a side effect of deleting a Photo.
 
 `inventory` orchestrates Photo Inventory Operations through the owning slice
 boundaries. Soft delete/restore changes only the inventory-owned Photo
-visibility marker. Hard purge may remove state owned by `processing` and
-`promo`, but it does so through their cleanup commands rather than by
-duplicating their invariants. Core Attempts and diagnostic evidence remain
-owned by `promo`/`diagnostics` and are not hard-purge targets.
+visibility marker. Soft delete prevents new search/result use but does not
+invalidate an already issued Promo session; that session may continue reading
+the referenced media while it exists. Hard purge calls `processing` cleanup for
+Photo-derived state and removes the Photo-owned media, but does not rebuild or
+invalidate existing Promo sessions. A client simply skips a referenced media
+item that is no longer available; the issued session and its historical `N`
+remain unchanged. Core Attempts and diagnostic evidence remain owned by
+`promo`/`diagnostics` and are not hard-purge targets.
 
 ### HTTP failure semantics
 
@@ -243,15 +247,19 @@ the active СПА/date.
 
 Soft deletion is one inventory-owned active/soft-deleted marker. It preserves
 the Photo record, original/preview/thumbnail, faces, pipeline states and other
-related data, but all search, participant media reads and recent-statistics
-queries must filter soft-deleted Photos out. Restore clears the marker and
-reuses the preserved state without re-upload or reprocessing.
+related data. New search/result formation and recent-statistics queries must
+filter soft-deleted Photos out. An already issued Promo/session deliberately
+continues to treat its referenced Photo as available while the media still
+exists; soft delete does not invalidate or rebuild the session. Restore clears
+the marker and reuses the preserved state without re-upload or reprocessing.
 
 A photographer may soft-delete or restore only Photos uploaded by that
 photographer. An operator or developer may do so for any Photo in an accessible
 СПА. Selection uses one СПА, authoritative `visit_date` and the effective
 `captured_at` range. Project-wide restore-all and hard purge are restricted to
-authorized operator/developer settings.
+authorized operator/developer settings. Once a hard-purge snapshot is confirmed,
+restore and restore-all reject its members until that run reaches `completed`;
+the fixed destructive snapshot therefore never changes silently.
 
 The Admin UI polls PostgreSQL-backed per-СПА counters every five seconds for
 the last 1, 5 and 60 minutes:
@@ -279,10 +287,12 @@ preemption. While waiting, the UI displays `Начну удаление, как 
 закончится процесс {human-readable process name}`; while running, the
 destructive settings surface is replaced by completed/total progress. The
 worker resumes the same snapshot after process restart and deletes each Photo,
-its original/preview/thumbnail, face and pipeline data, and every Promo
-result/session containing it. Core Attempts and diagnostic evidence are
-preserved under their ordinary retention rules even when they contain
-historical references to deleted Photos.
+its original/preview/thumbnail, face and pipeline data. Existing Promo
+results/sessions, core Attempts and diagnostic evidence remain under their
+ordinary lifecycles even when they contain historical references to deleted
+Photos. UI/device media loading skips a hard-purged item and continues with the
+remaining available media; it does not invalidate the session, replace the
+missing Photo or recalculate the issued `N`.
 
 Soft deletes made after confirmation are outside the fixed snapshot. Uploads
 already in progress are never interrupted; keeping ordinary upload admission
@@ -356,17 +366,37 @@ completed first upload.
 
 The hard-purge progress view does not require stopping the backend. Ordinary
 uploads may continue because the purge snapshot contains only Photos already
-soft-deleted at confirmation, while search and media access already exclude
-them. This avoids upload-drain coordination and guarantees that an upload
-already in progress is not interrupted.
+soft-deleted at confirmation, while new search/result formation already
+excludes them. Existing issued sessions may still read their media until hard
+purge removes it. This avoids upload-drain coordination and guarantees that an
+upload already in progress is not interrupted.
 
-After Chromium restart, SpaPromoClient is recommended to enter local `advertising`, discard personal result/frame state and avoid replaying search. A bounded IndexedDB outbox may retain only diagnostic metadata and `cooldown_until`; frames, tokens and personalized result data stay memory-only.
+After Chromium restart, SpaPromoClient is recommended to enter local
+`advertising`, discard personal result/frame state and avoid replaying search. A
+bounded IndexedDB outbox may retain only diagnostic metadata and
+`cooldown_until`; frames, tokens and personalized result data stay memory-only.
+Delivery of a client-only offline attempt is best-effort and may be lost after a
+short local expiry or browser restart.
 
-A simple authenticated client-event upsert is recommended to accept delayed offline failure metadata by `(spa_id, attempt_id)`. This closes the diagnostic gap without replaying frames or creating a durable realtime request.
+On a failed server-communication attempt, the client displays the small
+non-blocking message `Попытка связи с сервером была не успешна в hh:mm:ss` for
+5–10 seconds in the easiest non-obstructive location (bottom-left by default).
+The timestamp is the client-local failure time. A newer message may replace the
+current one immediately, including before five seconds have elapsed.
+
+A simple authenticated client-event upsert may accept delayed offline failure
+metadata by `(spa_id, attempt_id)`. This is best-effort diagnostics only: it
+does not require durable-until-ack delivery, replay frames or create a durable
+realtime request.
 
 ## 9. Attempt and diagnostic lifecycle
 
-The client is recommended to create one UUID `attempt_id` when an idle sensor trigger is accepted. `(spa_id, attempt_id)` is the idempotency/correlation key; a repeat is recommended to return the existing state rather than start inference again.
+The client is recommended to create one UUID `attempt_id` when an idle sensor
+trigger is accepted. For a request admitted by the server,
+`(spa_id, attempt_id)` is the idempotency/correlation key and a repeat is
+recommended to return the existing state rather than start inference again. A
+client-only offline trigger may never become a durable server Attempt; its
+metadata delivery is explicitly best-effort.
 
 Processing and display outcomes are recommended as separate fields:
 
@@ -377,13 +407,20 @@ processing_status: client_offline | accepted → searching
 display_status: not_applicable | pending → confirmed | failed | unconfirmed
 ```
 
-`result_issued` is not counted as Promo success. Only an idempotent client acknowledgement after all four teasers are decoded and the QR is fully visible sets `display_status=confirmed`; an expired acknowledgement becomes `unconfirmed`.
+`result_issued` is not counted as Promo success. Only an idempotent client
+acknowledgement after all four teasers are decoded and the QR is fully visible
+sets `display_status=confirmed`; a best-effort render-failure acknowledgement
+sets `failed`. If the result-display window ends without confirmation,
+`unconfirmed` is derived from `result_issued_at + result display duration` when
+the Attempt is read. A later acknowledgement does not change that terminal
+projection. No scheduler or acknowledgement outbox is required.
 
-The core Attempt itself is the durable diagnostic correlation point. Detailed
-events/artifacts remain direct best-effort writes. An active Attempt is shown as
-`collecting`; a terminal Attempt without finalized evidence is derived as
-`incomplete`. No empty diagnostic anchor, after-commit delivery state, outbox or
-reconciliation pass is recommended.
+For a server-admitted request, the core Attempt itself is the durable diagnostic
+correlation point. Detailed events/artifacts remain direct best-effort writes.
+An active Attempt is shown as `collecting`; a terminal Attempt without finalized
+evidence is derived as `incomplete`. A client-only offline trigger is not
+guaranteed to have a server Attempt. No empty diagnostic anchor, after-commit
+delivery state, durable-until-ack outbox or reconciliation pass is recommended.
 
 Client acceptance latency is recommended to use only the client monotonic clock:
 
@@ -420,7 +457,12 @@ The edge/application access log is recommended to omit the query string for this
 
 The Promo session stores one `qr_ticket_hash`, `browser_opened_at` and shared `browser_last_seen_at`; it has no per-device grant rows. Every scan before the 30-minute deadline may set the same session credential on another phone. Explicit participant navigation/actions from any opened phone update the shared `browser_last_seen_at`; asset loads and background polling provide no extension. After 60 minutes of session-wide inactivity, access expires for every opened phone. A local phone timer clears rendered personal state at expiry, while the server remains authoritative on later reads.
 
-Display teaser reads are recommended to use `spa_client_token` plus opaque attempt/session references. Phone teaser reads use the session cookie. Both paths remain `no-store` backend reads; presigned participant URLs are deferred until backend bandwidth becomes a measured problem.
+Display teaser reads are recommended to use `spa_client_token` plus opaque
+attempt/session references. Phone teaser reads use the session cookie. Both
+paths remain `no-store` backend reads and skip a referenced object that hard
+purge has removed; the session and issued `N` are not rewritten. Presigned
+participant URLs are deferred until backend bandwidth becomes a measured
+problem.
 
 ## 11. Diagnostics, retention and Calibration
 
@@ -445,9 +487,9 @@ One idempotent daily cleanup command is recommended, invoked by the planned Back
 
 Promotion is recommended to copy only selected frames/crops, parameters, scores and annotations into a self-contained case. Unselected frames, Promo screenshot, ordinary logs and the whole attempt retain their normal expiry.
 
-Photo hard purge does not cascade into the core Attempt or diagnostic-evidence
-lifecycle. Historical identifiers may remain in retained evidence, but media
-removed with the Photo is no longer available.
+Photo hard purge does not cascade into Promo sessions, the core Attempt or the
+diagnostic-evidence lifecycle. Historical identifiers and the issued `N` may
+remain, but media removed with the Photo is skipped by UI/device loading.
 
 Calibration work is recommended to reuse the planned shared
 `BackgroundPhotoWorker`. An explicitly started Calibration run may block photo
@@ -561,3 +603,10 @@ authorize additional lifecycle, coordination or recovery machinery:
 - A global hard purge may delay ordinary Photo processing while it occupies the
   shared worker; uploads may continue and accumulate normal durable `pending`
   work until purge completes.
+- A client-only offline trigger may never reach the server before its optional
+  short-lived metadata expires or Chromium restarts. The local connection
+  notice remains the required user feedback; a durable server Attempt is not
+  guaranteed.
+- Hard purge may leave an issued Promo session with fewer loadable media items
+  and an historical `N` that still counts a removed Photo. The client skips the
+  missing item; no session reconstruction or replacement selection is required.

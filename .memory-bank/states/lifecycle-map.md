@@ -43,6 +43,8 @@ pending -> processing -> ready | no_faces | failed
   `ingest_to_searchable` SLO breach for the accepted-JPEG population.
 - `pending` and `processing` records are durable. Worker startup returns
   unfinished `processing` work to `pending` and restarts it from the beginning.
+- Processing retries are bounded to three attempts initially; exhaustion
+  publishes terminal `failed` rather than looping forever.
 - At-least-once execution must remain idempotent and must not duplicate final
   face records.
 
@@ -61,15 +63,18 @@ soft_deleted -- confirmed global hard purge --> physically removed
 - Selection uses one СПА, authoritative `visit_date` and effective
   `captured_at` range.
 - `soft_deleted` is one inventory-owned visibility marker. All Photo/media,
-  faces, pipeline state and related data remain stored, but search,
-  participant media access and recent-statistics reads exclude the Photo.
+  faces, pipeline state and related data remain stored, but new search/result
+  formation and recent-statistics reads exclude the Photo. An already issued
+  Promo/session keeps using its referenced media while it exists.
 - Restore returns the Photo to `active` with its preserved processing state and
   timestamps; it does not upload or process the Photo again.
 - Project-wide restore-all moves every currently `soft_deleted` Photo to
-  `active`.
-- Hard purge physically removes snapshot Photo/media/face/pipeline data and
-  every Promo result/session containing the Photo. The core Attempt and
-  diagnostic evidence do not transition and remain under ordinary retention.
+  `active` except members of a confirmed non-terminal hard-purge snapshot;
+  restore of those members is rejected until completion.
+- Hard purge physically removes snapshot Photo/media/face/pipeline data.
+  Existing Promo results/sessions, the core Attempt and diagnostic evidence do
+  not transition. UI/device loading skips an unavailable item without
+  invalidating or rebuilding the session or recalculating issued `N`.
 - There is no per-photo `purge_pending` or purge-job lifecycle.
 
 Source: [.memory-bank/prd.md](../prd.md) `FR-INV-01..08`.
@@ -92,6 +97,8 @@ confirmed_waiting -> running -> completed
 - One durable global run retains enough snapshot/progress identity to resume
   idempotent cleanup after backend/worker restart. It is not a generic jobs
   subsystem.
+- Restore and restore-all reject snapshot members until the run reaches
+  `completed`; the fixed target set does not change.
 - An upload already in progress is never interrupted. Ordinary upload may
   continue and create normal `pending` Photo work while purge occupies the
   worker.
@@ -128,6 +135,15 @@ advertising -> capturing -> searching -> result -> cooldown -> advertising
   available; otherwise no final Promo/Chime or success cooldown occurs.
 - A stale response cannot replace a newer display state, and retry requires a
   fresh reference capture.
+- A server-communication failure returns to advertising and shows
+  `Попытка связи с сервером была не успешна в hh:mm:ss` non-blockingly for
+  5–10 seconds. A newer notice may replace the current one immediately.
+- For a server-issued result, display state is `pending` until an idempotent
+  post-render acknowledgement makes it `confirmed`; render failure may report
+  `failed`, and absence of confirmation after the result-display window is
+  derived as `unconfirmed` on read without scheduler machinery.
+- Realtime startup closes old server Attempts still in `accepted|searching` as
+  `interrupted`; it never replays their reference work.
 
 Sources: [IDEA_APP.md](../../IDEA_APP.md) and
 [.memory-bank/prd.md](../prd.md) `FR-CAP-01..08`, `FR-UX-01..09`.
@@ -142,16 +158,21 @@ Sources: [IDEA_APP.md](../../IDEA_APP.md) and
 - A QR scan may open or reuse the same browser access context for 30 minutes
   from `qr_issued_at`; after successful first open, the shared context expires
   after 60 minutes without explicit participant activity on any opened phone.
+- Soft delete does not invalidate an issued session. If a referenced Photo is
+  later hard-purged, UI/device loading skips that media item and continues with
+  the session's historical `N`.
 - Expiry makes personalized data unavailable and redirects to the separate main
   Face Moment page without passing teaser, `N`, or other expired-session data.
 
 Source: clarified [.memory-bank/prd.md](../prd.md) `FR-UX-03..10`; these values
-supersede older configurable defaults in `IDEA_APP.md`.
+supersede older configurable defaults in `IDEA_OS.md`.
 
 ## Core Attempt And Diagnostic Evidence
 
-- Every accepted capture/search execution creates one core Attempt with its
-  correlation identity before inference.
+- Every capture/search request admitted by the server creates one core Attempt
+  with its correlation identity before inference.
+- A client-only offline trigger is delivered best-effort and may have no durable
+  server Attempt.
 - Detailed diagnostic evidence is attached best-effort and is not a prerequisite
   for completing the participant-facing flow.
 - A terminal Attempt whose evidence is absent or failed to finalize remains

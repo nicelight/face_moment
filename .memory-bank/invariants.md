@@ -32,13 +32,20 @@ source_of_truth:
 - Делать browser/server logging и diagnostic ingestion неблокирующими для
   capture, search, Promo и QR; protected artifacts и technical logs остаются
   разными data classes согласно PRD `FR-DIAG-04..05` и `FR-DEV-04`.
-- Исключать soft-deleted Photo из search, participant media access и recent
+- Сохранять core Attempt для каждого server-admitted request; delivery
+  client-only offline attempt и detailed evidence остаются best-effort и не
+  требуют durable-until-ack outbox.
+- Исключать soft-deleted Photo из новых search/result formation и recent
   statistics, сохраняя Photo и связанные данные для restore без reprocessing.
+  Уже выданная Promo/session продолжает использовать media, пока она существует.
 - Выполнять hard purge по fixed project-wide snapshot через один resumable
   global run на shared worker без per-photo purge lifecycle или purge jobs
   table.
-- Сохранять core Attempt и diagnostic evidence при hard purge Photo, даже когда
-  удаляются связанные Promo result/session.
+- Отклонять restore/restore-all для Photo из подтверждённого non-terminal
+  hard-purge snapshot.
+- Сохранять существующие Promo sessions, core Attempt и diagnostic evidence при
+  hard purge Photo; UI/device loading пропускает отсутствующую media без
+  invalidation session, replacement или пересчёта issued `N`.
 - Выражать transport failures стандартными HTTP statuses (`401`, `403`, `413`,
   `422`, `429`, `5xx`), а результаты принятого capture/search request —
   `2xx` response с компактным typed domain outcome.
@@ -60,6 +67,7 @@ source_of_truth:
 - Не применять serving threshold или quality-gate recommendation автоматически.
 - Не добавлять собственный HTTP error framework/envelope и не принимать
   client decisions по тексту `5xx` response.
+- Не добавлять realtime waiter queue: singleton slot возвращает typed `busy`.
 - Не создавать PostgreSQL schemas/users/ACLs или независимые migration streams
   per capability slice; не разрешать `ON DELETE` cascade пересекать ownership
   boundary или удалять core Attempt/diagnostic evidence вместе с Photo.

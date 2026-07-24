@@ -99,9 +99,12 @@ speculative distributed infrastructure.
   materialization and WebSocket/SSE statistics.
 - Rule: one Photo visibility marker controls search/media/statistics. One
   durable global run fixes the project-wide hard-purge snapshot and progress,
-  resumes after restart and orchestrates owner-specific cleanup while
-  preserving core Attempts and diagnostic evidence. Per-СПА 1/5/60-minute
-  counters are direct PostgreSQL queries polled every five seconds.
+  rejects restore of snapshot members until completion, resumes after restart
+  and removes Photo-owned data while preserving already issued Promo sessions,
+  core Attempts and diagnostic evidence. Soft delete blocks new result
+  formation but not an already issued session; hard-purged media is skipped by
+  clients without rebuilding the session or `N`. Per-СПА 1/5/60-minute counters
+  are direct PostgreSQL queries polled every five seconds.
 - Verification: Required FT-012 proof, not currently runnable: authorization,
   hide/restore, exact counters and restartable fixed-snapshot purge.
 - Source: [.memory-bank/prd.md](../prd.md) FR-INV-01..11 and
@@ -114,7 +117,8 @@ speculative distributed infrastructure.
 - Rule: one client-generated `attempt_id`, one inference slot and one server
   deadline govern the synchronous request; concurrency returns `busy`. Only an
   idempotent client acknowledgement after four teasers and QR are visible sets
-  display success.
+  display success. Missing acknowledgement becomes derived `unconfirmed` after
+  the result-display window; no scheduler or acknowledgement outbox exists.
 - Verification: Required FT-003..FT-005 controlled 20-attempt proof, not
   currently runnable.
 - Source: [arch_vision.md](../../arch_vision.md) sections 8–9.
@@ -122,11 +126,14 @@ speculative distributed infrastructure.
 #### AD-007 — Core Attempt survives best-effort evidence
 - Binds: Promo, diagnostics, retention and hard purge.
 - Prevents: diagnostic evidence blocking participant flow, an empty anchor,
-  outbox or hard-purge cascade into Attempts/evidence.
-- Rule: `promo` persists core Attempt before inference; `diagnostics` attaches
-  detailed evidence best-effort and exposes missing finalization as
-  `incomplete`. Photo hard purge removes affected Promo result/session data but
-  retains the core Attempt and diagnostic evidence under ordinary retention.
+  server-side reliable-delivery outbox or hard-purge cascade into
+  sessions/Attempts/evidence.
+- Rule: `promo` persists a core Attempt before inference for every
+  server-admitted request; `diagnostics` attaches detailed evidence
+  best-effort and exposes missing finalization as `incomplete`. Client-only
+  offline triggers are best-effort and may have no durable Attempt. Photo hard
+  purge retains existing Promo result/session data, the core Attempt and
+  diagnostic evidence; clients skip unavailable media.
 - Verification: Required FT-007/FT-012 integration proof, not currently
   runnable.
 - Source: [arch_vision.md](../../arch_vision.md) sections 5, 9 and 11.
@@ -220,9 +227,10 @@ These roots are discovery locations, not task write boundaries.
   snapshot, `processing` for exact search and `diagnostics` best-effort.
 - `diagnostics` owns Calibration analysis and calls `processing` for offline
   evaluation; an accepted setting is applied only through `serving_control`.
-- `inventory` owns hard purge and calls `processing` and `promo` cleanup
-  boundaries. `diagnostics` receives no purge command because Attempts and
-  diagnostic evidence are retained.
+- `inventory` owns hard purge and calls the `processing` cleanup boundary.
+  `promo` and `diagnostics` receive no purge command because existing sessions,
+  Attempts and diagnostic evidence are retained; UI/device reads skip missing
+  hard-purged media.
 
 HTTP/UI handlers and the composition root only authenticate, validate and
 dispatch these use cases; they do not contain business orchestration.
@@ -240,11 +248,13 @@ dispatch these use cases; they do not contain business orchestration.
 - Effective `captured_at` is reliable EXIF interpreted in the СПА timezone,
   otherwise the file's server-side upload-start time, otherwise 01:00 on its
   authoritative `visit_date`.
-- Soft deletion preserves all data and excludes the Photo from search,
-  participant media and counters. Restore reuses the preserved state.
-- Hard purge deletes Photo/media/face/pipeline and affected Promo
-  result/session data. Attempts and diagnostic evidence retain historical
-  identifiers but cannot recover removed media.
+- Soft deletion preserves all data and excludes the Photo from new
+  search/result formation and counters. An already issued session continues to
+  use the media while it exists. Restore reuses the preserved state.
+- Hard purge rejects restore of fixed-snapshot members until completion and
+  deletes Photo/media/face/pipeline data. Existing Promo sessions, Attempts and
+  diagnostic evidence retain historical identifiers; clients skip removed
+  media without invalidating or rebuilding the session or recalculating `N`.
 
 Detailed lifecycle rules are in the
 [lifecycle map](../states/lifecycle-map.md); write directions are in the

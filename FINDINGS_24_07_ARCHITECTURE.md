@@ -1,7 +1,13 @@
 # Face Moment — актуальные архитектурные findings
 
 Дата: 2026-07-24
-Вердикт: `CHANGES REQUESTED`
+Статус: historical review input; не является source of truth.
+Вердикт на момент ревью: `CHANGES REQUESTED`
+
+Этот verdict superseded последующими operator decisions и синхронизацией
+Planning Revision 3. Текущее состояние и authority order определяет
+`.memory-bank/spec-backbone.md`; findings ниже нельзя переносить в работу без
+повторной проверки по актуальным canonical docs.
 
 ## Основание и границы ревью
 

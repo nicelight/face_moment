@@ -4,6 +4,21 @@ status: active
 ---
 # Changelog
 
+## [2026-07-24] KISS session, offline-attempt and purge clarification
+- Advanced the global backbone to Planning Revision 3 after explicit operator
+  decisions.
+- Clarified that soft delete blocks new search/result formation but does not
+  invalidate an already issued Promo session.
+- Simplified hard purge: it removes Photo-owned media/state while retaining
+  existing Promo sessions, core Attempts and diagnostic evidence; UI/device
+  loading skips unavailable media without rebuilding the session or `N`.
+- Made client-only offline Attempt delivery best-effort and added the
+  non-blocking 5–10-second server-communication failure notice.
+- Fixed hard-purge concurrency by rejecting restore/restore-all for confirmed
+  non-terminal snapshot members.
+- Reconciled singleton realtime `busy` semantics, display acknowledgement,
+  joint 19/20 acceptance, canonical feature links and supporting diagrams/docs.
+
 ## [2026-07-24] Photo Inventory Operations and SDD backbone
 - Added role-scoped Photo soft delete/restore, project-wide restore-all and
   fixed-snapshot hard purge that retains core Attempts and diagnostic evidence.

@@ -57,10 +57,11 @@ flowchart TD
         select["СПА + visit_date + captured_at range<br/>photographer: own uploads<br/>operator/developer: accessible СПА"]
         restore_all["restore all soft deleted<br/>весь проект"]
         confirm["Confirm hard delete ALL softed media<br/>зафиксировать global snapshot"]
+        reject_restore["Reject restore snapshot members<br/>до completed"]
         wait["confirmed_waiting<br/>ждать текущую worker operation<br/>human-readable process name"]
         purge["running<br/>same worker, completed / total<br/>restart resumes snapshot"]
-        remove["Удалить Photo + media + faces + pipeline<br/>и Promo results/sessions"]
-        retain["Сохранить core Attempts<br/>и diagnostic evidence"]
+        remove["Удалить Photo + media + faces + pipeline"]
+        retain["Сохранить Promo sessions + core Attempts<br/>и diagnostic evidence<br/>client skips missing media"]
         done["completed"]
         stats["Per-СПА direct PostgreSQL counters<br/>1 / 5 / 60 min, poll 5 sec<br/>active Photos only"]
 
@@ -70,6 +71,7 @@ flowchart TD
         soft -->|"restore"| active
         restore_all --> active
         soft --> confirm --> wait --> purge --> remove --> done
+        confirm --> reject_restore
         remove -.-> retain
         active -.-> stats
     end
@@ -85,12 +87,14 @@ flowchart TD
 - `ready` означает searchable face records конкретной `pipeline_revision`;
   `no_faces` является terminal outcome, но остаётся searchable-SLO breach.
 - Повторное at-least-once выполнение не дублирует `photo_faces` или derivatives.
-- Soft delete меняет один visibility marker; restore не запускает processing.
+- Soft delete меняет один visibility marker и блокирует новые search/results,
+  но не ломает уже выданную session; restore не запускает processing.
 - `new` использует `accepted_at`; `unprocessed` — in-window accepted и текущие
   `pending|processing`; `processed`/`failed` используют соответствующий
   transition time. Все counters исключают soft-deleted Photos.
 - Global purge snapshot фиксируется при confirmation. Soft deletes после
-  confirmation ждут следующего запуска.
+  confirmation ждут следующего запуска, а restore snapshot members отклоняется
+  до completion.
 - Batch, manifest, confirmation upload-а, per-photo `purge_pending`, отдельная
   jobs table, deletion worker, counter store и distributed transaction
   отсутствуют.

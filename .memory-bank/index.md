@@ -49,7 +49,7 @@ status: active
 
 - [.memory-bank/spec-index.md](spec-index.md): Pure SDD spec registry and planned-spec index.
 - [.memory-bank/spec-backbone.md](spec-backbone.md): Accepted complete global
-  SDD backbone at Planning Revision 2 and downstream readiness.
+  SDD backbone at Planning Revision 3 and downstream readiness.
 - [.memory-bank/foundation.md](foundation.md): Accepted Foundation Dev Path,
   substrate scope and pending Foundation gate.
 - `.memory-bank/user-scenarios.md`: optional user scenarios and architecture implications when created by `/spec-init` or `/spec-design`.
@@ -72,6 +72,8 @@ status: active
 - [.memory-bank/runbooks/](runbooks/): Runbooks и operational procedures.
 - [.memory-bank/testing/index.md](testing/index.md): Testing strategy.
 - [.memory-bank/skills/index.md](skills/index.md): Skill registry.
+- [mermaids/README.md](../mermaids/README.md): обзорные diagrams of the accepted
+  product, runtime, lifecycle, Promo and diagnostics contracts.
 
 ## Product Decomposition
 

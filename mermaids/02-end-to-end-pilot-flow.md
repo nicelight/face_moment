@@ -61,7 +61,7 @@ flowchart TD
     ack -.-> evidence
     failure -.-> evidence
 
-    inventory_ops["Photo Inventory Operations:<br/>soft delete/restore + direct 1/5/60 counters<br/>confirmed global purge via shared worker"]
+    inventory_ops["Photo Inventory Operations:<br/>soft delete/restore + direct 1/5/60 counters<br/>fixed purge; restore snapshot members rejected<br/>existing sessions skip hard-purged media"]
     inventory -.-> inventory_ops
 ```
 
@@ -73,8 +73,10 @@ flowchart TD
   видимый QR менее чем за 10 секунд по client monotonic interval от
   `reference_series_ready`.
 - Иностранная фотография в четырёх teasers или в `N` делает attempt некорректной; полное покрытие каждого человека группы не обещается.
-- Soft-deleted Photos исключены из search/media/statistics. Hard purge удаляет
-  Photo-owned данные и Promo result/session, сохраняя core Attempt/evidence.
+- Soft-deleted Photos исключены из новых search/results/statistics, но уже
+  выданная session продолжает использовать media. Hard purge удаляет
+  Photo-owned данные, сохраняет session/core Attempt/evidence, а client
+  пропускает отсутствующую media без пересчёта `N`.
 
 Источники: [PRD](../.memory-bank/prd.md),
 [Architecture](../arch_vision.md), [IDEA_INGEST.md](../IDEA_INGEST.md),

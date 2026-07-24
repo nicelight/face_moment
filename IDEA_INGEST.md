@@ -5,8 +5,10 @@
 ## 0. Статус и граница первого pilot
 
 Документ описывает актуальный ingest-контур первого one-СПА pilot. Продуктовые
-требования определяет `.memory-bank/prd.md`, а принятые архитектурные решения —
-`arch_vision.md`.
+требования определяет `.memory-bank/prd.md`. Для архитектуры `arch_impr1.md`
+имеет приоритет в HTTP/schema/migration refinements, затем действует
+`arch_vision.md`; этот файл остаётся subordinate overview/discovery evidence
+по порядку `.memory-bank/spec-backbone.md`.
 
 Работающего ingest/backend пока нет. Flow, состояния и границы ниже описывают
 target design для будущей реализации.
@@ -199,9 +201,10 @@ datastore не нужны.
 Оператор и разработчик могут выполнять те же действия для любой Photo в
 доступном СПА.
 
-Soft delete меняет один active marker и сразу исключает Photo из search,
-participant media access и статистики, сохраняя Photo, media, faces и pipeline
-state. Restore возвращает preserved state без re-upload/reprocessing.
+Soft delete меняет один active marker и сразу исключает Photo из новых
+search/results и статистики, сохраняя Photo, media, faces и pipeline state.
+Уже выданная session продолжает использовать media. Restore возвращает
+preserved state без re-upload/reprocessing.
 
 В Admin settings доступны две project-wide операции для оператора/разработчика:
 
@@ -209,11 +212,12 @@ state. Restore возвращает preserved state без re-upload/reprocessin
 - подтверждаемая `hard delete ALL softed media`.
 
 Hard purge фиксирует snapshot всех soft-deleted Photos на момент confirmation и
-использует один resumable global run с completed/total progress. После restart
-worker продолжает тот же snapshot. Удаляются Photo,
-original/preview/thumbnail, faces, pipeline states и Promo results/sessions,
-содержащие Photo; core Attempts и diagnostic evidence сохраняются по обычной
-retention policy. Upload, уже находящийся в процессе, не прерывается; ordinary
+использует один resumable global run с completed/total progress. Restore его
+members запрещён до completion. После restart worker продолжает тот же
+snapshot. Удаляются Photo, original/preview/thumbnail, faces и pipeline states;
+существующие Promo sessions, core Attempts и diagnostic evidence сохраняются,
+а UI/device loading пропускает отсутствующую media. Upload, уже находящийся в
+процессе, не прерывается; ordinary
 uploads могут продолжить создавать обычный `pending` backlog.
 
 ## 10. Durability boundary

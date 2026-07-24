@@ -24,16 +24,18 @@
 ## Канонические источники
 
 Работающего приложения/backend/runtime пока нет: диаграммы показывают target
-design. При расхождении product behavior определяет PRD, а architecture
-mechanics — `arch_vision.md`:
+design. Authority order совпадает с `.memory-bank/spec-backbone.md`:
 
 1. [`.memory-bank/constitution.md`](../.memory-bank/constitution.md)
-2. [`.memory-bank/prd.md`](../.memory-bank/prd.md)
+2. [`arch_impr1.md`](../arch_impr1.md) для принятых HTTP и
+   PostgreSQL schema/migration refinements
 3. [`arch_vision.md`](../arch_vision.md)
-4. [`.memory-bank/glossary.md`](../.memory-bank/glossary.md) и
+4. [`.memory-bank/prd.md`](../.memory-bank/prd.md)
+5. [`.memory-bank/glossary.md`](../.memory-bank/glossary.md) и
    [`.memory-bank/invariants.md`](../.memory-bank/invariants.md)
-5. [`IDEA_APP.md`](../IDEA_APP.md), [`IDEA_INGEST.md`](../IDEA_INGEST.md),
+6. [`IDEA_APP.md`](../IDEA_APP.md), [`IDEA_INGEST.md`](../IDEA_INGEST.md),
    [`IDEA_OS.md`](../IDEA_OS.md), [`IDEA_DEBUG.md`](../IDEA_DEBUG.md)
+   только как subordinate overview/discovery evidence
 
 Термины на диаграммах следуют
 [`.memory-bank/glossary.md`](../.memory-bank/glossary.md): `Photo`, `reference

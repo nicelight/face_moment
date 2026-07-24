@@ -11,10 +11,11 @@
 Работающего приложения или backend в репозитории пока нет. Описанные ниже
 компоненты, процессы и модели являются target design для будущей реализации.
 
-Продуктовые требования определяет `.memory-bank/prd.md`, а принятые
-архитектурные решения — `arch_vision.md`. При расхождении старой формулировки
-этого документа с данными источниками действуют более поздние PRD и
-`arch_vision.md`.
+Продуктовые требования определяет `.memory-bank/prd.md`. Для архитектуры
+`arch_impr1.md` имеет приоритет в HTTP/schema/migration refinements, затем
+действует `arch_vision.md`; этот файл остаётся subordinate overview/discovery
+evidence. При расхождении старой формулировки действуют эти более поздние
+источники в порядке `.memory-bank/spec-backbone.md`.
 
 Если не указано иное, `pilot MVP` означает одну СПА и контролируемые проходы
 тестировщиков. Целевая платформа на
@@ -615,8 +616,8 @@ reference-кадры посетителя или найденные для не�
 
 - ячейки `1`, `2`, `4`, `5` содержат четыре выбранные promo-фотографии;
 - ячейка `3` содержит QR-код;
-- ячейка `6` содержит текст
-  «Скачать можно на сайте или по QR-коду».
+- ячейка `6` содержит принятый текст
+  «Ваши фотографии найдены — откройте по QR-коду».
 
 Перед общей анимацией дыхания выполняется последовательная intro-анимация,
 подобная hover-прохождению cursor-а по ячейкам:
@@ -1023,7 +1024,10 @@ request body. Token передаётся в HTTP authorization header, не по
 Ответ возвращается в том же HTTP request/response. SSE и WebSocket для этого
 сценария не используются. При timeout или сетевой ошибке клиент отбрасывает
 устаревший запрос, продолжает показывать рекламу и может повторить операцию только
-со свежим кадром.
+со свежим кадром. Он также показывает маленькое неблокирующее сообщение
+`Попытка связи с сервером была не успешна в hh:mm:ss` на 5–10 секунд
+в простом ненавязчивом месте; более новое сообщение может сразу заменить
+предыдущее.
 
 **Почему принято:** результат нужен только инициировавшему его клиенту и готовится
 в рамках короткой синхронной операции. Request/response проще отдельного event
@@ -1187,9 +1191,10 @@ thresholds для конкретного СПА и query source через ад�
 
 ## 11. Core Attempt и diagnostic evidence первого pilot
 
-Client создаёт UUID `attempt_id` при принятии idle sensor trigger. Core Attempt
-сохраняется до inference и связывает обязательные outcome, applied snapshot и
-stage timestamps.
+Client создаёт UUID `attempt_id` при принятии idle sensor trigger. Для
+server-admitted request core Attempt сохраняется до inference и связывает
+обязательные outcome, applied snapshot и stage timestamps. Client-only offline
+trigger доставляется best-effort и может не создать durable Attempt.
 
 Processing и display outcomes разделены:
 
@@ -1202,7 +1207,9 @@ display_status: not_applicable | pending → confirmed | failed | unconfirmed
 
 `result_issued` не считается успешным Promo. `display_status=confirmed`
 устанавливается только после idempotent acknowledgement клиента, когда все
-четыре teasers декодированы и QR полностью видим.
+четыре teasers декодированы и QR полностью видим. Render failure может
+best-effort выставить `failed`; после завершения result-display window
+неподтверждённый status выводится как `unconfirmed` при чтении без scheduler.
 
 Detailed events и protected artifacts присоединяются best-effort по
 `attempt_id`. Они могут включать reference frames, normalized images, crops,
@@ -1233,10 +1240,11 @@ Acceptance run содержит 20 ожидаемо успешных попыт�
 
 - минимум 19 из 20 попыток дают полностью видимый и сканируемый QR менее чем за
   10 секунд от `reference_series_ready_at`;
-- landing каждой завершённой попытки правильно показывает СПА, `visit_date` и
-  согласованные с той же session teaser и `N`;
-- для каждой принятой попытки сохраняется core Attempt; отсутствие detailed
-  evidence явно отображается как `incomplete`;
+- landing каждой завершённой попытки правильно показывает СПА, `visit_date`,
+  доступный teaser и issued `N`; hard-purged media пропускается;
+- для каждого server-admitted request сохраняется core Attempt; client-only
+  offline attempt остаётся best-effort, а отсутствие detailed evidence явно
+  отображается как `incomplete`;
 - успешный Promo подтверждён отдельным idempotent display acknowledgement.
 
 Этот run подтверждает техническую работоспособность, но не полное покрытие
@@ -1263,12 +1271,14 @@ Acceptance run содержит 20 ожидаемо успешных попыт�
 Фотограф может soft-delete/restore только свои uploads. Оператор и разработчик
 могут выполнять те же действия для любой Photo в доступном СПА. Soft delete
 меняет один active marker, сохраняет Photo/media/faces/pipeline states и сразу
-исключает Photo из search, participant media access и статистики. Restore
-возвращает preserved state без re-upload или reprocessing.
+исключает Photo из новых search/results и статистики. Уже выданная session
+продолжает использовать media, пока она существует. Restore возвращает
+preserved state без re-upload или reprocessing.
 
 Admin settings оператора/разработчика содержат две global кнопки:
 
-- `restore all soft deleted` возвращает все soft-deleted Photos во всех СПА;
+- `restore all soft deleted` возвращает soft-deleted Photos во всех СПА, кроме
+  members подтверждённого non-terminal hard-purge snapshot;
 - `hard delete ALL softed media` после confirmation фиксирует snapshot всех
   soft-deleted Photos во всём проекте.
 
@@ -1278,9 +1288,11 @@ completed/total progress. Один resumable global run переживает res
 per-photo `purge_pending`, purge jobs table или отдельного deletion worker.
 
 Hard purge удаляет Photo, original/preview/thumbnail, faces, pipeline states и
-все Promo results/sessions, содержащие Photo. Core Attempts и diagnostic
-evidence сохраняются по обычной retention policy. Soft deletes после
-confirmation не добавляются в уже запущенный snapshot.
+сохраняет существующие Promo results/sessions, core Attempts и diagnostic
+evidence по их обычным lifecycle. UI/device loading пропускает отсутствующую
+media без invalidation session, replacement или пересчёта issued `N`. Restore
+snapshot members запрещён до completion; soft deletes после confirmation не
+добавляются в уже запущенный snapshot.
 
 Статистика считается прямыми PostgreSQL queries отдельно для каждого СПА и
 polling-ом обновляется каждые пять секунд:
@@ -1399,8 +1411,10 @@ configuration scheme.
     без watermark и QR continuation.
 11. Phone landing с СПА, `visit_date`, teaser, `N` и post-pilot CTA без
     payment/download.
-12. Core Attempt каждой принятой попытки и best-effort diagnostic evidence с
-    явным `incomplete`; ordinary Attempt/evidence retention — 90 дней.
+12. Core Attempt каждого server-admitted request; detailed evidence
+    присоединяется best-effort и отображается как `incomplete` только для
+    существующего server Attempt, а client-only offline event может не оставить
+    server record; ordinary Attempt/evidence retention — 90 дней.
 13. Отдельный idempotent display acknowledgement после decode четырёх teasers и
     полной видимости QR.
 14. Метрики `reference_ready_to_qr`, `busy` и
@@ -1408,7 +1422,8 @@ configuration scheme.
 15. Benchmark SFace и Buffalo M на reference-camera данных pilot; selfie samples
     только post-pilot.
 16. Role-scoped soft delete/restore, project-wide restore-all и один resumable
-    shared-worker hard purge, сохраняющий core Attempts/diagnostic evidence.
+    shared-worker hard purge, сохраняющий Promo sessions/core
+    Attempts/diagnostic evidence и запрещающий restore snapshot members.
 17. Polling каждые пять секунд для per-СПА `new`, `unprocessed`, `processed`,
     `failed` за 1/5/60 минут.
 
