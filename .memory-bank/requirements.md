@@ -44,9 +44,9 @@ last_updated: 2026-07-24
 | `REQ-CAL-002` | Calibration MUST analyze each input quality gate independently, support version/parameter before-after comparison and leave serving-setting application as an explicit manual developer action. | FR-DEV-08..10 |
 | `REQ-CAL-003` | Calibration MAY run on the shared `BackgroundPhotoWorker` and delay photo processing during debugging; interruption MUST become visible, photo processing MUST resume, and rerun remains manual without preemption, priority scheduling or a separate Calibration worker. | FR-DEV-11, NFR-PERF-03 |
 | `REQ-REL-001` | Central runtime MUST operate independently of the display session; the display MUST recover and retain local advertising, while realtime work uses one slot/deadline without a waiter queue and remains short-lived and non-replayed. | NFR-REL-01..03 |
-| `REQ-REL-002` | The PostgreSQL photo-processing queue MUST preserve its `pending`/`processing` population across backend/worker restart, return unfinished work to `pending`, restart idempotently without duplicate final faces, and keep storage/cleanup capacity observable. | NFR-REL-04..05 |
+| `REQ-REL-002` | The PostgreSQL photo-processing queue MUST preserve its `pending`/`processing` population across backend/worker restart, return unfinished work to `pending`, restart idempotently without duplicate final faces, and keep primary-storage capacity observable. | NFR-REL-04..05 |
 | `REQ-SEC-001` | Public access MUST use HTTPS, internal stores/services MUST stay private, СПА identity MUST derive from a hashed client token, and required rate-limit, SSH and browser-sandbox controls MUST apply. | NFR-SEC-01..03 |
-| `REQ-DATA-001` | Logs MUST expire after 30 days, ordinary attempts/artifacts after 90 days, and only the PRD-defined curated calibration subset may survive promotion; participant names remain annotation-only. | NFR-DATA-01..04 |
+| `REQ-DATA-001` | Logs MUST expire after 30 days and ordinary Attempts/evidence after 90 days; only the curated promoted subset may survive until explicit deletion, participant names remain annotation-only, and the latest cleanup outcome MUST be visible as defined by NFR-REL-05. | NFR-REL-05, NFR-DATA-01..04 |
 | `REQ-ARCH-001` | The pilot MUST retain the one-СПА, one central CPU-only server and simple backend/worker/realtime/PostgreSQL/object-storage baseline; hardware is site-validated and added complexity requires measured evidence. | NFR-ARCH-01..04 |
 
 ## Out of Scope
@@ -97,5 +97,5 @@ last_updated: 2026-07-24
 | `REQ-REL-001` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md), [FT-005](features/FT-005.md) | PRD AC-14, physical-site verification | planned |
 | `REQ-REL-002` | [EP-001](epics/EP-001.md) | [FT-002](features/FT-002.md) | PRD AC-06 and worker-restart recovery evidence | planned |
 | `REQ-SEC-001` | [EP-001](epics/EP-001.md), [EP-002](epics/EP-002.md) | [FT-001](features/FT-001.md), [FT-003](features/FT-003.md), [FT-004](features/FT-004.md), [FT-006](features/FT-006.md) | PRD NFR-SEC-01..03 boundary-conformance evidence | planned |
-| `REQ-DATA-001` | [EP-003](epics/EP-003.md) | [FT-007](features/FT-007.md), [FT-008](features/FT-008.md), [FT-009](features/FT-009.md), [FT-010](features/FT-010.md), [FT-011](features/FT-011.md) | PRD AC-13 | planned |
+| `REQ-DATA-001` | [EP-003](epics/EP-003.md) | [FT-007](features/FT-007.md), [FT-008](features/FT-008.md), [FT-009](features/FT-009.md), [FT-010](features/FT-010.md), [FT-011](features/FT-011.md) | PRD NFR-REL-05 and AC-13 | planned |
 | `REQ-ARCH-001` | [EP-001](epics/EP-001.md), [EP-002](epics/EP-002.md), [EP-003](epics/EP-003.md) | [FT-001](features/FT-001.md)–[FT-012](features/FT-012.md) | PRD controlled setup and architecture constraints | planned |

@@ -4,6 +4,28 @@ status: active
 ---
 # Changelog
 
+## [2026-07-24] SDD verifier corrections
+- Advanced Planning Revision once from `1` to `2` for three operator-approved
+  corrections; the empty task queue made no plan stale.
+- Fixed serving-revision recovery as an operator-owned manual action with no
+  automatic rollback.
+- Added the explicit Foundation `mypy` gate and an observable latest retention
+  result.
+
+## [2026-07-24] Global SDD backbone acceptance
+- Completed the mandatory `/spec-design` gate with a
+  `strict_architecture_scaffold`, `split-by-boundary-topic` strategy and
+  Planning Revision `1`.
+- Accepted the existing five-slice modular-monolith bundle without adding a
+  new spec hub; fixed processing-projection reads, manual revision-switch
+  orchestration and owner-ordered retention cleanup in the owning specs.
+- Accepted `Foundation Required: true` because the greenfield repository has no
+  executable release, entrypoints, migration/storage baseline or runnable
+  build/start/test path.
+- Kept product behavior outside Foundation and routed the next boundary to
+  `/foundation-to-tasks`; the empty indexed task queue required no lifecycle
+  invalidation.
+
 ## [2026-07-24] KISS session, offline-attempt and purge clarification
 - Recorded explicit operator decisions as candidate `/spec-design` inputs; no
   successful global backbone run or positive Planning Revision was established.

@@ -29,4 +29,4 @@ Latest report: [.memory-bank/analysis/brainstorming/BR-003.md](brainstorming/BR-
 
 Project principles: `ratified`.
 
-Recommended next step: /spec-design
+Recommended next step: /foundation-to-tasks

@@ -6,46 +6,52 @@ last_updated: 2026-07-24
 # Foundation Dev Path
 
 ## Gate Anchors
-- Foundation decision: blocked
-- Candidate Foundation Required: true
+- Foundation Required: true
 - Foundation Requirement: REQ-000
 - Foundation Pseudo-Feature: FT-000
-- Foundation Gate Task: not_assigned
-- Blocking evidence: the full `/spec-design` cycle has never run, so the
-  Foundation branch and minimum work path have not been accepted.
-- Affected features: FT-001..FT-012
-- Owner/resume route: operator decisions through `/spec-design`
+- Foundation Gate Task: pending_foundation_to_tasks
 
 ## Decision Evidence
 
-The repository has no working application, backend, worker, database schema,
-deployed runtime or project-native build/start/test command. The current
-walking-skeleton proposal is candidate input to `/spec-design`, not an accepted
-Foundation decision.
+The accepted target requires one release with backend, worker and realtime
+roles, one PostgreSQL/Alembic stream, private MinIO and an HTTPS edge. Current
+state has no application code, package/build manifest, Compose definition,
+database schema, migration, entrypoint or project-native
+build/typecheck/start/test command. Product features therefore cannot start
+with a reproducible executable baseline; a separate minimum Foundation queue
+is required.
 
 Foundation establishes substrate only. Photo admission, processing, Promo,
 diagnostics and Photo Inventory Operations remain product-feature behavior.
+Current-state absence is evidence for the required walking skeleton; it does
+not define or override the accepted target architecture.
 
 ## Minimal Work Path
-- Build command: not_available - Foundation must establish one reproducible build/typecheck command.
-- Start command: not_available - Foundation must establish one single-server local start command.
-- Primary entrypoint: not_available - Foundation must create backend, worker and realtime entrypoint seams from one release.
-- Smoke path: future fake-FaceEngine substrate path through HTTPS application,
-  one PostgreSQL schema built by the single Alembic stream, and private MinIO.
-- Test command: not_available - Foundation must establish one project-native test command.
-- Evidence: successful commands plus migration from an empty database through
-  one SQLAlchemy `Base/MetaData`/Alembic path, PostgreSQL and MinIO
-  read/write/delete, actual OpenCV/InsightFace imports in the target container,
-  realtime warmup seam, SpaPromoClient build and one substrate end-to-end
-  smoke.
+- Build command: `docker compose build` (planned target; Foundation makes it runnable).
+- Typecheck command:
+  `docker compose run --rm --no-deps backend python -m mypy src/face_moment`;
+  `mypy` is a dev/test dependency configured in the project `pyproject.toml`.
+- Start command: `docker compose up --build` (planned target single-server composition).
+- Primary entrypoint: one release image with separately invocable `backend`,
+  `BackgroundPhotoWorker` and `RealtimeFaceService` roles; concrete Python
+  module names remain implementation discretion.
+- Smoke path: apply the one Alembic stream to an empty PostgreSQL database,
+  ensure private MinIO buckets, start all three roles with a fake `FaceEngine`,
+  verify HTTPS readiness, PostgreSQL/MinIO read-write-delete and restart.
+- Test command: `docker compose run --rm backend python -m pytest`.
+- Evidence: build, typecheck, start, test and smoke commands exit with code
+  `0`; the empty-database migration uses one SQLAlchemy `Base/MetaData`; the
+  target image imports OpenCV and InsightFace; fake realtime warmup/readiness
+  and storage/restart probes pass. No product Photo, Attempt, session, evidence
+  or Promo behavior is part of this proof.
 
 ## Feature Pressure Map
 
 | Feature | Pressure | Foundation Response | Probe | Status |
 |---|---|---|---|---|
-| FT-001, FT-002, FT-012 | Shared PostgreSQL/MinIO baseline, migration/init and backend/worker entrypoints. | Compose storage, one application schema, one shared `Base/MetaData`, one Alembic configuration/stream and fake processing seam. | Apply the linear stream to an empty database; storage roundtrip and durable row visibility across restart. | planned |
-| FT-003, FT-004, FT-005, FT-006 | Realtime entrypoint, client build and warmup/readiness seam. | One fake realtime request path and SpaPromoClient build. | Start roles and complete one non-production substrate flow. | planned |
-| FT-007..FT-011 | Shared auth, Attempt/evidence persistence and background entrypoint. | Minimal role/auth and persistence wiring only. | Authenticated write/read through owning boundary. | planned |
+| FT-001, FT-002, FT-012 | Shared PostgreSQL/MinIO baseline, migration/init and backend/worker entrypoints. | Compose storage, one application schema, one shared `Base/MetaData`, one Alembic configuration/stream and fake worker seam. | Apply the linear stream to an empty database; storage roundtrip and restart visibility. | required |
+| FT-003, FT-004, FT-005, FT-006 | Realtime role and HTTPS readiness must exist before capture/search behavior. | One fake realtime warmup/readiness seam in the common release; client transport remains feature-owned. | Start all server roles and complete one non-production readiness request. | required |
+| FT-007..FT-011 | Diagnostics need only the same runnable application, database and worker substrate. | Reuse the common server/storage seams; do not create auth, Attempt, evidence or Calibration product rows in Foundation. | Common build/typecheck/start/test and database probes pass without empty capability scaffolds. | covered |
 
 ## Deferred Decisions
 
@@ -58,6 +64,7 @@ diagnostics and Photo Inventory Operations remain product-feature behavior.
 
 ## Foundation Exit Criteria
 - minimal path passes
+- configured project-native build, Python typecheck and relevant unit tests pass
 - single Alembic migration stream builds the empty application schema
 - compatibility probes pass
 - no P0/P1 design pressure unresolved

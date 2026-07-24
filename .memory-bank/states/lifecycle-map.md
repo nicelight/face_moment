@@ -144,6 +144,9 @@ advertising -> capturing -> searching -> result -> cooldown -> advertising
 
   `client_offline` is a client-side diagnostic outcome and may never become a
   durable server Attempt.
+- While serving maintenance/readiness is closed, capture/search is rejected
+  with `503` before `promo` admission. It creates no core Attempt, session or
+  display transition; the client remains/returns to local advertising.
 - New sensor events are ignored while capture/search or successful cooldown is
   active.
 - `result` is entered only after four unique threshold-valid teaser photos are
@@ -229,6 +232,9 @@ collecting -> complete | incomplete -> expired
   bundle or its Promo screenshot.
 - Recommendations never transition serving settings automatically; an explicit
   developer action is a separate boundary requiring later audit design.
+- Retention cleanup adds no separate lifecycle. Its ownership, observable
+  result and safe-rerun contract are defined in the
+  [boundary map](../contracts/boundary-map.md).
 
 Sources: [IDEA_DEBUG.md](../../IDEA_DEBUG.md) and clarified
 [.memory-bank/prd.md](../prd.md) `NFR-DATA-01..04`.
@@ -254,3 +260,4 @@ Source: [.memory-bank/prd.md](../prd.md) `FR-DEV-11` and `NFR-PERF-03`.
 - No per-photo hard-purge state or purge jobs table.
 - No realtime waiter/replay queue.
 - No per-device QR access-grant lifecycle.
+- No serving-revision switch lifecycle.

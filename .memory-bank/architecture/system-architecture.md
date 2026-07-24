@@ -167,8 +167,9 @@ speculative distributed infrastructure.
   disguised as transport errors and client decisions based on response prose.
 - Rule: authentication, permission, payload, validation, rate-limit and
   internal/upstream failures use the standard `401`, `403`, `413`, `422`,
-  `429` and `5xx` classes. An admitted capture/search request returns `2xx`
-  with a compact typed outcome such as `busy`, `deadline`,
+  `429` and `5xx` classes. Closed serving maintenance/readiness returns `503`
+  before capture/search admission and creates no core Attempt. An admitted
+  request returns `2xx` with a compact typed outcome such as `busy`, `deadline`,
   `unacceptable_query` or `insufficient_results`; clients branch on
   status/outcome, never `5xx` text.
 - Verification: Required boundary contract proof, not currently runnable:
@@ -214,15 +215,32 @@ speculative distributed infrastructure.
 
 #### AD-012 — Manual serving-revision switch with accepted downtime
 - Binds: changes to the active face pipeline or model revision.
-- Prevents: hot-switch orchestration, automated admission choreography and
-  automatic rollback machinery.
-- Rule: stop participant realtime, validate the target revision, update the
-  active pointer, start and warm realtime, run one smoke attempt, then resume.
-  A failed smoke returns the pointer to the prior revision and repeats warmup.
+- Prevents: hot switching and automatic rollback.
+- Rule: `serving_control` owns an operator-initiated change with accepted
+  downtime. Only a validated revision may serve. Any failed change leaves
+  participant service unavailable until the operator retries or explicitly
+  selects the prior revision; recovery never changes the revision
+  automatically. Restart uses the committed revision and stays unavailable if
+  it cannot serve.
 - Verification: Required serving-control/processing integration proof, not
-  currently runnable: incompatible work is never served and a failed smoke
-  restores the prior pointer.
-- Source: accepted operator KISS decision, recorded in this Architecture Spine.
+  currently runnable: an invalid revision never serves and every failed change
+  requires explicit operator recovery.
+- Source: accepted operator KISS decision, [.memory-bank/prd.md](../prd.md)
+  `NFR-REL-01` and the [boundary map](../contracts/boundary-map.md).
+
+#### AD-013 — Owner-ordered retention cleanup
+- Binds: core Attempts, technical logs, ordinary diagnostic evidence and
+  promoted Calibration subsets.
+- Prevents: cross-owner delete cascades, foreign direct writes, a generic jobs
+  subsystem and retention cleanup that destroys promoted evidence.
+- Rule: `promo` owns the cleanup outcome; each capability deletes only its own
+  data. Cleanup exposes the latest result defined by the boundary contract and
+  is safe to rerun after failure or interruption.
+- Verification: Required FT-007..FT-011 integration proof, not currently
+  runnable: cleanup enforces both cutoffs, preserves the promoted subset,
+  avoids cross-owner writes and exposes the latest result.
+- Source: [.memory-bank/prd.md](../prd.md) `NFR-REL-05`,
+  `NFR-DATA-01..04` and the [boundary map](../contracts/boundary-map.md).
 
 ## Runtime Shape
 
@@ -251,11 +269,11 @@ are the initial CPU policy.
 
 | Slice | Project-relative discovery root | Write ownership | Must not own | Minimum proof |
 |---|---|---|---|---|
-| `serving_control` | `src/face_moment/serving_control/` | СПА/timezone, active date/pipeline/settings, display token lifecycle and manual-change audit. | Photo, pipeline results, attempts, Promo sessions or recommendations. | Client cannot override СПА/date; attempt gets one immutable serving snapshot. |
-| `inventory` | `src/face_moment/inventory/` | Photo admission/identity/uploader/effective time/visibility, inventory authorization, direct recent counters and global hard-purge orchestration. | ML transitions, result/session rules, Attempts or evidence. | Independent admission; owner-scoped hide/restore; fixed-snapshot purge and 1/5/60 counters. |
-| `processing` | `src/face_moment/processing/` | Pipeline revisions, Photo processing states, derivatives/faces/embeddings, quality gates, exact search and offline evaluation. | Photo visibility, settings mutation or Promo assembly. | Restart from `processing`; one final face set; exact compatible search. |
-| `promo` | `src/face_moment/promo/` | Core Attempt, result/session, four teasers, `N`, QR ticket/access and participant continuation. | Inventory/processing/settings writes or detailed evidence. | Four unique teasers; truthful `N`; display acknowledgement; QR expiry. |
-| `diagnostics` | `src/face_moment/diagnostics/` | Detailed evidence/logs, views, annotations, curated cases and recommendations. | Core Attempt/result/session or direct settings mutation. | Role split, complete/incomplete evidence and promotion whitelist. |
+| `serving_control` | `src/face_moment/serving_control/` | СПА/timezone, active date/pipeline/settings, display token lifecycle and audited manual revision changes. | Photo, pipeline results, attempts, Promo sessions or recommendations. | Client cannot override СПА/date; one Attempt gets one immutable serving snapshot; revision recovery is operator-owned. |
+| `inventory` | `src/face_moment/inventory/` | Photo admission/identity/uploader/effective time/visibility, inventory authorization, direct recent counters and global hard-purge orchestration. | ML transitions, result/session rules, Attempts or evidence. | Independent admission; owner-scoped hide/restore; processing-projection counters; configured primary-storage free capacity; fixed-snapshot purge and 1/5/60 counters. |
+| `processing` | `src/face_moment/processing/` | Pipeline revisions, Photo processing states, derivatives/faces/embeddings, quality gates, revision validation, exact search and offline evaluation. | Photo visibility, settings mutation or Promo Attempt/session assembly. | Restart from `processing`; one final face set; exact compatible search; invalid revisions do not serve. |
+| `promo` | `src/face_moment/promo/` | Core Attempt, result/session, four teasers, `N`, QR ticket/access, participant continuation and retention-cleanup outcome. | Inventory/processing/settings writes or detailed evidence. | Four unique teasers; truthful `N`; display acknowledgement; QR expiry; observable retention result. |
+| `diagnostics` | `src/face_moment/diagnostics/` | Detailed evidence/logs, views, annotations, curated cases, recommendations and diagnostic-data expiry. | Core Attempt/result/session or direct settings mutation. | Role split, complete/incomplete evidence, promotion whitelist and 30/90-day cleanup. |
 
 `src/face_moment/platform/auth/` is a narrow technical component for staff
 principals, credentials and sessions. Business authorization stays in the five
@@ -276,9 +294,11 @@ These roots are discovery locations, not task write boundaries.
   `promo` and `diagnostics` receive no purge command because existing sessions,
   Attempts and diagnostic evidence are retained; UI/device reads skip missing
   hard-purged media.
-
-HTTP/UI handlers and the composition root only authenticate, validate and
-dispatch these use cases; they do not contain business orchestration.
+- `serving_control` owns manual serving-revision changes and asks `processing`
+  to validate a target.
+- `promo` owns retention cleanup and calls `diagnostics` for diagnostic-data
+  expiry. Each capability deletes only its own data; promoted Calibration
+  subsets remain under `diagnostics` ownership.
 
 ## Serving Snapshot And Revision Change
 
@@ -325,20 +345,16 @@ shared-schema ownership and cascade limits.
   PostgreSQL and MinIO volumes. One migrate/init command applies the single
   Alembic stream and ensures private buckets before backend, worker and realtime
   start or fail fast; realtime is ready only after exact active-model warmup.
-- The static HTTPS edge returns ordinary `502/503` while an upstream is
-  unavailable. Restart policies cover edge, backend, worker, realtime,
-  PostgreSQL and MinIO; a systemd user service restarts SpaPromoClient/Chromium.
-  No separate readiness orchestrator is required for this stop-the-world
-  deployment.
-- Process crashes restart automatically. Photo work restarts from the
-  beginning; realtime work is closed as interrupted and not replayed.
-- An in-progress upload is not interrupted by hard purge. Ordinary upload may
-  continue and add normal `pending` work while the shared worker is occupied.
+- Restart policies cover the Compose services and a systemd user service covers
+  SpaPromoClient/Chromium; the HTTPS edge returns `502/503` while an upstream is
+  unavailable. Photo work restarts from the beginning, while realtime work is
+  not replayed; serving-revision recovery follows AD-012.
 - Native-operation timing/health remains observable. A rare native hang may
   require manual `docker compose restart`; no watchdog/subprocess isolation is
   required without reproduced hangs.
-- One idempotent daily cleanup command expires logs and diagnostic data; it may
-  run through the shared worker or a simple host timer.
+- One idempotent daily cleanup command enters through the `promo` application
+  boundary and follows AD-013; it may run through the shared worker or a simple
+  host timer.
 - Backup, replication, zero-downtime deployment and automated recovery from
   native hangs are outside the accepted pilot.
 
@@ -406,7 +422,8 @@ These risks do not authorize extra lifecycle or recovery machinery:
 ## Verification Route
 
 The repository currently has no runnable code. Foundation establishes the
-build/start/test commands, one linear migration-from-empty proof and one
-storage/runtime smoke; feature work later owns the HTTP contract and
-ownership-safe deletion proofs named in the Architecture Spine. The bootstrap
-[testing policy](../testing/index.md) remains the quality-gate router.
+build/typecheck/start/test commands, one linear migration-from-empty proof and
+one storage/runtime smoke; feature work later owns the HTTP, cross-slice,
+owner-ordered retention and ownership-safe deletion proofs named in the
+Architecture Spine. The bootstrap [testing policy](../testing/index.md) remains
+the quality-gate router.

@@ -41,9 +41,9 @@ constitution_checked: true
 
 ### Readiness and verification context
 
-- [.memory-bank/spec-backbone.md](spec-backbone.md): pre-design global SDD
-  backbone candidate at Planning Revision 0; the mandatory `/spec-design` gate
-  has not run and downstream task planning remains blocked.
+- [.memory-bank/spec-backbone.md](spec-backbone.md): complete global SDD
+  backbone at Planning Revision 2; the accepted Foundation Dev Path must close
+  its FT-000 gate before product task design.
 - [.memory-bank/spec-index.md](spec-index.md): registry of current and planned
   canonical specs.
 - [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md): canonical
@@ -565,9 +565,13 @@ pilot actor or blocker.
   `processing` population. On worker startup, unfinished `processing` work MUST
   return to `pending` and restart from the beginning; at-least-once execution
   MUST NOT create duplicate final face records.
-- **NFR-REL-05** — Free primary-storage space and diagnostic-retention cleanup
-  MUST be observable; a recovery procedure for ordinary process, browser, host
-  and intact-volume restarts is required for the single-server pilot.
+- **NFR-REL-05** — Free space on the configured primary PostgreSQL/MinIO
+  volumes and diagnostic-retention cleanup MUST be observable separately.
+  Authorized users MUST see the latest cleanup's applied cutoffs, confirmed
+  deleted/preserved counts and final outcome/error. Failure or interruption
+  MUST remain visible and cleanup MUST be safely rerunnable. A recovery
+  procedure for browser and intact-volume restarts is also required for the
+  single-server pilot.
 - **NFR-REL-06** — A confirmed global hard purge MUST retain enough durable
   run identity, fixed target set and completion progress to resume after an
   ordinary backend or worker restart without reintroducing already purged
@@ -916,7 +920,7 @@ payment/fiscal providers, external observability stores and message brokers.
 - **AC-13** — Technical logs exclude forbidden payloads and respect 30-day
   retention; ordinary attempts/bundles respect 90-day retention; promoting a
   calibration case preserves only the curated NFR-DATA-03 subset until explicit
-  deletion.
+  deletion. The latest cleanup outcome satisfies NFR-REL-05.
 - **AC-14** — Network/search failure leaves the display on local advertising,
   discards stale work and permits a fresh attempt without a success cooldown.
   A server-communication failure also shows
@@ -966,7 +970,8 @@ production readiness, target 10-15-СПА capacity or complete group coverage.
      calculations;
    - pipeline-revision isolation, threshold gates, pHash-only ranking and `N`
      union/deduplication;
-   - attempt timing calculations, recommendation metrics and retention rules;
+   - attempt timing calculations, recommendation metrics, retention rules and
+     latest-cleanup outcome;
    - secret/redaction checks for structured logs.
 2. **Integration verification**
    - uploader -> object storage -> background processing -> searchable state;
@@ -981,6 +986,8 @@ production readiness, target 10-15-СПА capacity or complete group coverage.
      session;
    - server-admitted core Attempt/browser/server correlation -> Attempts/Log
      Explorer -> optional protected evidence and explicit `incomplete` state;
+   - retention expiry -> promoted-subset preservation -> latest result -> safe
+     rerun after failure or interruption;
    - client-only offline failure -> non-blocking 5–10-second notice and
      best-effort metadata delivery without durable-Attempt guarantee;
    - annotation -> Calibration calculations -> manual-only application boundary.
