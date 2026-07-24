@@ -92,14 +92,6 @@ hub.
 - Scope guard: Foundation establishes substrate only. Product Photo, Attempt,
   Promo, diagnostics and inventory behavior remains in FT-001..FT-012.
 
-## Planning Revision Effect
-
-This `/spec-design` correction advanced Planning Revision exactly once from `1`
-to `2`: the operator-approved manual revision recovery, Foundation typecheck
-gate and observable retention-result contract affect downstream task planning.
-The indexed task queue is empty, so no task lifecycle state or indexed
-task-plan review was invalidated.
-
 ## Handoff
 
 - Global backbone is ready at Planning Revision `2`.

@@ -108,22 +108,6 @@ confirmed_waiting -> running -> completed
 Source: [.memory-bank/prd.md](../prd.md) `FR-INV-05..09`,
 `NFR-REL-06`.
 
-## Recent Statistics Windows
-
-Each Admin UI poll reads independent 1-, 5- and 60-minute windows for one СПА:
-
-- `new`: active unique Photos accepted in-window by `accepted_at`;
-- `unprocessed`: active Photos accepted in-window and currently
-  `pending | processing`;
-- `processed`: active Photos transitioned in-window to `ready | no_faces`;
-- `failed`: active Photos transitioned in-window to `failed`.
-
-Soft deletion immediately removes a Photo from every window. Restore makes the
-Photo visible again according to its preserved timestamps and state. The UI
-polls every five seconds; no WebSocket/SSE lifecycle exists.
-
-Source: [.memory-bank/prd.md](../prd.md) `FR-INV-10..11`.
-
 ## Automatic Attempt And Display
 
 ```text

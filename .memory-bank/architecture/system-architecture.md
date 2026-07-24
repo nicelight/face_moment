@@ -364,19 +364,6 @@ shared-schema ownership and cascade limits.
   `photo_id` set.
 - Keep `query_source` extensible while the pilot serves only `reference`; the
   processing query boundary must not assume one camera transport.
-- A future selfie flow may reuse `promo` orchestration and `processing` search
-  only after its privacy and retention decisions are accepted.
-- Future payment/entitlement remains an internal `promo` module while it is one
-  local continuation. An order may copy an immutable result/СПА/date/commercial
-  snapshot; `inventory` remains original owner and may issue a short-lived
-  download only after a promo-owned entitlement check.
-- A sixth `commerce` slice requires independent deployment, regulatory
-  ownership or demonstrated reuse. Activating paid delivery also reopens the
-  no-backup durability decision.
-
-These seams authorize stable identifiers and boundaries only. They do not
-authorize selfie endpoints, payment tables/webhooks or original-download
-implementation in the pilot.
 
 ## Deferred Decisions
 

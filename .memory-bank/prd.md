@@ -77,44 +77,6 @@ acceptance gates.
   [.memory-bank/spec-backbone.md](spec-backbone.md) for decomposition and later
   SDD work.
 
-### 2026-07-24 — Greenfield boundary and Photo Inventory Operations
-
-- Face Moment is still at the documentation and design stage: this repository
-  has no working application code, backend, worker or deployed runtime. All
-  runtime components and behavior in this PRD describe the system to be built,
-  not an existing implementation.
-- A photographer may soft-delete and restore only their own uploaded Photos.
-  An operator or developer may soft-delete and restore any Photo in an
-  accessible СПА.
-- Photo selection for soft deletion uses СПА, authoritative `visit_date` and an
-  effective capture-time range. Reliable EXIF `captured_at` is interpreted in
-  the СПА timezone; otherwise the server-side start time of that file's upload
-  is used; if neither value is available, the effective time is 01:00 on
-  `visit_date`.
-- Soft deletion preserves the Photo and all related stored data but immediately
-  excludes the Photo from new search/result formation and queue statistics.
-  An already issued Promo/session continues using the referenced media while it
-  exists; soft delete does not invalidate or rebuild that session. Restore makes
-  the preserved Photo active again.
-- Admin settings provide project-wide `hard delete ALL softed media` and
-  `restore all soft deleted` actions. Hard deletion requires confirmation and
-  uses one resumable global purge run with progress, without a per-photo
-  `purge_pending` state or a separate purge jobs table.
-- The global hard purge waits for the shared worker's current operation, then
-  deletes the fixed confirmed set of soft-deleted Photos and their media, face
-  data and pipeline state. Existing Promo sessions, core Attempts and diagnostic
-  evidence are retained. UI/device loading skips a hard-purged media item
-  without invalidating the session, replacing the Photo or recalculating its
-  historical `N`.
-- Restore and restore-all reject Photos already included in a non-terminal
-  confirmed hard-purge snapshot. They become irrelevant once the purge reaches
-  `completed`; the fixed snapshot never changes silently.
-- Queue statistics are scoped per СПА, expose 1-, 5- and 60-minute windows for
-  `new`, `unprocessed`, `processed` and `failed`, and refresh by five-second
-  polling without WebSocket or SSE.
-- In each queue-statistics window, `failed` is the count of active Photos that
-  transitioned to `failed` during that window.
-
 ## Product Summary
 
 Face Moment is a controlled one-СПА smoke pilot that tests whether fresh
@@ -1013,6 +975,3 @@ production readiness, target 10-15-СПА capacity or complete group coverage.
    - evaluate AC-01..07 as per-attempt rows, requiring the same 19 attempts to
      pass both latency/QR and correctness without silently removing
      no-match/timeout failures.
-
-Evidence such as screenshots, traces, logs and videos belongs in task artifacts;
-the Memory Bank should retain links and conclusions rather than binary evidence.

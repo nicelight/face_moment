@@ -247,19 +247,10 @@ a different pipeline revision additionally follows the manual switch below.
 - restore-all clears the marker for every soft-deleted Photo in the project
   except members of a confirmed non-terminal hard-purge snapshot; restore of
   those members is rejected until completion;
-- hard purge starts one confirmed fixed-snapshot global run, waits for the
-  shared worker, then calls `processing` to remove derived state before final
-  Photo/media removal;
-- no purge command is sent to `promo` or `diagnostics`: existing sessions, core
-  Attempts and diagnostic evidence remain under their ordinary lifecycles.
-  UI/device session reads skip unavailable hard-purged media without
-  invalidating the session, selecting a replacement or recalculating issued
-  `N`.
-
-The global run is the only purge recovery state. It stores enough durable
-snapshot/progress identity to resume after restart but creates no per-photo
-`purge_pending` transition or purge jobs table. New soft deletes are outside a
-running snapshot.
+- hard purge follows the [runtime contract](#hard-purge-runtime-contract) and
+  [global-run lifecycle](../states/lifecycle-map.md);
+  `inventory` commands only `processing` cleanup before deleting its own
+  Photo/media and sends no purge command to `promo` or `diagnostics`.
 
 ## Recent Statistics Read Contract
 
@@ -294,15 +285,3 @@ materialized counters are outside the pilot.
   states. It preserves existing Promo results/sessions, core Attempts and
   diagnostic evidence; historical references and issued `N` may remain while
   UI/device loading skips deleted media.
-
-## Runtime Context Rules
-
-- Future code discovery roots are documented in the
-  [system architecture](../architecture/system-architecture.md); they are not
-  task hard write boundaries.
-- Post-pilot payment/original delivery, standalone selfie search, external
-  ingest, tracking/clustering and speculative infrastructure cannot enter pilot
-  work implicitly.
-- Stop when implementation would change accepted ownership, public/session
-  behavior, searchable truth, authorization, retention or irreversible
-  deletion behavior without an operator decision.
