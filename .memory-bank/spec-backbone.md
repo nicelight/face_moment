@@ -1,37 +1,35 @@
 ---
-description: Accepted global SDD backbone and Foundation routing state for the greenfield Face Moment pilot.
+description: Pre-design global SDD backbone candidate awaiting the mandatory full /spec-design gate.
 status: active
 last_updated: 2026-07-24
 ---
 # SDD Spec Backbone
 
 ## Review Status
-- Acceptance: accepted
-- State: ready
-- Notes: Reconciled through `/spec-design` into the canonical architecture,
-  boundary, lifecycle and Foundation specs from accepted operator decisions,
-  clarified product sources and the KISS session/offline-attempt/purge
-  decisions of 2026-07-24. No working application/backend/runtime exists yet.
+- Acceptance: pending
+- State: not_ready
+- Notes: Candidate architecture, boundary, lifecycle and Foundation specs exist,
+  but the complete `/spec-design` cycle has never run. No global readiness or
+  downstream task-planning approval is established. No working
+  application/backend/runtime exists yet.
 
 ## Global Backbone Status
-- Status: complete
-- Planning Revision: 3
-- Mode: standard_architecture_scaffold
-- Architecture artifact strategy: split-core-docs
+- Status: blocked
+- Planning Revision: 0
+- Mode: pending
+- Architecture artifact strategy: pending
 - Not applicable areas:
   - event_message_contracts: not_applicable - accepted runtime boundaries use direct in-process calls and PostgreSQL row state; no broker or event/message protocol exists.
   - agent_io_contracts: not_applicable - the product has no agent/tool/model-I/O boundary.
-- Notes: The global architecture, ownership, lifecycle, storage, security,
-  standard HTTP failure semantics, single-schema migration boundary and
-  Foundation decisions are explicit. Issued sessions survive Photo soft/hard
-  deletion with missing-media skip, client-only offline attempts are
-  best-effort, and restore of non-terminal purge snapshot members is rejected.
-  Feature-level table/payload detail remains owned by `/feature-to-tasks` and
-  does not block the backbone.
+- Notes: Existing documents are candidate inputs. The mandatory full
+  source/coverage/consequence review, artifact-strategy selection and
+  Foundation decision validation have not run. All downstream design/task gates
+  remain closed until `/spec-design` records `complete|minimal` with a positive
+  Planning Revision.
 
-## Accepted Source Roles
+## Candidate Source Roles
 
-Target authority is applied in this order:
+The future `/spec-design` run must apply target authority in this order:
 
 1. [.memory-bank/constitution.md](constitution.md) and explicit accepted
    operator decisions;
@@ -67,12 +65,12 @@ working application, backend, worker or deployed runtime.
 | testing_strategy | authoritative | [.memory-bank/testing/index.md](testing/index.md), [system architecture](architecture/system-architecture.md) | Bootstrap policy routes gates; Architecture Spine names required Foundation/feature proofs that are not runnable before code exists. |
 | deployment | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/foundation.md](foundation.md) | One future Compose deployment and minimum executable walking skeleton are explicit. |
 | risks | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/prd.md](prd.md) | Accepted pilot risks and deferred-complexity triggers are explicit. |
-| open_questions | authoritative | [system architecture](architecture/system-architecture.md) | Remaining hardware/scale/media-delivery choices are explicitly deferred with triggers; none blocks current task planning. |
+| open_questions | blocked | [system architecture](architecture/system-architecture.md) | `/spec-design` has not yet validated that the recorded deferrals exhaust all material architecture questions. Affected scope: all product features and Foundation. Owner/resume route: operator decisions through `/spec-design`. |
 
-## Canonical Design Bundle
+## Candidate Canonical Design Bundle
 
 - [System architecture](architecture/system-architecture.md): system shape,
-  Architecture Spine, runtime, slice roots, ownership, HTTP/storage decisions
+  Architecture Spine, runtime, slice roots, ownership, HTTP/storage decisions,
   recovery, extension seams, deferred decisions, accepted risks and Foundation
   proof pressure.
 - [Boundary map](contracts/boundary-map.md): application boundaries, write
@@ -85,38 +83,30 @@ working application, backend, worker or deployed runtime.
 - [.memory-bank/foundation.md](foundation.md): explicit greenfield Foundation
   Dev Path decision.
 
-No new domain, API, event, security or runbook spec is needed at this global
-boundary. Concrete payload/schema and feature-specific verification detail must
-reuse these subject paths or be added later only when
-`/feature-to-tasks` proves a missing concern.
+The bundle is not yet accepted as sufficient. `/spec-design` must confirm
+whether additional subject specs are needed before any downstream task design.
 
 ## Foundation Decision
 
-- Foundation Required: true
-- Foundation Gate Task: pending_foundation_to_tasks
-- Reason: no executable runtime, entrypoint, storage baseline, migration path
-  or project-native build/test command exists. Product feature execution needs
-  one minimal walking skeleton first.
-- Scope guard: Foundation contains only shared runtime/storage/native-
-  compatibility proof; Photo Inventory behavior remains product work.
+- Foundation Decision Status: pending `/spec-design`
+- Candidate Foundation Required: true
+- Foundation Gate Task: not_assigned
+- Candidate reason: no executable runtime, entrypoint, storage baseline,
+  migration path or project-native build/test command exists.
+- Scope guard: no Foundation task queue may be created until `/spec-design`
+  accepts or replaces this candidate decision.
 
 ## Planning Revision Effect
 
-Planning Revision advanced from `1` to `2` for the standard HTTP
-failure/domain-outcome contract and single-schema migration/foreign-key rules.
-It advanced from `2` to `3` for the operator-accepted KISS rules: soft delete
-does not invalidate an issued session, hard-purged media is skipped without
-rebuilding the session or `N`, client-only offline attempts are best-effort,
-and restore of non-terminal hard-purge snapshot members is rejected. These
-rules affect feature/task planning. The task index is empty, so no existing task
-status or task-plan review is made stale.
-
-Consolidating the already accepted target into registered canonical specs does
-not change the target and therefore does not advance Planning Revision `3`.
+Planning Revision is `0` because no successful full `/spec-design` run has
+occurred. Existing candidate decisions do not establish a positive Planning
+Revision. The first successful run must set Revision `1`; the task index is
+empty, so no task status or task-plan review is invalidated by this correction.
 
 ## Handoff
 
-- Global backbone is ready.
-- Run `/foundation-to-tasks` next because Foundation is required.
-- Do not create product task records until the Foundation route and normal
-  feature task-design gates are satisfied.
+- Global backbone is not ready.
+- Run `/spec-design` next.
+- Do not run `/foundation-to-tasks`, `/feature-to-tasks`, `/spec-auto` task
+  generation or execution until the backbone has a ready positive Planning
+  Revision and an accepted Foundation decision.

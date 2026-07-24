@@ -11,10 +11,12 @@ hardware и display/kiosk с рекламой.
 Работающего server-side приложения или backend пока нет. Описанные компоненты и
 deployment topology являются target design.
 
-Актуальные продуктовые требования определяет `.memory-bank/prd.md`. Для
-архитектуры `arch_impr1.md` имеет приоритет в HTTP/schema/migration refinements,
-затем действует `arch_vision.md`; этот файл остаётся subordinate
-overview/discovery evidence по порядку `.memory-bank/spec-backbone.md`.
+Актуальные продуктовые требования определяет `.memory-bank/prd.md`.
+Каноническую runtime/deployment архитектуру определяют
+`.memory-bank/architecture/system-architecture.md`,
+`.memory-bank/contracts/boundary-map.md` и
+`.memory-bank/states/lifecycle-map.md`; этот файл остаётся subordinate
+overview/discovery evidence по precedence из `.memory-bank/spec-backbone.md`.
 
 Первый pilot — one-СПА smoke test с тестировщиками. Топология на 10–15 СПА
 является target capacity после pilot, а

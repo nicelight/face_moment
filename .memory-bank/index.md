@@ -49,8 +49,8 @@ status: active
 - [.memory-bank/workflows/index.md](workflows/index.md): Workflow router and tier/execution/sync policies.
 
 - [.memory-bank/spec-index.md](spec-index.md): Pure SDD spec registry and planned-spec index.
-- [.memory-bank/spec-backbone.md](spec-backbone.md): Accepted complete global
-  SDD backbone at Planning Revision 3 and downstream readiness.
+- [.memory-bank/spec-backbone.md](spec-backbone.md): Pre-design global SDD
+  backbone candidate at Planning Revision 0, blocked until `/spec-design`.
 - [.memory-bank/foundation.md](foundation.md): Accepted Foundation Dev Path,
   substrate scope and pending Foundation gate.
 - `.memory-bank/user-scenarios.md`: optional user scenarios and architecture implications when created by `/spec-init` or `/spec-design`.

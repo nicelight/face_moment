@@ -5,10 +5,11 @@
 ## 0. Статус и граница первого pilot
 
 Документ описывает актуальный ingest-контур первого one-СПА pilot. Продуктовые
-требования определяет `.memory-bank/prd.md`. Для архитектуры `arch_impr1.md`
-имеет приоритет в HTTP/schema/migration refinements, затем действует
-`arch_vision.md`; этот файл остаётся subordinate overview/discovery evidence
-по порядку `.memory-bank/spec-backbone.md`.
+требования определяет `.memory-bank/prd.md`. Канонические ingest/storage
+границы определяют `.memory-bank/architecture/system-architecture.md`,
+`.memory-bank/contracts/boundary-map.md` и
+`.memory-bank/states/lifecycle-map.md`; этот файл остаётся subordinate
+overview/discovery evidence по precedence из `.memory-bank/spec-backbone.md`.
 
 Работающего ingest/backend пока нет. Flow, состояния и границы ниже описывают
 target design для будущей реализации.

@@ -11,11 +11,11 @@
 Работающего приложения или backend в репозитории пока нет. Описанные ниже
 компоненты, процессы и модели являются target design для будущей реализации.
 
-Продуктовые требования определяет `.memory-bank/prd.md`. Для архитектуры
-`arch_impr1.md` имеет приоритет в HTTP/schema/migration refinements, затем
-действует `arch_vision.md`; этот файл остаётся subordinate overview/discovery
-evidence. При расхождении старой формулировки действуют эти более поздние
-источники в порядке `.memory-bank/spec-backbone.md`.
+Продуктовые требования определяет `.memory-bank/prd.md`. Каноническую
+архитектуру определяют `.memory-bank/architecture/system-architecture.md`,
+`.memory-bank/contracts/boundary-map.md` и
+`.memory-bank/states/lifecycle-map.md`; этот файл остаётся subordinate
+overview/discovery evidence по precedence из `.memory-bank/spec-backbone.md`.
 
 Если не указано иное, `pilot MVP` означает одну СПА и контролируемые проходы
 тестировщиков. Целевая платформа на

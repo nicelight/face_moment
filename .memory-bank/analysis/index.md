@@ -25,8 +25,8 @@ Latest report: [.memory-bank/analysis/brainstorming/BR-003.md](brainstorming/BR-
   - [IDEA_DEBUG.md](../../IDEA_DEBUG.md)
   - [IDEA_INGEST.md](../../IDEA_INGEST.md)
   - [IDEA_OS.md](../../IDEA_OS.md)
-  - [arch_vision.md](../../arch_vision.md)
+  - [.memory-bank/architecture/system-architecture.md](../architecture/system-architecture.md)
 
 Project principles: `ratified`.
 
-Recommended next step: /foundation-to-tasks
+Recommended next step: /spec-design

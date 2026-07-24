@@ -6,17 +6,22 @@ last_updated: 2026-07-24
 # Foundation Dev Path
 
 ## Gate Anchors
-- Foundation Required: true
+- Foundation decision: blocked
+- Candidate Foundation Required: true
 - Foundation Requirement: REQ-000
 - Foundation Pseudo-Feature: FT-000
-- Foundation Gate Task: pending_foundation_to_tasks
+- Foundation Gate Task: not_assigned
+- Blocking evidence: the full `/spec-design` cycle has never run, so the
+  Foundation branch and minimum work path have not been accepted.
+- Affected features: FT-001..FT-012
+- Owner/resume route: operator decisions through `/spec-design`
 
 ## Decision Evidence
 
 The repository has no working application, backend, worker, database schema,
-deployed runtime or project-native build/start/test command. A minimal
-executable walking skeleton is required before product feature work can prove
-the accepted shared runtime and storage boundaries.
+deployed runtime or project-native build/start/test command. The current
+walking-skeleton proposal is candidate input to `/spec-design`, not an accepted
+Foundation decision.
 
 Foundation establishes substrate only. Photo admission, processing, Promo,
 diagnostics and Photo Inventory Operations remain product-feature behavior.

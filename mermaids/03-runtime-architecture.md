@@ -79,5 +79,7 @@ flowchart LR
 - PostgreSQL, MinIO и внутренние service ports не публикуются наружу.
 - Локальный HDMI client и будущий remote client используют один `SpaPromoClient` contract.
 
-Источники: [Architecture](../arch_vision.md), [IDEA_OS.md](../IDEA_OS.md),
+Источники:
+[Architecture](../.memory-bank/architecture/system-architecture.md),
+[IDEA_OS.md](../IDEA_OS.md),
 [IDEA_APP.md](../IDEA_APP.md), [PRD](../.memory-bank/prd.md).

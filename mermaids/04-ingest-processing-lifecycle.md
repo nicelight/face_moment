@@ -101,6 +101,6 @@ flowchart TD
   jobs table, deletion worker, counter store и distributed transaction
   отсутствуют.
 
-Источники: [Architecture](../arch_vision.md),
+Источники: [Architecture](../.memory-bank/architecture/system-architecture.md),
 [Lifecycle](../.memory-bank/states/lifecycle-map.md),
 [IDEA_INGEST.md](../IDEA_INGEST.md), [PRD](../.memory-bank/prd.md).

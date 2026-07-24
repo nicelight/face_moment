@@ -108,5 +108,6 @@ sequenceDiagram
 - Client-only offline trigger может не создать server Attempt; его metadata
   доставляется только best-effort без durable outbox.
 
-Источники: [Architecture](../arch_vision.md), [IDEA_APP.md](../IDEA_APP.md),
+Источники: [Architecture](../.memory-bank/architecture/system-architecture.md),
+[IDEA_APP.md](../IDEA_APP.md),
 [PRD](../.memory-bank/prd.md), [Glossary](../.memory-bank/glossary.md).

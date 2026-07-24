@@ -83,5 +83,6 @@ flowchart TD
   пропускает отсутствующую media без пересчёта `N`.
 
 Источники: [PRD](../.memory-bank/prd.md),
-[Architecture](../arch_vision.md), [IDEA_INGEST.md](../IDEA_INGEST.md),
+[Architecture](../.memory-bank/architecture/system-architecture.md),
+[IDEA_INGEST.md](../IDEA_INGEST.md),
 [IDEA_APP.md](../IDEA_APP.md).

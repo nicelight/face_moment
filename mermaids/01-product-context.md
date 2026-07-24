@@ -64,6 +64,6 @@ flowchart LR
   per-device grants.
 
 Источники: [PRD](../.memory-bank/prd.md),
-[Architecture](../arch_vision.md), [Product
+[Architecture](../.memory-bank/architecture/system-architecture.md), [Product
 Brief](../.memory-bank/analysis/product-brief.md),
 [Glossary](../.memory-bank/glossary.md).

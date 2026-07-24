@@ -41,9 +41,9 @@ constitution_checked: true
 
 ### Readiness and verification context
 
-- [.memory-bank/spec-backbone.md](spec-backbone.md): accepted global SDD
-  backbone at Planning Revision 3; architecture planning is complete and the
-  Foundation Gate remains pending `/foundation-to-tasks`.
+- [.memory-bank/spec-backbone.md](spec-backbone.md): pre-design global SDD
+  backbone candidate at Planning Revision 0; the mandatory `/spec-design` gate
+  has not run and downstream task planning remains blocked.
 - [.memory-bank/spec-index.md](spec-index.md): registry of current and planned
   canonical specs.
 - [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md): canonical

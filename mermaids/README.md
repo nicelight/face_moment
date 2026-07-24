@@ -27,9 +27,10 @@
 design. Authority order совпадает с `.memory-bank/spec-backbone.md`:
 
 1. [`.memory-bank/constitution.md`](../.memory-bank/constitution.md)
-2. [`arch_impr1.md`](../arch_impr1.md) для принятых HTTP и
-   PostgreSQL schema/migration refinements
-3. [`arch_vision.md`](../arch_vision.md)
+2. [`.memory-bank/spec-backbone.md`](../.memory-bank/spec-backbone.md)
+3. [System architecture](../.memory-bank/architecture/system-architecture.md),
+   [boundary map](../.memory-bank/contracts/boundary-map.md) и
+   [lifecycle map](../.memory-bank/states/lifecycle-map.md)
 4. [`.memory-bank/prd.md`](../.memory-bank/prd.md)
 5. [`.memory-bank/glossary.md`](../.memory-bank/glossary.md) и
    [`.memory-bank/invariants.md`](../.memory-bank/invariants.md)

@@ -17,7 +17,7 @@ type: product-brief
   - `IDEA_DEBUG.md`
   - `IDEA_INGEST.md`
   - `IDEA_OS.md`
-  - `arch_vision.md`
+  - `.memory-bank/architecture/system-architecture.md`
 
 ## 1. One-liner
 

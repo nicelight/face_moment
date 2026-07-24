@@ -5,8 +5,8 @@ status: active
 # Changelog
 
 ## [2026-07-24] KISS session, offline-attempt and purge clarification
-- Advanced the global backbone to Planning Revision 3 after explicit operator
-  decisions.
+- Recorded explicit operator decisions as candidate `/spec-design` inputs; no
+  successful global backbone run or positive Planning Revision was established.
 - Clarified that soft delete blocks new search/result formation but does not
   invalidate an already issued Promo session.
 - Simplified hard purge: it removes Photo-owned media/state while retaining
@@ -24,10 +24,10 @@ status: active
   fixed-snapshot hard purge that retains core Attempts and diagnostic evidence.
 - Added per-СПА 1/5/60-minute Photo processing counters with five-second Admin
   UI polling and traced the scope through `REQ-INV-*`, EP-001 and FT-012.
-- Accepted the initial global SDD backbone at Planning Revision 1 and recorded
-  the required greenfield Foundation Dev Path with its task gate still pending.
-- Advanced the backbone to Planning Revision 2 for standard HTTP transport
-  errors with typed capture/search outcomes and no custom error framework.
+- Drafted the global SDD backbone and greenfield Foundation proposal; both
+  remain candidate inputs until the first full `/spec-design` run.
+- Drafted standard HTTP transport errors with typed capture/search outcomes and
+  no custom error framework as candidate architecture input.
 - Fixed one PostgreSQL application schema, shared SQLAlchemy `Base/MetaData`,
   one Alembic configuration/stream and ownership-safe foreign-key/cascade
   constraints across capability slices.
