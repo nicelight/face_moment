@@ -1,23 +1,6 @@
 # Face Moment — выбранные архитектурные улучшения
 
-## 1. Не показывать запоздавший результат предыдущего поиска
-
-SpaPromoClient принимает realtime response только тогда, когда его
-`(spa_id, attempt_id)` всё ещё соответствует активной попытке и client state
-остаётся `searching`. Ответ завершённой, отменённой или заменённой попытки
-молча отбрасывается без Promo rendering, success cooldown и display
-acknowledgement.
-
-Отдельные `capture_id`, server cancellation protocol и новый durable state не
-нужны. Сервер может завершить уже начатую работу, но невостребованный result
-остаётся `unconfirmed` и очищается по обычным TTL/retention rules.
-
-Почему именно так: timeout или network delay могут вернуть корректный результат
-уже после перехода display к рекламе или следующему посетителю. Проверка
-активного `attempt_id` закрывает этот race минимальным client-side guard и не
-усложняет realtime lifecycle.
-
-## 2. Использовать стандартные HTTP errors без собственного error framework
+## 1. Использовать стандартные HTTP errors без собственного error framework
 
 Технические ошибки выражаются обычными HTTP statuses:
 
@@ -38,7 +21,7 @@ acknowledgement.
 framework добавил бы форматы, mapping и поддержку без сопоставимой пользы для
 одного backend.
 
-## 3. Одна PostgreSQL schema и один поток migrations
+## 2. Одна PostgreSQL schema и один поток migrations
 
 Весь modular monolith использует одну PostgreSQL schema, один SQLAlchemy
 `Base/MetaData`, одну Alembic configuration и один последовательный migration

@@ -42,7 +42,7 @@ constitution_checked: true
 ### Readiness and verification context
 
 - [.memory-bank/spec-backbone.md](spec-backbone.md): accepted global SDD
-  backbone at Planning Revision 1; architecture planning is complete and the
+  backbone at Planning Revision 2; architecture planning is complete and the
   Foundation Gate remains pending `/foundation-to-tasks`.
 - [.memory-bank/spec-index.md](spec-index.md): registry of current and planned
   canonical specs.

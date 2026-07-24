@@ -9,20 +9,22 @@ last_updated: 2026-07-24
 - Acceptance: accepted
 - State: ready
 - Notes: Reconciled through `/spec-design` from the operator-accepted
-  [architecture source](../arch_vision.md) and clarified product sources. No
-  working application/backend/runtime exists yet.
+  [architecture source](../arch_vision.md), selected
+  [architecture improvements](../arch_impr1.md) and clarified product sources.
+  No working application/backend/runtime exists yet.
 
 ## Global Backbone Status
 - Status: complete
-- Planning Revision: 1
+- Planning Revision: 2
 - Mode: standard_architecture_scaffold
 - Architecture artifact strategy: split-core-docs
 - Not applicable areas:
   - event_message_contracts: not_applicable - accepted runtime boundaries use direct in-process calls and PostgreSQL row state; no broker or event/message protocol exists.
   - agent_io_contracts: not_applicable - the product has no agent/tool/model-I/O boundary.
-- Notes: The global architecture, ownership, lifecycle, storage, security and
-  Foundation decisions are explicit. Feature-level schemas and concrete API
-  payloads remain owned by `/feature-to-tasks` and do not block the backbone.
+- Notes: The global architecture, ownership, lifecycle, storage, security,
+  standard HTTP failure semantics, single-schema migration boundary and
+  Foundation decisions are explicit. Feature-level table/payload detail
+  remains owned by `/feature-to-tasks` and does not block the backbone.
 
 ## Accepted Source Roles
 
@@ -30,12 +32,15 @@ Target authority is applied in this order:
 
 1. [.memory-bank/constitution.md](constitution.md) and explicit accepted
    operator decisions;
-2. [arch_vision.md](../arch_vision.md) for accepted target architecture;
-3. [.memory-bank/prd.md](prd.md), [.memory-bank/requirements.md](requirements.md)
+2. [arch_impr1.md](../arch_impr1.md) for the accepted HTTP-failure and
+   PostgreSQL schema/migration refinements;
+3. [arch_vision.md](../arch_vision.md) for the reconciled accepted target
+   architecture;
+4. [.memory-bank/prd.md](prd.md), [.memory-bank/requirements.md](requirements.md)
    and feature/epic composition for product behavior and acceptance;
-4. the canonical architecture, boundary and lifecycle projections registered
+5. the canonical architecture, boundary and lifecycle projections registered
    in [.memory-bank/spec-index.md](spec-index.md);
-5. `IDEA_*` files as overview/discovery evidence under the precedence declared
+6. `IDEA_*` files as overview/discovery evidence under the precedence declared
    in the PRD.
 
 There is no as-is runtime/code authority because the repository contains no
@@ -46,15 +51,15 @@ working application, backend, worker or deployed runtime.
 | Area | Status | Authoritative source | Notes |
 |---|---|---|---|
 | architecture_style | authoritative | [arch_vision.md](../arch_vision.md), [system architecture](architecture/system-architecture.md) | One greenfield Python/FastAPI modular monolith, one release and three server process entrypoints. |
-| source_of_truth | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | PostgreSQL owns durable state; private MinIO owns binary bytes; one capability owns every mutable invariant. |
-| module_boundaries | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | Five capability packages, public application boundaries, dependencies, orchestration and code discovery roots are explicit. |
+| source_of_truth | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | PostgreSQL owns durable state in one application schema/migration stream; private MinIO owns binary bytes; one capability owns every mutable invariant. |
+| module_boundaries | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | Five capability packages, public application boundaries, dependencies, orchestration, shared-schema ownership constraints and code discovery roots are explicit. |
 | user_scenarios | authoritative | [.memory-bank/prd.md](prd.md) | Actors and scenario-sensitive flows are reviewed through clarified PRD behavior; no separate scenario document is required. |
 | constraints | authoritative | [.memory-bank/constitution.md](constitution.md), [.memory-bank/prd.md](prd.md), [system architecture](architecture/system-architecture.md) | KISS, one server/СПА, performance, security and no-backup limits are explicit. |
 | non_goals | authoritative | [.memory-bank/prd.md](prd.md), [system architecture](architecture/system-architecture.md) | Paid delivery, standalone selfie, distribution, speculative scale and extra lifecycle machinery are excluded. |
 | domain_model | authoritative | [.memory-bank/prd.md](prd.md), [lifecycle map](states/lifecycle-map.md), [.memory-bank/glossary.md](glossary.md) | Product entities, effective capture time, Photo visibility, purge, Attempt and session semantics are explicit. |
 | data_flow | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | Admission, search, Promo, Calibration and Photo Inventory orchestration have named owners. |
-| storage | authoritative | [system architecture](architecture/system-architecture.md), [lifecycle map](states/lifecycle-map.md) | PostgreSQL/MinIO authority, transaction limits, visibility, retention and restart semantics are explicit. |
-| api_contracts | authoritative | [boundary map](contracts/boundary-map.md) | Applicable component/application contracts and external HTTPS boundaries are fixed; endpoint payload detail is feature-owned. |
+| storage | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md), [lifecycle map](states/lifecycle-map.md) | PostgreSQL/MinIO authority, one schema/Base/Alembic stream, ownership-safe foreign-key/cascade limits, transaction limits, visibility, retention and restart semantics are explicit. |
+| api_contracts | authoritative | [boundary map](contracts/boundary-map.md) | Standard HTTP failure statuses, typed admitted-request outcomes, client control inputs and external HTTPS boundaries are fixed; concrete endpoint success payloads remain feature-owned. |
 | event_message_contracts | not_applicable | [system architecture](architecture/system-architecture.md) | No event broker/message protocol is part of the accepted pilot. |
 | agent_io_contracts | not_applicable | [.memory-bank/prd.md](prd.md) | No agent/tool I/O is a product or runtime boundary. |
 | security_safety | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md), [.memory-bank/prd.md](prd.md) | Private stores, HTTPS, greenfield staff roles, owner-scoped deletion and protected evidence are fixed. |
@@ -66,10 +71,11 @@ working application, backend, worker or deployed runtime.
 ## Canonical Design Bundle
 
 - [System architecture](architecture/system-architecture.md): system shape,
-  Architecture Spine, runtime, slice roots, ownership and Foundation proof
-  pressure.
+  Architecture Spine, runtime, slice roots, ownership, HTTP/storage decisions
+  and Foundation proof pressure.
 - [Boundary map](contracts/boundary-map.md): application boundaries, write
-  authority, cross-slice orchestration, statistics and hard-purge contracts.
+  authority, shared-schema/migration constraints, HTTP failure semantics,
+  cross-slice orchestration, statistics and hard-purge contracts.
 - [Lifecycle map](states/lifecycle-map.md): Photo admission/processing/
   visibility, global purge, Promo/QR, Attempt/evidence and Calibration states.
 - [.memory-bank/foundation.md](foundation.md): explicit greenfield Foundation
@@ -92,10 +98,10 @@ reuse these subject paths or be added later only when
 
 ## Planning Revision Effect
 
-Planning Revision advanced once from `0` to `1` because accepted global
-architecture, ownership, lifecycle and Foundation rules became canonical. The
-task index is empty, so no existing task status or task-plan review is made
-stale.
+Planning Revision advanced once from `1` to `2` because the accepted standard
+HTTP failure/domain-outcome contract and single-schema migration/foreign-key
+rules affect global feature and task planning. The task index is empty, so no
+existing task status or task-plan review is made stale.
 
 ## Handoff
 

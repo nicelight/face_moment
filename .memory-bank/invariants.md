@@ -39,6 +39,12 @@ source_of_truth:
   table.
 - Сохранять core Attempt и diagnostic evidence при hard purge Photo, даже когда
   удаляются связанные Promo result/session.
+- Выражать transport failures стандартными HTTP statuses (`401`, `403`, `413`,
+  `422`, `429`, `5xx`), а результаты принятого capture/search request —
+  `2xx` response с компактным typed domain outcome.
+- Использовать одну PostgreSQL application schema, один SQLAlchemy
+  `Base/MetaData`, одну Alembic configuration и один последовательный migration
+  stream, сохраняя capability-level write ownership.
 
 ## NEVER
 
@@ -52,12 +58,18 @@ source_of_truth:
 - Не помещать в technical logs запрещённые sensitive payloads, перечисленные в
   PRD `FR-DEV-04` и `NFR-DATA-04`.
 - Не применять serving threshold или quality-gate recommendation автоматически.
+- Не добавлять собственный HTTP error framework/envelope и не принимать
+  client decisions по тексту `5xx` response.
+- Не создавать PostgreSQL schemas/users/ACLs или независимые migration streams
+  per capability slice; не разрешать `ON DELETE` cascade пересекать ownership
+  boundary или удалять core Attempt/diagnostic evidence вместе с Photo.
 
 ## Notes
 
 - Эти правила основаны на ratified
   [.memory-bank/constitution.md](constitution.md), clarified
-  [.memory-bank/prd.md](prd.md), [IDEA_APP.md](../IDEA_APP.md) и
+  [.memory-bank/prd.md](prd.md), принятых улучшениях
+  [arch_impr1.md](../arch_impr1.md), [IDEA_APP.md](../IDEA_APP.md) и
   [IDEA_DEBUG.md](../IDEA_DEBUG.md); `IDEA_INGEST.md` сохраняется как
   historical evidence, а при конфликте действует precedence из
   [.memory-bank/spec-backbone.md](spec-backbone.md).

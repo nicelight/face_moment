@@ -15,6 +15,13 @@ status: active
 - [IDEA_DEBUG.md](../IDEA_DEBUG.md): Developer-only browser/server logging,
   investigation attempts и KISS-подбор face threshold/quality gates.
 
+## Architecture decision inputs
+
+- [arch_vision.md](../arch_vision.md): accepted reconciled KISS target
+  architecture for the greenfield pilot.
+- [arch_impr1.md](../arch_impr1.md): selected operator-approved refinements for
+  standard HTTP failure semantics and the single PostgreSQL migration boundary.
+
 ## Навигация
 
 - [.memory-bank/constitution.md](constitution.md): Project Constitution — top governing policy for agents.
@@ -42,7 +49,7 @@ status: active
 
 - [.memory-bank/spec-index.md](spec-index.md): Pure SDD spec registry and planned-spec index.
 - [.memory-bank/spec-backbone.md](spec-backbone.md): Accepted complete global
-  SDD backbone, Planning Revision and downstream readiness.
+  SDD backbone at Planning Revision 2 and downstream readiness.
 - [.memory-bank/foundation.md](foundation.md): Accepted Foundation Dev Path,
   substrate scope and pending Foundation gate.
 - `.memory-bank/user-scenarios.md`: optional user scenarios and architecture implications when created by `/spec-init` or `/spec-design`.

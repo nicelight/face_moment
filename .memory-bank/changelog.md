@@ -9,8 +9,13 @@ status: active
   fixed-snapshot hard purge that retains core Attempts and diagnostic evidence.
 - Added per-СПА 1/5/60-minute Photo processing counters with five-second Admin
   UI polling and traced the scope through `REQ-INV-*`, EP-001 and FT-012.
-- Accepted the global SDD backbone at Planning Revision 1 and recorded the
-  required greenfield Foundation Dev Path with its task gate still pending.
+- Accepted the initial global SDD backbone at Planning Revision 1 and recorded
+  the required greenfield Foundation Dev Path with its task gate still pending.
+- Advanced the backbone to Planning Revision 2 for standard HTTP transport
+  errors with typed capture/search outcomes and no custom error framework.
+- Fixed one PostgreSQL application schema, shared SQLAlchemy `Base/MetaData`,
+  one Alembic configuration/stream and ownership-safe foreign-key/cascade
+  constraints across capability slices.
 - Clarified that all application, backend, worker and deployment descriptions
   are target design; no working runtime or code exists yet.
 

@@ -28,6 +28,25 @@ Shared PostgreSQL access does not grant shared write authority. A slice may read
 a published projection; only the owner may validate and perform its command or
 transition.
 
+## Shared PostgreSQL Contract
+
+- The modular monolith uses one PostgreSQL application schema, one SQLAlchemy
+  `Base/MetaData`, one Alembic configuration and one sequential migration
+  stream.
+- Table models and repositories remain in their owning capability packages.
+  One physical schema does not permit a slice to issue foreign commands,
+  mutate foreign-owned state or duplicate another slice's business rules.
+- Cross-slice transactions are allowed only through public application
+  boundaries under the named orchestration owner; they do not create shared
+  business ownership.
+- Foreign keys and `ON DELETE` behavior are deliberate per relation. Database
+  cascade MUST NOT cross a capability ownership boundary. In particular,
+  deleting a Photo MUST NOT cascade into core Attempts or diagnostic evidence;
+  the inventory-owned hard-purge flow calls owner cleanup boundaries and
+  preserves those records.
+- Per-slice PostgreSQL schemas, database users/ACLs and independent migration
+  pipelines are outside the accepted pilot.
+
 ## External And Runtime Boundaries
 
 | Boundary | Contract | Owner | Required constraints |
@@ -38,6 +57,36 @@ transition.
 | QR browser -> application | Ticket exchange and authorized no-store session reads. | `promo`. | 30-minute first-open, shared 60-minute idle state, no per-device grants. |
 | Application/worker -> PostgreSQL | Owner-scoped state writes and published projections. | Each capability owns its rows/invariants. | Direct foreign writes are forbidden even in one database. |
 | Application/worker -> MinIO | Opaque-key private binary read/write/delete behind owner authorization/state. | `inventory` owns originals; `processing` owns derivatives; `diagnostics` owns protected evidence. | PostgreSQL state determines usability; MinIO is never a browser endpoint. |
+
+## HTTP Failure Contract
+
+The application and realtime boundaries use standard HTTP transport semantics
+without a project-specific error framework:
+
+| Status | Contract |
+|---|---|
+| `401` | Authentication is missing or invalid. |
+| `403` | The authenticated principal lacks permission. |
+| `413` | The request exceeds an accepted payload bound. |
+| `422` | Request validation fails. |
+| `429` | The applicable rate limit is exceeded. |
+| `5xx` | An internal or upstream technical failure occurred. |
+
+An admitted capture/search request returns `2xx` with a compact typed domain
+result even when its outcome is `busy`, `deadline`, `unacceptable_query` or
+`insufficient_results`. These outcomes are not transport errors. `429` is a
+rate-limit rejection, while `busy` describes the valid request's singleton-slot
+condition; `422` is request validation failure, while `unacceptable_query`
+describes evaluated query quality. Clients make decisions from the HTTP status
+and typed outcome; response prose, especially `5xx` text, is never a control
+contract. A technical failure may also be persisted on the core Attempt for
+diagnostics, but its transport signal remains `5xx`.
+
+Feature-level endpoint design may define the smallest required success payload,
+but MUST NOT add a shared custom error envelope, error-code registry or mapping
+framework. Contract verification must cover representative standard-status
+mappings and prove that admitted non-success capture/search outcomes remain
+domain outcomes.
 
 ## Cross-Slice Orchestration
 

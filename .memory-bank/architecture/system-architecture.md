@@ -32,8 +32,13 @@ speculative distributed infrastructure.
   `serving_control`, `inventory`, `processing`, `promo`, `diagnostics`.
 - PostgreSQL/pgvector owns durable state and exact vector search; private MinIO
   owns binary bytes. No shared cross-store transaction is assumed.
+- All capability tables use one PostgreSQL schema, one SQLAlchemy
+  `Base/MetaData`, one Alembic configuration and one sequential migration
+  stream; slice write ownership remains semantic, not schema-based.
 - Public browser traffic crosses the HTTPS application boundary. PostgreSQL,
   MinIO and internal process ports stay private.
+- Technical HTTP failures use standard statuses; admitted capture/search
+  requests use typed domain outcomes rather than a custom error framework.
 - No Batch, broker, ANN, multi-worker coordination, backup guarantee,
   per-photo purge state, purge jobs table or realtime statistics transport.
 
@@ -137,6 +142,39 @@ speculative distributed infrastructure.
   runnable.
 - Source: [arch_vision.md](../../arch_vision.md) section 10.
 
+#### AD-009 — Standard HTTP failures and typed domain outcomes
+- Binds: every public/staff HTTPS endpoint and the SpaPromoClient realtime
+  contract.
+- Prevents: a project-specific error envelope/framework, business outcomes
+  disguised as transport errors and client decisions based on response prose.
+- Rule: authentication, permission, payload, validation, rate-limit and
+  internal/upstream failures use the standard `401`, `403`, `413`, `422`,
+  `429` and `5xx` classes. An admitted capture/search request returns `2xx`
+  with a compact typed outcome such as `busy`, `deadline`,
+  `unacceptable_query` or `insufficient_results`; clients branch on
+  status/outcome, never `5xx` text.
+- Verification: Required boundary contract proof, not currently runnable:
+  representative transport failures map to the standard status and admitted
+  non-success search results remain typed domain outcomes.
+- Source: [arch_impr1.md](../../arch_impr1.md) section 1 and
+  [boundary map](../contracts/boundary-map.md).
+
+#### AD-010 — One PostgreSQL schema and migration stream
+- Binds: every capability table, repository, shared transaction and Foundation
+  storage baseline.
+- Prevents: per-slice PostgreSQL schemas/users/ACLs, independent migration
+  pipelines, foreign direct writes and ownership-crossing delete cascades.
+- Rule: one application schema uses one SQLAlchemy `Base/MetaData`, one Alembic
+  configuration and one sequential migration stream. Models/repositories stay
+  in owning slices; foreign keys and `ON DELETE` rules are explicit, and
+  database cascade never crosses ownership boundaries or deletes core Attempts
+  or diagnostic evidence with a Photo.
+- Verification: Required Foundation/feature proof, not currently runnable:
+  the single migration stream builds an empty database and deletion tests
+  preserve foreign-owned Attempt/evidence state.
+- Source: [arch_impr1.md](../../arch_impr1.md) section 2 and
+  [boundary map](../contracts/boundary-map.md).
+
 ## Runtime Shape
 
 ```text
@@ -194,6 +232,9 @@ dispatch these use cases; they do not contain business orchestration.
 - PostgreSQL is authoritative for identities, relationships, mutable state,
   serving settings, counters' source timestamps, Attempts, sessions and
   structured evidence.
+- PostgreSQL uses one application schema, one SQLAlchemy `Base/MetaData` and
+  one sequential Alembic migration stream. Capability packages still own their
+  table models, repositories, invariants and commands.
 - MinIO is authoritative for binary bytes only. A PostgreSQL visibility/state
   decision determines whether a private object may be read.
 - Effective `captured_at` is reliable EXIF interpreted in the СПА timezone,
@@ -207,7 +248,8 @@ dispatch these use cases; they do not contain business orchestration.
 
 Detailed lifecycle rules are in the
 [lifecycle map](../states/lifecycle-map.md); write directions are in the
-[boundary map](../contracts/boundary-map.md).
+[boundary map](../contracts/boundary-map.md), including HTTP failure semantics,
+shared-schema ownership and cascade limits.
 
 ## Deployment And Recovery
 
@@ -234,6 +276,7 @@ Detailed lifecycle rules are in the
 ## Verification Route
 
 The repository currently has no runnable code. Foundation establishes the
-build/start/test commands and one storage/runtime smoke; feature work later owns
-the proof targets named in the Architecture Spine. The bootstrap
+build/start/test commands, one linear migration-from-empty proof and one
+storage/runtime smoke; feature work later owns the HTTP contract and
+ownership-safe deletion proofs named in the Architecture Spine. The bootstrap
 [testing policy](../testing/index.md) remains the quality-gate router.

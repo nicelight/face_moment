@@ -21,6 +21,8 @@ The recommendation preserves these accepted product constraints:
 | Role-scoped Photo Inventory Operations and direct PostgreSQL statistics. | Soft deletion is reversible, one global hard purge reuses the shared worker, and 1/5/60-minute counters do not justify another queue, service or realtime transport. |
 | Client-generated attempt ID plus a separate display acknowledgement. | Server response proves result construction, while only the client can prove that four teasers and a scannable QR were actually visible. |
 | One session-wide browser access state per QR ticket. | Scans during the 30-minute first-open window reuse the same Promo session and shared 60-minute idle state; per-device grant rows add state that the current pilot does not need. |
+| Standard HTTP errors plus compact domain outcomes. | Conventional transport semantics keep backend/client contracts small; accepted capture/search outcomes are not disguised as technical failures. |
+| One PostgreSQL schema and one sequential migration stream. | Capability slices are ownership boundaries inside one deployable, not independently administered database services. |
 | No backup in the MVP. | Loss of the only disk/server is an accepted data-loss event; recovery covers intact primary volumes and ordinary process/host restarts. |
 | Extension seams for selfie search, payment and original download. | Stable identifiers and ownership boundaries reduce future migration cost without creating unused MVP code. |
 
@@ -36,6 +38,8 @@ The recommendation preserves these accepted product constraints:
 | Realtime transport | One synchronous HTTPS request and one idempotent display acknowledgement. | The initiating display is the only result consumer; WebSocket/SSE reconnection state would not remove the need for the acknowledgement. |
 | Background queue | `photo_pipeline_states` in PostgreSQL, consumed by exactly one configured worker replica. | A row-state queue closes the current at-least-once requirement; advisory locks, fencing tokens and a broker protect concurrency excluded from the target pilot topology. |
 | Search | Exact pgvector cosine search after pipeline/СПА/date filtering. | The pilot data set is bounded; ANN introduces recall and index-management risk before a measured bottleneck. |
+| HTTP failures | Standard HTTP statuses for authentication, authorization, payload, validation, rate-limit and internal/upstream failures; compact domain outcomes for accepted capture/search requests. | A custom error framework would add an envelope, mapping layer and client dependency without comparable value for one backend. |
+| Database layout | One PostgreSQL schema, one SQLAlchemy `Base/MetaData`, one Alembic configuration and one sequential migration stream. | Per-slice schemas/users/ACLs and independent migration pipelines would imitate service isolation inside one deployable and complicate shared transactions, joins and operations. |
 | Documentation shape | A small `split-core-docs` set: system architecture, boundary map and applicable lifecycle/security contracts. | A document per edge case creates drift, while one giant document hides the few important contracts. |
 | Reliability | Automatic recovery from crashes, restart-from-scratch jobs and manual recovery for rare hangs. | Enterprise split-brain, zero-downtime and automated hang recovery cost more than their pilot value. |
 | Foundation | A minimal executable walking skeleton before feature work. | Greenfield runtime/storage/native compatibility is shared by all features; extensive recovery or browser matrices are cheaper inside the owning features. |
@@ -130,12 +134,47 @@ The shared database permits published read projections while retaining one
 write owner per invariant. Foreign direct writes, a generic Unit-of-Work
 framework, an event bus and an outbox are not recommended for the pilot.
 
+All capability tables remain in one PostgreSQL schema and use one shared
+SQLAlchemy `Base/MetaData`, one Alembic configuration and one sequential
+migration stream. Table models and repositories stay in their owning
+capability packages. This physical layout does not grant cross-slice command or
+write authority. Foreign keys and `ON DELETE` actions are chosen explicitly;
+database cascade must not cross an ownership boundary and must never delete a
+core Attempt or diagnostic evidence as a side effect of deleting a Photo.
+
 `inventory` orchestrates Photo Inventory Operations through the owning slice
 boundaries. Soft delete/restore changes only the inventory-owned Photo
 visibility marker. Hard purge may remove state owned by `processing` and
 `promo`, but it does so through their cleanup commands rather than by
 duplicating their invariants. Core Attempts and diagnostic evidence remain
 owned by `promo`/`diagnostics` and are not hard-purge targets.
+
+### HTTP failure semantics
+
+Technical request failures use conventional HTTP semantics without a
+project-specific error framework:
+
+| HTTP status | Meaning in the pilot |
+|---|---|
+| `401` | Authentication is absent or invalid. |
+| `403` | The authenticated principal lacks permission. |
+| `413` | The accepted payload bound is exceeded. |
+| `422` | Request validation fails. |
+| `429` | The applicable rate limit is exceeded. |
+| `5xx` | An internal or upstream technical failure occurred. |
+
+An admitted capture/search request may instead finish with a successful
+transport response (`2xx`) and a compact domain outcome such as `busy`,
+`deadline`, `unacceptable_query` or `insufficient_results`. These are normal
+business results, not transport errors. `429` denotes rate-limit rejection,
+whereas `busy` reports the accepted singleton-slot condition; `422` denotes
+request validation failure, whereas `unacceptable_query` reports evaluated
+query quality. The client branches on the HTTP status and typed domain outcome
+and never parses response prose, especially `5xx` text. A technical failure may
+still be persisted on the core Attempt for diagnostics, but its transport
+signal remains `5xx`. Concrete endpoint payloads remain feature-level
+contracts; they must not introduce a shared custom error envelope or
+error-mapping framework.
 
 ## 6. Serving context and pipeline changes
 
@@ -273,7 +312,8 @@ Recommended startup path:
 
 ```text
 PostgreSQL and MinIO healthy
-→ one migrate/init command applies schema and ensures buckets
+→ one migrate/init command applies the single sequential Alembic stream to the
+  one application schema and ensures buckets
 → backend, worker and realtime start or fail fast
 → realtime becomes ready after exact active-model warmup
 ```
@@ -453,7 +493,9 @@ Payment-provider abstractions, order tables, webhooks and original-download endp
 `Foundation Required: true` is recommended because the repository has no executable runtime. The recommended Foundation scope is limited to:
 
 - reproducible build/typecheck/test commands;
-- one migrate/init command;
+- one migrate/init command using one PostgreSQL schema, shared SQLAlchemy
+  `Base/MetaData`, one Alembic configuration and one sequential migration
+  stream;
 - Compose PostgreSQL/pgvector and MinIO with persistent primary volumes;
 - backend/worker/realtime entrypoints using a fake FaceEngine;
 - one PostgreSQL and MinIO read/write/delete roundtrip;
@@ -490,6 +532,7 @@ Recommended minimum feature proofs:
 | Payment/selfie/download implementation | Full-version feature activation | Only stable identifiers and ownership seams have current value. |
 | Backup/replication/snapshots | Before paid flow or public rollout, or after a new operator durability decision | The current pilot explicitly accepts loss of the only disk/server. |
 | Per-photo purge state/jobs, separate purge worker, counter materialization, WebSocket/SSE statistics | Measured purge or five-second polling failure | One global run, the shared worker and direct PostgreSQL queries satisfy current operations with less state. |
+| Per-slice PostgreSQL schemas/users/ACLs or independent migration streams | A slice becomes an independently deployed and operated service with an accepted migration plan. | The current capability slices share one deployable and gain no useful isolation from service-shaped database administration. |
 
 ## 16. Accepted pilot risks
 
