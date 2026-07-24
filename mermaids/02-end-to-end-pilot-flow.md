@@ -23,7 +23,9 @@ flowchart TD
         advertising["Локальная реклама"]
         trigger["Sensor trigger"]
         reference["Client-generated attempt_id<br/>ring buffer + reference series"]
-        attempt["Core Attempt до inference"]
+        admitted{"Request admitted<br/>by server?"}
+        offline["Client-only offline:<br/>вернуться к рекламе без cooldown<br/>5–10 sec: Попытка связи с сервером<br/>была не успешна в hh:mm:ss<br/>новое сообщение может заменить старое<br/>metadata best-effort, server record может отсутствовать"]
+        attempt["Server-admitted core Attempt<br/>до inference"]
         exact["Exact cosine search:<br/>revision + СПА + active visit_date + threshold"]
         assemble["session_result_photo_ids = unique union<br/>pHash ранжирует только valid matches"]
         enough{"Есть 4 уникальных<br/>threshold-valid teasers?"}
@@ -41,7 +43,7 @@ flowchart TD
         external["Post-pilot selfie-search / purchase page"]
     end
 
-    evidence["Core Attempt обязателен<br/>detailed evidence best-effort<br/>gap = incomplete"]
+    evidence["Для server-admitted request:<br/>core Attempt обязателен<br/>detailed evidence best-effort<br/>gap = incomplete"]
 
     start --> upload --> validate
     validate -- "нет" --> reject
@@ -50,7 +52,9 @@ flowchart TD
     searchable -- "нет" --> breach
 
     inventory --> advertising
-    advertising --> trigger --> reference --> attempt --> exact --> assemble --> enough
+    advertising --> trigger --> reference --> admitted
+    admitted -- "нет: client-only offline" --> offline --> advertising
+    admitted -- "да" --> attempt --> exact --> assemble --> enough
     enough -- "нет" --> failure --> advertising
     enough -- "да" --> issued --> render --> ack --> scan --> valid
     valid -- "да" --> landing --> external

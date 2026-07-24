@@ -53,8 +53,9 @@ flowchart TD
 
     subgraph inventory["Inventory visibility and project-wide purge"]
         active["Photo active<br/>доступна согласно pipeline state"]
-        soft["Photo soft_deleted<br/>все данные сохранены<br/>search/media/stats excluded"]
+        soft["Photo soft_deleted<br/>все данные сохранены<br/>new search/results/stats excluded<br/>issued-session media остаётся доступной"]
         select["СПА + visit_date + captured_at range<br/>photographer: own uploads<br/>operator/developer: accessible СПА"]
+        restore_guard{"Target Photo входит в confirmed<br/>non-terminal purge snapshot?"}
         restore_all["restore all soft deleted<br/>весь проект"]
         confirm["Confirm hard delete ALL softed media<br/>зафиксировать global snapshot"]
         reject_restore["Reject restore snapshot members<br/>до completed"]
@@ -68,10 +69,11 @@ flowchart TD
         create --> active
         select --> active
         active -->|"soft delete"| soft
-        soft -->|"restore"| active
-        restore_all --> active
+        soft -->|"restore"| restore_guard
+        restore_all --> restore_guard
+        restore_guard -- "да" --> reject_restore
+        restore_guard -- "нет" --> active
         soft --> confirm --> wait --> purge --> remove --> done
-        confirm --> reject_restore
         remove -.-> retain
         active -.-> stats
     end
