@@ -15,12 +15,13 @@ status: active
 - [IDEA_DEBUG.md](../IDEA_DEBUG.md): Developer-only browser/server logging,
   investigation attempts и KISS-подбор face threshold/quality gates.
 
-## Architecture decision inputs
+## Architecture decision authority
 
-- [arch_vision.md](../arch_vision.md): accepted reconciled KISS target
-  architecture for the greenfield pilot.
-- [arch_impr1.md](../arch_impr1.md): selected operator-approved refinements for
-  standard HTTP failure semantics and the single PostgreSQL migration boundary.
+- [.memory-bank/spec-backbone.md](spec-backbone.md): authority order, coverage
+  matrix and current Planning Revision.
+- [.memory-bank/architecture/system-architecture.md](architecture/system-architecture.md)
+  and [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md):
+  accepted architecture decisions and boundary contracts.
 
 ## Навигация
 
@@ -65,7 +66,8 @@ status: active
 - [.memory-bank/domains/](domains/): Subject-based domain models, storage, schemas, migrations, and persistence rules.
 - [.memory-bank/contracts/](contracts/): Контракты и boundary specs (prefer when present).
 - [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md): Canonical
-  capability ownership, application boundaries and cross-slice write rules.
+  capability ownership, cross-store/auth/media contracts, application
+  boundaries and cross-slice write rules.
 - [.memory-bank/states/](states/): Lifecycle/state rules (prefer when present).
 - [.memory-bank/states/lifecycle-map.md](states/lifecycle-map.md): Canonical
   Photo, processing, inventory, purge, Promo and diagnostics lifecycles.

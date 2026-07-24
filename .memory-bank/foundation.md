@@ -30,8 +30,9 @@ diagnostics and Photo Inventory Operations remain product-feature behavior.
 - Test command: not_available - Foundation must establish one project-native test command.
 - Evidence: successful commands plus migration from an empty database through
   one SQLAlchemy `Base/MetaData`/Alembic path, PostgreSQL and MinIO
-  read/write/delete, realtime warmup seam, SpaPromoClient build and one
-  substrate end-to-end smoke.
+  read/write/delete, actual OpenCV/InsightFace imports in the target container,
+  realtime warmup seam, SpaPromoClient build and one substrate end-to-end
+  smoke.
 
 ## Feature Pressure Map
 

@@ -10,9 +10,10 @@ source_of_truth:
 ## Status And Scope
 
 The repository has no working backend or runtime. This map constrains the
-target implementation described by [arch_vision.md](../../arch_vision.md) and
-the [system architecture](../architecture/system-architecture.md); it does not
-describe existing code.
+accepted target implementation together with the
+[system architecture](../architecture/system-architecture.md) and
+[lifecycle map](../states/lifecycle-map.md); it does not describe existing
+code.
 
 ## Capability Boundaries
 
@@ -47,6 +48,28 @@ transition.
 - Per-slice PostgreSQL schemas, database users/ACLs and independent migration
   pipelines are outside the accepted pilot.
 
+## PostgreSQL And MinIO Convergence
+
+- The backend writes each upload candidate under a unique opaque MinIO key,
+  then validates JPEG type, compressed size, decoded dimensions/pixels and
+  SHA-256. The browser never receives direct MinIO access.
+- PostgreSQL uniqueness on `(spa_id, visit_date, checksum_sha256)` is the
+  concurrent-admission arbiter. A duplicate creates no Photo or processing
+  state and deletes only its own candidate object; an accepted Photo keeps its
+  initial key without object move/copy.
+- The per-Photo PostgreSQL commit publishes `Photo + accepted_at + pending`.
+  A crash before commit may leave a private orphan and lose that admission;
+  retrying the upload is sufficient.
+- Derived media keys are deterministic by
+  `(photo_id, pipeline_revision_id, artifact_kind)`, so the singleton worker may
+  overwrite them safely before atomically replacing face rows and terminal
+  processing state.
+- Retryable cleanup first makes data inaccessible through owner state, then
+  performs idempotent MinIO deletion, then finalizes owning database cleanup.
+  No distributed transaction or per-object recovery lifecycle is required.
+- MinIO versioning and external volume snapshots remain disabled while the
+  no-backup pilot decision is active.
+
 ## External And Runtime Boundaries
 
 | Boundary | Contract | Owner | Required constraints |
@@ -57,6 +80,42 @@ transition.
 | QR browser -> application | Ticket exchange and authorized no-store session reads. | `promo`. | 30-minute first-open, shared 60-minute idle state, no per-device grants. |
 | Application/worker -> PostgreSQL | Owner-scoped state writes and published projections. | Each capability owns its rows/invariants. | Direct foreign writes are forbidden even in one database. |
 | Application/worker -> MinIO | Opaque-key private binary read/write/delete behind owner authorization/state. | `inventory` owns originals; `processing` owns derivatives; `diagnostics` owns protected evidence. | PostgreSQL state determines usability; MinIO is never a browser endpoint. |
+
+## Authentication And Protected Delivery
+
+- `platform/auth` owns staff principals, credentials and server sessions only.
+  It supports CLI provision/reset/deactivate, Argon2id or bcrypt password
+  hashing, hashed opaque PostgreSQL sessions with one short absolute TTL,
+  logout/revoke and CSRF protection. Photographer, operator and developer
+  authorization remains in the owning capability.
+- SpaPromoClient sends a high-entropy token in the Authorization header;
+  PostgreSQL stores only its hash and the server derives `spa_id`. Client input
+  cannot override that identity.
+- Public capture/continuation requests have bounded frame count, compressed
+  bytes, decoded dimensions/pixels, decode validation and simple per-token/IP
+  rate limits. Use same-origin delivery where possible; otherwise allow only
+  the configured SpaPromoClient origin.
+- Previews, teasers and diagnostic artifacts are backend-proxied with
+  authorization and `no-store` delivery on every read. Raw MinIO keys and
+  participant-facing presigned URLs are outside the pilot.
+- Display media reads require the SpaPromoClient token plus opaque
+  Attempt/session references. Phone media reads require the Promo session
+  cookie.
+
+QR ticket exchange is fixed:
+
+1. `GET /q?ticket=<opaque>` validates the ticket hash and 30-minute first-open
+   window.
+2. The backend opens or reuses the Promo session's single browser access state,
+   sets the opaque credential in an `HttpOnly Secure SameSite=Lax` cookie and
+   returns `303` to a token-free session URL.
+3. This route omits the query string from access logs and returns
+   `Cache-Control: no-store` and `Referrer-Policy: no-referrer`.
+
+The session stores one `qr_ticket_hash`, `browser_opened_at` and shared
+`browser_last_seen_at`. Explicit navigation/action from any opened phone
+extends the shared 60-minute idle state; asset loads and background polling do
+not.
 
 ## HTTP Failure Contract
 
@@ -87,6 +146,22 @@ but MUST NOT add a shared custom error envelope, error-code registry or mapping
 framework. Contract verification must cover representative standard-status
 mappings and prove that admitted non-success capture/search outcomes remain
 domain outcomes.
+
+## Realtime Idempotency And Client Retry
+
+- The client creates one UUID `attempt_id` when an idle sensor trigger is
+  accepted. For a server-admitted request, `(spa_id, attempt_id)` is the
+  idempotency/correlation key; a repeat returns existing state and never starts
+  inference twice.
+- `promo` persists the core Attempt before inference. The server deadline is
+  shorter than the client timeout; a late native return cannot publish a
+  result.
+- Browser-retryable commands are idempotent. Upload retry uses ordinary checksum
+  arbitration; there is no resumable-upload lifecycle.
+- An authenticated client-event upsert may accept delayed offline metadata by
+  `(spa_id, attempt_id)`. The client outbox contains only short-lived diagnostic
+  metadata and `cooldown_until`; frames, tokens and personalized results remain
+  memory-only. Delivery is best-effort and may be lost on expiry or restart.
 
 ## Cross-Slice Orchestration
 

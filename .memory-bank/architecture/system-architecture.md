@@ -11,11 +11,11 @@ source_of_truth:
 
 - Face Moment is in documentation/design: no working application, backend,
   worker, database schema or deployed runtime exists yet.
-- [arch_vision.md](../../arch_vision.md) is the accepted target-architecture
-  source. [.memory-bank/prd.md](../prd.md) owns product behavior and acceptance.
-- This document, the [boundary map](../contracts/boundary-map.md) and
-  [lifecycle map](../states/lifecycle-map.md) are the canonical compact SDD
-  projection of that accepted target.
+- This document, the [boundary map](../contracts/boundary-map.md),
+  [lifecycle map](../states/lifecycle-map.md) and
+  [Foundation decision](../foundation.md) are the canonical accepted
+  architecture bundle. [.memory-bank/prd.md](../prd.md) owns product behavior
+  and acceptance.
 
 ## System Goal
 
@@ -28,6 +28,9 @@ speculative distributed infrastructure.
 
 - One central CPU-only server, one display client and one configured replica of
   each long-running server role.
+- Ordinary process/browser crashes recover automatically; background work
+  restarts safely from durable state. Maintenance downtime and manual restart
+  for a rare native hang are accepted.
 - Five capability packages for the current pilot:
   `serving_control`, `inventory`, `processing`, `promo`, `diagnostics`.
 - PostgreSQL/pgvector owns durable state and exact vector search; private MinIO
@@ -50,24 +53,27 @@ speculative distributed infrastructure.
 - Binds: all pilot features and runtime entrypoints.
 - Prevents: microservices, technical-layer slices and a speculative sixth
   commerce slice.
-- Rule: one Python/FastAPI modular monolith supplies five capability packages;
-  `backend`, one `BackgroundPhotoWorker` and one `RealtimeFaceService` are
-  process entrypoints over the same release. The composition root owns only
-  settings, adapters, wiring, lifecycle, start and shutdown.
+- Rule: one repository and Python/FastAPI modular monolith supply five
+  capability packages; `backend`, one `BackgroundPhotoWorker` and one
+  `RealtimeFaceService` are process entrypoints over the same release. The
+  composition root owns only settings, adapters, wiring, lifecycle, start and
+  shutdown.
 - Verification: Required Foundation proof, not currently runnable: all three
   entrypoints start against fake adapters from one release.
-- Source: [arch_vision.md](../../arch_vision.md) sections 2–4.
+- Source: accepted operator architecture decision, recorded in this
+  Architecture Spine.
 
 #### AD-002 — One write owner per mutable invariant
 - Binds: shared PostgreSQL access and every cross-slice use case.
 - Prevents: foreign direct writes, duplicated business rules, generic
   Unit-of-Work/event-bus/outbox machinery and orchestration in HTTP/UI handlers.
 - Rule: a slice may read a published projection, but commands and transitions
-  pass through the owning slice's application boundary. Cross-slice
-  orchestration lives in the capability that owns the user-visible outcome.
+  use direct typed Python calls through the owning slice's application
+  boundary. Cross-slice orchestration lives in the capability that owns the
+  user-visible outcome.
 - Verification: Required feature-level integration proof, not currently
   runnable: each cross-slice flow changes state only through the named owner.
-- Source: [arch_vision.md](../../arch_vision.md) sections 4–5 and
+- Source: accepted operator architecture decision and the
   [boundary map](../contracts/boundary-map.md).
 
 #### AD-003 — Independent per-photo durable admission
@@ -79,7 +85,8 @@ speculative distributed infrastructure.
   `(spa_id, visit_date, checksum_sha256)`. MinIO remains outside the transaction.
 - Verification: Required FT-001/FT-002 proof, not currently runnable:
   concurrent duplicates yield one Photo and accepted work survives restart.
-- Source: [arch_vision.md](../../arch_vision.md) sections 5 and 7.
+- Source: [.memory-bank/prd.md](../prd.md) `FR-ING-01..08` and the
+  [lifecycle map](../states/lifecycle-map.md).
 
 #### AD-004 — Singleton background execution with restart from the beginning
 - Binds: Photo processing, Calibration and global hard purge.
@@ -91,7 +98,8 @@ speculative distributed infrastructure.
   current operation and then reuses the same worker.
 - Verification: Required FT-002/FT-011/FT-012 restart proofs, not currently
   runnable.
-- Source: [arch_vision.md](../../arch_vision.md) sections 8 and 11.
+- Source: [.memory-bank/prd.md](../prd.md) `NFR-REL-04`, `FR-DEV-11`,
+  `FR-INV-07..09` and the [lifecycle map](../states/lifecycle-map.md).
 
 #### AD-005 — Inventory owns visibility, statistics and permanent removal
 - Binds: FT-012 and every consumer of Photo/media.
@@ -107,8 +115,8 @@ speculative distributed infrastructure.
   are direct PostgreSQL queries polled every five seconds.
 - Verification: Required FT-012 proof, not currently runnable: authorization,
   hide/restore, exact counters and restartable fixed-snapshot purge.
-- Source: [.memory-bank/prd.md](../prd.md) FR-INV-01..11 and
-  [arch_vision.md](../../arch_vision.md) section 7.
+- Source: [.memory-bank/prd.md](../prd.md) `FR-INV-01..11` and the
+  [boundary map](../contracts/boundary-map.md).
 
 #### AD-006 — Bounded realtime request and explicit display success
 - Binds: automatic capture, search, Promo and performance acceptance.
@@ -121,7 +129,8 @@ speculative distributed infrastructure.
   the result-display window; no scheduler or acknowledgement outbox exists.
 - Verification: Required FT-003..FT-005 controlled 20-attempt proof, not
   currently runnable.
-- Source: [arch_vision.md](../../arch_vision.md) sections 8–9.
+- Source: [.memory-bank/prd.md](../prd.md) `FR-CAP-01..08`,
+  `FR-UX-01..09` and the [lifecycle map](../states/lifecycle-map.md).
 
 #### AD-007 — Core Attempt survives best-effort evidence
 - Binds: Promo, diagnostics, retention and hard purge.
@@ -136,7 +145,8 @@ speculative distributed infrastructure.
   diagnostic evidence; clients skip unavailable media.
 - Verification: Required FT-007/FT-012 integration proof, not currently
   runnable.
-- Source: [arch_vision.md](../../arch_vision.md) sections 5, 9 and 11.
+- Source: [.memory-bank/prd.md](../prd.md) `FR-DIAG-01..05`,
+  `NFR-DATA-01..04` and the [lifecycle map](../states/lifecycle-map.md).
 
 #### AD-008 — Session-wide QR continuation
 - Binds: Promo session authorization and participant media delivery.
@@ -147,7 +157,8 @@ speculative distributed infrastructure.
   no-store backend reads.
 - Verification: Required FT-006 multi-phone expiry proof, not currently
   runnable.
-- Source: [arch_vision.md](../../arch_vision.md) section 10.
+- Source: [.memory-bank/prd.md](../prd.md) `FR-UX-03..10` and the
+  [boundary map](../contracts/boundary-map.md).
 
 #### AD-009 — Standard HTTP failures and typed domain outcomes
 - Binds: every public/staff HTTPS endpoint and the SpaPromoClient realtime
@@ -163,7 +174,7 @@ speculative distributed infrastructure.
 - Verification: Required boundary contract proof, not currently runnable:
   representative transport failures map to the standard status and admitted
   non-success search results remain typed domain outcomes.
-- Source: [arch_impr1.md](../../arch_impr1.md) section 1 and
+- Source: accepted contract recorded in the
   [boundary map](../contracts/boundary-map.md).
 
 #### AD-010 — One PostgreSQL schema and migration stream
@@ -179,8 +190,39 @@ speculative distributed infrastructure.
 - Verification: Required Foundation/feature proof, not currently runnable:
   the single migration stream builds an empty database and deletion tests
   preserve foreign-owned Attempt/evidence state.
-- Source: [arch_impr1.md](../../arch_impr1.md) section 2 and
+- Source: accepted contract recorded in the
   [boundary map](../contracts/boundary-map.md).
+
+#### AD-011 — Idempotent PostgreSQL/MinIO convergence
+- Binds: Photo admission, derived media publication, hard purge and retention
+  cleanup.
+- Prevents: a distributed transaction emulator, public object-store access,
+  hidden retained versions and per-object recovery lifecycles.
+- Rule: committed PostgreSQL state decides whether a private MinIO object is
+  usable. Admission uses a unique opaque object key and database uniqueness;
+  a pre-commit crash may leave a private orphan. Derived keys are deterministic
+  by Photo, pipeline revision and artifact kind. Cleanup first makes data
+  inaccessible, then performs idempotent object deletion, then finalizes the
+  owning database cleanup. MinIO versioning and external volume snapshots stay
+  disabled while the no-backup pilot decision is active.
+- Verification: Required FT-001/FT-002/FT-012 proof, not currently runnable:
+  duplicate/orphan handling and repeated cleanup converge without exposing
+  foreign or deleted media.
+- Source: [.memory-bank/prd.md](../prd.md) `FR-ING-03..06`,
+  `NFR-SEC-01`, the [boundary map](../contracts/boundary-map.md) and
+  [lifecycle map](../states/lifecycle-map.md).
+
+#### AD-012 — Manual serving-revision switch with accepted downtime
+- Binds: changes to the active face pipeline or model revision.
+- Prevents: hot-switch orchestration, automated admission choreography and
+  automatic rollback machinery.
+- Rule: stop participant realtime, validate the target revision, update the
+  active pointer, start and warm realtime, run one smoke attempt, then resume.
+  A failed smoke returns the pointer to the prior revision and repeats warmup.
+- Verification: Required serving-control/processing integration proof, not
+  currently runnable: incompatible work is never served and a failed smoke
+  restores the prior pointer.
+- Source: accepted operator KISS decision, recorded in this Architecture Spine.
 
 ## Runtime Shape
 
@@ -198,9 +240,12 @@ SpaPromoClient
 └── local advertising, capture ring buffer, Promo render and display ack
 ```
 
-All server roles use the same release and capability packages. Process
+All server roles use the same release image and capability packages. Process
 separation protects realtime latency and long-running background work; it is
-not a microservice boundary.
+not a microservice boundary. Realtime loads only the active model; worker and
+realtime reuse the same revisioned FaceEngine implementations. One realtime
+slot, one sequential background operation and conservative native thread caps
+are the initial CPU policy.
 
 ## Capability Ownership
 
@@ -235,6 +280,19 @@ These roots are discovery locations, not task write boundaries.
 HTTP/UI handlers and the composition root only authenticate, validate and
 dispatch these use cases; they do not contain business orchestration.
 
+## Serving Snapshot And Revision Change
+
+Each Attempt copies one immutable serving snapshot:
+
+- `settings_revision`, `spa_id`, `visit_date`;
+- `pipeline_revision_id`, `pipeline_code`, `query_source=reference`;
+- threshold, quality settings and optional `calibration_id`;
+- `release_id`.
+
+The copied values are the reproducibility contract; the pilot does not add a
+versioned configuration platform. Serving-revision changes follow AD-012 and
+accept maintenance downtime.
+
 ## Data And Storage Flow
 
 - PostgreSQL is authoritative for identities, relationships, mutable state,
@@ -264,24 +322,86 @@ shared-schema ownership and cascade limits.
 ## Deployment And Recovery
 
 - A future Compose-based single-server deployment uses persistent primary
-  PostgreSQL and MinIO volumes and restart policies for server roles.
+  PostgreSQL and MinIO volumes. One migrate/init command applies the single
+  Alembic stream and ensures private buckets before backend, worker and realtime
+  start or fail fast; realtime is ready only after exact active-model warmup.
+- The static HTTPS edge returns ordinary `502/503` while an upstream is
+  unavailable. Restart policies cover edge, backend, worker, realtime,
+  PostgreSQL and MinIO; a systemd user service restarts SpaPromoClient/Chromium.
+  No separate readiness orchestrator is required for this stop-the-world
+  deployment.
 - Process crashes restart automatically. Photo work restarts from the
   beginning; realtime work is closed as interrupted and not replayed.
 - An in-progress upload is not interrupted by hard purge. Ordinary upload may
   continue and add normal `pending` work while the shared worker is occupied.
+- Native-operation timing/health remains observable. A rare native hang may
+  require manual `docker compose restart`; no watchdog/subprocess isolation is
+  required without reproduced hangs.
+- One idempotent daily cleanup command expires logs and diagnostic data; it may
+  run through the shared worker or a simple host timer.
 - Backup, replication, zero-downtime deployment and automated recovery from
   native hangs are outside the accepted pilot.
+
+## Low-Cost Extension Seams
+
+- Preserve immutable `photo_id`, result/session identity and the exact result
+  `photo_id` set.
+- Keep `query_source` extensible while the pilot serves only `reference`; the
+  processing query boundary must not assume one camera transport.
+- A future selfie flow may reuse `promo` orchestration and `processing` search
+  only after its privacy and retention decisions are accepted.
+- Future payment/entitlement remains an internal `promo` module while it is one
+  local continuation. An order may copy an immutable result/СПА/date/commercial
+  snapshot; `inventory` remains original owner and may issue a short-lived
+  download only after a promo-owned entitlement check.
+- A sixth `commerce` slice requires independent deployment, regulatory
+  ownership or demonstrated reuse. Activating paid delivery also reopens the
+  no-backup durability decision.
+
+These seams authorize stable identifiers and boundaries only. They do not
+authorize selfie endpoints, payment tables/webhooks or original-download
+implementation in the pilot.
 
 ## Deferred Decisions
 
 | Decision | Deferred because | Revisit when |
 |---|---|---|
 | Exact camera/sensor transport | Pilot hardware is not selected. | Site hardware is selected before FT-003 implementation. |
+| Client app-shell transport | Browser-native hardware favors a versioned Service Worker app shell; bridge-only hardware favors a client adapter serving the same bundle. The bridge is not a capability slice; building both paths or a generic device-plugin framework has no current value. | Site hardware selects the required adapter. |
 | Multiple worker/realtime replicas and coordination | Singleton topology is accepted. | Measured throughput/availability failure. |
+| Leases, fencing and claim-scoped derived keys | One configured worker prevents stale concurrent publication. | More than one worker or overlapping deployments are accepted. |
+| Killable inference subprocess/watchdog | Ordinary crashes already restart; hang isolation adds failure surface. | A native hang is reproduced and requires intervention. |
+| Broker, generic scheduler or reliable-delivery outbox | Owner-specific PostgreSQL rows and direct calls cover current durable flows. | A required durable workflow no longer fits those mechanisms. |
 | ANN or external vector store | Exact scoped search has no measured failure. | Representative benchmark misses the latency target. |
+| Automated pipeline switching/rollback | Maintenance downtime and manual rollback are accepted. | Revision switching becomes frequent enough to create measured operational cost. |
 | Presigned media delivery | Authorized backend proxy is simpler. | Backend bandwidth is a measured bottleneck. |
 | Backup/replication/snapshots | Loss of the sole primary is accepted. | Paid/public scope or a new durability decision. |
 | Purge jobs/per-photo state or materialized counters | The accepted global-run and direct-query design satisfies the pilot. | Measured purge/polling failure. |
+| GPU, Kubernetes, external observability, cpuset, dynamic priority or pause/resume scheduling | One CPU server with conservative thread caps has no measured failure. | Site measurements prove a compute, deployment or diagnostic limit. |
+| Payment, selfie and original delivery | Only low-cost identity/ownership seams have current value. | The corresponding post-pilot product scope is accepted. |
+| Per-slice database administration | One deployable shares transactions, joins and operations. | A slice becomes independently deployed and receives an accepted migration plan. |
+
+## Accepted Pilot Risks
+
+These risks do not authorize extra lifecycle or recovery machinery:
+
+- Loss of the sole primary disk/server may destroy all persisted data.
+- A crash between MinIO upload and PostgreSQL commit may leave one private
+  orphan and require one Photo re-upload.
+- During an unfinished multi-file upload, readers and metrics may see only the
+  compatible `ready` subset; there is no Batch-level SLO.
+- Calibration may occupy the shared worker and delay Photo processing; after
+  interruption the developer reruns it manually.
+- A Photo admitted under the wrong selected СПА/date has no dedicated correction
+  workflow in the pilot.
+- Effective `captured_at` may be approximate when EXIF is unreliable and the
+  upload-start or 01:00 fallback is used.
+- Global hard purge may delay processing while uploads continue to accumulate
+  normal `pending` work.
+- Client-only offline attempt metadata may expire or be lost on Chromium
+  restart without creating a server Attempt.
+- Hard purge may leave an issued session with fewer loadable media items and an
+  historical `N`; clients skip missing media without session reconstruction.
 
 ## Verification Route
 

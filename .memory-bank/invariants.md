@@ -76,10 +76,12 @@ source_of_truth:
 
 - Эти правила основаны на ratified
   [.memory-bank/constitution.md](constitution.md), clarified
-  [.memory-bank/prd.md](prd.md), принятых улучшениях
-  [arch_impr1.md](../arch_impr1.md), [IDEA_APP.md](../IDEA_APP.md) и
-  [IDEA_DEBUG.md](../IDEA_DEBUG.md); `IDEA_INGEST.md` сохраняется как
-  historical evidence, а при конфликте действует precedence из
+  [.memory-bank/prd.md](prd.md), зарегистрированных
+  [system architecture](architecture/system-architecture.md) и
+  [boundary contracts](contracts/boundary-map.md), а также
+  [IDEA_APP.md](../IDEA_APP.md) и [IDEA_DEBUG.md](../IDEA_DEBUG.md);
+  `IDEA_INGEST.md` сохраняется как historical evidence, а при конфликте
+  действует precedence из
   [.memory-bank/spec-backbone.md](spec-backbone.md).
 - Ссылайся на этот файл из архитектурных, контрактных и execution docs, если
   правило является cross-cutting.

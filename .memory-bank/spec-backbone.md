@@ -8,11 +8,10 @@ last_updated: 2026-07-24
 ## Review Status
 - Acceptance: accepted
 - State: ready
-- Notes: Reconciled through `/spec-design` from the operator-accepted
-  [architecture source](../arch_vision.md), selected
-  [architecture improvements](../arch_impr1.md), clarified product sources and
-  the accepted KISS session/offline-attempt/purge decisions of 2026-07-24. No
-  working application/backend/runtime exists yet.
+- Notes: Reconciled through `/spec-design` into the canonical architecture,
+  boundary, lifecycle and Foundation specs from accepted operator decisions,
+  clarified product sources and the KISS session/offline-attempt/purge
+  decisions of 2026-07-24. No working application/backend/runtime exists yet.
 
 ## Global Backbone Status
 - Status: complete
@@ -36,15 +35,13 @@ Target authority is applied in this order:
 
 1. [.memory-bank/constitution.md](constitution.md) and explicit accepted
    operator decisions;
-2. [arch_impr1.md](../arch_impr1.md) for the accepted HTTP-failure and
-   PostgreSQL schema/migration refinements;
-3. [arch_vision.md](../arch_vision.md) for the reconciled accepted target
-   architecture;
-4. [.memory-bank/prd.md](prd.md), [.memory-bank/requirements.md](requirements.md)
+2. the registered [system architecture](architecture/system-architecture.md),
+   [boundary map](contracts/boundary-map.md),
+   [lifecycle map](states/lifecycle-map.md) and
+   [Foundation decision](foundation.md) for the accepted technical target;
+3. [.memory-bank/prd.md](prd.md), [.memory-bank/requirements.md](requirements.md)
    and feature/epic composition for product behavior and acceptance;
-5. the canonical architecture, boundary and lifecycle projections registered
-   in [.memory-bank/spec-index.md](spec-index.md);
-6. `IDEA_*` files as overview/discovery evidence under the precedence declared
+4. `IDEA_*` files as overview/discovery evidence under the precedence declared
    in the PRD.
 
 There is no as-is runtime/code authority because the repository contains no
@@ -54,7 +51,7 @@ working application, backend, worker or deployed runtime.
 
 | Area | Status | Authoritative source | Notes |
 |---|---|---|---|
-| architecture_style | authoritative | [arch_vision.md](../arch_vision.md), [system architecture](architecture/system-architecture.md) | One greenfield Python/FastAPI modular monolith, one release and three server process entrypoints. |
+| architecture_style | authoritative | [system architecture](architecture/system-architecture.md) | One greenfield Python/FastAPI modular monolith, one release and three server process entrypoints. |
 | source_of_truth | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | PostgreSQL owns durable state in one application schema/migration stream; private MinIO owns binary bytes; one capability owns every mutable invariant. |
 | module_boundaries | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | Five capability packages, public application boundaries, dependencies, orchestration, shared-schema ownership constraints and code discovery roots are explicit. |
 | user_scenarios | authoritative | [.memory-bank/prd.md](prd.md) | Actors and scenario-sensitive flows are reviewed through clarified PRD behavior; no separate scenario document is required. |
@@ -69,19 +66,22 @@ working application, backend, worker or deployed runtime.
 | security_safety | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md), [.memory-bank/prd.md](prd.md) | Private stores, HTTPS, greenfield staff roles, owner-scoped deletion and protected evidence are fixed. |
 | testing_strategy | authoritative | [.memory-bank/testing/index.md](testing/index.md), [system architecture](architecture/system-architecture.md) | Bootstrap policy routes gates; Architecture Spine names required Foundation/feature proofs that are not runnable before code exists. |
 | deployment | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/foundation.md](foundation.md) | One future Compose deployment and minimum executable walking skeleton are explicit. |
-| risks | authoritative | [arch_vision.md](../arch_vision.md), [.memory-bank/prd.md](prd.md) | Accepted pilot risks and deferred-complexity triggers are explicit. |
+| risks | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/prd.md](prd.md) | Accepted pilot risks and deferred-complexity triggers are explicit. |
 | open_questions | authoritative | [system architecture](architecture/system-architecture.md) | Remaining hardware/scale/media-delivery choices are explicitly deferred with triggers; none blocks current task planning. |
 
 ## Canonical Design Bundle
 
 - [System architecture](architecture/system-architecture.md): system shape,
   Architecture Spine, runtime, slice roots, ownership, HTTP/storage decisions
-  and Foundation proof pressure.
+  recovery, extension seams, deferred decisions, accepted risks and Foundation
+  proof pressure.
 - [Boundary map](contracts/boundary-map.md): application boundaries, write
-  authority, shared-schema/migration constraints, HTTP failure semantics,
-  cross-slice orchestration, statistics and hard-purge contracts.
+  authority, PostgreSQL/MinIO convergence, authentication/protected delivery,
+  HTTP/realtime semantics, cross-slice orchestration, statistics and hard-purge
+  contracts.
 - [Lifecycle map](states/lifecycle-map.md): Photo admission/processing/
-  visibility, global purge, Promo/QR, Attempt/evidence and Calibration states.
+  visibility, global purge, Promo/QR, Attempt/display, client-restart,
+  evidence and Calibration states.
 - [.memory-bank/foundation.md](foundation.md): explicit greenfield Foundation
   Dev Path decision.
 
@@ -110,6 +110,9 @@ rebuilding the session or `N`, client-only offline attempts are best-effort,
 and restore of non-terminal hard-purge snapshot members is rejected. These
 rules affect feature/task planning. The task index is empty, so no existing task
 status or task-plan review is made stale.
+
+Consolidating the already accepted target into registered canonical specs does
+not change the target and therefore does not advance Planning Revision `3`.
 
 ## Handoff
 

@@ -43,6 +43,8 @@ pending -> processing -> ready | no_faces | failed
   `ingest_to_searchable` SLO breach for the accepted-JPEG population.
 - `pending` and `processing` records are durable. Worker startup returns
   unfinished `processing` work to `pending` and restarts it from the beginning.
+- Claiming work is one atomic `pending -> processing` transition that increments
+  the persisted attempt counter.
 - Processing retries are bounded to three attempts initially; exhaustion
   publishes terminal `failed` rather than looping forever.
 - At-least-once execution must remain idempotent and must not duplicate final
@@ -129,6 +131,19 @@ advertising -> capturing -> searching -> result -> cooldown -> advertising
                               +-> unsuccessful -> advertising
 ```
 
+- A server-admitted core Attempt uses:
+
+  ```text
+  processing_status: accepted -> searching
+                     -> result_issued | no_success | interrupted
+                        | deadline | internal_failure
+
+  display_status: not_applicable | pending
+                  pending -> confirmed | failed | unconfirmed
+  ```
+
+  `client_offline` is a client-side diagnostic outcome and may never become a
+  durable server Attempt.
 - New sensor events are ignored while capture/search or successful cooldown is
   active.
 - `result` is entered only after four unique threshold-valid teaser photos are
@@ -142,11 +157,28 @@ advertising -> capturing -> searching -> result -> cooldown -> advertising
   post-render acknowledgement makes it `confirmed`; render failure may report
   `failed`, and absence of confirmation after the result-display window is
   derived as `unconfirmed` on read without scheduler machinery.
+- `result_issued` is not Promo success. `confirmed` requires all four teasers
+  decoded and the QR fully visible. A late acknowledgement cannot replace
+  terminal derived `unconfirmed`.
 - Realtime startup closes old server Attempts still in `accepted|searching` as
   `interrupted`; it never replays their reference work.
+- Acceptance latency uses only client monotonic elapsed values:
+  `qr_fully_visible_elapsed_ms - reference_series_ready_elapsed_ms`. Server
+  stages record their own monotonic durations; cross-machine clock subtraction
+  and distributed tracing are not required.
 
 Sources: [IDEA_APP.md](../../IDEA_APP.md) and
 [.memory-bank/prd.md](../prd.md) `FR-CAP-01..08`, `FR-UX-01..09`.
+
+## Client Restart And Offline Metadata
+
+- After Chromium restart, SpaPromoClient enters `advertising`, discards
+  personalized result/frame/token state and does not replay search.
+- A bounded local outbox may retain only diagnostic metadata and
+  `cooldown_until` until acknowledgement or short expiry. Client-only offline
+  delivery is best-effort and may be lost on expiry or restart.
+- Local advertising remains available through network/server failure and
+  browser restart.
 
 ## Promo, QR, And Browser Session
 
@@ -158,6 +190,8 @@ Sources: [IDEA_APP.md](../../IDEA_APP.md) and
 - A QR scan may open or reuse the same browser access context for 30 minutes
   from `qr_issued_at`; after successful first open, the shared context expires
   after 60 minutes without explicit participant activity on any opened phone.
+- A local phone timer clears rendered personal state at expiry; the server
+  remains authoritative for every later read.
 - Soft delete does not invalidate an issued session. If a referenced Photo is
   later hard-purged, UI/device loading skips that media item and continues with
   the session's historical `N`.
@@ -182,6 +216,12 @@ Source: [.memory-bank/prd.md](../prd.md) `FR-DIAG-01..05`.
 
 ## Diagnostic And Calibration Retention
 
+```text
+collecting -> complete | incomplete -> expired
+```
+
+- An incomplete bundle retains an explicit gap reason. Participant flow and the
+  core Attempt/outcome/snapshot do not depend on detailed evidence completion.
 - Technical browser/server logs expire after 30 days.
 - Ordinary attempts and diagnostic evidence expire after 90 days.
 - Manual promotion preserves only the curated calibration subset named by PRD
