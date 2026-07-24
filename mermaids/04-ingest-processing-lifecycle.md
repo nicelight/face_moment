@@ -1,58 +1,100 @@
-# 4. Ingest and processing lifecycle
+# 4. Ingest, processing and inventory lifecycle
 
-Каждый JPEG проходит независимый admission и получает собственное
-pipeline-specific состояние.
+Каждый JPEG проходит независимый admission. Photo processing state,
+active/soft-deleted visibility и один global hard-purge run остаются разными
+KISS-контурами.
 
 ```mermaid
 flowchart TD
-    auth["Фотограф аутентифицирован"]
-    scope["Выбрать СПА + authoritative visit_date"]
-    upload["Один JPEG через HTTPS backend"]
-    object["Private MinIO object<br/>уникальный opaque key"]
-    decode{"JPEG поддерживается<br/>и декодируется?"}
-    checksum["Вычислить SHA-256"]
-    duplicate{"Уже существует тот же<br/>spa_id + visit_date + checksum?"}
-    rejected["Rejected<br/>удалить candidate object<br/>не создавать Photo/pending"]
-    duplicate_end["Duplicate<br/>idempotent delete нового object<br/>не создавать Photo/pending"]
-    create["Один PostgreSQL commit:<br/>Photo + accepted_at + pending"]
-    orphan["Принятый риск crash-window:<br/>private orphan / повторный upload"]
-    pending["state = pending<br/>durable queue"]
-    claim["BackgroundPhotoWorker<br/>atomic pending → processing"]
-    processing["state = processing"]
-    derivatives["EXIF orientation fix<br/>preview + thumbnail + pHash"]
-    engine["Native serving FaceEngine:<br/>detect + align + embedding"]
-    result{"Результат обработки"}
-    ready["state = ready<br/>searchable_at установлен<br/>photo_faces доступны exact search"]
-    nofaces["state = no_faces<br/>terminal, но JPEG не searchable"]
-    failed["state = failed<br/>last_error сохранён"]
-    retry{"attempts < 3?"}
-    restart["Worker restart:<br/>processing → pending<br/>начать с начала"]
-    metric["ingest_to_searchable success:<br/>preview готов AND serving state = ready"]
+    subgraph admission["Independent Photo admission"]
+        auth["Фотограф аутентифицирован"]
+        scope["Выбрать СПА + authoritative visit_date"]
+        upload["Один JPEG через HTTPS backend<br/>server-side file upload-start"]
+        object["Private MinIO object<br/>уникальный opaque key"]
+        decode{"JPEG поддерживается<br/>и декодируется?"}
+        captured["Effective captured_at:<br/>reliable EXIF in СПА timezone<br/>else file upload-start<br/>else visit_date 01:00"]
+        checksum["Вычислить SHA-256"]
+        duplicate{"Уже существует тот же<br/>spa_id + visit_date + checksum?"}
+        rejected["Rejected<br/>удалить candidate object<br/>не создавать Photo/pending"]
+        duplicate_end["Duplicate<br/>idempotent delete нового object<br/>не создавать Photo/pending"]
+        create["Один PostgreSQL commit:<br/>Photo + accepted_at + pending"]
+        orphan["Принятый crash-window:<br/>private orphan / повторный upload"]
 
-    auth --> scope --> upload --> object --> decode
-    object -. "crash до DB commit" .-> orphan
-    decode -- "нет" --> rejected
-    decode -- "да" --> checksum --> duplicate
-    duplicate -- "да" --> duplicate_end
-    duplicate -- "нет" --> create --> pending --> claim --> processing --> derivatives --> engine --> result
-    result -- "лица найдены" --> ready --> metric
-    result -- "обработано без лиц" --> nofaces
-    result -- "ошибка" --> retry
-    retry -- "да" --> pending
-    retry -- "нет" --> failed
-    processing -. "process crash" .-> restart --> pending
+        auth --> scope --> upload --> object --> decode
+        object -. "crash до DB commit" .-> orphan
+        decode -- "нет" --> rejected
+        decode -- "да" --> captured --> checksum --> duplicate
+        duplicate -- "да" --> duplicate_end
+        duplicate -- "нет" --> create
+    end
+
+    subgraph pipeline["Photo pipeline state — PostgreSQL durable queue"]
+        pending["pending"]
+        claim["Один BackgroundPhotoWorker<br/>atomic claim"]
+        processing["processing"]
+        derivatives["preview + thumbnail + pHash"]
+        engine["Native serving FaceEngine<br/>detect + align + embedding"]
+        result{"Результат"}
+        ready["ready<br/>searchable_at + faces"]
+        nofaces["no_faces<br/>terminal, not searchable"]
+        failed["failed<br/>status_changed_at + error"]
+        retry{"attempts < 3?"}
+        restart["Worker restart:<br/>processing → pending<br/>начать с начала"]
+        metric["ingest_to_searchable success:<br/>preview готов AND ready"]
+
+        create --> pending --> claim --> processing --> derivatives --> engine --> result
+        result -- "лица найдены" --> ready --> metric
+        result -- "обработано без лиц" --> nofaces
+        result -- "ошибка" --> retry
+        retry -- "да" --> pending
+        retry -- "нет" --> failed
+        processing -. "process crash" .-> restart --> pending
+    end
+
+    subgraph inventory["Inventory visibility and project-wide purge"]
+        active["Photo active<br/>доступна согласно pipeline state"]
+        soft["Photo soft_deleted<br/>все данные сохранены<br/>search/media/stats excluded"]
+        select["СПА + visit_date + captured_at range<br/>photographer: own uploads<br/>operator/developer: accessible СПА"]
+        restore_all["restore all soft deleted<br/>весь проект"]
+        confirm["Confirm hard delete ALL softed media<br/>зафиксировать global snapshot"]
+        wait["confirmed_waiting<br/>ждать текущую worker operation<br/>human-readable process name"]
+        purge["running<br/>same worker, completed / total<br/>restart resumes snapshot"]
+        remove["Удалить Photo + media + faces + pipeline<br/>и Promo results/sessions"]
+        retain["Сохранить core Attempts<br/>и diagnostic evidence"]
+        done["completed"]
+        stats["Per-СПА direct PostgreSQL counters<br/>1 / 5 / 60 min, poll 5 sec<br/>active Photos only"]
+
+        create --> active
+        select --> active
+        active -->|"soft delete"| soft
+        soft -->|"restore"| active
+        restore_all --> active
+        soft --> confirm --> wait --> purge --> remove --> done
+        remove -.-> retain
+        active -.-> stats
+    end
+
+    worker_busy["Shared worker current operation:<br/>Photo processing / Calibration / cleanup"]
+    worker_busy --> wait
+    ordinary_upload["Ordinary uploads may continue;<br/>in-progress upload is not interrupted"]
+    ordinary_upload -.-> create
 ```
 
-## Семантика состояний
+## Семантика
 
-- `ready` означает, что searchable face records созданы для конкретной `pipeline_revision`.
-- `no_faces` — успешный terminal processing outcome, но остаётся breach метрики searchable.
-- `pending`, `processing`, `failed` и `no_faces` после 15 минут остаются SLO breaches.
-- Повторное at-least-once выполнение не должно дублировать `photo_faces` или производные файлы.
-- `visit_date` выбирает фотограф; EXIF `captured_at` остаётся вторичной метаданной.
-- Accepted original сохраняет первоначальный opaque key без MinIO move/copy.
-- Batch, manifest, confirmation, отдельная jobs table и distributed transaction отсутствуют.
+- `ready` означает searchable face records конкретной `pipeline_revision`;
+  `no_faces` является terminal outcome, но остаётся searchable-SLO breach.
+- Повторное at-least-once выполнение не дублирует `photo_faces` или derivatives.
+- Soft delete меняет один visibility marker; restore не запускает processing.
+- `new` использует `accepted_at`; `unprocessed` — in-window accepted и текущие
+  `pending|processing`; `processed`/`failed` используют соответствующий
+  transition time. Все counters исключают soft-deleted Photos.
+- Global purge snapshot фиксируется при confirmation. Soft deletes после
+  confirmation ждут следующего запуска.
+- Batch, manifest, confirmation upload-а, per-photo `purge_pending`, отдельная
+  jobs table, deletion worker, counter store и distributed transaction
+  отсутствуют.
 
 Источники: [Architecture](../arch_vision.md),
-[IDEA_INGEST.md](../IDEA_INGEST.md), [IDEA_APP.md](../IDEA_APP.md),
-[Glossary](../.memory-bank/glossary.md).
+[Lifecycle](../.memory-bank/states/lifecycle-map.md),
+[IDEA_INGEST.md](../IDEA_INGEST.md), [PRD](../.memory-bank/prd.md).

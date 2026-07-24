@@ -1,7 +1,7 @@
 ---
 description: Pure SDD spec registry and planned-spec index.
 status: active
-last_updated: 2026-07-23
+last_updated: 2026-07-24
 source_of_truth:
   - .memory-bank/spec-index.md
 ---
@@ -19,26 +19,24 @@ source_of_truth:
 | governance | [.memory-bank/constitution.md](constitution.md) | active | Top governing policy. | /constitution |
 | invariants | [.memory-bank/invariants.md](invariants.md) | active | Global MUST/NEVER rules grounded in ratified governance decisions. | /constitution, /spec-init, or /spec-design |
 | glossary | [.memory-bank/glossary.md](glossary.md) | active | Canonical Face Moment vocabulary and disambiguation rules. | /brief, /spec-init, or /spec-design |
-| architecture | [.memory-bank/architecture/system-architecture.md](architecture/system-architecture.md) | draft | Compact architecture hub; global decisions remain pending `/spec-design`. | /spec-design |
-| contract | [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md) | draft | Lightweight responsibility/scope notes for task boundaries. | /spec-init or /spec-design |
-| state | [.memory-bank/states/lifecycle-map.md](states/lifecycle-map.md) | draft | Decomposition-level lifecycle hints; exact state design remains pending. | /spec-init or /spec-design |
-| testing | [.memory-bank/testing/index.md](testing/index.md) | active | Baseline verification strategy and quality gates; canonical design remains pending. | /spec-design |
+| architecture | [.memory-bank/architecture/system-architecture.md](architecture/system-architecture.md) | active | Accepted greenfield system shape, capability ownership and Architecture Spine. | /spec-design |
+| contract | [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md) | active | Canonical capability/application boundaries, write authority and cross-slice orchestration. | /spec-design or /feature-to-tasks |
+| state | [.memory-bank/states/lifecycle-map.md](states/lifecycle-map.md) | active | Canonical pilot lifecycle and recovery rules. | /spec-design or /feature-to-tasks |
+| foundation | [.memory-bank/foundation.md](foundation.md) | active | Explicit Foundation Dev Path decision and minimum substrate evidence. | /spec-design or /foundation-to-tasks |
+| testing | [.memory-bank/testing/index.md](testing/index.md) | active | Bootstrap verification router and project quality gates. | /spec-design |
 
 ## Planned Specs
 | Area | Expected path | Needed by | Notes |
 |---|---|---|---|
 | user_scenarios | .memory-bank/user-scenarios.md | /spec-design or decomposition repair | Current clarified PRD is sufficient for decomposition; create only if later scenario pressure needs a separate reviewed artifact. |
-| core_domain | .memory-bank/domains/core-domain.md | /spec-design | Current PRD owns product concepts; create only when shared design needs a canonical domain spec. |
-| boundary_hints | .memory-bank/contracts/boundary-map.md | /spec-design | Existing draft router; fill only evidence-backed responsibility/scope notes, no endpoint/OpenAPI details. |
-| lifecycle_hints | .memory-bank/states/lifecycle-map.md | /spec-design | Existing decomposition-level map; refine only when canonical lifecycle design is required. |
-| system_architecture | .memory-bank/architecture/system-architecture.md | /spec-design | Existing draft architecture hub; fill only through `/spec-design`. |
+| core_domain | .memory-bank/domains/core-domain.md | Later feature design if proven necessary | Current PRD plus registered architecture/lifecycle specs are sufficient; do not create a duplicate domain hub without new shared pressure. |
 | interface_contract_specs | .memory-bank/contracts/*, .memory-bank/testing/*, and .memory-bank/runbooks/* | /spec-design, /foundation-to-tasks, /feature-to-tasks | Generate/update only applicable Component/API/Event/Data contracts, protocol/agent/tool I/O, boundary compatibility, evidence/redaction, safety/security, testing, runbook, or verification contracts. A Data Contract defines payloads crossing a boundary. |
 | data_specs | .memory-bank/domains/* and .memory-bank/states/* | /spec-design, /feature-to-tasks | Generate/update internal domain, storage, schema, migration, validation/serialization, lifecycle, retention, seed, or runtime-data specs only when applicable. |
 | foundation_substrate_specs | .memory-bank/architecture/*, .memory-bank/contracts/*, .memory-bank/domains/*, .memory-bank/states/*, .memory-bank/testing/*, .memory-bank/runbooks/* | /foundation-to-tasks | Apply Architecture, Interfaces/Contracts, and Data lenses to the walking-skeleton proof path. Generate only applicable subject-based substrate contracts/specs. Product-level detail reuses or extends those paths later. |
 | subject_feature_concerns | .memory-bank/contracts/*, .memory-bank/domains/*, .memory-bank/states/*, .memory-bank/testing/*, .memory-bank/runbooks/*, or .memory-bank/guides/* | /feature-to-tasks | Discover existing canonical specs first; create only missing subject-based concerns and link exact paths from features/tasks. |
 
 ## Broken / Missing Links
-- None known at this pre-PRD framing boundary.
+- None known.
 
 ## Update Rules
 - Keep this file as index/registry only: types, canonical paths, statuses,

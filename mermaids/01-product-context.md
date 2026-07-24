@@ -20,7 +20,8 @@ flowchart LR
         promo_client["SpaPromoClient<br/>advertising + capture + Promo"]
         search["Exact scoped face search"]
         continuation["Session-wide QR continuation"]
-        operations["Photo readiness<br/>sanitized attempts"]
+        operations["Photo Inventory Operations<br/>soft delete / restore / global purge<br/>per-СПА 1/5/60-minute counters"]
+        attempt_view["Sanitized attempts"]
         diagnostics["Attempts + Log Explorer + Calibration<br/>developer-only"]
     end
 
@@ -41,8 +42,11 @@ flowchart LR
 
     operator --> operations
     operator --> serving
+    operator --> attempt_view
+    photographer -->|"только собственные Photos"| operations
     developer --> diagnostics
-    operations -.->|"наблюдает readiness"| inventory
+    developer --> operations
+    operations -.->|"active/soft-deleted visibility<br/>shared-worker hard purge"| inventory
     diagnostics -.->|"explicit audited apply"| serving
 ```
 
@@ -51,6 +55,10 @@ flowchart LR
 - Promo display завлекает, но не является touchscreen kiosk.
 - В pilot участник не загружает selfie и не получает original.
 - Оператор видит только sanitized attempt summary; protected artifacts и Calibration доступны разработчику.
+- Фотограф soft-delete/restore только свои uploads; оператор/разработчик могут
+  действовать в доступных СПА, а global restore/purge охватывает весь проект.
+- Soft-deleted Photo отсутствует в search/media/statistics; hard purge сохраняет
+  core Attempt и diagnostic evidence.
 - Повторные QR scans используют один session-wide browser access context без
   per-device grants.
 

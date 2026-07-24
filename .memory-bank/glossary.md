@@ -1,7 +1,9 @@
 ---
 description: Канонический словарь терминов со специальным значением в Face Moment.
 status: active
-last_updated: 2026-07-23
+last_updated: 2026-07-24
+source_of_truth:
+  - .memory-bank/glossary.md
 ---
 # Glossary
 
@@ -14,8 +16,9 @@ last_updated: 2026-07-23
 | `one-СПА pilot` | Контролируемый smoke pilot на одной СПА-площадке и группе тестировщиков. Он заканчивается проверенной QR continuation page. | Target capacity на 10–15 СПА, публичным rollout, payment или выдачей originals. |
 | `Promo display` / `display mode` | Экран с локальной рекламой между попытками, автоматическим capture и успешным Promo из четырёх teasers и QR. | Полноценным kiosk: на экране нет touch-навигации, оплаты или скачивания. |
 | `SpaPromoClient` | Логический browser client одной СПА: ведёт camera ring buffer, принимает sensor trigger, формирует reference series, вызывает realtime search и управляет display states. Локальный HDMI и remote computer реализуют один contract. | Backend, `RealtimeFaceService` или самой СПА-площадкой. |
-| `Face Moment / СПА operator` | Роль, которая управляет рабочей датой и операционным состоянием и видит только sanitized attempt summary: outcome, timeline, latency и issue tags. | `Application developer`, которому доступны protected artifacts, имена, annotations, detailed logs и Calibration. |
-| `Application developer` | Единственная product role с полным доступом к protected diagnostic artifacts, participant names в annotations, detailed logs, Log Explorer и Calibration; serving-setting changes применяет вручную. | OS user `facemoment` или оператором с sanitized-доступом. |
+| `Photographer` | Product role, которая загружает Photo и может soft-delete/restore только собственные uploads в выбранной СПА/date/time-range. | Operator/developer с правом управлять любыми Photo в доступной СПА или глобальными admin actions. |
+| `Face Moment / СПА operator` | Роль, которая управляет рабочей датой и операционным состоянием, управляет Photo в доступной СПА, запускает разрешённые global inventory actions и видит только sanitized attempt summary: outcome, timeline, latency и issue tags. | `Application developer`, которому доступны protected artifacts, имена, annotations, detailed logs и Calibration. |
+| `Application developer` | Product role с полным доступом к protected diagnostic artifacts, participant names в annotations, detailed logs, Log Explorer и Calibration, а также staff-доступом к Photo Inventory Operations; serving-setting changes применяет вручную. | OS user `facemoment` или оператором с sanitized-доступом. |
 | `facemoment` / `display` | Два OS users центрального сервера: `facemoment` администрирует SSH, `sudo` и Docker; `display` автоматически запускает sandboxed Chromium без административных прав. | Product roles оператора и участника pilot. |
 
 ## Ingest And Search Inventory
@@ -27,7 +30,9 @@ last_updated: 2026-07-23
 | `visit_date` | Выбранная фотографом business date, сохраняемая с каждой independently accepted Photo и задающая authoritative дневной scope поиска. | EXIF `captured_at`, upload time, client clock или именем файла. |
 | `photo.accepted_at` | Server-side время atomic admission одной Photo вместе с её serving-pipeline `pending` state; начало её `ingest_to_searchable` interval. | Временем object upload, EXIF `captured_at` или окончанием загрузки других файлов. |
 | Active working `visit_date` | Выбранная оператором server-side дата, которую используют автоматические attempts данной СПА, пока оператор её не изменит. | Автоматически выбранной датой последней загруженной Photo или значением из request body `SpaPromoClient`. |
-| `captured_at` | Вторичное время съёмки из EXIF для сортировки, diagnostics и, при подтверждённых clock/timezone, дополнительного time window. | Authoritative `visit_date`; `captured_at` не может молча её заменить. |
+| Effective `captured_at` | Время для Photo inventory time-range: reliable EXIF, интерпретированный в timezone СПА; иначе server-side start time загрузки конкретного файла; иначе 01:00 на authoritative `visit_date`. | Authoritative `visit_date`: effective `captured_at` не меняет дневной search scope. |
+| Photo visibility / soft-deleted Photo | Один признак активности Photo. Soft delete сохраняет Photo, media, face data и pipeline state, но исключает Photo из participant search/media и recent counters; restore возвращает сохранённое состояние и timestamps. | Hard purge, повторным upload/processing или отдельным Photo pipeline state. |
+| Global hard-purge run | Одна resumable project-wide операция над fixed snapshot всех soft-deleted Photos на момент подтверждения, с wait за shared worker и completed/total progress. Удаляет Photo-owned и связанный Promo state, сохраняя core Attempts и diagnostic evidence. | Per-photo `purge_pending`, общей jobs-системой, удалением Attempt/evidence или динамическим добавлением новых soft deletes в текущий snapshot. |
 | `pipeline_code` | Тип face pipeline, сейчас `opencv_sface` или `insightface_buffalo_m`. Threshold хранится на уровне СПА, `pipeline_code` и `query_source`. | `pipeline_revision_id`. |
 | `query_source` | Происхождение query face: `reference` для display camera или `selfie` для post-pilot selfie flow. Pilot-serving требует калибровки `reference`. | Источником commercial photos или ingest channel. |
 | Pipeline revision | Неизменяемая compatibility identity detector, recognizer, весов, preprocessing/alignment, normalization и embedding dimension. Embeddings сравниваются только внутри одной revision. | Названием/типом модели (`pipeline_code`) или изменяемым serving choice СПА. |
@@ -91,6 +96,7 @@ last_updated: 2026-07-23
 | `qr_fully_visible_at` | Момент, когда QR полностью отрисован на display и готов к сканированию. | Временем server response или началом Promo transition. |
 | `reference_ready_to_qr` | `qr_fully_visible_at - reference_series_ready_at`; основной realtime acceptance interval pilot. Gate: `<10_000 ms` минимум в 19 из 20 controlled attempts. | `trigger_to_preview`, который остаётся end-to-end diagnostic metric. |
 | `ingest_to_searchable` | Для каждой independently accepted unique Photo: от `photo.accepted_at` до готового preview и `ready` state serving revision. `pending`, `processing`, `failed` и `no_faces` после 15 минут остаются breaches; rejects, duplicates и non-serving jobs исключены. | Задержкой фотографа от съёмки до upload или временем обработки группы файлов. |
+| Recent Photo counters | Отдельные per-СПА значения за 1/5/60 минут: `new` — принятые в окне active unique Photos по `accepted_at`; `unprocessed` — принятые в окне active Photos в текущем `pending \| processing`; `processed` — active Photos, перешедшие в `ready \| no_faces` в окне; `failed` — active Photos, перешедшие в `failed` в окне. Admin UI получает значения polling каждые пять секунд. | Materialized metrics store, WebSocket/SSE stream или общим project-wide counter. |
 
 ## Source Basis
 

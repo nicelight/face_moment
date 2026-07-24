@@ -61,6 +61,12 @@ flowchart LR
     prohibition["Никогда не применять recommendation автоматически"]
     prohibition -.-> calibration
     prohibition -.-> manual
+
+    hard_purge["Photo hard purge:<br/>media + face/pipeline + Promo result/session удалены"]
+    preserved["Core Attempt + diagnostic evidence<br/>сохраняются по ordinary retention"]
+    hard_purge -.-> preserved
+    attempt --> preserved
+    evidence --> preserved
 ```
 
 ## Как пользоваться
@@ -74,6 +80,7 @@ flowchart LR
 Detailed evidence не является prerequisite participant flow. Отсутствующий или
 незавершённый evidence set отображается как `incomplete`; отдельный diagnostic
 anchor, priority scheduler и отдельный Calibration worker не создаются.
+Photo hard purge не каскадирует в core Attempt или diagnostic evidence.
 
 Источники: [Architecture](../arch_vision.md), [IDEA_DEBUG.md](../IDEA_DEBUG.md),
 [PRD](../.memory-bank/prd.md), [Glossary](../.memory-bank/glossary.md).

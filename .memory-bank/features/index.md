@@ -8,6 +8,8 @@ status: active
 
 - [FT-001](FT-001.md): Independent photographer photo admission.
 - [FT-002](FT-002.md): Compatible processing and searchable readiness.
+- [FT-012](FT-012.md): Role-scoped Photo Inventory Operations and recent
+  per-СПА queue statistics.
 
 ## EP-002 — Automatic Promo and QR Continuation
 

@@ -1,8 +1,14 @@
-# Face Moment — KISS architecture recommendation
+# Face Moment — accepted KISS target architecture
 
 ## 1. Scope and reliability target
 
-This document describes an advisory greenfield architecture for one СПА, one CPU-only server and one display client. The repository has no working application or backend yet; every runtime/component named below is a target to be implemented. The target is a practical working horse: normal process/browser crashes recover automatically, background work safely restarts from the beginning, maintenance downtime is acceptable, and rare native hangs may require a manual restart.
+This document is the accepted greenfield architecture source for one СПА, one
+CPU-only server and one display client. The repository has no working
+application, backend, worker or deployed runtime yet; every runtime/component
+named below is a target to be implemented. The target is a practical working
+horse: normal process/browser crashes recover automatically, background work
+safely restarts from the beginning, maintenance downtime is acceptable, and
+rare native hangs may require a manual restart.
 
 The recommendation preserves these accepted product constraints:
 
@@ -12,6 +18,7 @@ The recommendation preserves these accepted product constraints:
 | Greenfield staff authentication and role enforcement. | The project has no existing backend or IdP, while photographer/operator/developer access differs materially. |
 | Crash/restart behavior for every long-running role. | A one-server pilot needs predictable recovery from ordinary failures, but not distributed or zero-downtime guarantees. |
 | Idempotent PostgreSQL/MinIO operations without distributed transactions. | The two stores cannot share a transaction; simple retryable state transitions are sufficient. |
+| Role-scoped Photo Inventory Operations and direct PostgreSQL statistics. | Soft deletion is reversible, one global hard purge reuses the shared worker, and 1/5/60-minute counters do not justify another queue, service or realtime transport. |
 | Client-generated attempt ID plus a separate display acknowledgement. | Server response proves result construction, while only the client can prove that four teasers and a scannable QR were actually visible. |
 | One session-wide browser access state per QR ticket. | Scans during the 30-minute first-open window reuse the same Promo session and shared 60-minute idle state; per-device grant rows add state that the current pilot does not need. |
 | No backup in the MVP. | Loss of the only disk/server is an accepted data-loss event; recovery covers intact primary volumes and ordinary process/host restarts. |
@@ -32,13 +39,14 @@ The recommendation preserves these accepted product constraints:
 | Documentation shape | A small `split-core-docs` set: system architecture, boundary map and applicable lifecycle/security contracts. | A document per edge case creates drift, while one giant document hides the few important contracts. |
 | Reliability | Automatic recovery from crashes, restart-from-scratch jobs and manual recovery for rare hangs. | Enterprise split-brain, zero-downtime and automated hang recovery cost more than their pilot value. |
 | Foundation | A minimal executable walking skeleton before feature work. | Greenfield runtime/storage/native compatibility is shared by all features; extensive recovery or browser matrices are cheaper inside the owning features. |
+| Inventory operations | One active/soft-deleted marker, one resumable global hard-purge run and direct PostgreSQL counter queries. | Per-photo purge states, a purge jobs table, another worker, aggregate counter storage and WebSocket/SSE add lifecycle and recovery cost without pilot value. |
 
 ## 3. System topology
 
 ```text
 HTTPS edge
 └── backend
-    ├── staff UI/API and local staff auth
+    ├── staff UI/API, Photo Inventory Operations and local staff auth
     ├── serving settings
     ├── QR exchange and phone continuation
     └── diagnostics / annotation / Calibration UI
@@ -46,7 +54,7 @@ HTTPS edge
 private network
 ├── PostgreSQL + pgvector
 ├── MinIO
-├── BackgroundPhotoWorker
+├── BackgroundPhotoWorker (photo processing, Calibration, hard purge)
 └── RealtimeFaceService
 
 SpaPromoClient
@@ -82,8 +90,8 @@ tests/
 | Slice | Owned state and behavior | Public boundary | Excluded ownership | Boundary rationale |
 |---|---|---|---|---|
 | `serving_control` | СПА identity/timezone, active `visit_date`, active pipeline revision, threshold/quality settings, `settings_revision`, SpaPromoClient token lifecycle and manual change audit. | Read immutable `ServingContext`/`IngestTarget`; validate and apply a manual settings change. | Photos, processing state, attempts, sessions, detailed evidence and recommendations. | One write owner prevents participant or Calibration paths from silently changing serving scope. |
-| `inventory` | Independent Photo admission, photographer-selected СПА/date, checksum duplicate decision, Photo identity/`accepted_at`/original key and photographer ownership. | Admit one uploaded JPEG; return accepted/rejected/duplicate outcome; expose immutable photo projections and authorize access to owned uploads. | Pipeline state, embeddings/search, Promo sessions and diagnostics. | Per-photo admission removes Batch lifecycle while keeping commercial-photo identity separate from ML retries and model revisions. |
-| `processing` | Pipeline catalog/compatibility, native FaceEngine adapters, photo processing states, previews/faces/embeddings, query quality, exact search and offline model evaluation. | Create the serving-revision `pending` state during Photo admission; report readiness; process one reference query under an explicit serving snapshot. | Photo admission, live settings reads, result/session assembly and recommendation application. | Background and realtime ML share preprocessing/revision invariants; a separate FaceEngine slice would only be a technical layer. |
+| `inventory` | Independent Photo admission, photographer-selected СПА/date, effective `captured_at`, checksum duplicate decision, Photo identity/`accepted_at`/original key/uploader/active marker, role-scoped soft delete/restore, direct recent statistics and the global hard-purge orchestration. | Admit one uploaded JPEG; return accepted/rejected/duplicate outcome; query and change authorized Photo visibility; restore all; start/read one confirmed global hard purge; read per-СПА 1/5/60-minute counters. | Pipeline-state transitions, embeddings/search, Promo result/session state, core Attempts and diagnostic evidence. | Admission, visibility and permanent removal share the Photo ownership invariant; keeping them together avoids a deletion service or another slice. |
+| `processing` | Pipeline catalog/compatibility, native FaceEngine adapters, photo processing states, previews/faces/embeddings, query quality, exact search and offline model evaluation. | Create the serving-revision `pending` state during Photo admission; report readiness; process one reference query under an explicit serving snapshot; remove Photo-owned derived state when inventory orchestrates hard purge. | Photo admission/visibility, live settings reads, result/session assembly and recommendation application. | Background and realtime ML share preprocessing/revision invariants; a separate FaceEngine slice would only be a technical layer. |
 | `promo` | Attempt/result identity, applied snapshot, candidate/result sets, four teasers, `N`, QR ticket, session-wide browser access state, continuation and SpaPromoClient behavior. Future purchase/payment/entitlement state also stays here. | Execute a fresh attempt; accept display outcome; exchange QR ticket; read session-bound continuation. | Inventory/processing/settings writes and detailed diagnostic evidence. | Search result, QR and continuation form one participant-journey integrity boundary; future payment consumes the immutable result and does not justify a sixth slice. |
 | `diagnostics` | Detailed events/artifacts, sanitized/developer views, logs, annotations, curated Calibration cases and recommendations. | Record best-effort evidence; search attempts/logs; authorize artifacts; annotate/evaluate/apply through owning boundaries. | Core result/session and direct settings mutation. | Evidence, annotation and Calibration share privacy/retention rules but remain outside participant success. |
 
@@ -94,6 +102,8 @@ Recommended runtime calls:
 ```text
 inventory ──read ingest target──> serving_control
 inventory ──enqueue──> processing
+inventory ──hard-purge derived state──> processing
+inventory ──hard-purge affected results/sessions──> promo
 promo ──read──> serving_control
 promo ──search──> processing
 promo ──best-effort evidence──> diagnostics
@@ -119,6 +129,13 @@ before inference. `diagnostics` attaches events and artifacts best-effort by
 The shared database permits published read projections while retaining one
 write owner per invariant. Foreign direct writes, a generic Unit-of-Work
 framework, an event bus and an outbox are not recommended for the pilot.
+
+`inventory` orchestrates Photo Inventory Operations through the owning slice
+boundaries. Soft delete/restore changes only the inventory-owned Photo
+visibility marker. Hard purge may remove state owned by `processing` and
+`promo`, but it does so through their cleanup commands rather than by
+duplicating their invariants. Core Attempts and diagnostic evidence remain
+owned by `promo`/`diagnostics` and are not hard-purge targets.
 
 ## 6. Serving context and pipeline changes
 
@@ -170,6 +187,9 @@ The recommended working-horse flow is:
 5. A losing duplicate keeps its visible duplicate outcome, creates no Photo or processing state and schedules deletion of only its unique uploaded object.
 6. One short PostgreSQL transaction commits the new Photo, server-side `accepted_at` and serving-revision `pending` state; it never waits for another upload.
 7. The accepted original keeps its initial opaque key without a MinIO move/copy.
+8. The Photo receives an effective `captured_at`: reliable EXIF time interpreted
+   in the СПА timezone, otherwise that file's server-side upload-start time,
+   otherwise 01:00 on the authoritative `visit_date`.
 
 This flow is recommended over a cross-store transaction emulator because a
 private orphan or one lost admission during a crash is acceptable and simpler
@@ -180,19 +200,70 @@ commit. Other readers may observe a partial set while the photographer is still
 uploading; search always uses all compatible `ready` photos already present for
 the active СПА/date.
 
-### Derived objects and deletion
+### Photo visibility, statistics and deletion
+
+Soft deletion is one inventory-owned active/soft-deleted marker. It preserves
+the Photo record, original/preview/thumbnail, faces, pipeline states and other
+related data, but all search, participant media reads and recent-statistics
+queries must filter soft-deleted Photos out. Restore clears the marker and
+reuses the preserved state without re-upload or reprocessing.
+
+A photographer may soft-delete or restore only Photos uploaded by that
+photographer. An operator or developer may do so for any Photo in an accessible
+СПА. Selection uses one СПА, authoritative `visit_date` and the effective
+`captured_at` range. Project-wide restore-all and hard purge are restricted to
+authorized operator/developer settings.
+
+The Admin UI polls PostgreSQL-backed per-СПА counters every five seconds for
+the last 1, 5 and 60 minutes:
+
+| Counter | Definition for active Photos |
+|---|---|
+| `new` | Unique Photos whose `accepted_at` is inside the window. |
+| `unprocessed` | Photos accepted inside the window and currently `pending \| processing`. |
+| `processed` | Photos that transitioned to `ready \| no_faces` inside the window. |
+| `failed` | Photos that transitioned to `failed` inside the window. |
+
+The target backend computes these counters directly from Photo and
+`photo_pipeline_states` timestamps. No counter materialization, metrics store,
+WebSocket or SSE path is recommended before direct SQL becomes a measured
+problem.
+
+`hard delete ALL softed media` requires confirmation and creates one durable,
+resumable global run over the fixed project-wide snapshot of Photos that were
+soft-deleted at confirmation. The run owns only snapshot identity,
+waiting/running/completed status and completed/total progress; it does not add a
+per-photo `purge_pending` state or a purge jobs table.
+
+The global run waits for the shared worker's current operation without
+preemption. While waiting, the UI displays `Начну удаление, как только
+закончится процесс {human-readable process name}`; while running, the
+destructive settings surface is replaced by completed/total progress. The
+worker resumes the same snapshot after process restart and deletes each Photo,
+its original/preview/thumbnail, face and pipeline data, and every Promo
+result/session containing it. Core Attempts and diagnostic evidence are
+preserved under their ordinary retention rules even when they contain
+historical references to deleted Photos.
+
+Soft deletes made after confirmation are outside the fixed snapshot. Uploads
+already in progress are never interrupted; keeping ordinary upload admission
+available during purge is the KISS default, and newly accepted Photos merely
+add normal `pending` work while the shared worker is occupied.
 
 Derived preview/thumbnail keys are recommended to be deterministic by `photo_id/pipeline_revision/artifact_kind`. With one worker replica, a retry can safely overwrite the same key and then replace face rows plus terminal state in one transaction.
 
-Recommended delete sequence:
+Recommended retryable binary cleanup remains:
 
 ```text
-mark object inaccessible/delete_pending in PostgreSQL
+make the object inaccessible through Photo visibility or owning-state deletion
 → idempotent MinIO delete
-→ clear the object reference while preserving the visible outcome
+→ complete the owning database cleanup
 ```
 
-This three-step sequence is preferred over stronger cross-store machinery because a crash leaves only a retryable private orphan or an inaccessible pending deletion.
+This sequence is preferred over stronger cross-store machinery because a crash
+leaves only a retryable private orphan or an already inaccessible object. The
+global run progress supplies hard-purge resumption without another per-object
+lifecycle.
 
 MinIO versioning and external volume snapshots are recommended to remain disabled in the no-backup MVP. This keeps retention behavior truthful and avoids hidden copies.
 
@@ -221,6 +292,8 @@ The recommended worker algorithm is intentionally small:
 4. Processing restarts from the beginning after a crash.
 5. One final transaction replaces faces and publishes `ready|no_faces|failed`.
 6. A small retry limit, initially three, prevents poison-file crash loops.
+7. A confirmed global hard purge waits for the current operation and then uses
+   the same sequential worker until its fixed snapshot completes.
 
 This is recommended instead of advisory locks, leases, `claim_token`, fencing and claim-scoped object keys because concurrent workers are outside the deployment contract. Unique constraints and full face-set replacement still protect the required idempotency.
 
@@ -240,6 +313,12 @@ Backend commands are recommended to be idempotent where a browser may retry. An
 interrupted upload has no durable resumable-upload lifecycle; the photographer
 simply retries the file, and the ordinary checksum rule handles an already
 completed first upload.
+
+The hard-purge progress view does not require stopping the backend. Ordinary
+uploads may continue because the purge snapshot contains only Photos already
+soft-deleted at confirmation, while search and media access already exclude
+them. This avoids upload-drain coordination and guarantees that an upload
+already in progress is not interrupted.
 
 After Chromium restart, SpaPromoClient is recommended to enter local `advertising`, discard personal result/frame state and avoid replaying search. A bounded IndexedDB outbox may retain only diagnostic metadata and `cooldown_until`; frames, tokens and personalized result data stay memory-only.
 
@@ -326,6 +405,10 @@ One idempotent daily cleanup command is recommended, invoked by the planned Back
 
 Promotion is recommended to copy only selected frames/crops, parameters, scores and annotations into a self-contained case. Unselected frames, Promo screenshot, ordinary logs and the whole attempt retain their normal expiry.
 
+Photo hard purge does not cascade into the core Attempt or diagnostic-evidence
+lifecycle. Historical identifiers may remain in retained evidence, but media
+removed with the Photo is no longer available.
+
 Calibration work is recommended to reuse the planned shared
 `BackgroundPhotoWorker`. An explicitly started Calibration run may block photo
 processing for its full duration during debugging; this impact is accepted. If
@@ -386,7 +469,7 @@ Recommended minimum feature proofs:
 | Area | Evidence |
 |---|---|
 | `serving_control` | Client cannot override СПА/date; one immutable attempt snapshot; audited manual change. |
-| `inventory` | Independent Photo admission; concurrent duplicate arbitration; atomic `Photo + pending`; losing-object cleanup. |
+| `inventory` | Independent Photo admission; concurrent duplicate arbitration; atomic `Photo + pending`; role-scoped soft delete/restore; direct 1/5/60 counters; resumable fixed-snapshot hard purge with Attempt/evidence retention. |
 | `processing` | Restart-from-`processing`; bounded retries; one final face set/state. |
 | `promo` | Four unique teasers; correct full result/`N`; result vs display acknowledgement; session-wide access expiry. |
 | `diagnostics` | Sanitized/developer role split; core Attempt with complete/incomplete evidence; promotion whitelist. |
@@ -406,6 +489,7 @@ Recommended minimum feature proofs:
 | GPU, Kubernetes or external observability stack | Proven CPU/deployment/diagnostic limitation | They add operational surface without current evidence. |
 | Payment/selfie/download implementation | Full-version feature activation | Only stable identifiers and ownership seams have current value. |
 | Backup/replication/snapshots | Before paid flow or public rollout, or after a new operator durability decision | The current pilot explicitly accepts loss of the only disk/server. |
+| Per-photo purge state/jobs, separate purge worker, counter materialization, WebSocket/SSE statistics | Measured purge or five-second polling failure | One global run, the shared worker and direct PostgreSQL queries satisfy current operations with less state. |
 
 ## 16. Accepted pilot risks
 
@@ -427,3 +511,10 @@ authorize additional lifecycle, coordination or recovery machinery:
 - A photograph uploaded under the wrong photographer-selected СПА or
   `visit_date` has no special correction workflow in the pilot; the operator
   accepts this risk because the remedy costs more than the expected problem.
+- When EXIF time is missing or unreliable, effective `captured_at` derived from
+  the individual file's server-side upload-start time or final `visit_date`
+  01:00 fallback may be approximate; no separate manual-resolution path is
+  required.
+- A global hard purge may delay ordinary Photo processing while it occupies the
+  shared worker; uploads may continue and accumulate normal durable `pending`
+  work until purge completes.

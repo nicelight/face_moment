@@ -12,6 +12,7 @@ flowchart TD
         validate{"Файл валиден и уникален<br/>для spa_id + visit_date + SHA-256?"}
         reject["Показать rejected / duplicate<br/>не создавать Photo или pending"]
         admit["Per-photo PostgreSQL commit:<br/>Photo + accepted_at + pending"]
+        effective_time["Effective captured_at:<br/>reliable EXIF in СПА timezone<br/>else file upload-start, else visit_date 01:00"]
         process["BackgroundPhotoWorker:<br/>preview + native FaceEngine + embeddings"]
         searchable{"Preview готов и serving state = ready?"}
         inventory["Searchable inventory"]
@@ -44,7 +45,7 @@ flowchart TD
 
     start --> upload --> validate
     validate -- "нет" --> reject
-    validate -- "да" --> admit --> process --> searchable
+    validate -- "да" --> effective_time --> admit --> process --> searchable
     searchable -- "да" --> inventory
     searchable -- "нет" --> breach
 
@@ -59,6 +60,9 @@ flowchart TD
     exact -.-> evidence
     ack -.-> evidence
     failure -.-> evidence
+
+    inventory_ops["Photo Inventory Operations:<br/>soft delete/restore + direct 1/5/60 counters<br/>confirmed global purge via shared worker"]
+    inventory -.-> inventory_ops
 ```
 
 ## Acceptance anchors
@@ -69,6 +73,8 @@ flowchart TD
   видимый QR менее чем за 10 секунд по client monotonic interval от
   `reference_series_ready`.
 - Иностранная фотография в четырёх teasers или в `N` делает attempt некорректной; полное покрытие каждого человека группы не обещается.
+- Soft-deleted Photos исключены из search/media/statistics. Hard purge удаляет
+  Photo-owned данные и Promo result/session, сохраняя core Attempt/evidence.
 
 Источники: [PRD](../.memory-bank/prd.md),
 [Architecture](../arch_vision.md), [IDEA_INGEST.md](../IDEA_INGEST.md),

@@ -40,7 +40,7 @@ sequenceDiagram
         loop До 5 quality-ranked selected detections
             API->>Engine: native alignment / query embedding
             Engine-->>API: quality values + compatible embedding
-            API->>DB: exact cosine search<br/>revision + spa_id + visit_date + threshold
+            API->>DB: exact cosine search<br/>active Photo + revision + spa_id<br/>visit_date + threshold
             DB-->>API: threshold-valid matches
             API->>API: unique union + reserved_photo_ids<br/>pHash diversity ranking
         end

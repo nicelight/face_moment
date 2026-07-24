@@ -1,7 +1,7 @@
 ---
 description: Product definition (C4 L1) for the Face Moment one-СПА pilot.
 status: draft
-last_updated: 2026-07-23
+last_updated: 2026-07-24
 ---
 # Face Moment Product
 
@@ -17,16 +17,23 @@ The pilot also gives the application developer a protected diagnostic and
 calibration contour for explaining attempts and preparing manual face-match and
 input-quality setting changes.
 
+The repository is still at the documentation and design stage. No working
+application backend, worker or deployed runtime exists yet; every runtime
+component below describes the product to be built.
+
 ## Core Value
 
 - A participant discovers relevant photographs at the moment of leaving and
   continues the result with one QR scan.
 - A photographer gets a timely path from fresh JPEG upload to searchable
-  inventory and potential buyer attention.
-- An operator can observe readiness and Promo outcomes without receiving access
-  to sensitive developer diagnostics.
+  inventory and potential buyer attention, plus control to hide or restore their
+  own uploaded Photos.
+- An operator can observe recent per-СПА photo activity, manage authorized
+  inventory and Promo outcomes without receiving access to sensitive developer
+  diagnostics.
 - A developer can correlate failures, latency and face-search decisions and
-  derive explainable, manually applied calibration recommendations.
+  derive explainable, manually applied calibration recommendations, while
+  retaining project-wide inventory administration.
 
 ## Audience
 
@@ -50,6 +57,12 @@ authenticated independent JPEG upload for selected СПА/date
 -> same-session phone continuation
 ```
 
+In parallel, authorized users can select Photos by СПА, authoritative
+`visit_date` and effective capture-time range, soft-delete or restore them, and
+observe per-СПА 1/5/60-minute processing statistics. Authorized
+operator/developer settings also provide project-wide restore-all and confirmed
+hard-purge operations.
+
 Every accepted attempt produces one core Attempt/correlation timeline. Detailed
 diagnostic evidence is attached best-effort and remains visibly `incomplete`
 when absent or unfinished. Authorized developers may annotate collected
@@ -69,6 +82,12 @@ serving settings automatically.
 - Each accepted attempt retains a core correlation identity and stage timestamps
   sufficient to localize its outcome and latency; missing detailed evidence is
   explicit.
+- Soft-deleted Photos immediately leave search, participant media access and
+  queue statistics, can be restored without reprocessing, and can be removed by
+  one confirmed resumable project-wide purge that retains core Attempts and
+  diagnostic evidence.
+- Per-СПА `new`, `unprocessed`, `processed` and transition-based `failed`
+  counters for 1, 5 and 60 minutes refresh by five-second polling.
 
 ## Constraints
 
@@ -87,6 +106,10 @@ serving settings automatically.
   photo; the PostgreSQL-backed queue retains unfinished work across restart.
 - Developer Calibration may occupy the shared `BackgroundPhotoWorker`; an
   interrupted run is rerun manually after photo processing resumes.
+- Photo Inventory Operations reuse that shared worker and durable Photo data:
+  hard purge waits for the current operation, reports completed/total progress
+  and resumes after restart without per-photo purge state, a purge jobs table,
+  another worker, WebSocket or SSE.
 - Infrastructure complexity is added only after evidence of a current
   requirement failure or measured bottleneck.
 - Diagnostic logging is non-blocking and excludes images, embeddings, secrets,

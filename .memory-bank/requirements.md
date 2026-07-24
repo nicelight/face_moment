@@ -1,7 +1,7 @@
 ---
 description: Stable product requirements and REQ-to-epic-to-feature traceability for the one-СПА pilot.
 status: draft
-last_updated: 2026-07-23
+last_updated: 2026-07-24
 ---
 # Requirements
 
@@ -20,6 +20,10 @@ last_updated: 2026-07-23
 | `REQ-ING-002` | Every completed upload MUST be validated and reported independently as accepted, rejected or duplicate; EXIF, filename and upload time MUST NOT silently replace the selected `visit_date`. | FR-ING-03..04 |
 | `REQ-ING-003` | Uniqueness MUST be enforced by `(spa_id, visit_date, checksum_sha256)`; duplicates are visibly excluded/deleted, while each unique Photo, `accepted_at` and serving `pending` state are committed atomically per photo. | FR-ING-05..06, AC-17 |
 | `REQ-ING-004` | Accepted photos MUST expose explicit processing/searchable states, and at least 95% of all independently accepted unique JPEGs MUST become searchable within 15 minutes of `photo.accepted_at`. | FR-ING-07..08, NFR-PERF-03, AC-06/08 |
+| `REQ-INV-001` | Inventory time-range selection MUST use one СПА, authoritative `visit_date` and effective `captured_at`: reliable EXIF time in the СПА timezone, otherwise that file's server-side upload-start time, otherwise 01:00 on `visit_date`. | FR-INV-01, AC-18 |
+| `REQ-INV-002` | A photographer MUST be able to soft-delete and restore only their own uploads, while an operator/developer may act on any Photo in an accessible СПА; soft deletion preserves all Photo data but excludes it from search, participant media access and statistics, and restore reactivates the preserved state without reprocessing. | FR-INV-02..04, NFR-SEC-05, AC-18 |
+| `REQ-INV-003` | Authorized operator/developer settings MUST support project-wide restore-all and a confirmed, resumable hard purge over one fixed snapshot of all soft-deleted Photos. Purge MUST wait for the shared worker, show waiting/completed/total progress, remove Photo/media/face/pipeline and related Promo result/session data, retain core Attempts and diagnostic evidence, avoid interrupting an upload already in progress, and add no per-photo purge state or purge jobs table. | FR-INV-05..09, NFR-REL-06, NFR-ARCH-05, AC-20 |
+| `REQ-INV-004` | Admin UI MUST poll every five seconds for separate per-СПА 1-, 5- and 60-minute counters: active unique Photos accepted in-window as `new`; active in-window accepted Photos currently `pending \| processing` as `unprocessed`; active Photos transitioned in-window to `ready \| no_faces` as `processed`; and active Photos transitioned in-window to `failed` as `failed`. | FR-INV-10..11, AC-19 |
 | `REQ-SRCH-001` | SFace and Buffalo M MUST retain native processing paths, and embeddings/search MUST remain isolated by immutable compatible pipeline revision. | FR-SRCH-01..02 |
 | `REQ-SRCH-002` | Participant search MUST use exact scoped cosine search and admit matches only through configured query-quality and calibrated reference-threshold gates; top-1/top-2 margin is forbidden. | FR-SRCH-03..05 |
 | `REQ-SRCH-003` | The operator MUST select the server-side active working `visit_date`; search uses all currently `ready` compatible photos in that СПА/date without an ingest-group readiness gate, the client cannot override the scope, and a missing date prevents search with diagnostic evidence. | FR-SRCH-03/06, Clarifications |
@@ -67,6 +71,10 @@ last_updated: 2026-07-23
 | `REQ-ING-002` | [EP-001](epics/EP-001.md) | [FT-001](features/FT-001.md) | PRD AC-08 | planned |
 | `REQ-ING-003` | [EP-001](epics/EP-001.md) | [FT-001](features/FT-001.md), [FT-002](features/FT-002.md) | PRD AC-17 | planned |
 | `REQ-ING-004` | [EP-001](epics/EP-001.md) | [FT-002](features/FT-002.md) | PRD AC-06/08 | planned |
+| `REQ-INV-001` | [EP-001](epics/EP-001.md) | [FT-012](features/FT-012.md) | PRD AC-18 | planned |
+| `REQ-INV-002` | [EP-001](epics/EP-001.md) | [FT-012](features/FT-012.md) | PRD AC-18 | planned |
+| `REQ-INV-003` | [EP-001](epics/EP-001.md) | [FT-012](features/FT-012.md) | PRD AC-20 | planned |
+| `REQ-INV-004` | [EP-001](epics/EP-001.md) | [FT-012](features/FT-012.md) | PRD AC-19 | planned |
 | `REQ-SRCH-001` | [EP-001](epics/EP-001.md), [EP-002](epics/EP-002.md) | [FT-002](features/FT-002.md), [FT-004](features/FT-004.md) | PRD AC-03/10 | planned |
 | `REQ-SRCH-002` | [EP-002](epics/EP-002.md) | [FT-004](features/FT-004.md) | PRD AC-01/03 | planned |
 | `REQ-SRCH-003` | [EP-002](epics/EP-002.md) | [FT-004](features/FT-004.md) | PRD controlled setup, AC-03/05 | planned |
@@ -90,4 +98,4 @@ last_updated: 2026-07-23
 | `REQ-REL-002` | [EP-001](epics/EP-001.md) | [FT-002](features/FT-002.md) | PRD AC-06 and worker-restart recovery evidence | planned |
 | `REQ-SEC-001` | [EP-001](epics/EP-001.md), [EP-002](epics/EP-002.md) | [FT-001](features/FT-001.md), [FT-003](features/FT-003.md), [FT-004](features/FT-004.md), [FT-006](features/FT-006.md) | PRD NFR-SEC-01..03 boundary-conformance evidence | planned |
 | `REQ-DATA-001` | [EP-003](epics/EP-003.md) | [FT-007](features/FT-007.md), [FT-008](features/FT-008.md), [FT-009](features/FT-009.md), [FT-010](features/FT-010.md), [FT-011](features/FT-011.md) | PRD AC-13 | planned |
-| `REQ-ARCH-001` | [EP-001](epics/EP-001.md), [EP-002](epics/EP-002.md), [EP-003](epics/EP-003.md) | [FT-001](features/FT-001.md)–[FT-011](features/FT-011.md) | PRD controlled setup and architecture constraints | planned |
+| `REQ-ARCH-001` | [EP-001](epics/EP-001.md), [EP-002](epics/EP-002.md), [EP-003](epics/EP-003.md) | [FT-001](features/FT-001.md)–[FT-012](features/FT-012.md) | PRD controlled setup and architecture constraints | planned |

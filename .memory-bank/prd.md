@@ -41,13 +41,14 @@ constitution_checked: true
 
 ### Readiness and verification context
 
-- [.memory-bank/spec-backbone.md](spec-backbone.md): pre-PRD framing and
-  decomposition handoff; global architecture readiness remains pending
-  `/spec-design`.
+- [.memory-bank/spec-backbone.md](spec-backbone.md): accepted global SDD
+  backbone at Planning Revision 1; architecture planning is complete and the
+  Foundation Gate remains pending `/foundation-to-tasks`.
 - [.memory-bank/spec-index.md](spec-index.md): registry of current and planned
   canonical specs.
-- [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md): existing
-  draft boundary router; concrete boundaries remain for later SDD work.
+- [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md): canonical
+  capability ownership, application boundaries and cross-slice write rules for
+  the target greenfield implementation; it does not describe existing code.
 - [.memory-bank/testing/index.md](testing/index.md): baseline quality gates and
   critical-flow e2e guidance.
 
@@ -62,9 +63,9 @@ acceptance gates.
 
 ## Clarifications
 
-- Clarification status is complete for the one-СПА pilot. The resolved scope,
-  actors, behavior, data semantics, non-goals, and acceptance contract are
-  expressed in the normative PRD sections below.
+- Clarification status is complete for the one-СПА pilot, including Photo
+  Inventory Operations. The resolved scope, actors, behavior, data semantics,
+  non-goals and acceptance contract are expressed below.
 - Remaining site/hardware selection and post-pilot commercial questions do not
   change current actors, core scenarios, feature boundaries, or acceptance and
   must not be converted into pilot requirements without a new product decision.
@@ -75,6 +76,37 @@ acceptance gates.
 - Source precedence and superseded `IDEA_*` defaults are recorded in
   [.memory-bank/spec-backbone.md](spec-backbone.md) for decomposition and later
   SDD work.
+
+### 2026-07-24 — Greenfield boundary and Photo Inventory Operations
+
+- Face Moment is still at the documentation and design stage: this repository
+  has no working application code, backend, worker or deployed runtime. All
+  runtime components and behavior in this PRD describe the system to be built,
+  not an existing implementation.
+- A photographer may soft-delete and restore only their own uploaded Photos.
+  An operator or developer may soft-delete and restore any Photo in an
+  accessible СПА.
+- Photo selection for soft deletion uses СПА, authoritative `visit_date` and an
+  effective capture-time range. Reliable EXIF `captured_at` is interpreted in
+  the СПА timezone; otherwise the server-side start time of that file's upload
+  is used; if neither value is available, the effective time is 01:00 on
+  `visit_date`.
+- Soft deletion preserves the Photo and all related stored data but immediately
+  excludes the Photo from search, participant media access and queue
+  statistics. Restore makes the preserved Photo active again.
+- Admin settings provide project-wide `hard delete ALL softed media` and
+  `restore all soft deleted` actions. Hard deletion requires confirmation and
+  uses one resumable global purge run with progress, without a per-photo
+  `purge_pending` state or a separate purge jobs table.
+- The global hard purge waits for the shared worker's current operation, then
+  deletes the fixed confirmed set of soft-deleted Photos and their media, face
+  data, pipeline state and related Promo result/session data. Core Attempts and
+  diagnostic evidence are retained under their ordinary retention rules.
+- Queue statistics are scoped per СПА, expose 1-, 5- and 60-minute windows for
+  `new`, `unprocessed`, `processed` and `failed`, and refresh by five-second
+  polling without WebSocket or SSE.
+- In each queue-statistics window, `failed` is the count of active Photos that
+  transitioned to `failed` during that window.
 
 ## Product Summary
 
@@ -90,7 +122,7 @@ download and public use by ordinary СПА visitors are post-pilot context, not
 current delivery or acceptance scope.
 
 The same pilot includes a developer-only investigation and calibration contour
-inside the backend delivered by this project: correlated attempts,
+in the target backend to be delivered by this project: correlated attempts,
 browser/server log search, manual per-person/per-detection annotation and
 explainable recommendations for face-match threshold and individual input
 quality gates.
@@ -113,6 +145,9 @@ quality gates.
    group-search choices and threshold/quality-gate effects.
 7. Keep the pilot architecture operationally simple and add infrastructure
    complexity only after a measured bottleneck.
+8. Let authorized users safely hide, restore and permanently purge selected
+   commercial Photos, and let staff observe recent per-СПА ingest/processing
+   activity without introducing another queueing subsystem.
 
 ## Non-goals
 
@@ -168,10 +203,15 @@ quality gates.
 - Sees accepted, rejected and duplicate outcomes per file and observes each
   accepted photo's processing/searchable state; the photographer has no
   diagnostic-page access.
+- May select their own uploaded Photos by СПА, `visit_date` and capture-time
+  range, soft-delete them and restore them while they remain soft-deleted.
 
 ### Face Moment / СПА operator
 
 - Observes photo readiness, failures and Promo operation.
+- May view recent queue statistics per СПА and soft-delete or restore any Photo
+  in an accessible СПА, and may invoke the confirmed project-wide restore-all
+  or hard-purge action.
 - Explicitly sets the active working `visit_date` for the pilot СПА in the
   server-side application before automatic attempts use that date for search.
 - May open a sanitized attempt summary containing outcome, stage timeline,
@@ -181,6 +221,8 @@ quality gates.
 ### Application developer
 
 - Investigates individual attempts and correlated browser/server logs.
+- May view recent queue statistics per СПА, soft-delete or restore any Photo,
+  and invoke the confirmed project-wide restore-all or hard-purge action.
 - Has full authorized access to protected diagnostic artifacts, real names in
   annotations, detailed Log Explorer records and Calibration.
 - Adds ground-truth annotations, compares releases/configurations and examines
@@ -305,7 +347,7 @@ pilot actor or blocker.
   `Перейти к покупке` button.
 - **FR-UX-05** — The Promo display MUST use the truthful copy `Ваши фотографии
   найдены — откройте по QR-коду`. On the valid phone landing, `Перейти к
-  покупке` MUST navigate to the existing or separately delivered main Face
+  покупке` MUST navigate to the separately delivered main Face
   Moment selfie-search/purchase page. This pilot owns the navigation link but
   does not implement or accept the target purchase flow.
 - **FR-UX-06** — Display duration, successful-capture cooldown, QR-session TTL
@@ -411,6 +453,53 @@ pilot actor or blocker.
   `interrupted`, photo processing MUST resume, and the developer MAY rerun
   Calibration manually.
 
+### G. Photo Inventory Operations
+
+- **FR-INV-01** — Photo inventory selection for deletion MUST use one СПА,
+  authoritative `visit_date` and a selected capture-time range. Each Photo MUST
+  have an effective `captured_at`: reliable EXIF time interpreted in the СПА
+  timezone, otherwise the server-side start time of that file's upload, and as
+  the final fallback 01:00 on its authoritative `visit_date`.
+- **FR-INV-02** — A photographer MUST be able to soft-delete and restore only
+  Photos uploaded by that photographer. An operator or developer MUST be able
+  to soft-delete and restore any Photo in an accessible СПА.
+- **FR-INV-03** — Soft deletion MUST preserve the Photo record, stored media,
+  face data, pipeline state and other related data while immediately excluding
+  the Photo from participant-facing search, media access and queue statistics.
+- **FR-INV-04** — Restoring a soft-deleted Photo MUST make the preserved Photo
+  active again without re-upload or reprocessing and MUST return it to search,
+  media access and statistics according to its preserved state and timestamps.
+- **FR-INV-05** — Admin settings MUST provide two project-wide actions:
+  `hard delete ALL softed media` and `restore all soft deleted`. The restore-all
+  action MUST restore every currently soft-deleted Photo across all СПА.
+- **FR-INV-06** — `hard delete ALL softed media` MUST require explicit
+  confirmation and then operate on a fixed snapshot of every soft-deleted Photo
+  across the project. While it runs, its UI MUST be replaced by a progress view
+  based on completed Photos versus the snapshot total.
+- **FR-INV-07** — The global hard purge MUST wait for the shared worker's
+  current operation without preemption. While waiting, the UI MUST show
+  `Начну удаление, как только закончится процесс {human-readable process name}`.
+- **FR-INV-08** — For every Photo in the confirmed purge snapshot, hard deletion
+  MUST remove its Photo record, original/preview/thumbnail media, detected-face
+  data, photo-pipeline state and any Promo result/session containing the Photo.
+  Core Attempts and diagnostic evidence MUST NOT be removed by this action and
+  continue to follow their ordinary retention rules.
+- **FR-INV-09** — One global purge run MUST resume after a backend or worker
+  restart until its confirmed snapshot is complete. It MUST NOT introduce a
+  per-photo `purge_pending` lifecycle or a separate purge jobs table. An upload
+  already in progress MUST NOT be interrupted; uploads allowed to complete
+  during purge MAY add ordinary durable photo-processing backlog.
+- **FR-INV-10** — The Admin UI MUST show queue statistics separately for each
+  СПА for the last 1, 5 and 60 minutes:
+  `new` is the count of unique active Photos accepted in the window by
+  `accepted_at`; `unprocessed` is the count of active Photos accepted in the
+  window whose current state is `pending | processing`; `processed` is the
+  count of active Photos that transitioned to `ready | no_faces` in the
+  window; and `failed` is the count of active Photos that transitioned to
+  `failed` in the window.
+- **FR-INV-11** — Queue statistics MUST refresh by polling every five seconds.
+  WebSocket and SSE delivery are not required.
+
 ## Non-functional Requirements
 
 ### Performance and acceptance priority
@@ -451,6 +540,10 @@ pilot actor or blocker.
 - **NFR-REL-05** — Free primary-storage space and diagnostic-retention cleanup
   MUST be observable; a recovery procedure for ordinary process, browser, host
   and intact-volume restarts is required for the single-server pilot.
+- **NFR-REL-06** — A confirmed global hard purge MUST retain enough durable
+  run identity, fixed target set and completion progress to resume after an
+  ordinary backend or worker restart without reintroducing already purged
+  Photos or silently abandoning the remaining targets.
 
 ### Security, privacy and retention
 
@@ -466,6 +559,10 @@ pilot actor or blocker.
   latency/issue tags; the developer may access protected reference images/crops,
   names, annotations, detailed logs and Calibration. The photographer is limited
   to their own uploaded-photo state and has no diagnostic-page access.
+- **NFR-SEC-05** — Photo Inventory authorization MUST restrict photographers to
+  soft deletion and restoration of their own uploads. Operator/developer access
+  MAY cover any accessible СПА, while project-wide restore-all and hard-purge
+  actions MUST be restricted to authorized operator/developer admin settings.
 - **NFR-DATA-01** — Technical browser/server logs MUST expire after 30 days.
 - **NFR-DATA-02** — Attempts and ordinary diagnostic bundles/artifacts MUST
   expire after 90 days.
@@ -492,6 +589,10 @@ pilot actor or blocker.
 - **NFR-ARCH-04** — Exact pilot hardware, camera, lens, passage sensor, lighting,
   CPU affinity and thread limits are selected/validated against the actual site
   and are not fixed product gates beyond the stated display/capture baseline.
+- **NFR-ARCH-05** — Photo Inventory Operations MUST reuse the single shared
+  background worker and durable Photo data. They MUST NOT add a per-photo purge
+  state, a purge jobs table, WebSocket/SSE statistics transport or another
+  worker solely for deletion and statistics.
 ## Data / Domain Model
 
 ### Core concepts
@@ -499,7 +600,8 @@ pilot actor or blocker.
 - **СПА** — pilot venue with a name, timezone, operator-selected active working
   `visit_date`, active serving pipeline and calibrated reference threshold.
 - **Photo** — independently admitted commercial image linked directly to its
-  СПА, authoritative `visit_date`, server-side `accepted_at` and private
+  СПА, authoritative `visit_date`, effective `captured_at`, server-side
+  `accepted_at`, uploader identity, active/soft-deleted marker and private
   original, preview and thumbnail objects;
   `(spa_id, visit_date, checksum_sha256)` is its logical ingest-uniqueness key,
   while pHash supports teaser diversity only.
@@ -534,16 +636,28 @@ pilot actor or blocker.
   scores and annotations retained until explicit deletion, plus a computed
   threshold or one-dimensional quality-gate proposal; it never changes serving
   settings automatically.
+- **Global hard-purge run** — one resumable project-wide operation over the
+  fixed snapshot of soft-deleted Photos confirmed at its start, with total and
+  completed progress. It is not a per-photo pipeline state or general jobs
+  subsystem.
 
 ### Authoritative relationships and lifecycle
 
 - Each accepted Photo's photographer-selected `visit_date` is authoritative for
-  commercial-photo search scope; EXIF `captured_at` is secondary metadata.
+  commercial-photo search scope. Its effective `captured_at` uses reliable EXIF
+  time in the СПА timezone, then that file's server-side upload-start time, then
+  01:00 on `visit_date`; it scopes time-range inventory actions but does not
+  replace the authoritative `visit_date`.
 - An automatic attempt uses the server-side active working `visit_date` selected
   by the operator for its СПА; the client token selects the СПА but neither the
   client clock nor the latest uploaded photo silently selects the date.
 - A photo is searchable only through a `ready` state for the current compatible
   serving pipeline revision.
+- A soft-deleted Photo and all its related data remain stored but are inactive
+  for search, participant media access and statistics. Restore reactivates that
+  preserved state. Hard purge physically removes Photo-owned data and related
+  Promo result/session data while leaving the core Attempt and diagnostic
+  evidence governed by their independent retention lifecycle.
 - Four teaser IDs are a subset of `session_result_photo_ids`; `N` is the count of
   the entire unique union.
 - Attempt/log/evidence identifiers must allow navigation without placing image
@@ -567,6 +681,22 @@ pilot actor or blocker.
 3. Observe accepted, rejected or duplicate outcome for each file.
 4. Observe every accepted Photo progress through
    processing/searchable/no-face/failure state.
+5. Select own Photos by СПА, `visit_date` and capture-time range, then
+   soft-delete or restore them.
+
+### Photo inventory administration flow
+
+1. Select a СПА and observe `new`, `unprocessed`, `processed` and `failed`
+   statistics for the last 1, 5 and 60 minutes, refreshed every five seconds.
+2. An authorized operator/developer selects Photos by СПА, `visit_date` and
+   capture-time range and soft-deletes or restores them.
+3. In admin settings, an authorized user may restore every soft-deleted Photo
+   across the project.
+4. To permanently remove all soft-deleted Photos across the project, confirm
+   the hard-purge action.
+5. If the shared worker is busy, observe the human-readable current-operation
+   message; once purge starts, observe completed/total progress until it
+   finishes.
 
 ### Participant Promo and continuation flow
 
@@ -609,7 +739,8 @@ pilot actor or blocker.
   site-validation decision.
 - Chromium-based `SpaPromoClient`, running locally over HDMI or on a remote
   display computer after site selection; both use the same logical contract.
-- Backend/admin web application delivered by this project.
+- Target backend/admin web application to be delivered by this project; no
+  working backend or application runtime currently exists in this repository.
 - PostgreSQL with pgvector for metadata, state, exact vector search, structured
   logs and indexed diagnostic events.
 - MinIO/S3-compatible private object storage for originals, previews and
@@ -618,8 +749,8 @@ pilot actor or blocker.
 - QR generation performed locally in the client without an external QR service;
   the specific package is an implementation recommendation, not a product gate.
 - HTTPS as the public integration boundary.
-- Existing or separately delivered main Face Moment selfie-search/purchase page
-  as the expired-session redirect target; this pilot does not implement it.
+- Separately delivered main Face Moment selfie-search/purchase page as the
+  expired-session redirect target; this pilot does not implement it.
 
 Explicitly absent from the pilot are Yandex Disk, external face-recognition APIs,
 payment/fiscal providers, external observability stores and message brokers.
@@ -661,6 +792,15 @@ payment/fiscal providers, external observability stores and message brokers.
 - Diagnostic retention expiry must remove ordinary protected artifacts after 90
   days. For a promoted calibration case it preserves only the curated subset in
   NFR-DATA-03; unselected frames and the Promo screenshot are still deleted.
+- Soft-deleted Photos remain stored but are absent from search, participant
+  media access and all four queue-statistic counters. Restoring them makes them
+  eligible for those views again using their preserved states and timestamps.
+- Hard purge waits without preemption when the shared worker is busy and
+  exposes the current operation by a human-readable name. A process restart
+  resumes the same confirmed snapshot and progress.
+- Hard-purging a Photo removes any Promo result/session containing it but
+  preserves the related core Attempt and diagnostic evidence, including their
+  independent retention schedule.
 - Full primary storage, process/browser crash and central-server unavailability
   require observable degraded advertising behavior and documented recovery.
 
@@ -744,6 +884,19 @@ payment/fiscal providers, external observability stores and message brokers.
   `visit_date` deletes the new copy, reports it as a duplicate and leaves the
   accepted-photo population, `photo_id` set, processing states, search results,
   teaser selection and `N` unchanged.
+- **AC-18** — A photographer can select their own uploads by СПА,
+  `visit_date` and capture-time range, soft-delete them, observe their immediate
+  exclusion from search/media/statistics, and restore them without re-upload or
+  reprocessing. An operator/developer can perform the same actions for any
+  authorized Photo.
+- **AC-19** — The 1-, 5- and 60-minute per-СПА counters match the definitions in
+  FR-INV-10, omit soft-deleted Photos, reflect restored Photos from their
+  preserved states/timestamps, and refresh by polling every five seconds.
+- **AC-20** — After confirmation, one project-wide hard purge uses a fixed
+  soft-deleted snapshot, waits for the shared worker with the required
+  human-readable message, shows completed/total progress, survives a process
+  restart, and removes all snapshot Photo/media/face/pipeline and related Promo
+  result/session data while retaining core Attempts and diagnostic evidence.
 
 The smoke run validates the pilot path only. It does not demonstrate public
 production readiness, target 10-15-СПА capacity or complete group coverage.
@@ -754,12 +907,18 @@ production readiness, target 10-15-СПА capacity or complete group coverage.
    - configured build/typecheck and relevant unit tests;
    - per-photo admission/checksum/idempotency, same-СПА/date duplicate deletion,
      atomic `Photo + pending` creation and metric-population rules;
+   - effective capture-time fallback order, owner-scoped authorization,
+     soft-delete exclusion/restoration and exact 1/5/60-minute counter
+     calculations;
    - pipeline-revision isolation, threshold gates, pHash-only ranking and `N`
      union/deduplication;
    - attempt timing calculations, recommendation metrics and retention rules;
    - secret/redaction checks for structured logs.
 2. **Integration verification**
    - uploader -> object storage -> background processing -> searchable state;
+   - soft delete -> search/media/statistics exclusion -> restore;
+   - confirmed global purge snapshot -> shared-worker wait -> progress ->
+     restart/resume -> complete cleanup with Attempt/evidence retention;
    - worker crash/restart -> the existing queued population remains durable,
      unfinished work returns to `pending` and processing resumes from the
      beginning;
@@ -770,6 +929,8 @@ production readiness, target 10-15-СПА capacity or complete group coverage.
    - annotation -> Calibration calculations -> manual-only application boundary.
 3. **Critical-flow e2e verification**
    - authenticated photographer journey;
+   - photographer-owned and staff-authorized Photo Inventory journeys;
+   - project-wide restore-all and confirmed hard-purge progress journeys;
    - successful automatic single-person and best-effort group Promo journeys;
    - phone continuation without selfie and valid-session purchase-button
      navigation to the separately delivered target page;

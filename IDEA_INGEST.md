@@ -31,6 +31,10 @@ authenticated HTTPS upload через backend
 → decode и проверка JPEG, compressed bytes и decoded pixels
 → SHA-256
 → проверка UNIQUE(spa_id, visit_date, checksum_sha256)
+→ effective captured_at:
+  reliable EXIF в timezone СПА
+  иначе server-side start time upload этого файла
+  иначе 01:00 authoritative visit_date
 → один короткий PostgreSQL commit:
   Photo + accepted_at + serving-pipeline pending state
 → независимый accepted | rejected | duplicate outcome
@@ -49,10 +53,15 @@ spa_id
 visit_date
 ```
 
-Значения сохраняются с каждой принятой Photo. EXIF `captured_at`, filename,
-upload time и browser clock не могут молча заменить выбранный `visit_date`.
-`captured_at` остаётся вторичной метаданной для сортировки, diagnostics и
-optional time window только после проверки clock/timezone quality.
+Значения сохраняются с каждой принятой Photo. `visit_date` не заменяется
+filename, upload time или browser clock. Для сортировки и inventory time-range
+каждая Photo получает effective `captured_at`:
+
+1. reliable EXIF time, интерпретированный в timezone выбранного СПА;
+2. иначе server-side start time upload данного файла;
+3. иначе 01:00 выбранного authoritative `visit_date`.
+
+Отдельного manual-resolution пути для отсутствующего/ненадёжного EXIF нет.
 
 Фотография, ошибочно загруженная под неверными СПА или `visit_date`, не получает
 специальный correction workflow в pilot. Риск принят оператором.
@@ -131,6 +140,11 @@ pending → processing → ready | no_faces | failed
 Lease, `claim_token`, fencing, `SKIP LOCKED`, отдельная jobs table и несколько
 worker replicas не входят в текущую модель.
 
+Тот же worker выполняет явно запущенную Calibration и подтверждённый global
+hard purge. Purge ждёт завершения текущей операции без preemption, затем
+обрабатывает fixed snapshot soft-deleted Photos. Per-photo `purge_pending`,
+purge jobs table и отдельный deletion worker отсутствуют.
+
 ## 7. Ingest SLO
 
 Метрика рассчитывается отдельно для каждой independently accepted unique Photo:
@@ -164,11 +178,45 @@ processing; отдельный scheduler ради этого не создаёт
 - понятную причину reject/failure;
 - возможность повторно загрузить файл.
 
-Оператору дополнительно нужны backlog, oldest pending age, processing failures,
-ingest SLO и свободное место primary storage. Отдельный message broker или
-observability datastore для данных показателей не нужен.
+Admin UI каждые пять секунд polling-ом получает для каждого СПА отдельные окна
+1, 5 и 60 минут:
 
-## 9. Durability boundary
+- `new` — active unique Photos с `accepted_at` внутри окна;
+- `unprocessed` — active Photos, принятые внутри окна и сейчас находящиеся в
+  `pending | processing`;
+- `processed` — active Photos, перешедшие в `ready | no_faces` внутри окна;
+- `failed` — active Photos, перешедшие в `failed` внутри окна.
+
+Показатели считаются прямыми PostgreSQL queries по уже необходимым Photo и
+pipeline-state timestamps. Soft-deleted Photos исключаются. WebSocket, SSE,
+materialized counter storage, отдельный message broker или observability
+datastore не нужны.
+
+## 9. Photo Inventory Operations
+
+Фотограф может выбирать Photo по СПА, authoritative `visit_date` и effective
+`captured_at` range, затем soft-delete/restore только собственные uploads.
+Оператор и разработчик могут выполнять те же действия для любой Photo в
+доступном СПА.
+
+Soft delete меняет один active marker и сразу исключает Photo из search,
+participant media access и статистики, сохраняя Photo, media, faces и pipeline
+state. Restore возвращает preserved state без re-upload/reprocessing.
+
+В Admin settings доступны две project-wide операции для оператора/разработчика:
+
+- `restore all soft deleted`;
+- подтверждаемая `hard delete ALL softed media`.
+
+Hard purge фиксирует snapshot всех soft-deleted Photos на момент confirmation и
+использует один resumable global run с completed/total progress. После restart
+worker продолжает тот же snapshot. Удаляются Photo,
+original/preview/thumbnail, faces, pipeline states и Promo results/sessions,
+содержащие Photo; core Attempts и diagnostic evidence сохраняются по обычной
+retention policy. Upload, уже находящийся в процессе, не прерывается; ordinary
+uploads могут продолжить создавать обычный `pending` backlog.
+
+## 10. Durability boundary
 
 Очередь уже принятых `pending`/`processing` фотографий должна переживать обычный
 restart backend/worker и продолжать обработку.
@@ -177,7 +225,7 @@ restart backend/worker и продолжать обработку.
 потери единственного primary disk/server в pilot отсутствуют. Потеря persisted
 data при таком отказе является принятым риском.
 
-## 10. Post-pilot направления
+## 11. Post-pilot направления
 
 После отдельного product decision могут появиться:
 

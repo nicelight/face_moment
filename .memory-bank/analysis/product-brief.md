@@ -17,6 +17,7 @@ type: product-brief
   - `IDEA_DEBUG.md`
   - `IDEA_INGEST.md`
   - `IDEA_OS.md`
+  - `arch_vision.md`
 
 ## 1. One-liner
 
@@ -28,11 +29,13 @@ one-СПА pilot, показывает четыре персональных tea
 
 - Участник pilot — тестировщик пользовательского сценария.
 - Фотограф — загружает свежие готовые JPEG и получает новый канал контакта с
-  потенциальным покупателем.
+  потенциальным покупателем; управляет видимостью только собственных uploads.
 - Оператор Face Moment/СПА — контролирует readiness фотографий, Promo и
-  диагностику.
+  диагностику, управляет доступными Photo и запускает глобальные inventory
+  actions.
 - Разработчик приложения — расследует attempts и browser/server logs, размечает
-  результаты и подбирает thresholds/quality gates.
+  результаты, подбирает thresholds/quality gates и имеет staff-доступ к Photo
+  Inventory Operations.
 - После pilot: посетитель СПА как покупатель полного пакета фотографий.
 
 Экономический заказчик будущего продукта пока является гипотезой: СПА, фотограф
@@ -62,6 +65,8 @@ one-СПА pilot, показывает четыре персональных tea
 - Участник сразу видит свои фотографии и продолжает session одним QR scan.
 - Фотограф своевременно привлекает внимание потенциального покупателя.
 - СПА получает автоматический Promo без полноценного touchscreen kiosk.
+- Фотограф и staff могут скрывать ошибочные Photo, восстанавливать их и видеть
+  недавнее состояние ingest/processing без отдельной queueing-системы.
 - Команда получает correlated diagnostics с явными evidence gaps для настройки
   камеры, pipeline, thresholds, UX и latency.
 
@@ -88,6 +93,9 @@ Promo-фотографии являются только teaser.
 Post-pilot paid product продаёт весь найденный пакет за одну фиксированную сумму
 и выдаёт originals после оплаты.
 
+Photo Inventory Operations используют тот же Photo inventory: role-scoped soft
+delete/restore, два глобальных admin actions и прямые recent-statistics queries.
+
 ## 7. MVP Scope
 
 - одна выбранная СПА и ограниченная группа тестировщиков;
@@ -96,6 +104,15 @@ Post-pilot paid product продаёт весь найденный пакет з
 - authenticated direct web upload готовых JPEG после выбора СПА и
   authoritative `visit_date`, с независимым результатом для каждого файла и
   без Batch/manifest/confirmation;
+- выбор Photo по СПА, authoritative `visit_date` и effective `captured_at`;
+  фотограф может soft-delete/restore только собственные uploads, а
+  operator/developer — любые Photo в доступной СПА;
+- project-wide `restore all soft deleted` и подтверждённый fixed-snapshot
+  `hard delete ALL softed media` через общий worker с ожиданием, progress и
+  restart-resume; purge не прерывает уже идущий upload и сохраняет core
+  Attempts и diagnostic evidence;
+- отдельные per-СПА `new`, `unprocessed`, `processed` и `failed` counters за
+  1/5/60 минут с polling каждые пять секунд;
 - background processing и exact face search в пределах СПА, даты и совместимой
   pipeline revision;
 - best-effort group processing до пяти detections без tracking/clustering;
@@ -122,6 +139,8 @@ Post-pilot paid product продаёт весь найденный пакет з
 - production-grade validation по 20 попыткам;
 - RAW, identity clustering, ANN, Redis/Celery/Kafka, Kubernetes, GPU-first и
   полноценный kiosk.
+- отдельный purge worker, per-photo `purge_pending`, purge jobs table,
+  materialized recent counters и WebSocket/SSE для queue statistics.
 
 ## 9. Success Metrics
 
@@ -133,11 +152,21 @@ Post-pilot paid product продаёт весь найденный пакет з
   timestamps; отсутствие подробных evidence видно как `incomplete`.
 - Не менее 95% независимо принятых unique JPEG становятся searchable менее чем
   за 15 минут от server-side `photo.accepted_at`.
+- Role-scoped soft delete немедленно исключает Photo из search, participant
+  media и statistics; restore возвращает сохранённое состояние без повторного
+  upload/processing.
+- Один подтверждённый global hard purge возобновляет fixed snapshot после
+  process restart, показывает completed/total progress, удаляет Photo-owned и
+  связанный Promo state, но сохраняет core Attempts и diagnostic evidence.
+- Per-СПА counters за 1/5/60 минут соответствуют принятым определениям и
+  обновляются polling каждые пять секунд.
 
 Метрики доказывают работоспособность smoke-pilot.
 
 ## 10. Constraints
 
+- Проект находится только на стадии документации и design: working application,
+  backend, worker и deployed runtime ещё не существуют.
 - один центральный CPU-only сервер в РФ и одна pilot СПА;
 - без external cloud face-recognition API;
 - capture запускается автоматически, без действия участника;
@@ -145,8 +174,14 @@ Post-pilot paid product продаёт весь найденный пакет з
 - no-watermark policy для всех preview; originals в pilot не выдаются;
 - PostgreSQL/MinIO не публикуются наружу, public boundary использует HTTPS;
 - поиск ограничен СПА, датой/периодом и совместимой pipeline revision;
+- effective `captured_at` использует reliable EXIF в timezone СПА, затем
+  server-side start time загрузки конкретного файла, затем 01:00 на
+  authoritative `visit_date`;
 - `Photo` и её serving-pipeline `pending` state принимаются одной короткой
   PostgreSQL transaction; будущая queue должна переживать restart backend/worker;
+- Photo Inventory Operations используют один active/soft-deleted marker,
+  один resumable global purge run, общий `BackgroundPhotoWorker` и прямые
+  PostgreSQL queries;
 - Calibration может выполняться на общем `BackgroundPhotoWorker`, временно
   задерживать ingest и после interruption перезапускается разработчиком вручную;
 - архитектура усложняется только после измеримого bottleneck.
@@ -167,6 +202,10 @@ Post-pilot paid product продаёт весь найденный пакет з
   фотограф продолжает upload;
 - crash между object upload и per-photo DB commit может оставить orphan object
   и потерять admission одной фотографии; повторный upload считается достаточным;
+- fallback effective `captured_at` может лишь приблизительно отражать время
+  съёмки, что принято ради KISS time-range selection;
+- global hard purge может задержать Photo processing на общем worker; uploads
+  могут продолжиться и временно увеличить durable backlog;
 - Calibration во время debugging может временно ухудшить ingest SLO;
 - отсутствие watermark облегчает копирование teaser, хотя low-quality ограничивает
   их коммерческую ценность;
@@ -195,7 +234,10 @@ algorithm, core Attempt с best-effort diagnostic evidence, 90-day retention
 ordinary attempt/evidence и performance acceptance `19/20 under 10s`.
 Developer logging, attempt investigation, manual annotation и explainable
 parameter recommendations определены в `IDEA_DEBUG.md` и также являются входом
-PRD. Payment и originals остаются post-pilot context.
+PRD. Photo Inventory Operations включают role-scoped time-range soft
+delete/restore, global restore-all, fixed-snapshot resumable hard purge с
+Attempt/evidence retention и per-СПА 1/5/60-minute statistics с five-second
+polling. Payment и originals остаются post-pilot context.
 
 ## 15. Decision
 

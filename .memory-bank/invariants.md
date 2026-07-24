@@ -1,7 +1,7 @@
 ---
 description: Глобальные инварианты и запреты проекта (MUST/NEVER).
 status: active
-last_updated: 2026-07-23
+last_updated: 2026-07-24
 source_of_truth:
   - .memory-bank/invariants.md
 ---
@@ -16,6 +16,9 @@ source_of_truth:
 - Считать выбранный фотографом и сохранённый с каждой accepted Photo
   `visit_date` authoritative business scope коммерческой фотографии; EXIF, имя
   файла и upload time не могут молча заменить его.
+- Назначать каждой Photo effective `captured_at`: reliable EXIF time в timezone
+  СПА, иначе server-side start time upload этого файла, иначе 01:00
+  authoritative `visit_date`.
 - Создавать Photo и её serving-pipeline `pending` state одним per-photo commit;
   PostgreSQL-backed очередь MUST сохранять свою `pending`/`processing`
   population при restart backend/worker, а незавершённая `processing` работа
@@ -29,6 +32,13 @@ source_of_truth:
 - Делать browser/server logging и diagnostic ingestion неблокирующими для
   capture, search, Promo и QR; protected artifacts и technical logs остаются
   разными data classes согласно PRD `FR-DIAG-04..05` и `FR-DEV-04`.
+- Исключать soft-deleted Photo из search, participant media access и recent
+  statistics, сохраняя Photo и связанные данные для restore без reprocessing.
+- Выполнять hard purge по fixed project-wide snapshot через один resumable
+  global run на shared worker без per-photo purge lifecycle или purge jobs
+  table.
+- Сохранять core Attempt и diagnostic evidence при hard purge Photo, даже когда
+  удаляются связанные Promo result/session.
 
 ## NEVER
 

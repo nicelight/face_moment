@@ -4,6 +4,16 @@ status: active
 ---
 # Changelog
 
+## [2026-07-24] Photo Inventory Operations and SDD backbone
+- Added role-scoped Photo soft delete/restore, project-wide restore-all and
+  fixed-snapshot hard purge that retains core Attempts and diagnostic evidence.
+- Added per-СПА 1/5/60-minute Photo processing counters with five-second Admin
+  UI polling and traced the scope through `REQ-INV-*`, EP-001 and FT-012.
+- Accepted the global SDD backbone at Planning Revision 1 and recorded the
+  required greenfield Foundation Dev Path with its task gate still pending.
+- Clarified that all application, backend, worker and deployment descriptions
+  are target design; no working runtime or code exists yet.
+
 ## [2026-07-22] Pilot durability and QR-session simplification
 - Removed backup as a pilot requirement and recorded accepted data loss after
   irreversible loss of the only primary disk/server.

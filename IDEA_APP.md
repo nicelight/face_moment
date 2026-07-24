@@ -368,9 +368,11 @@ MVP может хранить только serving revision и фиксиров�
 ~~~text
 id
 spa_id
+uploader_id
 captured_at
 visit_date
 accepted_at
+is_active
 original_path
 preview_path
 thumbnail_path
@@ -382,6 +384,11 @@ created_at
 
 UNIQUE(spa_id, visit_date, checksum_sha256)
 ~~~
+
+`captured_at` является effective inventory time: reliable EXIF time в timezone
+СПА, иначе server-side start time upload данного файла, иначе 01:00
+authoritative `visit_date`. `is_active = false` означает soft delete и не
+удаляет ни одну связанную запись или object.
 
 `perceptual_hash` (`pHash`) детерминированно рассчитывается для каждой
 фотографии после исправления EXIF orientation на одинаково нормализованном
@@ -432,6 +439,7 @@ photo_id
 pipeline_revision_id
 status: pending | processing | ready | no_faces | failed
 searchable_at
+status_changed_at
 last_error
 
 UNIQUE(photo_id, pipeline_revision_id)
@@ -446,6 +454,10 @@ coverage не входит. `photos.searchable_at` не хранится: дос
 **Почему принято:** отдельное состояние устраняет неоднозначность между «ещё не
 обработано», «обработано без лиц» и «обработка завершилась ошибкой», не создавая
 сложного workflow engine.
+
+Для project-wide hard purge используется один durable global run с fixed
+snapshot soft-deleted `photo_id` и completed/total progress. Он не является
+Photo state или общей jobs table. Отдельного `purge_pending` у Photo нет.
 
 #### `photo_faces`
 
@@ -505,6 +517,7 @@ query embedding
 → WHERE pipeline_revision_id = serving pipeline
 → WHERE spa_id = selected СПА
 → WHERE visit_date = operator-selected active working date
+→ WHERE Photo is active
 → optional: WHERE captured_at входит в подтверждённый time window
 → точное cosine distance по оставшимся векторам
 → фильтр по calibrated threshold для СПА, pipeline code и query source
@@ -513,10 +526,11 @@ query embedding
 → preview
 ~~~
 
-`visit_date` является authoritative дневным scope. EXIF `captured_at` применяется
-для сортировки или дополнительного time window только когда его качество и
-timezone подтверждены. Обычные B-tree индексы используются для `spa_id`,
-`visit_date`, `captured_at`, `photo_id` и `pipeline_revision_id`.
+`visit_date` является authoritative дневным scope. Effective `captured_at`
+применяется для сортировки и inventory time window: reliable EXIF в timezone
+СПА, иначе server-side start time upload данного файла, иначе 01:00
+`visit_date`. Обычные B-tree индексы используются для `spa_id`, `visit_date`,
+`captured_at`, `photo_id` и `pipeline_revision_id`.
 
 **Почему принято:** даже при 10–15 СПА запрос ограничен одним СПА и коротким периодом. Exact search проще, детерминирован и не теряет recall, а ANN пока не решает измеримой проблемы.
 
@@ -861,6 +875,7 @@ admission, restart и at-least-once processing без второго lifecycle.
 
 - первичную обработку фотографий;
 - developer-triggered Calibration во время отладки;
+- подтверждённый project-wide hard purge soft-deleted Photos;
 - idempotent retention cleanup через отдельную явно запущенную команду.
 
 Calibration может занять worker на полную длительность run и временно задержать
@@ -870,6 +885,11 @@ Photo processing возобновляется, а разработчик зап�
 
 Preemption, priority scheduling, automatic Calibration reclaim и отдельный
 Calibration worker не нужны.
+
+Hard purge ждёт завершения текущей операции, затем worker обрабатывает его
+fixed snapshot до завершения. Пока worker занят, ordinary uploads могут
+продолжаться и создавать обычный durable `pending` backlog. Уже идущий upload
+не прерывается.
 
 ### 7.4 Условие масштабирования background processing
 
@@ -1231,10 +1251,49 @@ Acceptance run содержит 20 ожидаемо успешных попыт�
 - authenticated independent JPEG upload через HTTPS backend boundary;
 - выбор СПА и authoritative `visit_date`;
 - базовый статус originals, preview и `photo_pipeline_states`;
+- Photo selection по СПА/date/effective `captured_at` range;
+- owner-scoped soft delete/restore;
+- per-СПА `new | unprocessed | processed | failed` за 1/5/60 минут;
+- project-wide restore-all и подтверждаемый hard purge;
 - выбор serving pipeline для СПА;
 - редактирование thresholds для каждого СПА.
 
-### 13.2 Threshold settings
+### 13.2 Photo Inventory Operations
+
+Фотограф может soft-delete/restore только свои uploads. Оператор и разработчик
+могут выполнять те же действия для любой Photo в доступном СПА. Soft delete
+меняет один active marker, сохраняет Photo/media/faces/pipeline states и сразу
+исключает Photo из search, participant media access и статистики. Restore
+возвращает preserved state без re-upload или reprocessing.
+
+Admin settings оператора/разработчика содержат две global кнопки:
+
+- `restore all soft deleted` возвращает все soft-deleted Photos во всех СПА;
+- `hard delete ALL softed media` после confirmation фиксирует snapshot всех
+  soft-deleted Photos во всём проекте.
+
+Если shared worker занят, UI показывает `Начну удаление, как только закончится
+процесс {human-readable process name}`. Затем destructive UI заменяется
+completed/total progress. Один resumable global run переживает restart; нет
+per-photo `purge_pending`, purge jobs table или отдельного deletion worker.
+
+Hard purge удаляет Photo, original/preview/thumbnail, faces, pipeline states и
+все Promo results/sessions, содержащие Photo. Core Attempts и diagnostic
+evidence сохраняются по обычной retention policy. Soft deletes после
+confirmation не добавляются в уже запущенный snapshot.
+
+Статистика считается прямыми PostgreSQL queries отдельно для каждого СПА и
+polling-ом обновляется каждые пять секунд:
+
+- `new` — active unique Photos с `accepted_at` внутри окна;
+- `unprocessed` — active Photos, принятые внутри окна и сейчас
+  `pending | processing`;
+- `processed` — active Photos, перешедшие в `ready | no_faces` внутри окна;
+- `failed` — active Photos, перешедшие в `failed` внутри окна.
+
+Окна: 1, 5 и 60 минут. WebSocket/SSE и отдельный counter store не нужны.
+
+### 13.3 Threshold settings
 
 Для первого pilot обязательны откалиброванные reference threshold выбранного
 serving pipeline и простой способ его зарегистрировать или изменить.
@@ -1253,7 +1312,7 @@ Post-pilot администратор выбирает СПА и может из
 pipeline блокируется и админка предлагает зарегистрировать или запустить
 калибровку.
 
-### 13.3 Рекомендуемое расширенное управление pipeline
+### 13.4 Рекомендуемое расширенное управление pipeline
 
 Следующие возможности полезны для длительной эксплуатации, но не являются
 требованием MVP:
@@ -1265,7 +1324,7 @@ pipeline блокируется и админка предлагает заре�
 - просмотр и повтор failed states;
 - состояния моделей: missing/loading/warming/ready/error.
 
-### 13.4 Рекомендуемая техническая диагностика
+### 13.5 Рекомендуемая техническая диагностика
 
 - p50/p95/p99 inference, vector search и trigger-to-preview;
 - число `busy`/expired requests;
@@ -1348,6 +1407,10 @@ configuration scheme.
     `ingest_to_searchable`, а также acceptance run из 20 попыток.
 15. Benchmark SFace и Buffalo M на reference-camera данных pilot; selfie samples
     только post-pilot.
+16. Role-scoped soft delete/restore, project-wide restore-all и один resumable
+    shared-worker hard purge, сохраняющий core Attempts/diagnostic evidence.
+17. Polling каждые пять секунд для per-СПА `new`, `unprocessed`, `processed`,
+    `failed` за 1/5/60 минут.
 
 ### 15.1 Рекомендуется после минимального MVP
 
@@ -1452,7 +1515,9 @@ diagnostics и интерпретации acceptance; полное group coverag
 - developer-triggered Calibration может занять общий worker и задержать Photo
   processing;
 - фотография под ошибочно выбранными СПА или `visit_date` не получает
-  специальный correction workflow.
+  специальный correction workflow;
+- global hard purge может задержать Photo processing; ordinary uploads могут
+  продолжаться и накопить normal `pending` backlog.
 
 ## 19. Финальная архитектурная формула приложения
 
@@ -1471,6 +1536,13 @@ MinIO/S3-compatible storage
 photo_pipeline_states как durable singleton worker queue
 +
 один последовательный BackgroundPhotoWorker
+для Photo processing + Calibration + global hard purge
++
+active/soft-deleted Photo visibility,
+role-scoped restore и project-wide restore-all
++
+direct PostgreSQL per-СПА counters за 1/5/60 минут,
+Admin UI polling каждые 5 секунд
 +
 один синхронный RealtimeFaceService: один slot + busy + deadline
 +

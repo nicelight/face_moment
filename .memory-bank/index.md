@@ -10,8 +10,8 @@ status: active
   и явно отмеченные рекомендации.
 - [IDEA_OS.md](../IDEA_OS.md): Инфраструктурная концепция, topology display
   clients и deployment-рекомендации.
-- [IDEA_INGEST.md](../IDEA_INGEST.md): историческая Batch-first ingest-концепция;
-  актуальные per-photo admission и direct-upload правила находятся в PRD.
+- [IDEA_INGEST.md](../IDEA_INGEST.md): per-photo ingest и processing-концепция;
+  при расхождении product contract и acceptance определяет PRD.
 - [IDEA_DEBUG.md](../IDEA_DEBUG.md): Developer-only browser/server logging,
   investigation attempts и KISS-подбор face threshold/quality gates.
 
@@ -33,7 +33,7 @@ status: active
   and `REQ -> Epic -> Feature -> Test` traceability.
 - [.memory-bank/epics/index.md](epics/index.md): router for the three product
   epics (C4 L2).
-- [.memory-bank/features/index.md](features/index.md): router for the eleven product
+- [.memory-bank/features/index.md](features/index.md): router for the twelve product
   features (C4 L3).
 - [.memory-bank/behavior-specs/](behavior-specs/): Optional JSON behavior examples linked from feature docs and task `source_artifacts`.
 - [.memory-bank/tasks/index.json](tasks/index.json): Authoritative JSON task record index.
@@ -41,18 +41,27 @@ status: active
 - [.memory-bank/workflows/index.md](workflows/index.md): Workflow router and tier/execution/sync policies.
 
 - [.memory-bank/spec-index.md](spec-index.md): Pure SDD spec registry and planned-spec index.
-- [.memory-bank/spec-backbone.md](spec-backbone.md): Pre-PRD framing status and global backbone state for `/write-prd` and `/spec-design`.
+- [.memory-bank/spec-backbone.md](spec-backbone.md): Accepted complete global
+  SDD backbone, Planning Revision and downstream readiness.
+- [.memory-bank/foundation.md](foundation.md): Accepted Foundation Dev Path,
+  substrate scope and pending Foundation gate.
 - `.memory-bank/user-scenarios.md`: optional user scenarios and architecture implications when created by `/spec-init` or `/spec-design`.
 - [.memory-bank/glossary.md](glossary.md): Общий словарь терминов и доменных значений.
 - [.memory-bank/invariants.md](invariants.md): Глобальные MUST/NEVER правила.
 - [.memory-bank/architecture/](architecture/): Duo + boundaries (WHAT/WHY).
+- [.memory-bank/architecture/system-architecture.md](architecture/system-architecture.md):
+  canonical greenfield system shape, capability ownership and Architecture
+  Spine.
 - [.memory-bank/guides/](guides/): Valid HOW docs для использования, запуска и troubleshooting.
 - [.memory-bank/adrs/](adrs/): ADR решения.
 
 - [.memory-bank/domains/](domains/): Subject-based domain models, storage, schemas, migrations, and persistence rules.
 - [.memory-bank/contracts/](contracts/): Контракты и boundary specs (prefer when present).
-- [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md): Lightweight responsibility/scope boundary notes for decomposition and task runtime context.
+- [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md): Canonical
+  capability ownership, application boundaries and cross-slice write rules.
 - [.memory-bank/states/](states/): Lifecycle/state rules (prefer when present).
+- [.memory-bank/states/lifecycle-map.md](states/lifecycle-map.md): Canonical
+  Photo, processing, inventory, purge, Promo and diagnostics lifecycles.
 - [.memory-bank/runbooks/](runbooks/): Runbooks и operational procedures.
 - [.memory-bank/testing/index.md](testing/index.md): Testing strategy.
 - [.memory-bank/skills/index.md](skills/index.md): Skill registry.
@@ -60,7 +69,8 @@ status: active
 ## Product Decomposition
 
 - [.memory-bank/epics/EP-001.md](epics/EP-001.md): fresh searchable
-  commercial-photo inventory.
+  commercial-photo inventory, role-scoped inventory operations and recent
+  per-СПА processing statistics.
 - [.memory-bank/epics/EP-002.md](epics/EP-002.md): automatic participant Promo
   and QR continuation.
 - [.memory-bank/epics/EP-003.md](epics/EP-003.md): explainable diagnostics,

@@ -1,15 +1,17 @@
 ---
-description: Preliminary decomposition-level lifecycle hints for the Face Moment one-СПА pilot.
-status: draft
-last_updated: 2026-07-23
+description: Canonical pilot lifecycles for Photo admission, processing, inventory visibility, purge, Promo and diagnostics.
+status: active
+last_updated: 2026-07-24
+source_of_truth:
+  - .memory-bank/states/lifecycle-map.md
 ---
 # Lifecycle Map
 
 ## Purpose
 
-Record only lifecycle transitions that affect L1-L3 decomposition. Exact state
-schemas, persistence, concurrency, recovery, and transition contracts remain
-owned by `/spec-design`.
+Record the accepted lifecycle and recovery rules that constrain later feature
+design. The repository has no working runtime; every state below is target
+design rather than observed implementation.
 
 ## Independent Photo Admission
 
@@ -20,6 +22,9 @@ owned by `/spec-design`.
   and no new Photo or pipeline state is created.
 - For a valid unique object, one per-photo PostgreSQL commit creates Photo,
   server-side `accepted_at` and serving-pipeline `pending` state together.
+- Effective `captured_at` uses reliable EXIF interpreted in the СПА timezone,
+  otherwise that file's server-side upload-start time, otherwise 01:00 on the
+  authoritative `visit_date`.
 - A crash before that commit may leave an orphan object and lose one admission;
   re-upload is the accepted recovery. No group-level confirmation exists.
 
@@ -43,6 +48,72 @@ pending -> processing -> ready | no_faces | failed
 
 Sources: [IDEA_APP.md](../../IDEA_APP.md),
 [.memory-bank/prd.md](../prd.md) `FR-ING-07..08`.
+
+## Photo Inventory Visibility
+
+```text
+active <-> soft_deleted
+soft_deleted -- confirmed global hard purge --> physically removed
+```
+
+- A photographer may transition only Photos with their own `uploader_id`; an
+  operator/developer may transition any Photo in an accessible СПА.
+- Selection uses one СПА, authoritative `visit_date` and effective
+  `captured_at` range.
+- `soft_deleted` is one inventory-owned visibility marker. All Photo/media,
+  faces, pipeline state and related data remain stored, but search,
+  participant media access and recent-statistics reads exclude the Photo.
+- Restore returns the Photo to `active` with its preserved processing state and
+  timestamps; it does not upload or process the Photo again.
+- Project-wide restore-all moves every currently `soft_deleted` Photo to
+  `active`.
+- Hard purge physically removes snapshot Photo/media/face/pipeline data and
+  every Promo result/session containing the Photo. The core Attempt and
+  diagnostic evidence do not transition and remain under ordinary retention.
+- There is no per-photo `purge_pending` or purge-job lifecycle.
+
+Source: [.memory-bank/prd.md](../prd.md) `FR-INV-01..08`.
+
+## Global Hard-Purge Run
+
+```text
+confirmed_waiting -> running -> completed
+             restart ↘ resume same fixed snapshot ↗
+```
+
+- Explicit confirmation fixes every Photo that is soft-deleted across the
+  project at that moment. Later soft deletes are not added.
+- `confirmed_waiting` persists while the shared worker completes its current
+  Photo-processing, Calibration or maintenance operation. No preemption occurs.
+- The waiting UI displays `Начну удаление, как только закончится процесс
+  {human-readable process name}`.
+- `running` exposes completed/total progress and replaces the destructive
+  settings surface.
+- One durable global run retains enough snapshot/progress identity to resume
+  idempotent cleanup after backend/worker restart. It is not a generic jobs
+  subsystem.
+- An upload already in progress is never interrupted. Ordinary upload may
+  continue and create normal `pending` Photo work while purge occupies the
+  worker.
+
+Source: [.memory-bank/prd.md](../prd.md) `FR-INV-05..09`,
+`NFR-REL-06`.
+
+## Recent Statistics Windows
+
+Each Admin UI poll reads independent 1-, 5- and 60-minute windows for one СПА:
+
+- `new`: active unique Photos accepted in-window by `accepted_at`;
+- `unprocessed`: active Photos accepted in-window and currently
+  `pending | processing`;
+- `processed`: active Photos transitioned in-window to `ready | no_faces`;
+- `failed`: active Photos transitioned in-window to `failed`.
+
+Soft deletion immediately removes a Photo from every window. Restore makes the
+Photo visible again according to its preserved timestamps and state. The UI
+polls every five seconds; no WebSocket/SSE lifecycle exists.
+
+Source: [.memory-bank/prd.md](../prd.md) `FR-INV-10..11`.
 
 ## Automatic Attempt And Display
 
@@ -109,13 +180,16 @@ Sources: [IDEA_DEBUG.md](../../IDEA_DEBUG.md) and clarified
   photo processing resumes and the developer may rerun Calibration manually.
 - No preemption, priority scheduler or separate Calibration worker is part of
   the pilot requirement.
+- A confirmed hard purge waits for an active Calibration run. After the current
+  operation ends, the shared worker executes the purge before returning to
+  ordinary Photo processing.
 
 Source: [.memory-bank/prd.md](../prd.md) `FR-DEV-11` and `NFR-PERF-03`.
 
-## Deferred To /spec-design
+## Deliberate Non-lifecycles
 
-- Canonical state names/fields and persistence ownership.
-- Detailed transition guards, concurrency/idempotency contracts, bounded retry
-  policy and failure normalization beyond the restart behavior fixed above.
-- Session-token representation, expiry enforcement, cleanup, and audit events.
-- Calibration-case promotion/deletion and serving-setting change contracts.
+- No Batch/manifest/confirmation lifecycle.
+- No resumable-upload lifecycle.
+- No per-photo hard-purge state or purge jobs table.
+- No realtime waiter/replay queue.
+- No per-device QR access-grant lifecycle.
