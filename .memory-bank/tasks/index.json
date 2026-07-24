@@ -1,4 +1,13 @@
 {
   "version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "TASK-001-T3-FT-000-W0",
+      "file": "TASK-001-T3-FT-000-W0.task.json"
+    },
+    {
+      "id": "TASK-002-T2-FT-000-W0",
+      "file": "TASK-002-T2-FT-000-W0.task.json"
+    }
+  ]
 }

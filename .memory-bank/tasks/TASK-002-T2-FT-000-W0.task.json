@@ -1,0 +1,112 @@
+{
+  "id": "TASK-002-T2-FT-000-W0",
+  "title": "Prove the final Foundation gate",
+  "status": "planned",
+  "wave": "W0",
+  "feature": "FT-000",
+  "reqs": [
+    "REQ-000"
+  ],
+  "depends_on": [
+    "TASK-001-T3-FT-000-W0"
+  ],
+  "touched_files": [
+    ".tasks/TASK-002-T2-FT-000-W0/",
+    ".protocols/TASK-002-T2-FT-000-W0/",
+    ".memory-bank/foundation.md",
+    ".memory-bank/features/FT-000-foundation.md",
+    ".memory-bank/requirements.md"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Compose configuration",
+      "command": "docker compose config --quiet",
+      "required": true
+    },
+    {
+      "name": "Fresh application image build",
+      "command": "docker compose build",
+      "required": true
+    },
+    {
+      "name": "Configured Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Configured Python tests",
+      "command": "docker compose run --rm backend python -m pytest",
+      "required": true
+    },
+    {
+      "name": "Independent isolated runtime smoke",
+      "command": "bash scripts/smoke-runtime.sh",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/foundation.md",
+    ".memory-bank/features/FT-000-foundation.md",
+    ".memory-bank/requirements.md",
+    ".memory-bank/changelog.md"
+  ],
+  "evidence_required": [
+    "Fresh redacted outputs and exit codes for every required gate.",
+    "Independent mapping from REQ-000 and each Foundation verification target to concrete command/probe evidence.",
+    "Effective topology, image identity, migration/pgvector, imports, readiness, storage/restart and cleanup evidence under .tasks/TASK-002-T2-FT-000-W0/.",
+    "A verifier-owned outcome probe and VERDICT: PASS before the explicit owner or Foundation scheduler closes the gate."
+  ],
+  "purpose": "Independently determine whether the completed walking skeleton satisfies every accepted Foundation exit target before product task design.",
+  "success_outcome": "A fresh isolated verification run proves build, typecheck, tests, one-image/three-role startup, empty-database migration, pgvector, private topology, OpenCV/InsightFace imports, fake-engine HTTPS readiness, storage persistence across restart and owned cleanup, with no source or runtime repair performed by the gate.",
+  "anti_goals": [
+    "Do not implement, repair or reconfigure the walking skeleton inside this final gate.",
+    "Do not add product behavior, schemas, endpoints, auth, production certificates or deployment actions.",
+    "Do not treat prior implementation receipts as sufficient independent PASS evidence."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Application source, build, migration, Compose or HTTPS-edge repair",
+      "Product feature implementation or specification expansion",
+      "Operator/default persistent data or non-test external resources"
+    ],
+    "stop_conditions": [
+      "Any required command or verification target fails or cannot produce independently grounded evidence.",
+      "Passing the gate would require changing source, runtime configuration, a canonical spec or accepted architecture.",
+      "The smoke run is not isolated from existing operator/default Compose resources.",
+      "REQ-000 or the named Foundation exit criteria no longer match the implemented baseline."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/tasks/TASK-001-T3-FT-000-W0.task.json",
+    ".memory-bank/features/FT-000-foundation.md",
+    ".memory-bank/tasks/plans/IMPL-FT-000.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/foundation.md",
+    ".memory-bank/architecture/system-architecture.md#AD-001",
+    ".memory-bank/architecture/system-architecture.md#AD-010",
+    ".memory-bank/architecture/system-architecture.md#AD-011",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/testing/index.md"
+  ],
+  "constraints": [
+    "This is the only final Foundation gate and it depends on every required implementation task.",
+    "The gate is verification-only: failures are reported and routed back; they are not repaired in this task.",
+    "Use a fresh unique Compose project with disposable test resources and preserve operator/default volumes.",
+    "Independent verification must ground every REQ-000 and executable-baseline claim rather than relying only on implementation receipts."
+  ],
+  "invariants": [
+    "No application source or runtime configuration changes are allowed to turn a failing gate into a pass.",
+    "Only the non-production HTTPS edge may be host-published during the isolated run.",
+    "Probe data and Compose cleanup target only resources created by this gate.",
+    "A non-zero or incomplete probe prevents VERDICT: PASS and Foundation closure."
+  ],
+  "verification_targets": [
+    ".memory-bank/testing/index.md#foundation-verification-targets",
+    "Independently rerun and map all build, mypy, pytest, topology, migration, import, readiness, storage, restart and cleanup claims.",
+    "Confirm the implementation contains no product tables/endpoints/state, empty future slices, real-model execution or production deployment machinery.",
+    "Record one fresh verifier-owned outcome probe in addition to any eligible implementation evidence."
+  ]
+}

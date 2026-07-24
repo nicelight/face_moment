@@ -9,7 +9,7 @@ last_updated: 2026-07-24
 - Foundation Required: true
 - Foundation Requirement: REQ-000
 - Foundation Pseudo-Feature: FT-000
-- Foundation Gate Task: pending_foundation_to_tasks
+- Foundation Gate Task: TASK-002-T2-FT-000-W0
 
 ## Decision Evidence
 
@@ -39,6 +39,10 @@ not define or override the accepted target architecture.
   ensure private MinIO buckets, start all three roles with a fake `FaceEngine`,
   verify HTTPS readiness, PostgreSQL/MinIO read-write-delete and restart.
 - Test command: `docker compose run --rm backend python -m pytest`.
+- Deterministic smoke command: `bash scripts/smoke-runtime.sh`; its isolation,
+  failure and evidence rules are canonical in the
+  [testing specification](testing/index.md), section
+  `Executable Baseline Contract`.
 - Evidence: build, typecheck, start, test and smoke commands exit with code
   `0`; the empty-database migration uses one SQLAlchemy `Base/MetaData`; the
   target image imports OpenCV and InsightFace; fake realtime warmup/readiness
@@ -61,6 +65,17 @@ not define or override the accepted target architecture.
 | Crash/restart matrices | Owner-specific recovery is cheaper to prove with each feature. | FT-002, FT-007, FT-011 or FT-012 execution. |
 | Camera/sensor transport and offline browser proof | Pilot hardware is not selected. | Before FT-003 implementation. |
 | Backup, replicas and distributed coordination | Explicitly outside the accepted pilot. | New operator durability/scale decision. |
+
+## Foundation Queue
+
+- [TASK-001-T3-FT-000-W0](tasks/TASK-001-T3-FT-000-W0.task.json) implements
+  the cohesive executable walking skeleton and deterministic smoke harness.
+- [TASK-002-T2-FT-000-W0](tasks/TASK-002-T2-FT-000-W0.task.json) is the only
+  final Foundation gate and depends on TASK-001. It verifies the completed
+  baseline without repairing source or runtime configuration.
+- Both tasks use reserved wave `W0`. Their planning state does not claim
+  Foundation completion; the named gate must pass its tier-routed execution
+  and verification lifecycle before product task design.
 
 ## Foundation Exit Criteria
 - minimal path passes

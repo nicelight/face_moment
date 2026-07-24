@@ -85,7 +85,7 @@ hub.
 
 - Foundation Decision Status: accepted
 - Foundation Required: true
-- Foundation Gate Task: pending_foundation_to_tasks
+- Foundation Gate Task: TASK-002-T2-FT-000-W0
 - Reason: the accepted target needs one executable release, three server roles,
   one storage/migration baseline and a project-native
   build/typecheck/start/test path; none exists in current state.
@@ -95,6 +95,8 @@ hub.
 ## Handoff
 
 - Global backbone is ready at Planning Revision `2`.
-- Run `/foundation-to-tasks` next.
-- Do not generate product feature tasks until the resulting FT-000 Foundation
-  gate is complete.
+- The minimum FT-000 queue exists and names
+  `TASK-002-T2-FT-000-W0` as its final gate.
+- Run `/mb-doctor --strict` next.
+- Do not generate product feature tasks until the named FT-000 Foundation gate
+  is `done`.

@@ -1,0 +1,17 @@
+.git
+.memory-bank
+.protocols
+.tasks
+.agents
+.claude
+__pycache__
+*.py[cod]
+.mypy_cache
+.pytest_cache
+.venv
+Untitled.jpeg
+mermaids
+IDEA_*.md
+notes_face_moment.md
+CAMERA_OPTIONS.md
+

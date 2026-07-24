@@ -4,6 +4,11 @@ status: active
 ---
 # Feature Index
 
+## Foundation pseudo-feature
+
+- [FT-000](FT-000-foundation.md): Minimum executable walking skeleton; not a
+  product feature.
+
 ## EP-001 — Fresh Searchable Inventory
 
 - [FT-001](FT-001.md): Independent photographer photo admission.

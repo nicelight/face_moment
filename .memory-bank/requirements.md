@@ -16,6 +16,7 @@ last_updated: 2026-07-24
 
 | ID | Requirement | PRD basis |
 |---|---|---|
+| `REQ-000` | The repository MUST provide a reproducible executable baseline that builds one application image, invokes backend/background-worker/realtime roles from the same release, typechecks and tests the Python package, applies one Alembic stream with one SQLAlchemy `Base/MetaData` to an empty PostgreSQL/pgvector database, keeps PostgreSQL/MinIO/internal ports private behind a non-production HTTPS edge, and passes isolated fake-`FaceEngine`, import, storage and restart probes without implementing product behavior. | Accepted [.memory-bank/foundation.md](foundation.md) decision; NFR-ARCH-01..03 and NFR-SEC-01 substrate pressure |
 | `REQ-ING-001` | The photographer MUST authenticate, select one СПА and authoritative `visit_date`, and upload only ready JPEGs independently through the HTTPS application boundary without Batch/manifest/confirmation. | FR-ING-01..02 |
 | `REQ-ING-002` | Every completed upload MUST be validated and reported independently as accepted, rejected or duplicate; EXIF, filename and upload time MUST NOT silently replace the selected `visit_date`. | FR-ING-03..04 |
 | `REQ-ING-003` | Uniqueness MUST be enforced by `(spa_id, visit_date, checksum_sha256)`; duplicates are visibly excluded/deleted, while each unique Photo, `accepted_at` and serving `pending` state are committed atomically per photo. | FR-ING-05..06, AC-17 |
@@ -67,6 +68,7 @@ last_updated: 2026-07-24
 
 | REQ | Epic | Feature | Test / evidence target | Lifecycle |
 |---|---|---|---|---|
+| `REQ-000` | Foundation (no product epic) | [FT-000](features/FT-000-foundation.md) | [Testing specification](testing/index.md), `Executable Baseline Contract`, and final Foundation gate | planned |
 | `REQ-ING-001` | [EP-001](epics/EP-001.md) | [FT-001](features/FT-001.md) | PRD AC-08 | planned |
 | `REQ-ING-002` | [EP-001](epics/EP-001.md) | [FT-001](features/FT-001.md) | PRD AC-08 | planned |
 | `REQ-ING-003` | [EP-001](epics/EP-001.md) | [FT-001](features/FT-001.md), [FT-002](features/FT-002.md) | PRD AC-17 | planned |

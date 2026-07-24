@@ -23,7 +23,7 @@ source_of_truth:
 | contract | [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md) | active | Canonical capability/application boundaries, write authority and cross-slice orchestration. | /spec-design or /feature-to-tasks |
 | state | [.memory-bank/states/lifecycle-map.md](states/lifecycle-map.md) | active | Canonical pilot lifecycle and recovery rules. | /spec-design or /feature-to-tasks |
 | foundation | [.memory-bank/foundation.md](foundation.md) | active | Explicit Foundation Dev Path decision and minimum substrate evidence. | /spec-design or /foundation-to-tasks |
-| testing | [.memory-bank/testing/index.md](testing/index.md) | active | Bootstrap verification router and project quality gates. | /spec-design |
+| testing | [.memory-bank/testing/index.md](testing/index.md) | active | Bootstrap verification contract and project quality-gate router. | /spec-design or /foundation-to-tasks |
 
 ## Planned Specs
 | Area | Expected path | Needed by | Notes |

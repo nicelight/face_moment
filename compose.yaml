@@ -1,0 +1,138 @@
+name: face-moment
+
+x-application: &application
+  build:
+    context: .
+  image: "${FACE_MOMENT_IMAGE:-face-moment:dev}"
+  restart: unless-stopped
+  environment: &application-environment
+    DATABASE_URL: "postgresql+psycopg://${POSTGRES_USER:-face_moment}:${POSTGRES_PASSWORD:-face_moment_dev}@postgres:5432/${POSTGRES_DB:-face_moment}"
+    S3_ENDPOINT_URL: "http://minio:9000"
+    S3_ACCESS_KEY: "${MINIO_ROOT_USER:-face_moment}"
+    S3_SECRET_KEY: "${MINIO_ROOT_PASSWORD:-face_moment_dev}"
+    S3_BUCKET: "${S3_BUCKET:-face-moment-private}"
+    DEPENDENCY_WAIT_SECONDS: "${DEPENDENCY_WAIT_SECONDS:-60}"
+    NO_ALBUMENTATIONS_UPDATE: "1"
+  networks:
+    - private
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.0-pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-face_moment}"
+      POSTGRES_USER: "${POSTGRES_USER:-face_moment}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-face_moment_dev}"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "pg_isready -U ${POSTGRES_USER:-face_moment} -d ${POSTGRES_DB:-face_moment}"
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - private
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    command: server /data
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ROOT_USER:-face_moment}"
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:-face_moment_dev}"
+    volumes:
+      - minio-data:/data
+    networks:
+      - private
+
+  migrate:
+    <<: *application
+    restart: "no"
+    command: ["face-moment-migrate"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  backend:
+    <<: *application
+    command: ["face-moment-backend"]
+    expose:
+      - "8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  background-worker:
+    <<: *application
+    command: ["face-moment-background-worker"]
+    expose:
+      - "8001"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/healthz', timeout=2)"
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  realtime:
+    <<: *application
+    command: ["face-moment-realtime"]
+    expose:
+      - "8002"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/healthz', timeout=2)"
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  edge:
+    image: caddy:2.10.0-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${FACE_MOMENT_EDGE_PORT:-8443}:8443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      - private
+      - edge
+    depends_on:
+      backend:
+        condition: service_healthy
+      realtime:
+        condition: service_healthy
+
+networks:
+  private:
+    internal: true
+  edge:
+
+volumes:
+  postgres-data:
+  minio-data:

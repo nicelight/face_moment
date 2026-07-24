@@ -1,0 +1,13 @@
+https://localhost:8443 {
+	tls internal
+
+	handle_path /backend/* {
+		reverse_proxy backend:8000
+	}
+
+	handle_path /realtime/* {
+		reverse_proxy realtime:8002
+	}
+
+	respond /healthz 200
+}

@@ -18,6 +18,7 @@ status: active
 | <code>cold-start</code> | yes | yes |
 | <code>constitution</code> | yes | yes |
 | <code>context-manifest</code> | yes | yes |
+| <code>creator-vibe</code> | yes | yes |
 | <code>discuss</code> | yes | yes |
 | <code>exe</code> | yes | yes |
 | <code>feature-doctor</code> | yes | yes |

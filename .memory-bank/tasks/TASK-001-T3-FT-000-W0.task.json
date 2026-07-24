@@ -1,0 +1,131 @@
+{
+  "id": "TASK-001-T3-FT-000-W0",
+  "title": "Implement the executable walking skeleton",
+  "status": "in_progress",
+  "wave": "W0",
+  "feature": "FT-000",
+  "reqs": [
+    "REQ-000"
+  ],
+  "depends_on": [],
+  "touched_files": [
+    "pyproject.toml",
+    "Dockerfile",
+    "compose.yaml",
+    ".dockerignore",
+    "alembic.ini",
+    "migrations/",
+    "src/face_moment/entrypoints/",
+    "src/face_moment/infrastructure/",
+    "src/face_moment/processing/",
+    "tests/",
+    "scripts/smoke-runtime.sh"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Compose configuration",
+      "command": "docker compose config --quiet",
+      "required": true
+    },
+    {
+      "name": "Application image build",
+      "command": "docker compose build",
+      "required": true
+    },
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Python tests",
+      "command": "docker compose run --rm backend python -m pytest",
+      "required": true
+    },
+    {
+      "name": "Isolated runtime smoke",
+      "command": "bash scripts/smoke-runtime.sh",
+      "required": true
+    }
+  ],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Independent T3 functional verification passed all current-source gates and fresh isolated runtime, restart, persistence, idempotent-delete and owned-cleanup probes.",
+      "protocol": ".protocols/TASK-001-T3-FT-000-W0/verification.md",
+      "report": ".tasks/TASK-001-T3-FT-000-W0/TASK-001-T3-FT-000-W0-S-VERIFY-final-report-docs-01.md",
+      "artifacts": [
+        ".tasks/TASK-001-T3-FT-000-W0/verifier-20260724-XV0Sdo/",
+        ".tasks/TASK-001-T3-FT-000-W0/runtime-smoke-20260724T172705Z-569935/"
+      ]
+    }
+  ],
+  "docs": [
+    ".memory-bank/foundation.md",
+    ".memory-bank/features/FT-000-foundation.md",
+    ".memory-bank/testing/index.md",
+    ".memory-bank/tasks/plans/IMPL-FT-000.md"
+  ],
+  "evidence_required": [
+    "Redacted outputs and exit codes for Compose config/build, mypy, pytest and the isolated smoke command.",
+    "Effective topology evidence that one application image supplies all three roles and only the non-production HTTPS edge is host-published.",
+    "Empty-database Alembic/pgvector evidence using one Base/MetaData and no product tables.",
+    "Target-image OpenCV/InsightFace import and fake FaceEngine warmup/readiness evidence.",
+    "PostgreSQL/MinIO read-write-read-after-restart-delete and task-owned cleanup evidence.",
+    "Independent VERDICT: PASS, T3 semantic-pass evidence and the exact human checkpoint marker before closure."
+  ],
+  "purpose": "Create the minimum reproducible application/runtime substrate required before any product feature can be tasked or implemented.",
+  "success_outcome": "A fresh isolated checkout builds one image, invokes backend, BackgroundPhotoWorker and RealtimeFaceService roles, passes configured mypy/pytest, applies the one empty-database Alembic stream, keeps internal services private, and passes fake-engine, HTTPS, import, storage, restart and cleanup probes without product behavior.",
+  "anti_goals": [
+    "Do not implement FT-001 through FT-012 behavior, product tables, endpoints, authentication or seed data.",
+    "Do not create empty serving_control, inventory, promo or diagnostics packages merely to mirror the future architecture.",
+    "Do not download or run a production face model, provision production TLS, deploy to production or add backup, broker, extra-worker or distributed machinery."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Product Photo, processing, Attempt, Promo/session, diagnostics, inventory and authentication behavior",
+      "Empty future capability-slice scaffolding",
+      "Production deployment, production certificates and operator/default persistent-volume deletion"
+    ],
+    "stop_conditions": [
+      "The accepted one-release, capability-root, private-service or single-migration-stream architecture would need to change.",
+      "Passing the baseline would require a product schema, endpoint, state machine, auth flow or feature behavior.",
+      "The smoke proof cannot be isolated from existing operator/default Compose resources or requires mounting the host Docker socket.",
+      "A real model download/inference or another production-capable external side effect becomes necessary."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-000-foundation.md",
+    ".memory-bank/tasks/plans/IMPL-FT-000.md",
+    ".protocols/FT-000/decision-log.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/foundation.md",
+    ".memory-bank/architecture/system-architecture.md#AD-001",
+    ".memory-bank/architecture/system-architecture.md#AD-010",
+    ".memory-bank/architecture/system-architecture.md#AD-011",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/testing/index.md"
+  ],
+  "constraints": [
+    "Use one installable Python release and one application image with separately invocable backend, background-worker and realtime roles.",
+    "The composition root owns settings, adapters, wiring and lifecycle only; create only roots used by the proof.",
+    "Use one PostgreSQL application schema, one SQLAlchemy Base/MetaData, one Alembic configuration and one linear migration stream.",
+    "Publish only the non-production HTTPS edge; PostgreSQL, MinIO, internal role ports and the Docker API remain private.",
+    "Exact module filenames, edge technology, test certificate method, dependency versions, bucket names and migration revision filename remain implementation discretion."
+  ],
+  "invariants": [
+    "No Foundation migration creates Product, Attempt, Promo/session, evidence, auth or purge tables.",
+    "The realtime bootstrap uses an explicit fake FaceEngine and never downloads or runs a production model.",
+    "The smoke harness uses a unique Compose project and deletes only its own probe data and resources.",
+    "Any dependency, migration, warmup, readiness, topology, storage, restart or cleanup failure is visible and exits non-zero."
+  ],
+  "verification_targets": [
+    ".memory-bank/testing/index.md#foundation-verification-targets",
+    "One image supplies three healthy role entrypoints and imports OpenCV plus InsightFace.",
+    "An empty database reaches the single current Alembic head with pgvector available and no product tables.",
+    "HTTPS readiness, private-service topology, PostgreSQL/MinIO convergence, persistence across restart and owned cleanup pass from a fresh isolated state."
+  ]
+}

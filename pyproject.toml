@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "face-moment"
+version = "0.1.0"
+description = "Executable Foundation walking skeleton for Face Moment."
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "alembic==1.16.4",
+  "boto3==1.39.14",
+  "fastapi==0.116.1",
+  "insightface==0.7.3",
+  "mypy==1.17.0",
+  "numpy==1.26.4",
+  "onnxruntime==1.22.1",
+  "opencv-python-headless==4.10.0.84",
+  "psycopg[binary]==3.2.9",
+  "pytest==8.4.1",
+  "sqlalchemy==2.0.41",
+  "uvicorn==0.35.0",
+]
+
+[project.scripts]
+face-moment-backend = "face_moment.entrypoints.backend:main"
+face-moment-background-worker = "face_moment.entrypoints.background_worker:main"
+face-moment-realtime = "face_moment.entrypoints.realtime:main"
+face-moment-migrate = "face_moment.entrypoints.migrate:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+warn_unused_ignores = true

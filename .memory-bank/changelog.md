@@ -4,6 +4,15 @@ status: active
 ---
 # Changelog
 
+## [2026-07-24] Foundation executable-baseline queue
+- Added `REQ-000` and the reserved `FT-000` pseudo-feature for the accepted
+  greenfield executable baseline.
+- Extended the existing testing spec with isolated build/typecheck/test,
+  empty-database migration, private-storage, fake-engine, HTTPS and restart
+  proof contracts without adding product behavior.
+- Created the minimum two-task W0 queue: one T3 walking-skeleton
+  implementation and one dependent T2 verification-only final gate.
+
 ## [2026-07-24] SDD verifier corrections
 - Advanced Planning Revision once from `1` to `2` for three operator-approved
   corrections; the empty task queue made no plan stale.
