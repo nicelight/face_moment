@@ -17,12 +17,12 @@ flowchart LR
         upload["Independent JPEG upload<br/>selected СПА + visit_date"]
         inventory["Searchable inventory"]
         serving["Serving control<br/>active visit_date + settings"]
-        promo_client["SpaPromoClient<br/>advertising + capture + Promo"]
-        search["Exact scoped face search"]
+        promo_client["SpaPromoClient<br/>advertising + local face proposals + Promo"]
+        search["Server-owned exact scoped face search"]
         continuation["Session-wide QR continuation"]
         operations["Photo Inventory Operations<br/>soft delete / restore / global purge<br/>per-СПА 1/5/60-minute counters"]
-        attempt_view["Sanitized attempts"]
-        diagnostics["Attempts + Log Explorer + Calibration<br/>developer-only"]
+        attempt_view["Sanitized Attempts<br/>operator role-scoped"]
+        diagnostics["Developer-only protected detail:<br/>names + annotations + logs + Calibration"]
     end
 
     photographer -->|"выбирает СПА/date<br/>независимо загружает JPEG"| upload
@@ -31,7 +31,7 @@ flowchart LR
     sensor --> promo_client
     camera --> promo_client
     participant -->|"проходит capture-zone без действий"| promo_client
-    promo_client -->|"reference series"| search
+    promo_client -->|"crop + metadata каждого occurrence<br/>zero → metadata-only<br/>без full frames / local ranking / top-5"| search
     inventory --> search
     serving --> search
     search -->|"4 teasers + QR session"| promo_client
@@ -54,7 +54,10 @@ flowchart LR
 
 - Promo display завлекает, но не является touchscreen kiosk.
 - В pilot участник не загружает selfie и не получает original.
-- Оператор видит только sanitized attempt summary; protected artifacts и Calibration доступны разработчику.
+- Операторский Attempts view содержит только sanitized summary. Participant
+  names, manual annotations, detailed logs, Calibration и protected non-media
+  доступны разработчику; capture-derived media не становится developer-only
+  только из-за image content.
 - Фотограф soft-delete/restore только свои uploads; оператор/разработчик могут
   действовать в доступных СПА, а global restore/purge охватывает весь проект.
 - Soft-deleted Photo отсутствует в новых search/results/statistics, но уже
@@ -64,6 +67,8 @@ flowchart LR
   per-device grants.
 
 Источники: [PRD](../.memory-bank/prd.md),
-[Architecture](../.memory-bank/architecture/system-architecture.md), [Product
+[Architecture](../.memory-bank/architecture/system-architecture.md),
+[Boundary map](../.memory-bank/contracts/boundary-map.md),
+[IDEA_CLIENT.md](../IDEA_CLIENT.md), [Product
 Brief](../.memory-bank/analysis/product-brief.md),
 [Glossary](../.memory-bank/glossary.md).

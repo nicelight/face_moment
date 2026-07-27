@@ -4,6 +4,7 @@ status: draft
 type: prd
 clarification_status: complete
 constitution_checked: true
+last_updated: 2026-07-27
 ---
 # PRD
 
@@ -38,12 +39,14 @@ constitution_checked: true
   boundaries; recommendations explicitly marked there are not pilot gates.
 - [IDEA_DEBUG.md](../IDEA_DEBUG.md): concise normative input for the first
   developer diagnostics version.
+- [IDEA_CLIENT.md](../IDEA_CLIENT.md): accepted operator clarification of
+  client behavior, timing and capture-derived media policy.
 
 ### Readiness and verification context
 
-- [.memory-bank/spec-backbone.md](spec-backbone.md): complete global SDD
-  backbone at Planning Revision 2; the accepted Foundation Dev Path must close
-  its FT-000 gate before product task design.
+- [.memory-bank/spec-backbone.md](spec-backbone.md): current global SDD
+  readiness, coverage and clarification routing; its status must reflect the
+  project-wide reconciliation of this clarified product source.
 - [.memory-bank/spec-index.md](spec-index.md): registry of current and planned
   canonical specs.
 - [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md): canonical
@@ -56,12 +59,20 @@ constitution_checked: true
 
 The Constitution governs all decisions. The current Product Brief defines the
 pilot scope. Explicitly selected directions in BR-002 and BR-003 refine that
-scope. `IDEA_*` documents supply accepted behavior and constraints where they do
-not conflict with the Product Brief. Historical ideas, post-pilot candidates and
-items explicitly labelled as recommendations are not converted into pilot
-acceptance gates.
+scope. Explicit operator decisions in `IDEA_CLIENT.md` supersede older
+conflicting client-side and capture-derived media wording; they do not define
+server-internal processing, ranking or search. Remaining `IDEA_*` material
+supplies accepted behavior and constraints where it does not conflict with
+those sources. Historical ideas, post-pilot candidates and items explicitly
+labelled as recommendations are not converted into pilot acceptance gates.
 
 ## Clarifications
+
+### 2026-07-27 — `SpaPromoClient` and capture-derived media
+
+- `IDEA_CLIENT.md` is accepted for the client behavior, timing and media-policy
+  contracts below. It does not decide server internals or the deferred client
+  technical choices.
 
 - Clarification status is complete for the one-СПА pilot, including Photo
   Inventory Operations. The resolved scope, actors, behavior, data semantics,
@@ -76,6 +87,15 @@ acceptance gates.
 - Source precedence and superseded `IDEA_*` defaults are recorded in
   [.memory-bank/spec-backbone.md](spec-backbone.md) for decomposition and later
   SDD work.
+
+### Deferred Technical Decisions
+
+- Client runtime route and local detector/runtime/model/update choice;
+  `ONNX Runtime Web` and YuNet remain feasibility context, not requirements,
+  gates or mandatory checks.
+- Camera and sensor hardware, plus sensor-to-client transport.
+- Crop parameters, request/response schema and exact request bounds.
+- Any future move of embeddings or search to the client.
 
 ## Product Summary
 
@@ -139,6 +159,8 @@ quality gates.
   represented in the result.
 - Tracking or identity deduplication across reference frames, automatic identity
   clustering or cross-pipeline person linking.
+- Mandatory upload of full/downscaled reference frames, proof or annotation of
+  occurrences missed by the local detector, or a diagnostic frame-upload mode.
 - ANN search, Redis, Celery/RQ/Arq, Kafka, multiple priority queues, Kubernetes,
   distributed scheduling, GPU-first deployment or one inference server per СПА.
 - Multi-model ensemble in participant-facing search, automatic serving-pipeline
@@ -184,15 +206,15 @@ quality gates.
 - Explicitly sets the active working `visit_date` for the pilot СПА in the
   server-side application before automatic attempts use that date for search.
 - May open a sanitized attempt summary containing outcome, stage timeline,
-  latency and issue tags, but cannot access reference images/crops, participant
-  names, manual annotations, detailed logs or Calibration.
+  latency and issue tags; access to other data follows NFR-SEC-04 and
+  NFR-SEC-06.
 
 ### Application developer
 
 - Investigates individual attempts and correlated browser/server logs.
 - May view recent queue statistics per СПА, soft-delete or restore any Photo,
   and invoke the confirmed project-wide restore-all or hard-purge action.
-- Has full authorized access to protected diagnostic artifacts, real names in
+- Has authorized access to developer-restricted diagnostic data, real names in
   annotations, detailed Log Explorer records and Calibration.
 - Adds ground-truth annotations, compares releases/configurations and examines
   group-search decisions.
@@ -277,9 +299,13 @@ pilot actor or blocker.
   action.
 - **FR-CAP-02** — While capture or search is active, new sensor events MUST be
   ignored; stale realtime requests MUST NOT later replace a newer display state.
-- **FR-CAP-03** — The system MUST select at most five highest-quality face
-  detections from the reference series. Each selected detection is searched
-  independently; embeddings from different detections MUST NOT be merged.
+- **FR-CAP-03** — `SpaPromoClient` MUST send one crop plus metadata for every
+  face occurrence returned by the local detector in one bounded request. It
+  MUST NOT rank, choose a top-5, authoritatively quality-gate, track, cluster,
+  deduplicate, embed or search those occurrences. The pre-existing server
+  contract remains at most five independently searched detections with no
+  merged embeddings; this clarification does not otherwise define server
+  processing.
 - **FR-CAP-04** — The pilot MUST preserve the current best-effort behavior: one
   physical person may occupy several detection slots, and tracking, identity
   clustering and cross-frame person deduplication are absent.
@@ -299,6 +325,22 @@ pilot actor or blocker.
   every unique `photo_id` counted in `N` belong to at least one pilot participant
   represented by a processed selected detection; complete group coverage is not
   required.
+- **FR-CAP-09** — If the complete bounded request containing all proposal crops
+  and metadata cannot fit accepted request bounds, the attempt MUST end with an
+  explicit non-success outcome; the client MUST NOT rank, drop or send a subset.
+- **FR-CAP-10** — If the local detector returns no occurrences, the client MUST
+  send a metadata-only request with the same attempt correlation and client
+  timings. If admitted, it MUST create the core Attempt and return an explicit
+  non-success outcome.
+- **FR-CAP-11** — Client configuration MUST list available cameras with
+  understandable labels, provide preview, explicit selection and refresh. If
+  the selected camera becomes unavailable, advertising MUST continue and
+  capture MUST wait for operator reselection and preview; no arbitrary camera
+  substitution is allowed.
+- **FR-CAP-12** — Client configuration MUST provide an explicitly labelled test
+  trigger. Physical and test triggers MUST follow the same capture, proposal,
+  request and overlap/staleness behavior, with distinguishable trigger-source
+  metadata.
 
 ### D. Promo display and QR continuation
 
@@ -364,33 +406,33 @@ pilot actor or blocker.
   row. A client-only offline trigger MAY be delivered through a short-lived
   metadata outbox and server upsert, but this is best-effort and is not
   guaranteed to produce a durable Attempt.
-- **FR-DIAG-02** — The attempt timeline MUST expose capture/reference readiness,
-  request/network, singleton-slot acquisition or `busy`, inference, vector
-  search, response, browser receipt, Promo render and full QR visibility so a
-  `>=10 s` outcome can be localized to a stage.
+- **FR-DIAG-02** — The diagnostic UI MUST show the client-local moments when
+  ready-series processing starts, request sending starts and the response is
+  received. The correlated timeline MUST also expose capture/reference
+  readiness, request/network, singleton-slot acquisition or `busy`, server
+  processing, Promo render and full QR visibility so a `>=10 s` outcome can be
+  localized.
 - **FR-DIAG-03** — Attempt detail MUST show release, serving pipeline revision,
   applied threshold and quality values, selected detections, repeated
   detections, candidate pools, selected teasers, `N`, outcome/status and issue
   tags.
-- **FR-DIAG-04** — Collected diagnostic evidence MUST link the source reference
-  series, normalized images, selected crops, camera/config metadata, detections,
-  candidates, thresholds, selected IDs, timestamps, actually displayed Promo
-  screenshot and QR continuation event. A product flow that actually captures
-  a selfie MUST also retain that selfie as a diagnostic artifact; the current
-  pilot has no selfie capture and therefore creates no selfie artifact.
-- **FR-DIAG-05** — Diagnostic images MUST be stored as protected artifacts, not
-  embedded in log records. Detailed evidence is attached best-effort by
-  `attempt_id`; a terminal Attempt without finalized evidence MUST remain
-  visible as `incomplete`. When evidence exists, the attempt MUST expose a
-  redacted reproducibility manifest with versions, parameters, timestamps and
-  authorized artifact links; an automatic replay runner is not required.
+- **FR-DIAG-04** — Collected diagnostic evidence MUST correlate received
+  proposal crops and metadata, camera/config metadata, detections, candidates,
+  thresholds, selected IDs, timestamps, actually displayed Promo evidence and
+  QR continuation event. A product flow that actually captures a selfie MUST
+  also retain that selfie as a diagnostic artifact; the current pilot has no
+  selfie capture and therefore creates no selfie artifact.
+- **FR-DIAG-05** — Detailed evidence is attached best-effort by `attempt_id`; a
+  terminal Attempt without finalized evidence MUST remain visible as
+  `incomplete`. When evidence exists, the attempt MUST expose a reproducibility
+  manifest with versions, parameters, timestamps and links governed by
+  NFR-SEC-06; an automatic replay runner is not required.
 - **FR-DIAG-06** — The `Attempts` page MUST support filtering by time, status,
   release, pipeline, latency and issue tags, opening a unified browser/server
   timeline and navigating to relevant logs/artifacts.
 - **FR-DIAG-07** — The operator view of an attempt MUST be sanitized to outcome,
-  stage timeline, latency and issue tags. Navigation to protected images/crops,
-  participant names, manual annotations, detailed logs and Calibration MUST be
-  available only to the authorized developer role.
+  stage timeline, latency and issue tags. Navigation beyond that view MUST
+  follow NFR-SEC-04 and NFR-SEC-06.
 
 ### F. Manual annotation, logs and calibration
 
@@ -405,8 +447,11 @@ pilot actor or blocker.
 - **FR-DEV-03** — Log search MUST operate through the project backend and
   PostgreSQL. The browser MUST NOT access PostgreSQL directly.
 - **FR-DEV-04** — Browser/server logging MUST be non-blocking for capture,
-  search, Promo and QR. Log records MUST NOT contain images, embeddings,
-  authentication headers, cookies, tokens, request bodies or session replay.
+  search, Promo and QR. Log records MUST NOT contain embeddings, credentials,
+  authentication headers, cookies, tokens, participant names, commercial Photo
+  originals, personalized session data or session replay. Capture-derived
+  media MAY be logged when useful and bounded; logging every crop or complete
+  request body is not required.
 - **FR-DEV-05** — `Calibration` MUST use annotated attempts to compare SFace and
   Buffalo M and calculate face-match-threshold recommendations without changing
   serving settings automatically.
@@ -495,7 +540,10 @@ pilot actor or blocker.
 
 - **NFR-PERF-01** — At least 19 of 20 controlled attempts MUST produce a fully
   visible and scannable QR with
-  `qr_fully_visible_at - reference_series_ready_at < 10_000 ms`.
+  `qr_fully_visible_elapsed_ms - reference_series_ready_elapsed_ms < 10_000 ms`
+  on one client monotonic clock. `reference_series_ready` is the client-local
+  moment when the capture window ends and local processing starts; local
+  processing and request sending are therefore inside the interval.
 - **NFR-PERF-02** — Timeout or no-match without a completed QR is a failed
   attempt, not an excluded observation.
 - **NFR-PERF-03** — At least 95% of the metric population defined by FR-ING-08
@@ -549,24 +597,31 @@ pilot actor or blocker.
 - **NFR-SEC-03** — Public requests MUST be rate-limited. SSH MUST be key-only,
   and the display browser MUST run sandboxed under a non-privileged OS user.
 - **NFR-SEC-04** — Application authorization MUST enforce a split diagnostic
-  access matrix: the operator may read only sanitized attempt outcome/timeline/
-  latency/issue tags; the developer may access protected reference images/crops,
-  names, annotations, detailed logs and Calibration. The photographer is limited
-  to their own uploaded-photo state and has no diagnostic-page access.
+  access matrix for protected data and actions: the operator receives the
+  sanitized attempt outcome/timeline/latency/issue tags; participant names,
+  annotations, detailed logs and Calibration require the developer role. The
+  photographer is limited to their own uploaded-photo state and has no
+  diagnostic-page access.
 - **NFR-SEC-05** — Photo Inventory authorization MUST restrict photographers to
   soft deletion and restoration of their own uploads. Operator/developer access
   MAY cover any accessible СПА, while project-wide restore-all and hard-purge
   actions MUST be restricted to authorized operator/developer admin settings.
+- **NFR-SEC-06** — Capture-derived reference images, normalized images and face
+  crops are ordinary media, not protected solely because they contain an image
+  or face. They MAY be logged, cached, stored or delivered without
+  developer-only media authorization; none of those mechanisms is required.
+  Credentials, infrastructure, commercial Photo media, personalized data,
+  participant names and administrative actions remain protected.
 - **NFR-DATA-01** — Technical browser/server logs MUST expire after 30 days.
 - **NFR-DATA-02** — Attempts and ordinary diagnostic bundles/artifacts MUST
-  expire after 90 days.
+  expire after 90 days, including persisted capture-derived diagnostic media.
 - **NFR-DATA-03** — A manually promoted calibration case MAY be retained until
-  explicit deletion, but only as a curated reproducible subset: selected source
-  reference frames, required face crops or a selfie when one was actually
-  captured, versioned parameters/configuration, quality and match scores,
-  ground-truth annotations and the entered participant name. The rest of the
-  raw reference series and the Promo screenshot MUST expire with the ordinary
-  90-day bundle; technical logs MUST still expire after 30 days.
+  explicit deletion, but only as a curated reproducible subset: already
+  available server-side media, required face crops or an actually captured
+  selfie, versioned parameters/configuration, scores, annotations and the
+  entered participant name. Other diagnostic media and the Promo screenshot
+  MUST expire with the ordinary 90-day bundle; technical logs MUST still expire
+  after 30 days.
 - **NFR-DATA-04** — Real pilot-participant names may appear only in authorized
   manual diagnostic annotations, not in general technical logs.
 
@@ -606,7 +661,7 @@ pilot actor or blocker.
 - **Photo face** — one face detected by one pipeline revision in one photo.
   Different pipelines create independent records and no shared person identity.
 - **Reference series** — sensor-triggered set of frames from the client ring
-  buffer used to select up to five independent query detections.
+  buffer used to form the request governed by FR-CAP-03.
 - **Selected detection** — one quality-ranked face occurrence used for a search;
   it is not proof of a unique physical person.
 - **Promo/search session** — short-lived context binding СПА, authoritative
@@ -617,16 +672,16 @@ pilot actor or blocker.
   activity on any opened phone.
 - **Attempt** — one correlated automatic capture/search/display execution,
   including unsuccessful outcomes and stage timestamps.
-- **Diagnostic evidence** — optional protected image artifacts plus a versioned
+- **Diagnostic evidence** — optional media plus a versioned
   manifest, indexed events, decisions, configuration and display evidence linked
   to a core Attempt. Absence or failed finalization is represented as
   `incomplete`, not by a mandatory empty anchor row.
-- **Structured log record** — non-image browser/server event associated with a
-  correlation ID where applicable.
+- **Structured log record** — browser/server event associated with a correlation
+  ID where applicable.
 - **Annotation** — authorized ground truth associating a participant/person and
   detection/result outcome.
 - **Calibration case/recommendation** — a manually curated reproducible subset
-  of selected source frames/crops or an actually captured selfie, parameters,
+  of server-available media/crops or an actually captured selfie, parameters,
   scores and annotations retained until explicit deletion, plus a computed
   threshold or one-dimensional quality-gate proposal; it never changes serving
   settings automatically.
@@ -657,8 +712,8 @@ pilot actor or blocker.
   `N` is not recalculated.
 - Four teaser IDs are a subset of `session_result_photo_ids`; `N` is the count of
   the entire unique union.
-- Attempt/log/evidence identifiers must allow navigation without placing image
-  or secret payloads in logs.
+- Attempt/log/evidence identifiers must allow navigation without placing
+  protected payloads in logs.
 - Technical logs, normal attempt/evidence data and promoted calibration data have
   distinct retention rules defined by NFR-DATA-01..03.
 - Promoting a calibration case does not extend the lifetime of the entire
@@ -701,9 +756,11 @@ pilot actor or blocker.
 1. The display shows local advertising while the camera stream/ring buffer is
    active.
 2. Passage sensor triggers a reference series without participant action.
-3. The client captures and searches while preventing overlapping attempts.
-4. The service processes up to five detections and either forms four unique
-   valid teasers or returns a non-success outcome.
+3. The client submits crops and metadata for every detected face occurrence, or
+   metadata only when none are detected, without full-frame upload, while
+   preventing overlapping attempts.
+4. The service processes selected detections and either forms four unique valid
+   teasers or returns a non-success outcome.
 5. On success, the display presents four no-watermark teasers and a scannable QR
    within the performance budget.
 6. A participant scans QR and immediately opens the same session-wide browser
@@ -795,9 +852,9 @@ payment/fiscal providers, external observability stores and message brokers.
   60 minutes, invalidates the personalized result and redirects to the main
   selfie-based search/purchase page. No teaser, `N` or other data from the
   expired session is disclosed to the redirect target.
-- Diagnostic retention expiry must remove ordinary protected artifacts after 90
-  days. For a promoted calibration case it preserves only the curated subset in
-  NFR-DATA-03; unselected frames and the Promo screenshot are still deleted.
+- Diagnostic retention expiry must remove ordinary records and artifacts after
+  90 days. For a promoted calibration case it preserves only the curated subset
+  in NFR-DATA-03; other diagnostic media and the Promo screenshot are deleted.
 - Soft-deleted Photos remain stored but are absent from new search/result
   formation and all four queue-statistic counters. Already issued sessions keep
   using their referenced media while it exists. Restoring a Photo makes it
@@ -834,7 +891,8 @@ payment/fiscal providers, external observability stores and message brokers.
 
 - **AC-01** — At least 19 of 20 controlled attempts both produce four unique
   teasers and a fully visible, scannable QR in `<10_000 ms` from
-  `reference_series_ready_at` and satisfy the correctness rule in AC-03.
+  `reference_series_ready_at` under NFR-PERF-01 and satisfy the correctness rule
+  in AC-03.
 - **AC-02** — No-match or timeout without a completed QR counts as a failed
   attempt.
 - **AC-03** — For every attempt counted among the 19 joint AC-01 successes, all
@@ -866,11 +924,10 @@ payment/fiscal providers, external observability stores and message brokers.
   accepted/rejected/duplicate outcome and observe every accepted photo reach an
   explicit current/final state.
 - **AC-09** — An operator can find a failed or slow attempt and see only its
-  sanitized outcome, timeline, latency and issue tags; protected artifacts,
-  names, annotations, detailed logs and Calibration are inaccessible to that
-  role.
+  sanitized outcome, timeline, latency and issue tags; protected data governed
+  by NFR-SEC-04 and NFR-SEC-06 is inaccessible to that role.
 - **AC-10** — An authorized developer can trace the same attempt's versions,
-  parameters, group/search decisions, protected artifacts and detailed logs by
+  parameters, group/search decisions, available artifacts and detailed logs by
   correlation ID; `Log Explorer` supports all required filters and navigation
   without exposing PostgreSQL directly.
 - **AC-11** — An authorized developer can annotate person/detection outcomes and
@@ -917,6 +974,11 @@ payment/fiscal providers, external observability stores and message brokers.
   snapshot Photo/media/face/pipeline data while retaining existing Promo
   results/sessions, core Attempts and diagnostic evidence. Existing clients
   skip unavailable media without invalidating the session or recalculating `N`.
+- **AC-21** — Proposal, zero-proposal and oversize requests satisfy
+  FR-CAP-03, FR-CAP-09 and FR-CAP-10.
+- **AC-22** — The diagnostic UI exposes all three client markers in FR-DIAG-02.
+- **AC-23** — Camera list, preview, selection/reselection and the same-behavior
+  physical/test triggers satisfy FR-CAP-11..12.
 
 The smoke run validates the pilot path only. It does not demonstrate public
 production readiness, target 10-15-СПА capacity or complete group coverage.
@@ -947,7 +1009,7 @@ production readiness, target 10-15-СПА capacity or complete group coverage.
    - sensor/client -> synchronous realtime service -> exact scoped search -> QR
      session;
    - server-admitted core Attempt/browser/server correlation -> Attempts/Log
-     Explorer -> optional protected evidence and explicit `incomplete` state;
+     Explorer -> optional evidence and explicit `incomplete` state;
    - retention expiry -> promoted-subset preservation -> latest result -> safe
      rerun after failure or interruption;
    - client-only offline failure -> non-blocking 5–10-second notice and
@@ -972,6 +1034,11 @@ production readiness, target 10-15-СПА capacity or complete group coverage.
    - retain the per-attempt outcome, `reference_ready_to_qr_ms`, phone-context
      consistency, ground-truth validation of all four teasers and every unique
      `photo_id` in `N`, and diagnostic evidence;
-   - evaluate AC-01..07 as per-attempt rows, requiring the same 19 attempts to
-     pass both latency/QR and correctness without silently removing
-     no-match/timeout failures.
+   - evaluate AC-01..07 and AC-21..23, requiring the same 19 attempts to pass
+     both latency/QR and correctness without silently removing no-match/timeout
+     failures.
+
+## Unresolved Blockers
+
+None at product level. The Deferred Technical Decisions above do not change
+`clarification_status: complete`.

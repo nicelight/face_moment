@@ -1,9 +1,15 @@
 ---
 description: Стратегия тестирования и верификации (quality gates, anti-cheat, UI/e2e).
 status: active
-last_updated: 2026-07-24
+last_updated: 2026-07-28
 ---
 # Testing & Verification
+
+## Subject specifications
+
+- [Client realtime verification](client-realtime.md): all-occurrence
+  submission, one-clock Promo latency, diagnostic markers, media/retention
+  checks and explicit exclusions.
 
 ## Quality gates
 

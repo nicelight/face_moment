@@ -12,7 +12,7 @@ flowchart LR
         camera["Camera stream"]
         display["43-inch display"]
         assets[("Локально закэшированная реклама<br/>prePromo / audio assets")]
-        client["SpaPromoClient в Chromium<br/>ring buffer + state machine + QR render"]
+        client["SpaPromoClient<br/>ring buffer + local face proposals<br/>state machine + QR render"]
 
         sensor --> client
         camera --> client
@@ -29,14 +29,14 @@ flowchart LR
 
         subgraph engines["FaceEngine adapters"]
             face_engine["FaceEngine interface<br/>выбор compatible serving revision"]
-            sface["OpenCV YuNet + SFace"]
+            sface["OpenCV SFace pipeline"]
             buffalo["InsightFace SCRFD + Buffalo M"]
             face_engine --> sface
             face_engine --> buffalo
         end
 
         postgres[("PostgreSQL + pgvector<br/>Photo visibility, pipeline states,<br/>global purge run, exact vectors,<br/>Attempts and evidence")]
-        minio[("Private MinIO / S3 storage<br/>originals, previews, thumbnails,<br/>protected diagnostic artifacts")]
+        minio[("Private MinIO / S3 storage<br/>commercial Photo media<br/>+ optional diagnostic media")]
         edge --> backend
         edge --> realtime
 
@@ -56,7 +56,7 @@ flowchart LR
     end
 
     photographer -->|"HTTPS JPEG upload + admin"| edge
-    client -->|"sync HTTPS request<br/>attempt_id + spa_client_token"| edge
+    client -->|"sync HTTPS request<br/>all occurrence crops + metadata<br/>spa_client_token"| edge
     edge -->|"4 preview URLs + QR session"| client
     client -->|"idempotent display acknowledgement"| edge
     participant_phone -->|"HTTPS QR continuation"| edge
@@ -70,6 +70,8 @@ flowchart LR
 - `BackgroundPhotoWorker` и `RealtimeFaceService` разделены из-за разных latency и lifecycle требований.
 - Пять capability slices являются package ownership, а не отдельными services.
 - Realtime не ставит запросы в waiter queue: занятый slot возвращает `busy`.
+- Client не ранжирует/top-5/deduplicate proposals; oversize полного набора
+  завершается явно, а zero-proposal request содержит только metadata.
 - Serving pipeline заранее загружается и прогревается; второй pipeline нужен только при доказанной необходимости benchmark-а.
 - `inventory` владеет active/soft-deleted marker, direct PostgreSQL counters и
   одним resumable global purge run; worker ждёт текущую операцию без preemption.
@@ -82,4 +84,5 @@ flowchart LR
 Источники:
 [Architecture](../.memory-bank/architecture/system-architecture.md),
 [IDEA_OS.md](../IDEA_OS.md),
-[IDEA_APP.md](../IDEA_APP.md), [PRD](../.memory-bank/prd.md).
+[IDEA_APP.md](../IDEA_APP.md), [IDEA_CLIENT.md](../IDEA_CLIENT.md),
+[PRD](../.memory-bank/prd.md).

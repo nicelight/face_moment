@@ -1,7 +1,7 @@
 ---
 description: Canonical pilot lifecycles for Photo admission, processing, inventory visibility, purge, Promo and diagnostics.
 status: active
-last_updated: 2026-07-24
+last_updated: 2026-07-28
 source_of_truth:
   - .memory-bank/states/lifecycle-map.md
 ---
@@ -115,6 +115,16 @@ advertising -> capturing -> searching -> result -> cooldown -> advertising
                               +-> unsuccessful -> advertising
 ```
 
+- When the capture window ends, the ready reference series enters local
+  processing. The client sends one crop plus metadata for every detector
+  occurrence in one bounded request; repeated occurrences are valid, and the
+  client does not rank, select a top-5, quality-gate, track, cluster or
+  deduplicate them.
+- Zero proposals produce a metadata-only request with the same correlation and
+  client timings. Server admission creates the core Attempt and returns a typed
+  non-success; its exact machine name remains unresolved.
+- If the complete proposal set cannot fit the accepted request bounds, the
+  attempt ends explicitly as non-success without sending a subset.
 - A server-admitted core Attempt uses:
 
   ```text
@@ -151,11 +161,13 @@ advertising -> capturing -> searching -> result -> cooldown -> advertising
   `interrupted`; it never replays their reference work.
 - Acceptance latency uses only client monotonic elapsed values:
   `qr_fully_visible_elapsed_ms - reference_series_ready_elapsed_ms`. Server
-  stages record their own monotonic durations; cross-machine clock subtraction
-  and distributed tracing are not required.
+  stages record their own monotonic durations. This interval includes local
+  detection, crop extraction/encoding, request upload, server processing,
+  response receipt and Promo/QR render; cross-machine clock subtraction and
+  distributed tracing are not required.
 
-Sources: [IDEA_APP.md](../../IDEA_APP.md) and
-[.memory-bank/prd.md](../prd.md) `FR-CAP-01..08`, `FR-UX-01..09`.
+Sources: [IDEA_APP.md](../../IDEA_APP.md), [IDEA_CLIENT.md](../../IDEA_CLIENT.md)
+and [.memory-bank/prd.md](../prd.md) `FR-CAP-01..10`, `FR-UX-01..09`.
 
 ## Client Restart And Offline Metadata
 
@@ -192,14 +204,19 @@ supersede older configurable defaults in `IDEA_OS.md`.
 
 - Every capture/search request admitted by the server creates one core Attempt
   with its correlation identity before inference.
+- The correlated timeline retains client-local markers for ready-series
+  processing start, request-send start and response receipt.
 - A client-only offline trigger is delivered best-effort and may have no durable
   server Attempt.
 - Detailed diagnostic evidence is attached best-effort and is not a prerequisite
   for completing the participant-facing flow.
 - A terminal Attempt whose evidence is absent or failed to finalize remains
   visible as `incomplete`.
+- Evidence completeness requires neither a full/downscaled reference-frame
+  upload nor proof or annotation of occurrences missed by the local detector.
 
-Source: [.memory-bank/prd.md](../prd.md) `FR-DIAG-01..05`.
+Sources: [IDEA_CLIENT.md](../../IDEA_CLIENT.md) and
+[.memory-bank/prd.md](../prd.md) `FR-CAP-10`, `FR-DIAG-01..05`, `AC-22`.
 
 ## Diagnostic And Calibration Retention
 
@@ -210,17 +227,22 @@ collecting -> complete | incomplete -> expired
 - An incomplete bundle retains an explicit gap reason. Participant flow and the
   core Attempt/outcome/snapshot do not depend on detailed evidence completion.
 - Technical browser/server logs expire after 30 days.
-- Ordinary attempts and diagnostic evidence expire after 90 days.
+- Ordinary Attempts and diagnostic evidence, including persisted
+  capture-derived media, expire after 90 days.
 - Manual promotion preserves only the curated calibration subset named by PRD
   `NFR-DATA-03` until explicit deletion; it does not extend the whole ordinary
   bundle or its Promo screenshot.
+- Capture-derived media adds no separate retention lifecycle and is not
+  protected solely because it contains an image. Other data keeps its
+  data-specific authorization and delivery rules from the boundary contract.
 - Recommendations never transition serving settings automatically; an explicit
   developer action is a separate boundary requiring later audit design.
 - Retention cleanup adds no separate lifecycle. Its ownership, observable
   result and safe-rerun contract are defined in the
   [boundary map](../contracts/boundary-map.md).
 
-Sources: [IDEA_DEBUG.md](../../IDEA_DEBUG.md) and clarified
+Sources: [IDEA_DEBUG.md](../../IDEA_DEBUG.md),
+[IDEA_CLIENT.md](../../IDEA_CLIENT.md) and clarified
 [.memory-bank/prd.md](../prd.md) `NFR-DATA-01..04`.
 
 ## Calibration Run
@@ -245,3 +267,5 @@ Source: [.memory-bank/prd.md](../prd.md) `FR-DEV-11` and `NFR-PERF-03`.
 - No realtime waiter/replay queue.
 - No per-device QR access-grant lifecycle.
 - No serving-revision switch lifecycle.
+- No local-detector-miss proof or diagnostic reference-frame-upload lifecycle.
+- No separate capture-media retention lifecycle.

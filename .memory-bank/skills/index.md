@@ -39,6 +39,7 @@ status: active
 | <code>spec-auto</code> | yes | yes |
 | <code>spec-design</code> | yes | yes |
 | <code>spec-init</code> | yes | yes |
+| <code>technical-premortem</code> | yes | yes |
 | <code>verify</code> | yes | yes |
 | <code>write-prd</code> | yes | yes |
 

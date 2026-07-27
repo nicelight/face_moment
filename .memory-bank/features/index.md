@@ -18,14 +18,14 @@ status: active
 
 ## EP-002 — Automatic Promo and QR Continuation
 
-- [FT-003](FT-003.md): Sensor-triggered reference capture and attempt control.
+- [FT-003](FT-003.md): Sensor-triggered capture and client proposal submission.
 - [FT-004](FT-004.md): Scoped realtime face search and result assembly.
 - [FT-005](FT-005.md): Promo presentation and advertising fallback.
 - [FT-006](FT-006.md): QR phone continuation and session expiry.
 
 ## EP-003 — Explainable Diagnostics and Calibration
 
-- [FT-007](FT-007.md): Core Attempt and best-effort diagnostic evidence.
+- [FT-007](FT-007.md): Core Attempt, client timings and best-effort evidence.
 - [FT-008](FT-008.md): Role-scoped Attempts investigation.
 - [FT-009](FT-009.md): Developer structured Log Explorer.
 - [FT-010](FT-010.md): Ground-truth annotation.

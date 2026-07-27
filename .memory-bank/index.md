@@ -14,6 +14,8 @@ status: active
   при расхождении product contract и acceptance определяет PRD.
 - [IDEA_DEBUG.md](../IDEA_DEBUG.md): Developer-only browser/server logging,
   investigation attempts и KISS-подбор face threshold/quality gates.
+- [IDEA_CLIENT.md](../IDEA_CLIENT.md): принятые client behavior, timing и
+  capture-derived media-policy decisions с явно отложенными technical choices.
 
 ## Architecture decision authority
 
@@ -50,7 +52,8 @@ status: active
 
 - [.memory-bank/spec-index.md](spec-index.md): Pure SDD spec registry and planned-spec index.
 - [.memory-bank/spec-backbone.md](spec-backbone.md): accepted complete global
-  SDD backbone at Planning Revision 2 and verified Foundation handoff.
+  SDD backbone at Planning Revision 3, feature blockers and verified Foundation
+  handoff.
 - [.memory-bank/foundation.md](foundation.md): Accepted Foundation Dev Path,
   verified substrate scope, concrete Foundation gate and completion evidence.
 - [.memory-bank/features/FT-000-foundation.md](features/FT-000-foundation.md):

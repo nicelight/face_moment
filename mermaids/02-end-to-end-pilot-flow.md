@@ -21,8 +21,8 @@ flowchart TD
 
     subgraph realtime["B. Automatic Promo"]
         advertising["Локальная реклама"]
-        trigger["Sensor trigger"]
-        reference["Client-generated attempt_id<br/>ring buffer + reference series"]
+        trigger["Sensor / test trigger"]
+        reference["Client-generated attempt_id<br/>reference series → local detector<br/>all occurrence crops + metadata<br/>zero proposals → metadata-only<br/>oversize full set → explicit failure, no subset"]
         admitted{"Request admitted<br/>by server?"}
         offline["Client-only offline:<br/>вернуться к рекламе без cooldown<br/>5–10 sec: Попытка связи с сервером<br/>была не успешна в hh:mm:ss<br/>новое сообщение может заменить старое<br/>metadata best-effort, server record может отсутствовать"]
         attempt["Server-admitted core Attempt<br/>до inference"]
@@ -75,7 +75,7 @@ flowchart TD
   чем за 15 минут от `photo.accepted_at`.
 - Не менее 19 из 20 controlled attempts должны получить подтверждённый полностью
   видимый QR менее чем за 10 секунд по client monotonic interval от
-  `reference_series_ready`.
+  `reference_series_ready`, включая local processing и request send.
 - Иностранная фотография в четырёх teasers или в `N` делает attempt некорректной; полное покрытие каждого человека группы не обещается.
 - Soft-deleted Photos исключены из новых search/results/statistics, но уже
   выданная session продолжает использовать media. Hard purge удаляет
@@ -84,5 +84,7 @@ flowchart TD
 
 Источники: [PRD](../.memory-bank/prd.md),
 [Architecture](../.memory-bank/architecture/system-architecture.md),
+[Boundary map](../.memory-bank/contracts/boundary-map.md),
+[IDEA_CLIENT.md](../IDEA_CLIENT.md),
 [IDEA_INGEST.md](../IDEA_INGEST.md),
 [IDEA_APP.md](../IDEA_APP.md).

@@ -121,12 +121,16 @@ delete/restore, два глобальных admin actions и прямые recent
 - четыре low-quality preview и QR без watermark;
 - QR continuation page без нового selfie: СПА, дата, teaser, `N` и post-pilot
   CTA полного пакета;
-- core Attempt каждого server-admitted request; подробные protected diagnostic
-  evidence присоединяются best-effort, и их отсутствие у существующего server
-  Attempt отображается как `incomplete`; client-only offline event может не
-  оставить server record;
-- developer-only `Attempts`, `Log Explorer` и `Calibration` через backend и
-  PostgreSQL, создаваемые в этом проекте;
+- core Attempt каждого server-admitted request; подробные diagnostic evidence
+  присоединяются best-effort, и их отсутствие у существующего server Attempt
+  отображается как `incomplete`; client-only offline event может не оставить
+  server record. Capture-derived media не требует защиты только как media или
+  developer-only authorization; это не создаёт public-endpoint, cache или
+  logging obligation. Credentials, infrastructure, commercial Photo media и
+  personalized data сохраняют текущую защиту;
+- sanitized `Attempts` для operator (outcome, timeline, latency, issue tags);
+  participant names, manual annotations, searchable logs и `Calibration`
+  вместе с прочими role-protected diagnostic fields остаются developer-only;
 - failure mode с локальной рекламой, best-effort diagnostic event и коротким
   неблокирующим сообщением при неудачной связи с сервером;
 - controlled acceptance run из 20 попыток.

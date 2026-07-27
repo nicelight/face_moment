@@ -1,7 +1,7 @@
 ---
 description: Stable product requirements and REQ-to-epic-to-feature traceability for the one-СПА pilot.
 status: draft
-last_updated: 2026-07-24
+last_updated: 2026-07-28
 ---
 # Requirements
 
@@ -28,18 +28,18 @@ last_updated: 2026-07-24
 | `REQ-SRCH-001` | SFace and Buffalo M MUST retain native processing paths, and embeddings/search MUST remain isolated by immutable compatible pipeline revision. | FR-SRCH-01..02 |
 | `REQ-SRCH-002` | Participant search MUST use exact scoped cosine search and admit matches only through configured query-quality and calibrated reference-threshold gates; top-1/top-2 margin is forbidden. | FR-SRCH-03..05 |
 | `REQ-SRCH-003` | The operator MUST select the server-side active working `visit_date`; search uses all currently `ready` compatible photos in that СПА/date without an ingest-group readiness gate, the client cannot override the scope, and a missing date prevents search with diagnostic evidence. | FR-SRCH-03/06, Clarifications |
-| `REQ-CAP-001` | The display client MUST maintain a ring buffer, create an automatic pre/post-trigger reference series and prevent overlapping or stale attempts. | FR-CAP-01..02 |
-| `REQ-CAP-002` | The system MUST process at most five quality-ranked detections independently without tracking, identity clustering or cross-frame person deduplication. | FR-CAP-03..04 |
+| `REQ-CAP-001` | The display client MUST maintain a selected-camera ring buffer, create one pre/post-trigger reference series through the same physical/test-trigger path with distinguishable trigger-source metadata, and prevent overlapping or stale attempts while preserving recoverable camera selection and local advertising. | FR-CAP-01..02, FR-CAP-11..12 |
+| `REQ-CAP-002` | For one reference series, the client MUST submit crops and metadata for every local-detector face occurrence without local ranking, top-5, authoritative quality gating, tracking, clustering or deduplication. Zero proposals MUST produce a metadata-only request with the same correlation and client timings; server admission MUST create the core Attempt and explicit non-success. If the complete proposal request exceeds accepted bounds, the outcome MUST be explicit non-success without an arbitrary subset. Any selection of at most five independently searched detections remains server-authoritative; this requirement defines no other server-internal processing. | FR-CAP-03..04, FR-CAP-09..10, AC-21 |
 | `REQ-CAP-003` | Result assembly MUST use only threshold-valid candidates, apply pHash as ranking-only, produce four unique teaser IDs, and compute `N` from the complete unique valid-photo union across processed detections. | FR-CAP-05..08 |
 | `REQ-UX-001` | The display MUST show local advertising outside results and, on success, exactly four low-quality no-watermark teasers, truthful Promo copy and a fully visible high-contrast QR confirmed by an idempotent display acknowledgement; missing acknowledgement becomes derived `unconfirmed` without scheduler machinery. | FR-UX-01..02, FR-UX-05 |
 | `REQ-UX-002` | QR MUST continue the same session without a selfie and show its СПА, authoritative date, available teaser when present, issued `N` and purchase-navigation CTA on the phone; hard-purged media is skipped without invalidating the session. | FR-UX-03..05 |
 | `REQ-UX-003` | Display, QR first-open and browser-idle expiry MUST be independent; scans within 30 minutes reuse one session-wide browser access context, which expires after 60 minutes without explicit participant activity across that context, and expired data must not leak through redirect. | FR-UX-06..07, FR-UX-10 |
 | `REQ-UX-004` | Insufficient results or runtime failure MUST return to local advertising without final Promo or success cooldown; stale work is discarded and retry uses a fresh capture. A server-communication failure MUST also show the small non-blocking `Попытка связи с сервером была не успешна в hh:mm:ss` notice for 5–10 seconds, with a newer notice allowed to replace it immediately. | FR-UX-08..09 |
-| `REQ-PERF-001` | At least 19 of the same 20 controlled attempts MUST meet the under-10-second visible/scannable QR gate and full-session correctness gate, counting timeout/no-match as failures and retaining stage timestamps. | NFR-PERF-01..02, NFR-PERF-04..05, AC-01..03/05 |
-| `REQ-DIAG-001` | Every request admitted by the server MUST create one core Attempt/correlation identity before inference and retain a cross-client/server stage timeline sufficient to localize outcome and latency; missing finalized evidence remains visible as `incomplete`. Client-only offline attempt delivery is best-effort and does not guarantee a durable server Attempt. | FR-DIAG-01..02/05 |
-| `REQ-DIAG-002` | Detailed diagnostic evidence is best-effort and MUST NOT block the critical flow; when collected, attempt detail MUST expose versions, parameters, search decisions and protected artifacts through a redacted reproducibility manifest without embedding images in logs. | FR-DIAG-03..05 |
-| `REQ-DIAG-003` | Attempts MUST be filterable and navigable while enforcing the sanitized operator view and protected developer-only detail boundary. | FR-DIAG-06..07, NFR-SEC-04 |
-| `REQ-LOG-001` | Developer Log Explorer MUST search structured browser/server logs through the backend, correlate them to attempts, remain non-blocking and exclude forbidden sensitive payloads. | FR-DEV-02..04 |
+| `REQ-PERF-001` | At least 19 of the same 20 controlled attempts MUST meet the under-10-second visible/scannable QR and full-session correctness gates. Latency MUST run from `reference_series_ready_at`, when capture ends and local processing starts, through request sending and QR visibility on one client monotonic clock; timeout/no-match remain failures. | NFR-PERF-01..02, NFR-PERF-04..05, AC-01..03/05 |
+| `REQ-DIAG-001` | Every server-admitted request MUST create one core Attempt/correlation identity before inference and retain a timeline sufficient to localize outcome and latency, including client-local ready-series processing start, request-send start and response receipt. Missing finalized evidence remains `incomplete`; client-only offline delivery is best-effort. | FR-DIAG-01..02/05, AC-22 |
+| `REQ-DIAG-002` | Detailed diagnostic evidence MUST remain best-effort and non-blocking. When collected, it MUST expose the required reproducibility context; capture-derived media MAY be logged, cached, stored or delivered without developer-only media authorization, but no such mechanism or per-crop logging is required. | FR-DIAG-03..05, NFR-SEC-06 |
+| `REQ-DIAG-003` | Attempts MUST be filterable and navigable with the sanitized operator view and developer-only names, annotations, detailed logs and Calibration. Capture-derived media MUST NOT become developer-only solely because it is image content. | FR-DIAG-06..07, NFR-SEC-04/06 |
+| `REQ-LOG-001` | Developer Log Explorer MUST search structured browser/server logs through the backend, correlate them to Attempts and remain non-blocking. Bounded capture-derived media MAY be logged; embeddings, credentials/authentication state, participant names, commercial Photo originals, personalized session data and session replay MUST NOT be logged. | FR-DEV-02..04, NFR-SEC-06 |
 | `REQ-ANN-001` | An authorized developer MUST record person/detection ground truth with participant name and correct, false or missed semantics usable by Calibration. | FR-DEV-01 |
 | `REQ-CAL-001` | Calibration MUST compare SFace and Buffalo M and show the three named threshold profiles with proposed value, counts, precision, recall, sample size and attempt drill-down. | FR-DEV-05..07 |
 | `REQ-CAL-002` | Calibration MUST analyze each input quality gate independently, support version/parameter before-after comparison and leave serving-setting application as an explicit manual developer action. | FR-DEV-08..10 |
@@ -47,7 +47,7 @@ last_updated: 2026-07-24
 | `REQ-REL-001` | Central runtime MUST operate independently of the display session; the display MUST recover and retain local advertising, while realtime work uses one slot/deadline without a waiter queue and remains short-lived and non-replayed. | NFR-REL-01..03 |
 | `REQ-REL-002` | The PostgreSQL photo-processing queue MUST preserve its `pending`/`processing` population across backend/worker restart, return unfinished work to `pending`, restart idempotently without duplicate final faces, and keep primary-storage capacity observable. | NFR-REL-04..05 |
 | `REQ-SEC-001` | Public access MUST use HTTPS, internal stores/services MUST stay private, СПА identity MUST derive from a hashed client token, and required rate-limit, SSH and browser-sandbox controls MUST apply. | NFR-SEC-01..03 |
-| `REQ-DATA-001` | Logs MUST expire after 30 days and ordinary Attempts/evidence after 90 days; only the curated promoted subset may survive until explicit deletion, participant names remain annotation-only, and the latest cleanup outcome MUST be visible as defined by NFR-REL-05. | NFR-REL-05, NFR-DATA-01..04 |
+| `REQ-DATA-001` | Logs MUST expire after 30 days and ordinary Attempts/evidence, including persisted capture-derived diagnostic media, after 90 days. Only the curated promoted subset may survive until explicit deletion; participant names remain annotation-only, and the latest cleanup outcome MUST be visible. | NFR-REL-05, NFR-DATA-01..04 |
 | `REQ-ARCH-001` | The pilot MUST retain the one-СПА, one central CPU-only server and simple backend/worker/realtime/PostgreSQL/object-storage baseline; hardware is site-validated and added complexity requires measured evidence. | NFR-ARCH-01..04 |
 
 ## Out of Scope
@@ -58,6 +58,8 @@ last_updated: 2026-07-24
 - External ingest, RAW, standalone/repeated selfie capture and watermarking.
 - Guaranteed complete group coverage, tracking, identity clustering,
   cross-pipeline linking and participant-facing ensembles.
+- Mandatory proof or annotation of local-detector misses and mandatory full or
+  downscaled reference-frame upload.
 - Speculative ANN, broker, distributed, multi-worker, GPU-first or external
   observability infrastructure.
 - Automatic Calibration application or multidimensional joint optimization.
@@ -80,15 +82,15 @@ last_updated: 2026-07-24
 | `REQ-SRCH-001` | [EP-001](epics/EP-001.md), [EP-002](epics/EP-002.md) | [FT-002](features/FT-002.md), [FT-004](features/FT-004.md) | PRD AC-03/10 | planned |
 | `REQ-SRCH-002` | [EP-002](epics/EP-002.md) | [FT-004](features/FT-004.md) | PRD AC-01/03 | planned |
 | `REQ-SRCH-003` | [EP-002](epics/EP-002.md) | [FT-004](features/FT-004.md) | PRD controlled setup, AC-03/05 | planned |
-| `REQ-CAP-001` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md) | PRD AC-01/14 | planned |
-| `REQ-CAP-002` | [EP-002](epics/EP-002.md) | [FT-004](features/FT-004.md) | PRD AC-03/10 | planned |
+| `REQ-CAP-001` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md) | PRD AC-01/14/23 | planned |
+| `REQ-CAP-002` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md), [FT-004](features/FT-004.md), [FT-007](features/FT-007.md) | PRD AC-03/05/10/21 | planned |
 | `REQ-CAP-003` | [EP-002](epics/EP-002.md) | [FT-004](features/FT-004.md) | PRD AC-01/03 | planned |
 | `REQ-UX-001` | [EP-002](epics/EP-002.md) | [FT-005](features/FT-005.md) | PRD AC-01/07/16 | planned |
 | `REQ-UX-002` | [EP-002](epics/EP-002.md) | [FT-006](features/FT-006.md) | PRD AC-04 | planned |
 | `REQ-UX-003` | [EP-002](epics/EP-002.md) | [FT-006](features/FT-006.md) | PRD AC-15 | planned |
 | `REQ-UX-004` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md), [FT-005](features/FT-005.md) | PRD AC-14 | planned |
 | `REQ-PERF-001` | [EP-002](epics/EP-002.md), [EP-003](epics/EP-003.md) | [FT-003](features/FT-003.md), [FT-004](features/FT-004.md), [FT-005](features/FT-005.md), [FT-007](features/FT-007.md) | PRD AC-01..03/05/07 | planned |
-| `REQ-DIAG-001` | [EP-003](epics/EP-003.md) | [FT-007](features/FT-007.md) | PRD AC-05/10 | planned |
+| `REQ-DIAG-001` | [EP-003](epics/EP-003.md) | [FT-007](features/FT-007.md), [FT-008](features/FT-008.md) | PRD AC-05/10/22 | planned |
 | `REQ-DIAG-002` | [EP-003](epics/EP-003.md) | [FT-007](features/FT-007.md) | PRD AC-05/10/13 | planned |
 | `REQ-DIAG-003` | [EP-003](epics/EP-003.md) | [FT-008](features/FT-008.md) | PRD AC-09/10 | planned |
 | `REQ-LOG-001` | [EP-003](epics/EP-003.md) | [FT-009](features/FT-009.md) | PRD AC-10/13 | planned |

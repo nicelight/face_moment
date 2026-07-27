@@ -22,7 +22,12 @@ sequenceDiagram
     Client->>Client: создать UUID attempt_id
     Client->>Client: capturing — показать non-personal prePromo
     Client->>Client: собрать pre/post-trigger reference series
-    Client->>Edge: sync HTTPS request<br/>attempt_id + reference series + spa_client_token
+    Client->>Client: marker: ready-series processing start
+    Client->>Client: local detector → crop + metadata<br/>для каждого occurrence, без ranking/top-5/dedup
+    Client->>Client: marker: request-send start
+    Note right of Client: zero proposals → metadata-only request<br/>oversize полного набора → explicit failure без subset
+    Client->>Edge: sync HTTPS request<br/>attempt_id + all occurrence crops/metadata<br/>+ spa_client_token
+    Note right of Client: Каждый полученный response<br/>фиксирует response-received marker
     alt Transport/offline failure до server admission
         Edge--xClient: network error / no response
         Client->>Client: вернуться к рекламе без success cooldown<br/>5–10 sec: Попытка связи с сервером<br/>была не успешна в hh:mm:ss
@@ -98,6 +103,8 @@ sequenceDiagram
 ## Алгоритмические ограничения pilot
 
 - Selected detection — occurrence лица, а не уникальный человек; tracking и identity deduplication отсутствуют.
+- Client отправляет все proposal occurrences с допустимыми повторами; server
+  contract, а не client, владеет selection до пяти detections.
 - Embeddings разных detections не объединяются, а pipeline revisions никогда не смешиваются.
 - `pHash` влияет только на разнообразие уже прошедших threshold фотографий.
 - Promo существует только при четырёх уникальных valid teasers; partial result запрещён.
@@ -107,7 +114,13 @@ sequenceDiagram
   при чтении; отдельный scheduler не нужен.
 - Client-only offline trigger может не создать server Attempt; его metadata
   доставляется только best-effort без durable outbox.
+- `<10 s` измеряется одним client monotonic clock от начала local processing и
+  включает crop preparation и request send.
+- Full/downscaled reference-frame upload и доказательство local-detector misses
+  не являются обязательными.
 
 Источники: [Architecture](../.memory-bank/architecture/system-architecture.md),
+[Boundary map](../.memory-bank/contracts/boundary-map.md),
 [IDEA_APP.md](../IDEA_APP.md),
+[IDEA_CLIENT.md](../IDEA_CLIENT.md),
 [PRD](../.memory-bank/prd.md), [Glossary](../.memory-bank/glossary.md).

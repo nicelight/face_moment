@@ -1,7 +1,7 @@
 ---
 description: Canonical capability ownership, public application boundaries and cross-slice write rules for the greenfield pilot.
 status: active
-last_updated: 2026-07-24
+last_updated: 2026-07-28
 source_of_truth:
   - .memory-bank/contracts/boundary-map.md
 ---
@@ -9,8 +9,8 @@ source_of_truth:
 
 ## Status And Scope
 
-The repository has no working backend or runtime. This map constrains the
-accepted target implementation together with the
+The verified Foundation supplies runtime substrate but no product behavior.
+This map constrains the accepted target implementation together with the
 [system architecture](../architecture/system-architecture.md) and
 [lifecycle map](../states/lifecycle-map.md); it does not describe existing
 code.
@@ -22,8 +22,8 @@ code.
 | `serving_control` | Read immutable `ServingContext`/`IngestTarget`; apply audited manual setting and serving-revision changes. | СПА/timezone, active `visit_date`, pipeline/settings revision, display token lifecycle and change audit. | Photos, processing results, Attempts, sessions, evidence or Calibration recommendations. | Command `processing` revision validation; use platform auth/runtime adapters. | Client input cannot override СПА/date; one Attempt sees one immutable snapshot; failed revision changes require explicit operator recovery. |
 | `inventory` | Admit one JPEG; query authorized Photos; soft-delete/restore; restore-all; start/read one global hard purge; read recent per-СПА counters and configured primary-storage free capacity. | Photo identity, uploader, authoritative date, effective capture time, accepted time, checksum/original reference, active marker, authorization and global purge orchestration/progress. | Pipeline transition rules, embeddings, Promo integrity, core Attempt or evidence retention. | Read `serving_control` targets and published `processing` state/timestamp projections; command `processing`; use platform auth/storage/host-capacity adapters. | Duplicate arbitration; owner-scoped visibility; processing-projection counters; separate PostgreSQL/MinIO free-capacity values; fixed-snapshot purge recovery. |
 | `processing` | Create initial `pending`; report readiness; validate a pipeline revision; process Photo; exact compatible search; offline evaluate; clean Photo-derived state on inventory purge. | Pipeline catalog, processing state, derivatives/faces/embeddings, quality gates, exact-search, validation and evaluation rules. | Photo admission/visibility, live setting mutation, Promo Attempt/session assembly or evidence retention. | Read Photo/serving projections; use storage/model adapters. | Restart from `processing`, one final face set, compatible exact search, revision validation and idempotent cleanup. |
-| `promo` | Execute fresh attempt; accept display outcome; exchange/read QR continuation; skip unavailable hard-purged media during an existing session read; run/read retention cleanup. | Core Attempt, result/session, candidate union, teasers, `N`, QR ticket, session-wide browser access and latest retention result. | Photo/processing/settings writes or detailed diagnostic evidence. | Read `serving_control`/`inventory`; command `processing`; command `diagnostics` best-effort evidence and retention expiry. | Four unique teasers, correct issued `N`, display acknowledgement, session expiry, missing-media skip and observable retention outcome. |
-| `diagnostics` | Record/search authorized evidence/logs; annotate; run evaluation; request audited manual apply; expire owned logs/evidence and report Attempt-deletion eligibility. | Detailed evidence/logs, access views, annotations, curated Calibration cases, recommendations and diagnostic-data expiry. | Core Attempt/result/session, aggregate cleanup result or direct serving-setting change. | Read `promo`; command `processing` evaluation and `serving_control` apply. | Sanitized/developer split, visible incomplete evidence, promotion whitelist and 30/90-day expiry. |
+| `promo` | Execute fresh attempt; accept display outcome; exchange/read QR continuation; skip unavailable hard-purged media during an existing session read; run/read retention cleanup. | Core Attempt, result/session, candidate union, teasers, `N`, QR ticket, session-wide browser access and latest retention result. | Photo/processing/settings writes or detailed diagnostic evidence. | Read `serving_control`/`inventory`; command `processing`; command `diagnostics` best-effort evidence and retention expiry. | All-occurrence, zero-proposal and oversize request behavior; four unique teasers; correct issued `N`; display acknowledgement; session expiry; missing-media skip and observable retention outcome. |
+| `diagnostics` | Record/search evidence and logs under their data-specific access rules; annotate; run evaluation; request audited manual apply; expire owned logs/evidence and report Attempt-deletion eligibility. | Detailed evidence/logs, access views, annotations, curated Calibration cases, recommendations and diagnostic-data expiry. | Core Attempt/result/session, aggregate cleanup result or direct serving-setting change. | Read `promo`; command `processing` evaluation and `serving_control` apply. | Sanitized/developer split for protected detail, capture-media classification, visible incomplete evidence, promotion whitelist and 30/90-day expiry. |
 
 Shared PostgreSQL access does not grant shared write authority. A slice may read
 a published projection; only the owner may validate and perform its command or
@@ -80,13 +80,13 @@ transition.
 | Boundary | Contract | Owner | Required constraints |
 |---|---|---|---|
 | Staff browser -> application | HTTPS staff authentication, independent JPEG upload and authorized Admin UI commands. | `platform/auth` authenticates; the target capability authorizes and handles the command. | MinIO/PostgreSQL stay private; no Batch/manifest/confirmation. |
-| `SpaPromoClient` -> realtime | One bounded synchronous request with client-generated `attempt_id`, server-derived СПА, one slot and deadline. | `promo` orchestrates; `processing` performs compatible inference/search. | Concurrent admitted request returns `busy`; closed maintenance/readiness returns `503` before admission and creates no core Attempt. |
+| `SpaPromoClient` -> realtime | One bounded synchronous request with client-generated `attempt_id`, server-derived СПА and crop plus metadata for every local-detector occurrence; zero proposals use metadata only. | `promo` orchestrates; `processing` performs the already accepted compatible inference/search contract. | No client ranking/top-5/gating/tracking/clustering/deduplication; duplicates are allowed; an oversize complete set fails explicitly without a subset. Concurrent admitted request returns `busy`; closed maintenance/readiness returns `503` before admission and creates no core Attempt. |
 | Display -> application | Idempotent acknowledgement after four teasers decode and QR is fully visible. | `promo`. | Server result issue alone is not Promo success. |
 | QR browser -> application | Ticket exchange and authorized no-store session reads. | `promo`. | 30-minute first-open, shared 60-minute idle state, no per-device grants. |
 | Application/worker -> PostgreSQL | Owner-scoped state writes and published projections. | Each capability owns its rows/invariants. | Direct foreign writes are forbidden even in one database. |
-| Application/worker -> MinIO | Opaque-key private binary read/write/delete behind owner authorization/state. | `inventory` owns originals; `processing` owns derivatives; `diagnostics` owns protected evidence. | PostgreSQL state determines usability; MinIO is never a browser endpoint. |
+| Application/worker -> MinIO | Opaque-key private binary read/write/delete behind owner state and applicable authorization. | `inventory` owns originals; `processing` owns derivatives; `diagnostics` owns persisted diagnostic media. | PostgreSQL state determines usability; all stored objects remain private from direct browser access regardless of media classification. |
 
-## Authentication And Protected Delivery
+## Authentication And Data-Specific Delivery
 
 - `platform/auth` owns staff principals, credentials and server sessions only.
   It supports CLI provision/reset/deactivate, Argon2id or bcrypt password
@@ -96,13 +96,22 @@ transition.
 - SpaPromoClient sends a high-entropy token in the Authorization header;
   PostgreSQL stores only its hash and the server derives `spa_id`. Client input
   cannot override that identity.
-- Public capture/continuation requests have bounded frame count, compressed
-  bytes, decoded dimensions/pixels, decode validation and simple per-token/IP
-  rate limits. Use same-origin delivery where possible; otherwise allow only
-  the configured SpaPromoClient origin.
-- Previews, teasers and diagnostic artifacts are backend-proxied with
-  authorization and `no-store` delivery on every read. Raw MinIO keys and
+- Public capture/continuation requests have bounded compressed bytes and decoded
+  dimensions/pixels, crop decode validation and simple per-token/IP rate
+  limits. Use same-origin delivery where possible; otherwise allow only the
+  configured SpaPromoClient origin.
+- Commercial Photo originals/previews/teasers and personalized session data
+  remain backend-proxied, authorized and `no-store`. Raw MinIO keys and
   participant-facing presigned URLs are outside the pilot.
+- Capture-derived reference images, normalized images and face crops are not
+  developer-only solely because they contain media. They may be logged, cached,
+  stored or delivered, but no endpoint, cache or logging path is required. If
+  stored in MinIO, they remain behind the private object-store boundary; any
+  HTTP delivery still enters through the application/edge.
+- Credentials, authentication headers/cookies/tokens, private infrastructure,
+  commercial Photo media, personalized data, participant names/annotations,
+  detailed logs, Calibration and administrative actions retain their existing
+  protection.
 - Display media reads require the SpaPromoClient token plus opaque
   Attempt/session references. Phone media reads require the Promo session
   cookie.
@@ -152,6 +161,27 @@ but MUST NOT add a shared custom error envelope, error-code registry or mapping
 framework. Contract verification must cover representative standard-status
 mappings and prove that admitted non-success capture/search outcomes remain
 domain outcomes.
+
+## SpaPromoClient Proposal Contract
+
+- One ready reference series yields one crop plus metadata for every occurrence
+  returned by the local detector. Repeated occurrences of one person are valid.
+- The client does not rank, select a top-5, authoritatively quality-gate, track,
+  cluster, deduplicate, embed or search proposals.
+- The complete proposal set travels in one bounded request. If it cannot fit
+  accepted bounds, the attempt fails explicitly without a ranked or arbitrary
+  subset; exact bounds and machine response shape remain unresolved.
+- Zero proposals produce a metadata-only request with the same correlation and
+  client timings; server admission creates the core Attempt and an explicit
+  non-success outcome.
+- This client payload contract does not define server ranking, selection or
+  search internals; their existing canonical owners retain authority.
+- The normal flow requires neither full/downscaled reference-frame upload nor
+  proof or annotation of local-detector misses.
+- The `<10 s` interval starts when the capture window ends and local processing
+  begins, then includes local processing and request sending on one client
+  monotonic clock. Diagnostics exposes the client-local processing-start,
+  request-send-start and response-received markers.
 
 ## Realtime Idempotency And Client Retry
 
@@ -228,6 +258,8 @@ a different pipeline revision additionally follows the manual switch below.
     confirmed deleted/preserved counts and outcome/error.
 - Invariants:
   - each capability deletes only its own data;
+  - persisted capture-derived diagnostic media follows the ordinary 90-day
+    cutoff without a separate media lifecycle;
   - the promoted Calibration subset is preserved;
   - failure remains observable and cleanup is safe to rerun;
   - no cleanup history or generic jobs lifecycle is introduced.

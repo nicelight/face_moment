@@ -1,27 +1,28 @@
 # 6. Diagnostics and calibration
 
 Для server-admitted request core Attempt сохраняет обязательный outcome и
-timeline; protected evidence, annotation и Calibration образуют отдельный
-developer-only контур, а оператор получает только sanitized view. Client-only
-offline event может не оставить server record.
+timeline; protected diagnostic data/actions остаются developer-only, а
+capture-derived media не получает этот статус только из-за image content.
+Операторский Attempts view остаётся sanitized. Client-only offline event может
+не оставить server record.
 
 ```mermaid
 flowchart LR
-    browser["Server-admitted browser stages:<br/>reference ready, request, response,<br/>Promo render, display acknowledgement"]
+    browser["Client-local markers:<br/>processing start, request-send start,<br/>response received<br/>+ Promo/QR stages"]
     server["Server stages:<br/>accepted, inference, vector search,<br/>candidate pools, response"]
     config["Applied context:<br/>release, pipeline revision,<br/>threshold, quality gates"]
-    artifacts["Optional protected artifacts:<br/>selected frames/crops,<br/>normalized images, Promo screenshot"]
+    artifacts["Optional diagnostic media:<br/>received crops / normalized images<br/>+ Promo evidence"]
 
     attempt["Server-admitted core Attempt до inference<br/>client-generated attempt_id<br/>processing + display outcome"]
     offline["Client-only offline event<br/>best-effort; server record может отсутствовать"]
-    logs[("Structured logs в PostgreSQL<br/>без images, embeddings, secrets,<br/>request bodies и session replay")]
-    evidence[("Best-effort diagnostic evidence<br/>events + authorized artifact links")]
+    logs[("Structured logs в PostgreSQL<br/>без embeddings, credentials/tokens,<br/>names, commercial originals,<br/>personalized data и session replay")]
+    evidence[("Best-effort diagnostic evidence<br/>events + data-class-aware links")]
     evidence_state["collecting → complete | incomplete → expired"]
 
     operator["Оператор"]
     developer["Разработчик"]
     sanitized["Sanitized view:<br/>outcome + timeline + latency + issue tags"]
-    detail["Full attempt detail:<br/>detections, repeated detections,<br/>matches, pools, teasers, N"]
+    detail["Developer detail:<br/>detections, decisions, logs,<br/>annotations, Calibration"]
     annotation["Manual ground truth:<br/>participant name + correct / wrong / missed"]
     calibration["Calibration"]
 
@@ -84,11 +85,16 @@ flowchart LR
 Detailed evidence не является prerequisite participant flow. Для существующего
 server Attempt отсутствующий или незавершённый evidence set отображается как
 `incomplete`; client-only offline event может полностью отсутствовать на
-сервере. Отдельный diagnostic anchor, priority scheduler и отдельный Calibration
-worker не создаются.
+сервере. Capture-derived media может логироваться, кэшироваться, храниться или
+отдаваться без developer-only media authorization, но ни один такой механизм
+не обязателен. Reference-frame upload и proof local-detector misses не требуются.
+Отдельный diagnostic anchor, priority scheduler и отдельный Calibration worker
+не создаются.
 Photo hard purge не каскадирует в Promo session, core Attempt или diagnostic
 evidence; missing media пропускается при UI/device loading.
 
 Источники: [Architecture](../.memory-bank/architecture/system-architecture.md),
+[Boundary map](../.memory-bank/contracts/boundary-map.md),
 [IDEA_DEBUG.md](../IDEA_DEBUG.md),
+[IDEA_CLIENT.md](../IDEA_CLIENT.md),
 [PRD](../.memory-bank/prd.md), [Glossary](../.memory-bank/glossary.md).

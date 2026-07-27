@@ -1,7 +1,7 @@
 ---
 description: Product definition (C4 L1) for the Face Moment one-СПА pilot.
 status: draft
-last_updated: 2026-07-24
+last_updated: 2026-07-28
 ---
 # Face Moment Product
 
@@ -13,7 +13,7 @@ exit. A sensor-triggered display finds four valid low-quality teaser photos and
 continues the same short-lived result on the participant's phone through QR,
 without a new selfie.
 
-The pilot also gives the application developer a protected diagnostic and
+The pilot also gives the application developer a role-scoped diagnostic and
 calibration contour for explaining attempts and preparing manual face-match and
 input-quality setting changes.
 
@@ -52,6 +52,7 @@ authenticated independent JPEG upload for selected СПА/date
 -> compatible background processing
 -> searchable inventory
 -> automatic sensor-triggered reference series
+-> client-side face proposals and bounded request
 -> exact scoped face search and result assembly
 -> four-teaser Promo with QR
 -> same-session phone continuation
@@ -74,7 +75,8 @@ Calibration; recommendations never update serving settings automatically.
 
 - At least 19 of 20 controlled attempts show four correct unique teasers and a
   fully visible, scannable QR in less than 10 seconds from
-  `reference_series_ready_at`.
+  `reference_series_ready_at`, measured on one client monotonic clock and
+  including local reference-series processing and request sending.
 - The same accepted attempts contain no unrelated teaser or `photo_id` in `N`.
 - At least 95% of independently accepted unique JPEGs become searchable in less
   than 15 minutes from their server-side `photo.accepted_at`.
@@ -116,8 +118,10 @@ Calibration; recommendations never update serving settings automatically.
   another worker, WebSocket or SSE.
 - Infrastructure complexity is added only after evidence of a current
   requirement failure or measured bottleneck.
-- Diagnostic logging is non-blocking and excludes images, embeddings, secrets,
-  request bodies and session replay.
+- Diagnostic logging is non-blocking. Capture-derived media is not protected
+  solely by its content; credentials, infrastructure, commercial Photo media,
+  personalized data, participant names and administrative actions remain
+  protected by their own boundaries.
 
 ## Non-goals
 

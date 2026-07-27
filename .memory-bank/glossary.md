@@ -1,7 +1,7 @@
 ---
 description: Канонический словарь терминов со специальным значением в Face Moment.
 status: active
-last_updated: 2026-07-24
+last_updated: 2026-07-28
 source_of_truth:
   - .memory-bank/glossary.md
 ---
@@ -15,10 +15,10 @@ source_of_truth:
 | `СПА` | Каноническое русское обозначение физической СПА-площадки/venue, к которой привязаны фотографии, client token, рабочая дата, serving pipeline и search scope. | Англоязычной аббревиатурой `single-page application`. `one-СПА pilot` означает одну площадку, а не один frontend. |
 | `one-СПА pilot` | Контролируемый smoke pilot на одной СПА-площадке и группе тестировщиков. Он заканчивается проверенной QR continuation page. | Target capacity на 10–15 СПА, публичным rollout, payment или выдачей originals. |
 | `Promo display` / `display mode` | Экран с локальной рекламой между попытками, автоматическим capture и успешным Promo из четырёх teasers и QR. | Полноценным kiosk: на экране нет touch-навигации, оплаты или скачивания. |
-| `SpaPromoClient` | Логический browser client одной СПА: ведёт camera ring buffer, принимает sensor trigger, формирует reference series, вызывает realtime search и управляет display states. Локальный HDMI и remote computer реализуют один contract. | Backend, `RealtimeFaceService` или самой СПА-площадкой. |
+| `SpaPromoClient` | Логический display/capture client одной СПА: формирует reference series, отправляет crop и metadata каждого local-detector occurrence без local ranking/top-5/deduplication и управляет display states и client-local timings. | Backend, server-side processing/search или самой СПА-площадкой. |
 | `Photographer` | Product role, которая загружает Photo и может soft-delete/restore только собственные uploads в выбранной СПА/date/time-range. | Operator/developer с правом управлять любыми Photo в доступной СПА или глобальными admin actions. |
-| `Face Moment / СПА operator` | Роль, которая управляет рабочей датой и операционным состоянием, управляет Photo в доступной СПА, запускает разрешённые global inventory actions и видит только sanitized attempt summary: outcome, timeline, latency и issue tags. | `Application developer`, которому доступны protected artifacts, имена, annotations, detailed logs и Calibration. |
-| `Application developer` | Product role с полным доступом к protected diagnostic artifacts, participant names в annotations, detailed logs, Log Explorer и Calibration, а также staff-доступом к Photo Inventory Operations; serving-setting changes применяет вручную. | OS user `facemoment` или оператором с sanitized-доступом. |
+| `Face Moment / СПА operator` | Роль, которая управляет рабочей датой и операционным состоянием, управляет Photo в доступной СПА, запускает разрешённые global inventory actions и видит sanitized attempt summary: outcome, timeline, latency и issue tags. | `Application developer`, которому доступны role-restricted names, annotations, detailed logs и Calibration. |
+| `Application developer` | Product role с доступом к role-restricted diagnostic data/actions, включая participant names в annotations, detailed logs, Log Explorer и Calibration, а также staff-доступом к Photo Inventory Operations; serving-setting changes применяет вручную. | Единственным владельцем доступа к capture-derived media или OS user `facemoment`. |
 | `facemoment` / `display` | Два OS users центрального сервера: `facemoment` администрирует SSH, `sudo` и Docker; `display` автоматически запускает sandboxed Chromium без административных прав. | Product roles оператора и участника pilot. |
 
 ## Ingest And Search Inventory
@@ -48,9 +48,10 @@ source_of_truth:
 
 | Термин | Значение в Face Moment | Не путать с |
 |---|---|---|
-| Reference series | Sensor-triggered набор кадров из постоянного video stream и ring buffer в настроенном pre/post-trigger окне. Из него выбираются query detections. | Набором коммерческих upload-файлов или standalone selfie; selfie в текущем pilot не снимается. |
-| Selected detection | Каноническое название одной quality-ranked face occurrence из reference series, независимо запускающей поиск. В discovery docs также встречаются `query detection`, `reference detection` и `face candidate`; всего выбирается не более пяти. | Уникальным физическим человеком: один человек может дать несколько selected detections. |
-| Best-effort group search | Обработка до пяти selected detections без tracking, identity clustering и cross-frame person deduplication. Результат может содержать нескольких людей, но полное покрытие группы не гарантируется. | Обещанием отдельного slot для каждого участника. |
+| Reference series | Sensor/test-triggered набор кадров из client ring buffer, используемый для формирования request по PRD `FR-CAP-03`. | Набором коммерческих upload-файлов, обязательным diagnostic frame upload или standalone selfie. |
+| Face proposal occurrence | Одно обнаружение лица local detector в одном кадре reference series; один человек может дать несколько occurrences. | Распознанной person identity или server-side `Selected detection`. |
+| Selected detection | Полученный face occurrence, выбранный server-side contract для отдельного поиска; всего обрабатывается не более пяти. | Client-side top-5 или уникальным физическим человеком. |
+| Best-effort group search | Server-side обработка до пяти selected detections без гарантии полного покрытия группы. | Client-side ranking или обещанием отдельного slot для каждого участника. |
 | Promo candidate pools | `matched_candidates` — threshold-valid scoped matches текущей detection с готовым preview; `diverse_candidates` — глобально предпочтённые по pHash diversity; `fallback_candidates` — threshold-valid резерв; `reserved_photo_ids` не допускает повтор одной фотографии при обработке следующих detections. | `session_result_photo_ids`: candidate pools выбирают четыре teasers, а session result хранит полный unique union matches. |
 | Teaser | Одна из ровно четырёх уникальных low-quality фотографий без watermark, выбранных для успешного Promo. | Всем найденным пакетом или original. |
 | `session_result_photo_ids` | Union всех уникальных `photo_id`, прошедших обычный calibrated threshold хотя бы для одной processed selected detection. | Четырьмя teaser IDs; teaser IDs являются подмножеством этого union. |
@@ -76,12 +77,13 @@ source_of_truth:
 | Термин | Значение в Face Moment | Не путать с |
 |---|---|---|
 | `diagnostic_session_id` / `correlation_id` | Один логический correlation identifier попытки, связывающий browser events, server stages, configuration, search decisions, logs и artifacts. Точное имя поля может быть унифицировано в SDD. | Promo/search session token или participant identity. |
-| Diagnostic evidence | Best-effort protected artifacts, manifest, indexed events, decisions, configuration, timestamps и display/QR evidence, связанные с core Attempt. Отсутствующий или незавершённый evidence set отображается как `incomplete`; ordinary evidence хранится 90 дней. | Core Attempt, обязательным для server-admitted request, или structured logs, где images и sensitive payloads запрещены. |
-| Structured log record | Неблокирующее browser/server событие, связанное с correlation ID там, где это применимо. Technical logs хранятся 30 дней и не содержат images, embeddings, auth headers, cookies, tokens, request bodies или session replay. | Diagnostic artifact или долговременный calibration dataset. |
+| Diagnostic evidence | Best-effort набор evidence, связанный с core Attempt; optional capture-derived media и доступ регулируются PRD `FR-DIAG-04..07` и `NFR-SEC-06`. Незавершённый set отображается как `incomplete`. | Core Attempt или разрешением ослабить защиту других data classes. |
+| Capture-derived media | Reference images, normalized images и face crops автоматической попытки. Media content само по себе не требует developer-only authorization; logging, caching, storage и public delivery разрешены, но не обязательны. | Commercial Photo originals/previews/teasers, personalized data, credentials или публичным MinIO. |
+| Structured log record | Неблокирующее browser/server событие, связанное с correlation ID; content и retention регулируются PRD `FR-DEV-04` и `NFR-DATA-01`. | Diagnostic artifact или долговременный calibration dataset. |
 | `Attempts` | Role-scoped UI для поиска попыток и investigation по attempt-level timeline, parameters, decisions, logs и artifacts; operator получает sanitized subset, developer — полный разрешённый detail. | `Log Explorer`, который ищет отдельные log records глобально. |
 | `Log Explorer` | Developer-only UI глобального поиска structured browser/server logs через backend/PostgreSQL с переходом к связанной attempt. | Прямым browser-доступом к PostgreSQL или отдельным observability datastore. |
 | Annotation | Developer-only ground truth на уровне person/detection с разрешённым именем pilot participant и outcome `correct`, `wrong/false` или `missed`. Exact normalized storage vocabulary остаётся за SDD. | Автоматическим identity cluster или общей записью имени в technical logs. |
-| Promoted calibration case | Вручную выбранный воспроизводимый subset attempt: нужные source frames/crops, фактически снятый selfie при его наличии, versions/parameters, scores и annotations. Хранится до явного удаления. | Продлением retention всего diagnostic evidence set: прочая reference series, Promo screenshot и technical logs удаляются по обычным срокам. |
+| Promoted calibration case | Вручную выбранный воспроизводимый subset из PRD `NFR-DATA-03`, хранящийся до явного удаления. | Продлением retention всего diagnostic evidence set. |
 | `Calibration` | Developer-only UI, использующий annotated attempts для сравнения pipelines/releases/config sets и расчёта объяснимых recommendations. Run может занять общий `BackgroundPhotoWorker`; после interruption разработчик запускает его повторно вручную. | Автоматическим изменением serving settings, отдельной experimentation platform или отдельным Calibration worker. |
 | Calibration recommendation | Объяснимое предложение threshold или одного quality gate, рассчитанное по annotated attempts. Оно никогда не меняет serving settings автоматически. | Автоматическим optimizer или совместным подбором нескольких quality gates. |
 | `Best face match` | Threshold profile, минимизирующий false matches; при равенстве предпочитает больше correct matches. | `Balance` или `Minimum missed faces`. |
@@ -92,9 +94,9 @@ source_of_truth:
 
 | Термин | Значение в Face Moment | Не путать с |
 |---|---|---|
-| `reference_series_ready_at` | Момент, когда sensor-triggered reference series уже сформирована и готова к realtime processing. | `sensor_triggered_at`; задержка capture до готовности не входит в основной `<10 s` acceptance interval. |
+| `reference_series_ready_at` | Client-local момент завершения capture window и начала local processing. | `sensor_triggered_at`; capture до готовности не входит в основной `<10 s` interval. |
 | `qr_fully_visible_at` | Момент, когда QR полностью отрисован на display и готов к сканированию. | Временем server response или началом Promo transition. |
-| `reference_ready_to_qr` | `qr_fully_visible_at - reference_series_ready_at`; основной realtime acceptance interval pilot. Gate: `<10_000 ms` минимум в 19 из 20 controlled attempts. | `trigger_to_preview`, который остаётся end-to-end diagnostic metric. |
+| `reference_ready_to_qr` | Интервал от `reference_series_ready_at` до полной видимости QR на одном client monotonic clock; local processing и request send входят в него. | Межмашинным вычитанием wall clocks или `trigger_to_preview`. |
 | `ingest_to_searchable` | Для каждой independently accepted unique Photo: от `photo.accepted_at` до готового preview и `ready` state serving revision. `pending`, `processing`, `failed` и `no_faces` после 15 минут остаются breaches; rejects, duplicates и non-serving jobs исключены. | Задержкой фотографа от съёмки до upload или временем обработки группы файлов. |
 | Recent Photo counters | Отдельные per-СПА значения за 1/5/60 минут: `new` — принятые в окне active unique Photos по `accepted_at`; `unprocessed` — принятые в окне active Photos в текущем `pending \| processing`; `processed` — active Photos, перешедшие в `ready \| no_faces` в окне; `failed` — active Photos, перешедшие в `failed` в окне. Admin UI получает значения polling каждые пять секунд. | Materialized metrics store, WebSocket/SSE stream или общим project-wide counter. |
 
@@ -108,6 +110,8 @@ source_of_truth:
   pipeline terminology.
 - [IDEA_DEBUG.md](../IDEA_DEBUG.md): attempts, logs, annotations and Calibration
   terminology.
+- [IDEA_CLIENT.md](../IDEA_CLIENT.md): accepted SpaPromoClient, timing and
+  capture-derived media terminology; unresolved technical choices stay open.
 - [IDEA_INGEST.md](../IDEA_INGEST.md): historical ingest evidence; current
   per-photo admission and metric semantics come from the PRD.
 - [IDEA_OS.md](../IDEA_OS.md): display topology, OS-user boundary and deployment

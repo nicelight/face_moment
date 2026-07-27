@@ -1,7 +1,7 @@
 ---
 description: Pure SDD spec registry and planned-spec index.
 status: active
-last_updated: 2026-07-24
+last_updated: 2026-07-28
 source_of_truth:
   - .memory-bank/spec-index.md
 ---
@@ -24,6 +24,7 @@ source_of_truth:
 | state | [.memory-bank/states/lifecycle-map.md](states/lifecycle-map.md) | active | Canonical pilot lifecycle and recovery rules. | /spec-design or /feature-to-tasks |
 | foundation | [.memory-bank/foundation.md](foundation.md) | active | Explicit Foundation Dev Path decision and minimum substrate evidence. | /spec-design or /foundation-to-tasks |
 | testing | [.memory-bank/testing/index.md](testing/index.md) | active | Bootstrap verification contract and project quality-gate router. | /spec-design or /foundation-to-tasks |
+| testing | [.memory-bank/testing/client-realtime.md](testing/client-realtime.md) | active | Client proposal, one-clock latency, diagnostics and related media/retention verification. | /spec-auto or /feature-to-tasks |
 
 ## Planned Specs
 | Area | Expected path | Needed by | Notes |

@@ -1,7 +1,7 @@
 ---
 description: Глобальные инварианты и запреты проекта (MUST/NEVER).
 status: active
-last_updated: 2026-07-24
+last_updated: 2026-07-28
 source_of_truth:
   - .memory-bank/invariants.md
 ---
@@ -26,12 +26,20 @@ source_of_truth:
 - Обрабатывать и сравнивать embeddings только внутри совместимой immutable
   `pipeline_revision`, сохраняя native detector/preprocessing/alignment каждого
   face pipeline.
+- Передавать из `SpaPromoClient` crop и metadata каждого local-detector
+  occurrence одним bounded request; при нуле proposals отправлять metadata-only
+  request, а при oversize полного набора завершать попытку явно без subset.
+- Измерять основной `<10 s` interval от начала local processing до полной
+  видимости QR на одном client monotonic clock, включая local processing и
+  request send; diagnostics показывает три client markers из PRD `FR-DIAG-02`.
 - Сохранять result/session integrity и expired-data isolation, определённые в
   [.memory-bank/prd.md](prd.md) `FR-CAP-05..08` и `FR-UX-03..10`, не создавая
   здесь параллельную копию этих правил.
 - Делать browser/server logging и diagnostic ingestion неблокирующими для
-  capture, search, Promo и QR; protected artifacts и technical logs остаются
-  разными data classes согласно PRD `FR-DIAG-04..05` и `FR-DEV-04`.
+  capture, search, Promo и QR. Capture-derived media не является protected
+  только из-за image content; credentials, private infrastructure, commercial
+  Photo media, personalized data, names/annotations и admin actions сохраняют
+  собственные protection boundaries.
 - Сохранять core Attempt для каждого server-admitted request; delivery
   client-only offline attempt и detailed evidence остаются best-effort и не
   требуют durable-until-ack outbox.
@@ -59,6 +67,10 @@ source_of_truth:
 - Не расширять pilot search/group semantics смешиванием pipeline revisions,
   cross-pipeline preprocessing, tracking, identity clustering, ensemble или
   top-1/top-2 margin.
+- Не выполнять на client proposals ranking/top-5, authoritative quality gating,
+  tracking, clustering, deduplication, embeddings или search.
+- Не требовать proof/annotation local-detector misses или diagnostic upload
+  полных/downscaled reference frames.
 - Не добавлять Redis/broker, ANN, distributed scheduling, extra workers,
   GPU-first или внешний observability stack без измеримого bottleneck либо
   требования текущего scope.
@@ -79,7 +91,8 @@ source_of_truth:
   [.memory-bank/prd.md](prd.md), зарегистрированных
   [system architecture](architecture/system-architecture.md) и
   [boundary contracts](contracts/boundary-map.md), а также
-  [IDEA_APP.md](../IDEA_APP.md) и [IDEA_DEBUG.md](../IDEA_DEBUG.md);
+  [IDEA_APP.md](../IDEA_APP.md), [IDEA_DEBUG.md](../IDEA_DEBUG.md) и явных
+  client/media решений [IDEA_CLIENT.md](../IDEA_CLIENT.md);
   `IDEA_INGEST.md` сохраняется как historical evidence, а при конфликте
   действует precedence из
   [.memory-bank/spec-backbone.md](spec-backbone.md).

@@ -1,7 +1,7 @@
 ---
 description: Canonical greenfield system shape, capability ownership and Architecture Spine for the Face Moment pilot.
 status: active
-last_updated: 2026-07-24
+last_updated: 2026-07-28
 source_of_truth:
   - .memory-bank/architecture/system-architecture.md
 ---
@@ -9,8 +9,8 @@ source_of_truth:
 
 ## Status And Source Boundary
 
-- Face Moment is in documentation/design: no working application, backend,
-  worker, database schema or deployed runtime exists yet.
+- The verified Foundation supplies the executable substrate only; product
+  behavior remains target design rather than implemented behavior.
 - This document, the [boundary map](../contracts/boundary-map.md),
   [lifecycle map](../states/lifecycle-map.md) and
   [Foundation decision](../foundation.md) are the canonical accepted
@@ -21,7 +21,7 @@ source_of_truth:
 
 Deliver the one-СПА pilot as one greenfield modular-monolith release with
 predictable process-restart recovery, searchable per-photo inventory,
-low-latency Promo/QR continuation and protected diagnostics, without
+low-latency Promo/QR continuation and data-class-aware diagnostics, without
 speculative distributed infrastructure.
 
 ## Main Constraints
@@ -40,6 +40,9 @@ speculative distributed infrastructure.
   stream; slice write ownership remains semantic, not schema-based.
 - Public browser traffic crosses the HTTPS application boundary. PostgreSQL,
   MinIO and internal process ports stay private.
+- `SpaPromoClient` submits crop and metadata for every local-detector face
+  occurrence in one bounded request. It performs no local ranking, top-5,
+  authoritative quality gate, tracking, clustering or deduplication.
 - Technical HTTP failures use standard statuses; admitted capture/search
   requests use typed domain outcomes rather than a custom error framework.
 - No Batch, broker, ANN, multi-worker coordination, backup guarantee,
@@ -120,29 +123,37 @@ speculative distributed infrastructure.
 
 #### AD-006 — Bounded realtime request and explicit display success
 - Binds: automatic capture, search, Promo and performance acceptance.
-- Prevents: a realtime waiter queue, durable replay and treating a server
-  response as visible Promo success.
-- Rule: one client-generated `attempt_id`, one inference slot and one server
-  deadline govern the synchronous request; concurrency returns `busy`. Only an
-  idempotent client acknowledgement after four teasers and QR are visible sets
-  display success. Missing acknowledgement becomes derived `unconfirmed` after
-  the result-display window; no scheduler or acknowledgement outbox exists.
-- Verification: Required FT-003..FT-005 controlled 20-attempt proof, not
-  currently runnable.
-- Source: [.memory-bank/prd.md](../prd.md) `FR-CAP-01..08`,
+- Prevents: client-side ranking/top-5/deduplication, hidden oversize subsets, a
+  realtime waiter queue, durable replay and treating a server response as
+  visible Promo success.
+- Rule: one client-generated `attempt_id`, one bounded request, one inference
+  slot and one server deadline govern the synchronous attempt. The request
+  carries every local-detector occurrence as crop plus metadata; duplicates are
+  allowed. If the complete proposal set cannot fit the accepted bounds, the
+  attempt fails explicitly without sending a subset; zero proposals use a
+  metadata-only request. Concurrency returns `busy`. Only an idempotent client
+  acknowledgement after four teasers and QR are visible sets display success.
+  Missing acknowledgement becomes derived `unconfirmed` after the
+  result-display window; no scheduler or acknowledgement outbox exists.
+- Verification: Required FT-003..FT-005 proof of the proposal/zero/oversize
+  paths plus the controlled 20-attempt outcome, not currently runnable.
+- Source: [.memory-bank/prd.md](../prd.md) `FR-CAP-01..12`,
   `FR-UX-01..09` and the [lifecycle map](../states/lifecycle-map.md).
 
 #### AD-007 — Core Attempt survives best-effort evidence
 - Binds: Promo, diagnostics, retention and hard purge.
 - Prevents: diagnostic evidence blocking participant flow, an empty anchor,
-  server-side reliable-delivery outbox or hard-purge cascade into
-  sessions/Attempts/evidence.
+  mandatory reference-frame upload or local-detector miss proof, a server-side
+  reliable-delivery outbox or hard-purge cascade into sessions/Attempts/
+  evidence.
 - Rule: `promo` persists a core Attempt before inference for every
   server-admitted request; `diagnostics` attaches detailed evidence
   best-effort and exposes missing finalization as `incomplete`. Client-only
-  offline triggers are best-effort and may have no durable Attempt. Photo hard
-  purge retains existing Promo result/session data, the core Attempt and
-  diagnostic evidence; clients skip unavailable media.
+  offline triggers are best-effort and may have no durable Attempt.
+  Capture-derived media is not developer-only merely because it is an image,
+  and no logging, cache, storage or public-delivery mechanism is required.
+  Photo hard purge retains existing Promo result/session data, the core Attempt
+  and diagnostic evidence; clients skip unavailable media.
 - Verification: Required FT-007/FT-012 integration proof, not currently
   runnable.
 - Source: [.memory-bank/prd.md](../prd.md) `FR-DIAG-01..05`,
@@ -153,8 +164,8 @@ speculative distributed infrastructure.
 - Prevents: per-device grant rows and public MinIO/presigned participant URLs in
   the pilot.
 - Rule: one Promo session has a 30-minute first-open window and one shared
-  60-minute idle access state; protected media is served through authorized
-  no-store backend reads.
+  60-minute idle access state; commercial Photo media and personalized session
+  data are served through authorized no-store backend reads.
 - Verification: Required FT-006 multi-phone expiry proof, not currently
   runnable.
 - Source: [.memory-bank/prd.md](../prd.md) `FR-UX-03..10` and the
@@ -200,12 +211,14 @@ speculative distributed infrastructure.
 - Prevents: a distributed transaction emulator, public object-store access,
   hidden retained versions and per-object recovery lifecycles.
 - Rule: committed PostgreSQL state decides whether a private MinIO object is
-  usable. Admission uses a unique opaque object key and database uniqueness;
-  a pre-commit crash may leave a private orphan. Derived keys are deterministic
-  by Photo, pipeline revision and artifact kind. Cleanup first makes data
-  inaccessible, then performs idempotent object deletion, then finalizes the
-  owning database cleanup. MinIO versioning and external volume snapshots stay
-  disabled while the no-backup pilot decision is active.
+  usable. MinIO remains private for every stored object, including ordinary
+  capture-derived media; data classification changes application authorization,
+  not the storage boundary. Admission uses a unique opaque object key and
+  database uniqueness; a pre-commit crash may leave a private orphan. Derived
+  keys are deterministic by Photo, pipeline revision and artifact kind. Cleanup
+  first makes data inaccessible, then performs idempotent object deletion, then
+  finalizes the owning database cleanup. MinIO versioning and external volume
+  snapshots stay disabled while the no-backup pilot decision is active.
 - Verification: Required FT-001/FT-002/FT-012 proof, not currently runnable:
   duplicate/orphan handling and repeated cleanup converge without exposing
   foreign or deleted media.
@@ -255,7 +268,7 @@ private network
 └── BackgroundPhotoWorker: one sequential operation
 
 SpaPromoClient
-└── local advertising, capture ring buffer, Promo render and display ack
+└── ring buffer, local face proposals, all-occurrence request, Promo/display
 ```
 
 All server roles use the same release image and capability packages. Process
@@ -323,6 +336,9 @@ accept maintenance downtime.
   table models, repositories, invariants and commands.
 - MinIO is authoritative for binary bytes only. A PostgreSQL visibility/state
   decision determines whether a private object may be read.
+- Persisted capture-derived diagnostic media follows the ordinary 90-day
+  evidence cutoff. Its image content alone does not require developer-only
+  authorization, and persistence is optional rather than a new storage path.
 - Effective `captured_at` is reliable EXIF interpreted in the СПА timezone,
   otherwise the file's server-side upload-start time, otherwise 01:00 on its
   authoritative `visit_date`.
@@ -369,8 +385,9 @@ shared-schema ownership and cascade limits.
 
 | Decision | Deferred because | Revisit when |
 |---|---|---|
-| Exact camera/sensor transport | Pilot hardware is not selected. | Site hardware is selected before FT-003 implementation. |
-| Client app-shell transport | Browser-native hardware favors a versioned Service Worker app shell; bridge-only hardware favors a client adapter serving the same bundle. The bridge is not a capability slice; building both paths or a generic device-plugin framework has no current value. | Site hardware selects the required adapter. |
+| Client runtime and site integration | The browser-native versus narrow-bridge route, exact camera/sensor hardware and ESP32 transport are not accepted decisions. | Operator/site owner selects one pilot route before FT-003 tasking. |
+| Proposal detector and request contract | Detector/runtime/model/update choices, crop parameters, schema and exact byte/pixel bounds require representative client-hardware evidence. ONNX Runtime Web and YuNet remain non-normative technical context, not a requirement or gate. | Operator accepts one evidenced FT-003 contract. |
+| Client-side embeddings/search | Current accepted boundary keeps embeddings and search off the client. | A future benchmark and explicit operator decision justify reconsideration. |
 | Multiple worker/realtime replicas and coordination | Singleton topology is accepted. | Measured throughput/availability failure. |
 | Leases, fencing and claim-scoped derived keys | One configured worker prevents stale concurrent publication. | More than one worker or overlapping deployments are accepted. |
 | Killable inference subprocess/watchdog | Ordinary crashes already restart; hang isolation adds failure surface. | A native hang is reproduced and requires intervention. |
@@ -408,9 +425,9 @@ These risks do not authorize extra lifecycle or recovery machinery:
 
 ## Verification Route
 
-The repository currently has no runnable code. Foundation establishes the
-build/typecheck/start/test commands, one linear migration-from-empty proof and
-one storage/runtime smoke; feature work later owns the HTTP, cross-slice,
-owner-ordered retention and ownership-safe deletion proofs named in the
-Architecture Spine. The bootstrap [testing policy](../testing/index.md) remains
-the quality-gate router.
+The verified Foundation supplies build/typecheck/start/test commands, one
+linear migration-from-empty proof and one storage/runtime smoke; it does not
+verify product behavior. Feature work owns the HTTP, client-proposal,
+cross-slice, owner-ordered retention and ownership-safe deletion proofs named
+in the Architecture Spine. The bootstrap
+[testing policy](../testing/index.md) remains the quality-gate router.
