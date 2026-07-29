@@ -17,9 +17,10 @@ The pilot also gives the application developer a role-scoped diagnostic and
 calibration contour for explaining attempts and preparing manual face-match and
 input-quality setting changes.
 
-The repository is still at the documentation and design stage. No working
-application backend, worker or deployed runtime exists yet; every runtime
-component below describes the product to be built.
+The repository is no longer documentation-only: the verified Foundation
+supplies runnable backend, background-worker and realtime entrypoints plus the
+non-production Compose/storage substrate. Product behavior and a deployed pilot
+runtime do not exist yet; the capabilities below remain the product to be built.
 
 ## Core Value
 

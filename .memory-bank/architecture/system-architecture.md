@@ -61,8 +61,8 @@ speculative distributed infrastructure.
   `RealtimeFaceService` are process entrypoints over the same release. The
   composition root owns only settings, adapters, wiring, lifecycle, start and
   shutdown.
-- Verification: Required Foundation proof, not currently runnable: all three
-  entrypoints start against fake adapters from one release.
+- Verification: Verified Foundation proof: all three entrypoints start against
+  fake adapters from one release.
 - Source: accepted operator architecture decision, recorded in this
   Architecture Spine.
 
@@ -357,10 +357,11 @@ shared-schema ownership and cascade limits.
 
 ## Deployment And Recovery
 
-- A future Compose-based single-server deployment uses persistent primary
-  PostgreSQL and MinIO volumes. One migrate/init command applies the single
-  Alembic stream and ensures private buckets before backend, worker and realtime
-  start or fail fast; realtime is ready only after exact active-model warmup.
+- The verified Foundation supplies the Compose-based single-server substrate.
+  The target pilot deployment uses persistent primary PostgreSQL and MinIO
+  volumes. One migrate/init command applies the single Alembic stream and
+  ensures private buckets before backend, worker and realtime start or fail
+  fast; realtime is ready only after exact active-model warmup.
 - Restart policies cover the Compose services and a systemd user service covers
   SpaPromoClient/Chromium; the HTTPS edge returns `502/503` while an upstream is
   unavailable. Photo work restarts from the beginning, while realtime work is

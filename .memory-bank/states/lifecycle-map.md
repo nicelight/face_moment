@@ -10,8 +10,9 @@ source_of_truth:
 ## Purpose
 
 Record the accepted lifecycle and recovery rules that constrain later feature
-design. The repository has no working runtime; every state below is target
-design rather than observed implementation.
+design. The verified Foundation supplies runnable infrastructure and server-role
+entrypoints, but no product lifecycle below is implemented; every state remains
+target design rather than observed product behavior.
 
 ## Independent Photo Admission
 

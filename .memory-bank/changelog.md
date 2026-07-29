@@ -4,6 +4,14 @@ status: active
 ---
 # Changelog
 
+## [2026-07-28] Foundation current-state reconciliation
+- Reconciled Product Brief, product, PRD, lifecycle and Architecture Spine
+  wording with the verified Foundation: the executable server/storage substrate
+  exists, while product behavior and the deployed pilot runtime remain target
+  work.
+- Preserved feature-level `not currently runnable` verification statements for
+  product behavior that Foundation intentionally does not implement.
+
 ## [2026-07-24] Wave W0 — verified Foundation completion
 - Reconciled scheduler-owned `done` closure for both indexed FT-000 tasks:
   TASK-001 has functional `PASS`, `semantic-pass` and

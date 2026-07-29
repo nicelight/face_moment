@@ -4,7 +4,7 @@ status: draft
 type: prd
 clarification_status: complete
 constitution_checked: true
-last_updated: 2026-07-27
+last_updated: 2026-07-28
 ---
 # PRD
 
@@ -797,8 +797,10 @@ pilot actor or blocker.
   site-validation decision.
 - Chromium-based `SpaPromoClient`, running locally over HDMI or on a remote
   display computer after site selection; both use the same logical contract.
-- Target backend/admin web application to be delivered by this project; no
-  working backend or application runtime currently exists in this repository.
+- Target backend/admin product behavior remains to be delivered by this project.
+  The repository already contains the verified Foundation backend,
+  background-worker and realtime substrate, but no working product application
+  or deployed pilot runtime.
 - PostgreSQL with pgvector for metadata, state, exact vector search, structured
   logs and indexed diagnostic events.
 - MinIO/S3-compatible private object storage for originals, previews and

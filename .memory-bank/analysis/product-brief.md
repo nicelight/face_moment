@@ -177,8 +177,9 @@ delete/restore, два глобальных admin actions и прямые recent
 
 ## 10. Constraints
 
-- Проект находится только на стадии документации и design: working application,
-  backend, worker и deployed runtime ещё не существуют.
+- Verified Foundation уже предоставляет executable non-production substrate с
+  backend, background-worker и realtime entrypoints. Working product application
+  и deployed pilot runtime ещё не существуют.
 - один центральный CPU-only сервер в РФ и одна pilot СПА;
 - без external cloud face-recognition API;
 - capture запускается автоматически, без действия участника;
