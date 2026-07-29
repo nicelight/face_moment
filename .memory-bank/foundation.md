@@ -1,7 +1,7 @@
 ---
 description: Foundation Dev Path evidence and feature pressure map for the greenfield Face Moment pilot.
 status: active
-last_updated: 2026-07-24
+last_updated: 2026-07-29
 ---
 # Foundation Dev Path
 
@@ -56,7 +56,7 @@ Foundation does not define or override the accepted target architecture.
 | Feature | Pressure | Foundation Response | Probe | Status |
 |---|---|---|---|---|
 | FT-001, FT-002, FT-012 | Shared PostgreSQL/MinIO baseline, migration/init and backend/worker entrypoints. | Compose storage, one application schema, one shared `Base/MetaData`, one Alembic configuration/stream and fake worker seam. | Apply the linear stream to an empty database; storage roundtrip and restart visibility. | required |
-| FT-003, FT-004, FT-005, FT-006 | Realtime role and HTTPS readiness must exist before capture/search behavior. | One fake realtime warmup/readiness seam in the common release; client transport remains feature-owned. | Start all server roles and complete one non-production readiness request. | required |
+| FT-003, FT-004, FT-005, FT-006 | Realtime role and HTTPS readiness must exist before capture/search behavior. | One fake realtime warmup/readiness seam in the common release. The accepted central-origin browser/mDNS ESP32 transport and client proposal behavior remain product-feature scope, not Foundation work. | Start all server roles and complete one non-production readiness request. | required |
 | FT-007..FT-011 | Diagnostics need only the same runnable application, database and worker substrate. | Reuse the common server/storage seams; do not create auth, Attempt, evidence or Calibration product rows in Foundation. | Common build/typecheck/start/test and database probes pass without empty capability scaffolds. | covered |
 
 ## Deferred Decisions
@@ -65,7 +65,7 @@ Foundation does not define or override the accepted target architecture.
 |---|---|---|
 | Photo/Attempt/purge table shape, foreign keys/`ON DELETE` rules and endpoint payloads | Product behavior does not belong in Foundation; cross-ownership cascade is already forbidden. | Owning feature task design and contract proof. |
 | Crash/restart matrices | Owner-specific recovery is cheaper to prove with each feature. | FT-002, FT-007, FT-011 or FT-012 execution. |
-| Camera/sensor transport and offline browser proof | Pilot hardware is not selected. | Before FT-003 implementation. |
+| Exact camera/site geometry | Camera model, lens, lighting and maximum input dimensions are deployment configuration; the browser/mDNS ESP32 route is already accepted and adds no Foundation work. | Configure and verify the pilot site. |
 | Backup, replicas and distributed coordination | Explicitly outside the accepted pilot. | New operator durability/scale decision. |
 
 ## Foundation Queue

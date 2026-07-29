@@ -4,7 +4,7 @@ status: draft
 type: prd
 clarification_status: complete
 constitution_checked: true
-last_updated: 2026-07-28
+last_updated: 2026-07-29
 ---
 # PRD
 
@@ -30,6 +30,9 @@ last_updated: 2026-07-28
 - [.memory-bank/analysis/brainstorming/BR-003.md](analysis/brainstorming/BR-003.md):
   user-confirmed developer diagnostics, logging, annotation and calibration
   decisions.
+- [.memory-bank/analysis/brainstorming/BR-004.md](analysis/brainstorming/BR-004.md):
+  operator-selected browser-native FT-003 route, local proposal contract and
+  structural pilot bounds.
 - [IDEA_APP.md](../IDEA_APP.md): application behavior, current best-effort
   search algorithm, data concepts and accepted KISS architecture boundaries.
 - [IDEA_INGEST.md](../IDEA_INGEST.md): historical ingest evidence; the current
@@ -58,13 +61,15 @@ last_updated: 2026-07-28
 ### Source precedence used in this draft
 
 The Constitution governs all decisions. The current Product Brief defines the
-pilot scope. Explicitly selected directions in BR-002 and BR-003 refine that
-scope. Explicit operator decisions in `IDEA_CLIENT.md` supersede older
-conflicting client-side and capture-derived media wording; they do not define
-server-internal processing, ranking or search. Remaining `IDEA_*` material
-supplies accepted behavior and constraints where it does not conflict with
-those sources. Historical ideas, post-pilot candidates and items explicitly
-labelled as recommendations are not converted into pilot acceptance gates.
+pilot scope. Explicitly selected directions in BR-002, BR-003 and BR-004 refine
+that scope. BR-004 supersedes older conflicting `IDEA_CLIENT.md` wording about
+the FT-003 client route, detector, crop, request and bounds; the remaining
+accepted `IDEA_CLIENT.md` decisions continue to govern client behavior, timing
+and capture-derived media without defining server-internal processing, ranking
+or search. Remaining `IDEA_*` material supplies accepted behavior and
+constraints where it does not conflict with those sources. Historical ideas,
+post-pilot candidates and items explicitly labelled as recommendations are not
+converted into pilot acceptance gates.
 
 ## Clarifications
 
@@ -88,14 +93,14 @@ labelled as recommendations are not converted into pilot acceptance gates.
   [.memory-bank/spec-backbone.md](spec-backbone.md) for decomposition and later
   SDD work.
 
-### Deferred Technical Decisions
+### 2026-07-29 — FT-003 browser-native client contract
 
-- Client runtime route and local detector/runtime/model/update choice;
-  `ONNX Runtime Web` and YuNet remain feasibility context, not requirements,
-  gates or mandatory checks.
-- Camera and sensor hardware, plus sensor-to-client transport.
-- Crop parameters, request/response schema and exact request bounds.
-- Any future move of embeddings or search to the client.
+- The operator accepted the BR-004 browser-native route and proposal contract.
+  Its normative behavior is captured by FR-CAP-03, FR-CAP-09..17, NFR-SEC-07,
+  NFR-ARCH-06 and AC-21/23..26.
+- Exact endpoint serialization and site-specific camera choices remain
+  downstream inputs; neither reopens product clarification nor creates a
+  representative-benchmark gate.
 
 ## Product Summary
 
@@ -159,6 +164,10 @@ quality gates.
   represented in the result.
 - Tracking or identity deduplication across reference frames, automatic identity
   clustering or cross-pipeline person linking.
+- Alternative FT-003 routes/runtimes or a representative benchmark gate beyond
+  the accepted FR-CAP-13..17 and NFR-ARCH-06 contract.
+- Additional proposal-request caps or an oversize domain lifecycle beyond
+  FR-CAP-09, including client ranking/truncation to fit the transport limit.
 - Mandatory upload of full/downscaled reference frames, proof or annotation of
   occurrences missed by the local detector, or a diagnostic frame-upload mode.
 - ANN search, Redis, Celery/RQ/Arq, Kafka, multiple priority queues, Kubernetes,
@@ -223,9 +232,12 @@ quality gates.
 
 ### System actors
 
-- `SpaPromoClient`: local or remote display/capture client bound to one СПА by a
-  client token.
-- Passage sensor and camera: trigger and capture the reference series.
+- `SpaPromoClient`: browser-native Chromium display/capture client loaded from
+  the central HTTPS origin and bound to one СПА by a client token.
+- ESP32 passage sensor: local authenticated trigger source published under one
+  fixed mDNS `.local` name.
+- Browser-visible camera: captures the reference series after explicit
+  configuration and preview.
 - Backend, `BackgroundPhotoWorker` and `RealtimeFaceService`: ingest/control,
   background photo processing and synchronous realtime search responsibilities.
 
@@ -299,13 +311,15 @@ pilot actor or blocker.
   action.
 - **FR-CAP-02** — While capture or search is active, new sensor events MUST be
   ignored; stale realtime requests MUST NOT later replace a newer display state.
-- **FR-CAP-03** — `SpaPromoClient` MUST send one crop plus metadata for every
-  face occurrence returned by the local detector in one bounded request. It
-  MUST NOT rank, choose a top-5, authoritatively quality-gate, track, cluster,
-  deduplicate, embed or search those occurrences. The pre-existing server
-  contract remains at most five independently searched detections with no
-  merged embeddings; this clarification does not otherwise define server
-  processing.
+- **FR-CAP-03** — `SpaPromoClient` MUST traverse reference-series frames from
+  earliest pre-trigger to latest post-trigger and preserve BlazeFace output
+  order within each frame. It MUST stop local detection immediately after the
+  twentieth face proposal occurrence and send those first at most 20
+  occurrences in one synchronous request. It MUST NOT rank, choose a top-5,
+  authoritatively quality-gate, track, cluster, deduplicate, embed or search
+  those occurrences. The pre-existing server contract remains at most five
+  independently searched detections with no merged embeddings; this
+  clarification does not otherwise define server processing.
 - **FR-CAP-04** — The pilot MUST preserve the current best-effort behavior: one
   physical person may occupy several detection slots, and tracking, identity
   clustering and cross-frame person deduplication are absent.
@@ -325,9 +339,13 @@ pilot actor or blocker.
   every unique `photo_id` counted in `N` belong to at least one pilot participant
   represented by a processed selected detection; complete group coverage is not
   required.
-- **FR-CAP-09** — If the complete bounded request containing all proposal crops
-  and metadata cannot fit accepted request bounds, the attempt MUST end with an
-  explicit non-success outcome; the client MUST NOT rank, drop or send a subset.
+- **FR-CAP-09** — The client proposal envelope MUST be structurally bounded by
+  at most 20 occurrence parts and a maximum encoded crop side of 512 pixels.
+  The server MUST reject a total multipart request body larger than `20 MiB`
+  (`20,971,520` bytes) with HTTP `413` before domain admission. It MUST NOT
+  introduce separate aggregate-pixel, per-JPEG-byte or manifest-size caps,
+  produce an oversize domain outcome, or rank/drop a subset to fit the
+  transport limit.
 - **FR-CAP-10** — If the local detector returns no occurrences, the client MUST
   send a metadata-only request with the same attempt correlation and client
   timings. If admitted, it MUST create the core Attempt and return an explicit
@@ -336,11 +354,53 @@ pilot actor or blocker.
   understandable labels, provide preview, explicit selection and refresh. If
   the selected camera becomes unavailable, advertising MUST continue and
   capture MUST wait for operator reselection and preview; no arbitrary camera
-  substitution is allowed.
+  substitution is allowed. Frames larger than the deployment-configured maximum
+  MUST be downscaled before entering the ring buffer or detector; the exact
+  maximum belongs to camera/site configuration.
 - **FR-CAP-12** — Client configuration MUST provide an explicitly labelled test
   trigger. Physical and test triggers MUST follow the same capture, proposal,
   request and overlap/staleness behavior, with distinguishable trigger-source
   metadata.
+- **FR-CAP-13** — The single pilot client route MUST be browser-native Chromium
+  loaded from the central Face Moment HTTPS origin, without a local bridge or
+  local web server. While active, it MUST keep one HTTP long-poll request to the
+  fixed mDNS ESP32 `.local` name with a 10-second timeout and open the next
+  request immediately after an event or timeout. WebSocket is not part of this
+  route.
+- **FR-CAP-14** — The local proposal detector MUST be MediaPipe BlazeFace
+  Full-range through its browser runtime, without TensorFlow.js or another
+  project-selected ML runtime. Its model MUST be a separate versioned asset
+  shipped with the `SpaPromoClient` release, not embedded in JavaScript. YuNet
+  2026may FP32 MAY replace it only after BlazeFace is shown technically
+  unusable; both detectors and a generic detector abstraction MUST NOT be
+  implemented simultaneously.
+- **FR-CAP-15** — Each occurrence crop MUST be a centered square with side
+  `1.2 × max(bbox_width, bbox_height)`, clipped to the source frame without
+  alignment, landmark normalization or upscaling. A crop whose longest side
+  exceeds 512 pixels MUST be proportionally downscaled to 512 pixels and
+  encoded as ordinary sRGB JPEG without EXIF or source metadata.
+- **FR-CAP-16** — The configuration/debug page MUST expose JPEG quality as one
+  dropdown containing exactly `0.7`, `0.75`, `0.8`, `0.85`, `0.9` and `0.95`,
+  with default `0.85`. The selected value MUST be stored in kiosk-profile
+  `localStorage`, apply from the next Attempt and be included in its manifest;
+  it is not a server-side setting.
+- **FR-CAP-17** — One ready reference series MUST produce one synchronous
+  `multipart/form-data` request containing a versioned JSON manifest and one
+  JPEG part per occurrence; zero occurrences use the same endpoint with the
+  manifest only. Its identity block MUST contain only `schema_version: 1`, UUID
+  `attempt_id`, `trigger_source`, `client_release`, `detector_id`,
+  `model_version` and `jpeg_quality`; it also carries the selected
+  `camera_device_id`. Its timing block MUST contain
+  `reference_series_ready_at` for correlation plus
+  `local_detection_completed_ms` and `request_started_ms` as monotonic offsets
+  from ready-series zero; client/server wall clocks MUST NOT be subtracted.
+  Every occurrence MUST carry only request-local `occurrence_index`,
+  `frame_index`, `frame_offset_ms`, `detector_confidence` and `crop_part`.
+  `spa_client_token` stays in the Authorization header and the server derives
+  `spa_id`; the manifest MUST NOT carry either one, another secret, an
+  occurrence UUID, camera label/configuration snapshot, `bbox_px`,
+  `crop_rect_px`, `source_frame_width_px` or `source_frame_height_px`. Exact
+  serialization belongs to downstream SDD.
 
 ### D. Promo display and QR continuation
 
@@ -563,9 +623,11 @@ pilot actor or blocker.
 
 - **NFR-REL-01** — The central backend/runtime MUST start and operate
   independently of the local KDE/Chromium display session.
-- **NFR-REL-02** — Chromium/display MUST recover automatically after browser or
-  network failure and continue local advertising while the server is
-  unavailable.
+- **NFR-REL-02** — Chromium/display MUST recover automatically after browser
+  failure once the central HTTPS origin is reachable. A currently loaded client
+  MUST remain in or return to local advertising during transient server/network
+  failure. Recovery after tab reload or Chromium restart while the central
+  origin remains unavailable is not required.
 - **NFR-REL-03** — Realtime processing MUST use one inference slot and one
   server deadline without a waiter queue. A concurrent admitted request receives
   typed `busy`; stale reference work is not durable and MUST NOT be replayed
@@ -612,6 +674,13 @@ pilot actor or blocker.
   developer-only media authorization; none of those mechanisms is required.
   Credentials, infrastructure, commercial Photo media, personalized data,
   participant names and administrative actions remain protected.
+- **NFR-SEC-07** — The managed kiosk MUST pre-authorize the central Face Moment
+  origin for Local Network Access. ESP32 MUST allow that exact origin through
+  CORS, handle OPTIONS when Authorization is present and validate one manually
+  provisioned Bearer secret stored through the client configuration UI in the
+  managed kiosk browser profile. The secret MUST be sent only in the
+  Authorization header and MUST NOT enter URLs or logs. Pairing, automatic
+  rotation, PKI and a separate sensor-credential lifecycle are not required.
 - **NFR-DATA-01** — Technical browser/server logs MUST expire after 30 days.
 - **NFR-DATA-02** — Attempts and ordinary diagnostic bundles/artifacts MUST
   expire after 90 days, including persisted capture-derived diagnostic media.
@@ -642,6 +711,11 @@ pilot actor or blocker.
   background worker and durable Photo data. They MUST NOT add a per-photo purge
   state, a purge jobs table, WebSocket/SSE statistics transport or another
   worker solely for deletion and statistics.
+- **NFR-ARCH-06** — FT-003 implementation readiness MUST use the selected
+  browser-native route and structural bounds directly. A representative
+  benchmark MUST NOT be required before design or tasking; implementation and
+  site evidence still verify the existing performance acceptance contract.
+
 ## Data / Domain Model
 
 ### Core concepts
@@ -661,7 +735,11 @@ pilot actor or blocker.
 - **Photo face** — one face detected by one pipeline revision in one photo.
   Different pipelines create independent records and no shared person identity.
 - **Reference series** — sensor-triggered set of frames from the client ring
-  buffer used to form the request governed by FR-CAP-03.
+  buffer traversed chronologically until the frames end or the first 20 face
+  proposal occurrences have been found.
+- **Face proposal occurrence** — one BlazeFace detection in one reference frame,
+  identified only by request-local order plus frame context. It is not a person
+  identity, and repeated occurrences of the same person are valid.
 - **Selected detection** — one quality-ranked face occurrence used for a search;
   it is not proof of a unique physical person.
 - **Promo/search session** — short-lived context binding СПА, authoritative
@@ -755,10 +833,13 @@ pilot actor or blocker.
 
 1. The display shows local advertising while the camera stream/ring buffer is
    active.
-2. Passage sensor triggers a reference series without participant action.
-3. The client submits crops and metadata for every detected face occurrence, or
-   metadata only when none are detected, without full-frame upload, while
-   preventing overlapping attempts.
+2. The client keeps one 10-second HTTP long-poll request to the authenticated
+   fixed-name mDNS ESP32; a passage event triggers a reference series without
+   participant action and the client immediately continues long-polling.
+3. The client traverses frames chronologically, stops when it finds occurrence
+   20, and submits the first at most 20 crops plus metadata in one multipart
+   request. When none are found it submits the manifest only; it does not upload
+   full frames and still prevents overlapping attempts.
 4. The service processes selected detections and either forms four unique valid
    teasers or returns a non-success outcome.
 5. On success, the display presents four no-watermark teasers and a scannable QR
@@ -793,10 +874,10 @@ pilot actor or blocker.
 
 ## Integrations / Dependencies
 
-- Passage sensor, camera/video stream and 43-inch display; exact models remain a
-  site-validation decision.
-- Chromium-based `SpaPromoClient`, running locally over HDMI or on a remote
-  display computer after site selection; both use the same logical contract.
+- One ESP32 passage sensor, browser-visible camera and 43-inch display; exact
+  camera, lens, lighting and maximum input dimensions remain site choices.
+- Managed Chromium, Local Network Access and the BlazeFace model asset are
+  client dependencies governed by FR-CAP-13..17 and NFR-SEC-07.
 - Target backend/admin product behavior remains to be delivered by this project.
   The repository already contains the verified Foundation backend,
   background-worker and realtime substrate, but no working product application
@@ -833,6 +914,12 @@ payment/fiscal providers, external observability stores and message brokers.
   searchable SLO for its accepted JPEG population.
 - Sensor events arriving during capture/search or successful cooldown are
   ignored according to client state.
+- An ESP32 long-poll timeout continues polling. Sensor unavailability leaves
+  the display in local advertising without a durable queue or fallback
+  transport.
+- A BlazeFace model load/validation failure leaves the client in advertising
+  with a recoverable operator-visible error; it does not silently activate a
+  second detector.
 - Multiple detections of one person are allowed and must be visible in
   diagnostics; missing another group member is not itself a group-coverage
   contract breach.
@@ -879,6 +966,8 @@ payment/fiscal providers, external observability stores and message brokers.
 
 - One selected СПА, one configured `SpaPromoClient`, the 43-inch/16:9/1920x1080
   baseline and validated camera/sensor/lighting geometry at 3-5 metres.
+- The managed Chromium kiosk has Local Network Access and can reach its
+  configured authenticated ESP32 route.
 - A selected serving pipeline is pre-warmed; its reference threshold and input
   quality gates are calibrated before the run.
 - The operator has explicitly set the active working `visit_date`, and it
@@ -976,11 +1065,28 @@ payment/fiscal providers, external observability stores and message brokers.
   snapshot Photo/media/face/pipeline data while retaining existing Promo
   results/sessions, core Attempts and diagnostic evidence. Existing clients
   skip unavailable media without invalidating the session or recalculating `N`.
-- **AC-21** — Proposal, zero-proposal and oversize requests satisfy
-  FR-CAP-03, FR-CAP-09 and FR-CAP-10.
+- **AC-21** — A chronological reference-series fixture with more than 20
+  occurrences proves that the client stops at occurrence 20 and sends exactly
+  the first 20 in traversal order; a zero-occurrence fixture sends only the
+  manifest. A transport-boundary fixture proves that a request body larger than
+  `20 MiB` returns HTTP `413` without core Attempt admission; no oversize domain
+  outcome or hidden ranking/subset behavior is present.
 - **AC-22** — The diagnostic UI exposes all three client markers in FR-DIAG-02.
 - **AC-23** — Camera list, preview, selection/reselection and the same-behavior
-  physical/test triggers satisfy FR-CAP-11..12.
+  physical/test triggers satisfy FR-CAP-11..12; oversized configured camera
+  input is downscaled before ring-buffer/detector work.
+- **AC-24** — The configuration/debug page exposes only the six accepted JPEG
+  quality values, defaults to `0.85`, persists the selection in kiosk-profile
+  `localStorage`, applies it from the next Attempt and records it in the
+  manifest.
+- **AC-25** — The central-origin Chromium client, managed Local Network Access,
+  exact-origin ESP32 CORS/OPTIONS/Bearer handling and continuous one-request
+  10-second long-poll behavior satisfy FR-CAP-13 and NFR-SEC-07 without a local
+  bridge, local web server or WebSocket.
+- **AC-26** — BlazeFace, crop and multipart fixtures satisfy FR-CAP-14..17,
+  including separate versioned model delivery, `1.2 × max(width, height)`
+  clipping, 512-pixel downscale without upscale, selected manifest fields and
+  the explicit omitted fields.
 
 The smoke run validates the pilot path only. It does not demonstrate public
 production readiness, target 10-15-СПА capacity or complete group coverage.
@@ -996,6 +1102,9 @@ production readiness, target 10-15-СПА capacity or complete group coverage.
      calculations;
    - pipeline-revision isolation, threshold gates, pHash-only ranking and `N`
      union/deduplication;
+   - chronological first-20 traversal/stop behavior, crop geometry and
+     downscale/no-upscale rules, JPEG-quality configuration and manifest
+     allow/omit fields;
    - attempt timing calculations, recommendation metrics, retention rules and
      latest-cleanup outcome;
    - secret/redaction checks for structured logs.
@@ -1008,8 +1117,9 @@ production readiness, target 10-15-СПА capacity or complete group coverage.
    - worker crash/restart -> the existing queued population remains durable,
      unfinished work returns to `pending` and processing resumes from the
      beginning;
-   - sensor/client -> synchronous realtime service -> exact scoped search -> QR
-     session;
+   - central-origin Chromium -> authenticated mDNS ESP32 long-poll -> capture
+     -> BlazeFace -> multipart request -> synchronous realtime service -> exact
+     scoped search -> QR session;
    - server-admitted core Attempt/browser/server correlation -> Attempts/Log
      Explorer -> optional evidence and explicit `incomplete` state;
    - retention expiry -> promoted-subset preservation -> latest result -> safe
@@ -1036,11 +1146,22 @@ production readiness, target 10-15-СПА capacity or complete group coverage.
    - retain the per-attempt outcome, `reference_ready_to_qr_ms`, phone-context
      consistency, ground-truth validation of all four teasers and every unique
      `photo_id` in `N`, and diagnostic evidence;
-   - evaluate AC-01..07 and AC-21..23, requiring the same 19 attempts to pass
+   - evaluate AC-01..07 and AC-21..26, requiring the same 19 attempts to pass
      both latency/QR and correctness without silently removing no-match/timeout
      failures.
 
+## Downstream SDD Inputs
+
+- Exact endpoint paths, JSON serialization, multipart part naming and validation
+  details are owned by downstream SDD. They MUST preserve FR-CAP-03 and
+  FR-CAP-09..17 rather than reopening the accepted route or adding a benchmark
+  gate.
+- Exact camera model, lens, lighting and deployment-configured maximum input
+  dimensions are site choices and do not block feature design or tasking.
+- Any future move of embeddings or search to the client requires a new explicit
+  product decision.
+
 ## Unresolved Blockers
 
-None at product level. The Deferred Technical Decisions above do not change
-`clarification_status: complete`.
+None at product level. The remaining downstream serialization and site
+configuration choices do not change `clarification_status: complete`.

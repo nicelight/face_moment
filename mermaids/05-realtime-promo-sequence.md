@@ -17,16 +17,20 @@ sequenceDiagram
     actor Phone as Телефон
 
     Note right of Client: advertising — camera stream и ring buffer уже активны
+    Client->>Sensor: authenticated HTTP long-poll (10 s)
+    Note over Sensor,Client: timeout → сразу следующий request, без Attempt
     Person->>Sensor: Проходит capture-zone
-    Sensor->>Client: trigger at t = 0
+    Sensor-->>Client: passage event response at t = 0
+    Client->>Sensor: открыть следующий long-poll
     Client->>Client: создать UUID attempt_id
     Client->>Client: capturing — показать non-personal prePromo
     Client->>Client: собрать pre/post-trigger reference series
     Client->>Client: marker: ready-series processing start
-    Client->>Client: local detector → crop + metadata<br/>для каждого occurrence, без ranking/top-5/dedup
+    Client->>Client: chronological BlazeFace traversal<br/>stop at occurrence 20, без ranking/top-5/dedup
+    Client->>Client: crop + metadata для первых ≤20 occurrences
     Client->>Client: marker: request-send start
-    Note right of Client: zero proposals → metadata-only request<br/>oversize полного набора → explicit failure без subset
-    Client->>Edge: sync HTTPS request<br/>attempt_id + all occurrence crops/metadata<br/>+ spa_client_token
+    Note right of Client: zero proposals → manifest-only request<br/>body >20 MiB → HTTP 413 до admission, без subset
+    Client->>Edge: sync HTTPS multipart request<br/>attempt_id + first ≤20 occurrence crops/metadata<br/>+ spa_client_token
     Note right of Client: Каждый полученный response<br/>фиксирует response-received marker
     alt Transport/offline failure до server admission
         Edge--xClient: network error / no response
@@ -34,6 +38,9 @@ sequenceDiagram
         Note right of Client: Новое сообщение может сразу заменить текущее
         Client-->>Backend: optional best-effort offline metadata<br/>только если transport станет доступен
         Note right of Backend: Durable delivery и server Attempt не гарантируются
+    else Request body larger than 20 MiB
+        Edge-->>Client: HTTP 413 before domain admission
+        Client->>Client: вернуться к локальной рекламе<br/>без core Attempt / oversize domain outcome
     else Request admitted by server
         Edge->>API: authenticated bounded request
 
@@ -103,8 +110,12 @@ sequenceDiagram
 ## Алгоритмические ограничения pilot
 
 - Selected detection — occurrence лица, а не уникальный человек; tracking и identity deduplication отсутствуют.
-- Client отправляет все proposal occurrences с допустимыми повторами; server
-  contract, а не client, владеет selection до пяти detections.
+- Client отправляет первые не более 20 proposal occurrences в chronological
+  traversal order с допустимыми повторами; server contract, а не client,
+  владеет selection до пяти detections.
+- Body больше `20 MiB` получает HTTP `413` до domain admission; client не
+  выбирает subset для обхода лимита, core Attempt и oversize domain outcome не
+  создаются.
 - Embeddings разных detections не объединяются, а pipeline revisions никогда не смешиваются.
 - `pHash` влияет только на разнообразие уже прошедших threshold фотографий.
 - Promo существует только при четырёх уникальных valid teasers; partial result запрещён.
@@ -114,6 +125,9 @@ sequenceDiagram
   при чтении; отдельный scheduler не нужен.
 - Client-only offline trigger может не создать server Attempt; его metadata
   доставляется только best-effort без durable outbox.
+- ESP32 trigger приходит как response на один authenticated 10-second HTTP
+  long-poll к fixed mDNS `.local` name; обычный timeout сразу продолжает polling
+  и не создаёт Attempt.
 - `<10 s` измеряется одним client monotonic clock от начала local processing и
   включает crop preparation и request send.
 - Full/downscaled reference-frame upload и доказательство local-detector misses

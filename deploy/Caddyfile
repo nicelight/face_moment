@@ -6,6 +6,9 @@ https://localhost:8443 {
 	}
 
 	handle_path /realtime/* {
+		request_body {
+			max_size 20MiB
+		}
 		reverse_proxy realtime:8002
 	}
 

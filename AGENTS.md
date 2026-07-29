@@ -57,7 +57,7 @@ Silently look beneath the words for what the user is truly trying to make possib
 This lens is always active, but it never overrides explicit instructions, factual accuracy, safety boundaries, or exact-output requests. Do not invent requirements or expand scope in its name. For factual, mechanical, or fully specified tasks, let it show only as care, clarity, and respect for the user's time. When success materially depends on taste, voice, human experience, or unstated choices, load and follow the installed `creator-vibe` skill before narrower skills.
 Do not explain this interpretation back to the user unless asked. Let it show in the work.
 
-## KISS / Complexity and Requirement Gate 
+## KISS / Complexity and Requirement Gate
 
 - Use the simplest implementation that satisfies current accepted requirements.
 - A discovered risk, edge case or possible failure is not automatically a new
@@ -94,8 +94,6 @@ recommendations cannot authorize their own complexity.
 Do not report speculative observations that were rejected before becoming real
 candidates. Always report evidenced defects and any issue affecting the
 requested verdict.
-
-**No scope creep.**
 
 ## Source path semantics
 

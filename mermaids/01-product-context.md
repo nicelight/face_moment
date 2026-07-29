@@ -28,10 +28,11 @@ flowchart LR
     photographer -->|"выбирает СПА/date<br/>независимо загружает JPEG"| upload
     upload -->|"accepted Photo → pending → ready"| inventory
 
-    sensor --> promo_client
+    promo_client -->|"authenticated 10 s HTTP long-poll<br/>fixed mDNS .local"| sensor
+    sensor -->|"event response"| promo_client
     camera --> promo_client
     participant -->|"проходит capture-zone без действий"| promo_client
-    promo_client -->|"crop + metadata каждого occurrence<br/>zero → metadata-only<br/>без full frames / local ranking / top-5"| search
+    promo_client -->|"первые ≤20 chronological occurrence crops + metadata<br/>zero → manifest only<br/>без full frames / local ranking / top-5"| search
     inventory --> search
     serving --> search
     search -->|"4 teasers + QR session"| promo_client

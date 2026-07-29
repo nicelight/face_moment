@@ -1,7 +1,7 @@
 ---
 description: Глобальные инварианты и запреты проекта (MUST/NEVER).
 status: active
-last_updated: 2026-07-28
+last_updated: 2026-07-29
 source_of_truth:
   - .memory-bank/invariants.md
 ---
@@ -26,9 +26,15 @@ source_of_truth:
 - Обрабатывать и сравнивать embeddings только внутри совместимой immutable
   `pipeline_revision`, сохраняя native detector/preprocessing/alignment каждого
   face pipeline.
-- Передавать из `SpaPromoClient` crop и metadata каждого local-detector
-  occurrence одним bounded request; при нуле proposals отправлять metadata-only
-  request, а при oversize полного набора завершать попытку явно без subset.
+- Загружать browser-native Chromium `SpaPromoClient` с центрального HTTPS
+  origin и, пока client активен, держать ровно один authenticated 10-second
+  HTTP long-poll к fixed-name mDNS ESP32, сразу продолжая после event/timeout.
+- Обходить ready reference series хронологически через BlazeFace Full-range,
+  останавливаться на occurrence 20 и передавать первые не более 20 crops плюс
+  metadata одним synchronous multipart request; при нуле proposals отправлять
+  manifest-only request. Сервер отклоняет request body больше `20 MiB` через
+  HTTP `413` до domain admission, без oversize domain outcome и без
+  client-side ranking/truncation.
 - Измерять основной `<10 s` interval от начала local processing до полной
   видимости QR на одном client monotonic clock, включая local processing и
   request send; diagnostics показывает три client markers из PRD `FR-DIAG-02`.
@@ -69,6 +75,9 @@ source_of_truth:
   top-1/top-2 margin.
 - Не выполнять на client proposals ranking/top-5, authoritative quality gating,
   tracking, clustering, deduplication, embeddings или search.
+- Не добавлять для FT-003 local bridge/separate local client web server,
+  WebSocket, sensor discovery service, pairing/PKI/rotation lifecycle,
+  параллельный YuNet, generic detector/runtime abstraction или model OTA.
 - Не требовать proof/annotation local-detector misses или diagnostic upload
   полных/downscaled reference frames.
 - Не добавлять Redis/broker, ANN, distributed scheduling, extra workers,

@@ -4,6 +4,13 @@ status: active
 ---
 # Changelog
 
+## [2026-07-29] Client restart availability clarification
+- Kept local advertising during transient server/network failure for an already
+  loaded client.
+- Removed the guarantee that tab reload or Chromium restart restores
+  advertising while the central HTTPS origin is unavailable; normal automatic
+  recovery resumes once that origin is reachable.
+
 ## [2026-07-28] Foundation current-state reconciliation
 - Reconciled Product Brief, product, PRD, lifecycle and Architecture Spine
   wording with the verified Foundation: the executable server/storage substrate

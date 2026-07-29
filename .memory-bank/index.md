@@ -52,7 +52,7 @@ status: active
 
 - [.memory-bank/spec-index.md](spec-index.md): Pure SDD spec registry and planned-spec index.
 - [.memory-bank/spec-backbone.md](spec-backbone.md): accepted complete global
-  SDD backbone at Planning Revision 3, feature blockers and verified Foundation
+  SDD backbone at Planning Revision 4, feature blockers and verified Foundation
   handoff.
 - [.memory-bank/foundation.md](foundation.md): Accepted Foundation Dev Path,
   verified substrate scope, concrete Foundation gate and completion evidence.

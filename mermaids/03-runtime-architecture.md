@@ -8,13 +8,14 @@ flowchart LR
     participant_phone["Телефон участника"]
 
     subgraph spa_site["Pilot СПА"]
-        sensor["Passage sensor"]
+        sensor["ESP32 passage sensor<br/>fixed mDNS .local"]
         camera["Camera stream"]
         display["43-inch display"]
         assets[("Локально закэшированная реклама<br/>prePromo / audio assets")]
         client["SpaPromoClient<br/>ring buffer + local face proposals<br/>state machine + QR render"]
 
-        sensor --> client
+        client -->|"authenticated HTTP long-poll<br/>one request, 10 s timeout"| sensor
+        sensor -->|"event response"| client
         camera --> client
         assets --> client
         client --> display
@@ -56,7 +57,7 @@ flowchart LR
     end
 
     photographer -->|"HTTPS JPEG upload + admin"| edge
-    client -->|"sync HTTPS request<br/>all occurrence crops + metadata<br/>spa_client_token"| edge
+    client -->|"sync HTTPS multipart<br/>first ≤20 chronological crops + metadata<br/>spa_client_token"| edge
     edge -->|"4 preview URLs + QR session"| client
     client -->|"idempotent display acknowledgement"| edge
     participant_phone -->|"HTTPS QR continuation"| edge
@@ -70,8 +71,11 @@ flowchart LR
 - `BackgroundPhotoWorker` и `RealtimeFaceService` разделены из-за разных latency и lifecycle требований.
 - Пять capability slices являются package ownership, а не отдельными services.
 - Realtime не ставит запросы в waiter queue: занятый slot возвращает `busy`.
-- Client не ранжирует/top-5/deduplicate proposals; oversize полного набора
-  завершается явно, а zero-proposal request содержит только metadata.
+- Client не ранжирует/top-5/deduplicate proposals и отправляет первые не более
+  20 occurrences в chronological traversal order; zero-proposal request
+  содержит только manifest.
+- Общий request body ограничен `20 MiB`: больший body получает HTTP `413` до
+  domain admission без core Attempt, oversize domain outcome или выбора subset.
 - Serving pipeline заранее загружается и прогревается; второй pipeline нужен только при доказанной необходимости benchmark-а.
 - `inventory` владеет active/soft-deleted marker, direct PostgreSQL counters и
   одним resumable global purge run; worker ждёт текущую операцию без preemption.

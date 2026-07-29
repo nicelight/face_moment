@@ -1,16 +1,17 @@
 ---
 description: Accepted global SDD backbone, coverage matrix and Foundation routing for the Face Moment pilot.
 status: active
-last_updated: 2026-07-28
+last_updated: 2026-07-30
 ---
 # SDD Spec Backbone
 
 ## Pre-PRD Spec Status
 
 - Status: ready_for_prd
-- Last updated: 2026-07-28
-- Notes: The clarified [.memory-bank/prd.md](prd.md) is sufficient for
-  meaningful L1-L3 decomposition.
+- Last updated: 2026-07-29
+- Notes: The clarified [.memory-bank/prd.md](prd.md), including the accepted
+  FT-003 browser-native client direction, is sufficient for meaningful L1-L3
+  decomposition without a representative benchmark gate.
 
 ## Decomposition Inputs
 
@@ -19,17 +20,23 @@ last_updated: 2026-07-28
   needed.
 - Domain model: PRD `Data / Domain Model`, with terms disambiguated by
   [.memory-bank/glossary.md](glossary.md).
-- Constraints: PRD `FR-CAP-03`, `NFR-PERF-01` and `NFR-SEC-06`.
-- Non-goals: PRD `Non-goals` and `Deferred Technical Decisions`.
-- Risks: PRD `Edge Cases / Failure Handling` and `FR-CAP-09..10`.
-- Boundary hints: PRD source precedence and `FR-CAP-03`; the client submission
-  contract does not define server-internal processing.
-- Lifecycle hints: PRD `FR-DIAG-02`, `FR-CAP-10` and `NFR-DATA-01..03`.
+- Constraints: PRD `FR-CAP-01..17`, `NFR-PERF-01`,
+  `NFR-SEC-02`, `NFR-SEC-07` and `NFR-ARCH-06`.
+- Non-goals: PRD `Non-goals` and `Downstream SDD Inputs`.
+- Risks: PRD `Risks` and `Edge Cases / Failure Handling`, including the
+  accepted first-20 traversal trade-off and site-dependent camera geometry.
+- Boundary hints: PRD source precedence, `FR-CAP-03`, `FR-CAP-09..17` and
+  `NFR-SEC-02/07`; the accepted client boundaries do not redefine
+  server-internal ranking, selection, embeddings or search.
+- Lifecycle hints: PRD `Participant Promo and continuation flow`,
+  `FR-CAP-01..03`, `FR-CAP-10..17` and `FR-DIAG-01..02`.
 
 ## Open Design Questions
 
-- See PRD `Deferred Technical Decisions` and `Feature Design Blockers` below;
-  they do not change the accepted L1-L3 cut.
+- No product/domain question blocks decomposition. Exact endpoint paths,
+  serialization details and site-selected camera/input dimensions remain
+  downstream choices under PRD `Downstream SDD Inputs`; they do not reopen the
+  accepted FT-003 route or require a representative benchmark.
 
 ## Handoff To /prd-to-features
 
@@ -38,17 +45,30 @@ last_updated: 2026-07-28
   [.memory-bank/prd.md](prd.md), [.memory-bank/glossary.md](glossary.md), this
   decomposition framing and the pure
   [.memory-bank/spec-index.md](spec-index.md).
-- Stop conditions: stop if decomposition requires selecting a deferred
-  technical alternative or if the PRD becomes unclear or contradictory.
+- Stop conditions: stop if reconciliation would change an actor, product
+  outcome, non-goal or lifecycle without PRD authority. Do not reopen the
+  accepted FT-003 route, detector, crop, request or structural bounds.
 
-## Handoff To /spec-design
+## /spec-design Reconciliation
 
-- Global Backbone Status: `complete` at Planning Revision `3`; see below.
-- Downstream readiness: see `Feature Design Blockers` and `Handoff`.
+- Global Backbone Status: complete at Planning Revision `4`.
+- Reconciled areas: FT-003 system ownership, client/realtime boundary,
+  admission/restart lifecycle and verification. Exact sensor and proposal
+  contracts live in the boundary map; architecture and lifecycle retain only
+  their own consequences and route to that owner.
+- Reused specs: the existing
+  [system architecture](architecture/system-architecture.md),
+  [boundary map](contracts/boundary-map.md),
+  [lifecycle map](states/lifecycle-map.md) and
+  [client realtime verification](testing/client-realtime.md); no new spec or
+  ADR was needed.
+- Remaining FT-003 gate: exact endpoint path, multipart part naming/
+  serialization, validation detail and compact machine outcome names remain a
+  routed feature-level design completion before product task planning.
 
 ## Global Backbone Status
 - Status: complete
-- Planning Revision: 3
+- Planning Revision: 4
 - Mode: strict_architecture_scaffold
 - Architecture artifact strategy: split-by-boundary-topic
 - Not applicable areas:
@@ -58,7 +78,8 @@ last_updated: 2026-07-28
   HTTPS/security boundaries, retention, one migration stream and irreversible
   hard purge justify strict mode; the implementation remains a KISS modular
   monolith. The registered system, boundary and lifecycle subjects are the
-  smallest useful split. The client proposal/media boundary changed durably;
+  smallest useful split. The selected client transport/proposal contract
+  changed the durable global boundary from Planning Revision `3` to `4`;
   Foundation remains accepted, verified and complete.
 
 ## Source Roles
@@ -66,7 +87,9 @@ last_updated: 2026-07-28
 Target authority was applied in this order:
 
 1. [.memory-bank/constitution.md](constitution.md) and explicit accepted
-   operator decisions, including the client/media decisions in
+   operator decisions, including the selected FT-003 directions recorded in
+   [.memory-bank/analysis/brainstorming/BR-004.md](analysis/brainstorming/BR-004.md)
+   and the compatible client/media decisions in
    [IDEA_CLIENT.md](../IDEA_CLIENT.md);
 2. the registered [system architecture](architecture/system-architecture.md),
    [boundary map](contracts/boundary-map.md),
@@ -78,7 +101,7 @@ Target authority was applied in this order:
    declared in the PRD.
 
 The verified Foundation is as-is evidence for substrate only. It does not
-define product behavior or override the Planning Revision `3` target.
+define product behavior or override the Planning Revision `4` target.
 
 ## Backbone Area Matrix
 
@@ -88,18 +111,18 @@ define product behavior or override the Planning Revision `3` target.
 | source_of_truth | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | PostgreSQL owns durable state in one application schema/migration stream; private MinIO owns stored binary bytes regardless of media classification; one capability owns every mutable invariant. |
 | module_boundaries | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | Five capability packages, public application boundaries, dependencies, orchestration, shared-schema ownership constraints and code discovery roots are explicit. |
 | user_scenarios | authoritative | [.memory-bank/prd.md](prd.md) | Actors and scenario-sensitive flows are reviewed through clarified PRD behavior; no separate scenario document is required. |
-| constraints | authoritative | [.memory-bank/constitution.md](constitution.md), [.memory-bank/prd.md](prd.md), [system architecture](architecture/system-architecture.md) | KISS, one server/СПА, all-occurrence client submission, one-clock performance, security and no-backup limits are explicit. |
+| constraints | authoritative | [.memory-bank/constitution.md](constitution.md), [.memory-bank/prd.md](prd.md), [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | KISS, one server/СПА, client/sensor and proposal boundaries, one-clock performance, security and no-backup limits are explicit. |
 | non_goals | authoritative | [.memory-bank/prd.md](prd.md), [system architecture](architecture/system-architecture.md) | Paid delivery, standalone selfie, local-detector miss proof/frame upload, speculative scale and extra lifecycle machinery are excluded. |
 | domain_model | authoritative | [.memory-bank/prd.md](prd.md), [lifecycle map](states/lifecycle-map.md), [.memory-bank/glossary.md](glossary.md) | Product entities, face proposal occurrences, Photo visibility, purge, Attempt and session semantics are explicit. |
 | data_flow | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | Client proposals, existing server-owned search, Promo, diagnostics, inventory, revision recovery and retention have named owners and failure paths. |
 | storage | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md), [lifecycle map](states/lifecycle-map.md) | Private PostgreSQL/MinIO authority, ownership-safe persistence, optional capture media, retention and restart semantics are explicit. |
-| api_contracts | authoritative | [boundary map](contracts/boundary-map.md) | All-occurrence, zero-proposal and oversize client semantics, standard HTTP failures and typed admitted outcomes are fixed; exact schema/bounds remain feature-owned. |
+| api_contracts | needed_before_tasks | [boundary map](contracts/boundary-map.md) | Global transport, manifest allow/omit fields, first-at-most-20/512 structural bounds, zero-proposal behavior, standard HTTP failures and typed admitted outcomes are fixed. FT-003 still needs exact endpoint path, multipart serialization/validation and compact machine outcome names before its task planning. |
 | event_message_contracts | not_applicable | [system architecture](architecture/system-architecture.md) | No event broker/message protocol is part of the accepted pilot. |
 | agent_io_contracts | not_applicable | [.memory-bank/prd.md](prd.md) | No agent/tool I/O is a product or runtime boundary. |
 | security_safety | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md), [.memory-bank/prd.md](prd.md) | Capture-derived media is not protected solely as media; credentials, infrastructure, commercial/personalized data, names/annotations and admin actions retain protection. |
 | deployment | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/foundation.md](foundation.md) | The verified Compose walking skeleton provides the explicit build, typecheck, start, test and smoke substrate; production deployment remains outside Foundation. |
-| risks | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/prd.md](prd.md) | Oversize fails visibly without a hidden subset; accepted pilot risks and deferred-complexity triggers are explicit. |
-| open_questions | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/prd.md](prd.md) | No global blocker remains. FT-003 runtime/transport/detector/crop/schema/bounds and FT-011 `Balance` are unresolved feature decisions with named owners. |
+| risks | authoritative | [.memory-bank/prd.md](prd.md), [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | Client proposal-order and site-camera trade-offs plus accepted pilot/deferred-complexity risks are explicit. |
+| open_questions | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/prd.md](prd.md) | No global blocker remains. FT-003 has only a routed concrete serialization completion; FT-011 `Balance` remains the unrelated operator-owned feature decision. |
 
 ## Canonical Design Bundle
 
@@ -114,15 +137,15 @@ define product behavior or override the Planning Revision `3` target.
 - [Lifecycle map](states/lifecycle-map.md): Photo admission/processing/
   visibility, global purge, Promo/QR, Attempt/display, client-restart,
   evidence and Calibration states.
-- [Client realtime verification](testing/client-realtime.md): all-occurrence,
-  zero-proposal, oversize, one-clock latency, diagnostics and related
-  media/retention proof.
+- [Client realtime verification](testing/client-realtime.md): browser/ESP32
+  transport, chronological first-at-most-20, crop/JPEG/manifest, zero-proposal,
+  one-clock latency, diagnostics and related media/retention proof.
 - [.memory-bank/foundation.md](foundation.md): explicit greenfield Foundation
   Dev Path decision.
 
-This bundle is sufficient at the global boundary. Concrete endpoint payloads,
-feature schemas and feature-owned verification detail remain routed to
-`/feature-to-tasks`; they do not justify another global or feature-owned spec
+This bundle is sufficient at the global boundary. Concrete endpoint
+serialization and feature-owned validation detail remain routed to later
+FT-003 feature design; they do not justify another global or feature-owned spec
 hub.
 
 ## Foundation Decision
@@ -140,25 +163,28 @@ hub.
 
 ## Feature Design Blockers
 
-These feature-level questions do not reopen the accepted global architecture,
-Foundation decision or Planning Revision `3`. They prevent only the affected
+These feature-level gates do not reopen the accepted global architecture,
+Foundation decision or Planning Revision `4`. They prevent only the affected
 feature from reaching an executable task handoff.
 
-### FT-003 — Client runtime and site integration
+### FT-003 — Endpoint serialization completion
 
-- Exact question: Which single client runtime route and ESP32-to-client
-  transport will implement FT-003?
-- Alternatives and impact: browser-native and narrow-bridge routes remain
-  candidates; neither is accepted. Existing feasibility observations do not
-  select a route. Exact camera/sensor models remain site-validation choices,
-  not this blocker. Detector/runtime/model/update, crop, schema and hard-bound
-  choices remain unresolved pending the route and representative benchmark.
+- Concrete missing detail: exact endpoint path, multipart part naming/
+  serialization, validation detail and compact machine outcome names.
+- Fixed surrounding contract: the
+  [boundary map](contracts/boundary-map.md) owns the accepted sensor/proposal
+  transport, payload and admission boundary; the
+  [lifecycle map](states/lifecycle-map.md) owns resulting state changes; and
+  [client realtime verification](testing/client-realtime.md) owns proof. The
+  feature-level completion may fill the named missing details but may not
+  redefine those contracts or add a representative-benchmark gate.
 - Affected artifacts/features: FT-003 and its request interface with FT-004;
-  the all-occurrence client contract and existing server search authority stay
-  fixed.
-- Decision owner and repair route: operator/site technical owner selects one
-  route and transport through `/feature-doctor FT-003`, then reruns
-  `/spec-auto FT-003`.
+  server-authoritative validation, at-most-five selection, embeddings and
+  search remain fixed. FT-007 keeps the same server-admission/core-Attempt
+  boundary.
+- Completion route: later operator-authorized `/feature-to-tasks FT-003` or
+  `/spec-auto FT-003`. No further operator product/architecture decision is
+  required for this concrete detail.
 
 ### FT-011 — `Balance` calibration objective
 
@@ -178,19 +204,17 @@ feature from reaching an executable task handoff.
 
 ## Handoff
 
-- Global backbone is ready at Planning Revision `3`.
+- Global backbone is ready at Planning Revision `4`.
 - The minimum FT-000 queue is complete and
   `TASK-002-T2-FT-000-W0` is the scheduler-closed final gate with independent
   `VERDICT: PASS`.
-- Planning Revision `3` is the baseline for future product task plans; none
+- Planning Revision `4` is the baseline for future product task plans; none
   currently exist. The completed FT-000 queue is unchanged.
-- `/spec-auto --all` leaves FT-003 and FT-011 blocked and confirms
-  FT-001..FT-002, FT-004..FT-010 and FT-012 complete against their direct
-  canonical links.
-- Product-wide task handoff remains blocked by FT-003 and FT-011. Run
-  `/feature-doctor FT-003`, then `/feature-doctor FT-011`; after both decisions,
-  rerun `/spec-auto --all`, then `/feature-to-tasks --all` and
-  `/review-tasks-plan --all`.
-- The top-level scheduler runs `node scripts/mb-lint.mjs` and then
-  `/mb-doctor --strict` before any product-task promotion or next success
-  handoff.
+- FT-004 and FT-007 remain `spec_design_status: complete` after revalidation
+  against the revised client request/admission boundary.
+- FT-003 remains `spec_design_status: blocked` only for the concrete
+  endpoint/serialization completion above. FT-011's `Balance` blocker remains
+  unchanged and unrelated.
+- The operator has not authorized product feature decomposition/tasking in this
+  run. Stop at the reconciled spec layer; no product TASK, implementation plan,
+  task protocol or code/runtime change is part of this handoff.

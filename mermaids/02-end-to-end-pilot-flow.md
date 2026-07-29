@@ -21,8 +21,9 @@ flowchart TD
 
     subgraph realtime["B. Automatic Promo"]
         advertising["Локальная реклама"]
-        trigger["Sensor / test trigger"]
-        reference["Client-generated attempt_id<br/>reference series → local detector<br/>all occurrence crops + metadata<br/>zero proposals → metadata-only<br/>oversize full set → explicit failure, no subset"]
+        trigger["ESP32 HTTP long-poll / test trigger"]
+        reference["Client-generated attempt_id<br/>reference series → chronological BlazeFace<br/>first ≤20 crops + metadata in traversal order<br/>zero proposals → manifest only<br/>no client ranking / subset"]
+        too_large["HTTP 413 at transport boundary<br/>multipart body > 20 MiB<br/>no core Attempt / domain outcome"]
         admitted{"Request admitted<br/>by server?"}
         offline["Client-only offline:<br/>вернуться к рекламе без cooldown<br/>5–10 sec: Попытка связи с сервером<br/>была не успешна в hh:mm:ss<br/>новое сообщение может заменить старое<br/>metadata best-effort, server record может отсутствовать"]
         attempt["Server-admitted core Attempt<br/>до inference"]
@@ -53,6 +54,7 @@ flowchart TD
 
     inventory --> advertising
     advertising --> trigger --> reference --> admitted
+    reference -. "body > 20 MiB" .-> too_large --> advertising
     admitted -- "нет: client-only offline" --> offline --> advertising
     admitted -- "да" --> attempt --> exact --> assemble --> enough
     enough -- "нет" --> failure --> advertising

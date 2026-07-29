@@ -12,7 +12,7 @@ status: active
 - [.memory-bank/analysis/brainstorming/BR-004.md](brainstorming/BR-004.md): Выбор KISS client route, proposal detector, crop/request contract и pilot hard bounds для FT-003 без benchmark prerequisite.
 
 Latest report: [.memory-bank/analysis/brainstorming/BR-004.md](brainstorming/BR-004.md)
-Immediate next step: `/brief` to reconcile the operator-selected FT-003 client direction.
+BR-004 handoff: reconciled into the Product Brief through `/brief`.
 
 ## Product Brief
 
@@ -23,6 +23,7 @@ Immediate next step: `/brief` to reconcile the operator-selected FT-003 client d
   - [.memory-bank/analysis/brainstorming/BR-001.md](brainstorming/BR-001.md)
   - [.memory-bank/analysis/brainstorming/BR-002.md](brainstorming/BR-002.md)
   - [.memory-bank/analysis/brainstorming/BR-003.md](brainstorming/BR-003.md)
+  - [.memory-bank/analysis/brainstorming/BR-004.md](brainstorming/BR-004.md)
   - [IDEA_APP.md](../../IDEA_APP.md)
   - [IDEA_DEBUG.md](../../IDEA_DEBUG.md)
   - [IDEA_INGEST.md](../../IDEA_INGEST.md)
@@ -30,5 +31,3 @@ Immediate next step: `/brief` to reconcile the operator-selected FT-003 client d
   - [.memory-bank/architecture/system-architecture.md](../architecture/system-architecture.md)
 
 Project principles: `ratified`.
-
-Recommended next step: /foundation-to-tasks

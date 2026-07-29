@@ -534,13 +534,15 @@ misses и diagnostic frame mode не входят в scope.
   использоваться для проверки остального client path.
 - No local proposals: metadata-only server request сохраняет Attempt и
   non-success outcome.
-- Server unavailable: client возвращается/остаётся в advertising, показывает
-  согласованное короткое сообщение о неудачной связи и не сохраняет stale
-  personalized result.
+- Server unavailable: уже загруженный client возвращается/остаётся в
+  advertising, показывает согласованное короткое сообщение о неудачной связи
+  и не сохраняет stale personalized result.
 - Timeout или stale response: retry требует новой `reference series`, старые
   crops не переигрываются как новая попытка.
 - Browser/client restart: in-memory frames, crops и personalized result могут
-  быть отброшены; realtime work не становится durable queue.
+  быть отброшены; realtime work не становится durable queue. Reload/restart при
+  недоступном центральном HTTPS origin не обязан восстанавливать advertising;
+  обычная загрузка возобновляется, когда origin снова доступен.
 - Новый sensor/test trigger во время capture/search или successful cooldown
   игнорируется по общему client state contract.
 

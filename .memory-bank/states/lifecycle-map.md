@@ -1,7 +1,7 @@
 ---
 description: Canonical pilot lifecycles for Photo admission, processing, inventory visibility, purge, Promo and diagnostics.
 status: active
-last_updated: 2026-07-28
+last_updated: 2026-07-30
 source_of_truth:
   - .memory-bank/states/lifecycle-map.md
 ---
@@ -116,16 +116,20 @@ advertising -> capturing -> searching -> result -> cooldown -> advertising
                               +-> unsuccessful -> advertising
 ```
 
+- While active in `advertising`, the client awaits a passage event through the
+  ESP32 boundary. Poll continuation is transport behavior and creates no
+  sensor queue or additional lifecycle.
 - When the capture window ends, the ready reference series enters local
-  processing. The client sends one crop plus metadata for every detector
-  occurrence in one bounded request; repeated occurrences are valid, and the
-  client does not rank, select a top-5, quality-gate, track, cluster or
-  deduplicate them.
-- Zero proposals produce a metadata-only request with the same correlation and
-  client timings. Server admission creates the core Attempt and returns a typed
-  non-success; its exact machine name remains unresolved.
-- If the complete proposal set cannot fit the accepted request bounds, the
-  attempt ends explicitly as non-success without sending a subset.
+  proposal preparation and then crosses one realtime request boundary; this
+  local work creates no intermediate server-visible state.
+- Client configuration changes apply from the next Attempt and do not mutate
+  an active Attempt or add a server-side settings lifecycle.
+- Zero proposals follow the same admission boundary. Once admitted, the server
+  creates the core Attempt and returns a typed non-success; its exact machine
+  name remains unresolved.
+- Transport rejection occurs before domain admission and creates no core
+  Attempt or domain transition. Exact proposal, payload and failure contracts
+  are defined in the [boundary map](../contracts/boundary-map.md).
 - A server-admitted core Attempt uses:
 
   ```text
@@ -168,17 +172,19 @@ advertising -> capturing -> searching -> result -> cooldown -> advertising
   distributed tracing are not required.
 
 Sources: [IDEA_APP.md](../../IDEA_APP.md), [IDEA_CLIENT.md](../../IDEA_CLIENT.md)
-and [.memory-bank/prd.md](../prd.md) `FR-CAP-01..10`, `FR-UX-01..09`.
+and [.memory-bank/prd.md](../prd.md) `FR-CAP-01..17`, `FR-UX-01..09`.
 
 ## Client Restart And Offline Metadata
 
-- After Chromium restart, SpaPromoClient enters `advertising`, discards
-  personalized result/frame/token state and does not replay search.
+- After Chromium restart, SpaPromoClient reloads and enters `advertising` once
+  the central HTTPS origin is reachable; it discards personalized
+  result/frame/token state and does not replay search.
 - A bounded local outbox may retain only diagnostic metadata and
   `cooldown_until` until acknowledgement or short expiry. Client-only offline
   delivery is best-effort and may be lost on expiry or restart.
-- Local advertising remains available through network/server failure and
-  browser restart.
+- A currently loaded client keeps local advertising available through
+  network/server failure. Reload or restart while the central HTTPS origin is
+  unavailable is not required to restore advertising.
 
 ## Promo, QR, And Browser Session
 
@@ -270,3 +276,6 @@ Source: [.memory-bank/prd.md](../prd.md) `FR-DEV-11` and `NFR-PERF-03`.
 - No serving-revision switch lifecycle.
 - No local-detector-miss proof or diagnostic reference-frame-upload lifecycle.
 - No separate capture-media retention lifecycle.
+- No separate sensor transport/configuration lifecycle.
+- No admitted proposal-request rejection lifecycle; transport rejection occurs
+  before domain admission.

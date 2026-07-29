@@ -1,7 +1,7 @@
 ---
 description: Product definition (C4 L1) for the Face Moment one-СПА pilot.
 status: draft
-last_updated: 2026-07-28
+last_updated: 2026-07-29
 ---
 # Face Moment Product
 
@@ -53,7 +53,8 @@ authenticated independent JPEG upload for selected СПА/date
 -> compatible background processing
 -> searchable inventory
 -> automatic sensor-triggered reference series
--> client-side face proposals and bounded request
+-> first at most 20 chronological BlazeFace occurrences
+-> one synchronous multipart proposal request
 -> exact scoped face search and result assembly
 -> four-teaser Promo with QR
 -> same-session phone continuation
@@ -100,6 +101,19 @@ Calibration; recommendations never update serving settings automatically.
 
 - One selected СПА, one central CPU-only server in the Russian Federation and
   one configured `SpaPromoClient`.
+- `SpaPromoClient` is a browser-native Chromium client loaded from the central
+  HTTPS origin. It talks directly to one fixed-name mDNS ESP32 through one
+  authenticated 10-second HTTP long-poll request at a time; there is no local
+  bridge, local web server or WebSocket route.
+- MediaPipe BlazeFace Full-range is the only implemented local proposal
+  detector. YuNet 2026may FP32 remains a sequential fallback only after
+  concrete BlazeFace incompatibility; both implementations and a generic
+  detector/runtime abstraction are excluded.
+- The client stops chronological reference-series traversal at occurrence 20,
+  crops each occurrence to the accepted centered square, bounds the encoded
+  crop side to 512 pixels and sends one versioned multipart request. Camera
+  frames above the site-configured maximum are downscaled before the ring
+  buffer/detector path.
 - One pre-warmed participant-facing pipeline; pipeline revisions and native
   preprocessing/alignment paths remain isolated.
 - Exact PostgreSQL/pgvector search scoped by pipeline revision, СПА and the
@@ -133,6 +147,13 @@ Calibration; recommendations never update serving settings automatically.
 - External ingest, RAW processing or photographer cloud OAuth.
 - Full group-member coverage, tracking, identity clustering, cross-pipeline
   person linking or participant-facing model ensembles.
+- A representative benchmark as a prerequisite or design/tasking gate for the
+  accepted client route, detector, crop, request or structural bounds.
+- A local bridge, local web server, ESP32 WebSocket route, parallel BlazeFace
+  and YuNet implementations, or a generic detector/runtime abstraction.
+- Separate aggregate-pixel, per-JPEG-byte or manifest-size caps, an oversize
+  domain outcome, or client ranking/truncation to fit the accepted `20 MiB`
+  total request-body transport limit.
 - ANN, brokers, Redis, distributed scheduling, extra workers, Kubernetes,
   GPU-first deployment or an external observability stack without evidence.
 - Automatic application of Calibration recommendations or a general-purpose

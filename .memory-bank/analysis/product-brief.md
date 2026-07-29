@@ -13,6 +13,7 @@ type: product-brief
   - `.memory-bank/analysis/brainstorming/BR-001.md`
   - `.memory-bank/analysis/brainstorming/BR-002.md`
   - `.memory-bank/analysis/brainstorming/BR-003.md`
+  - `.memory-bank/analysis/brainstorming/BR-004.md`
   - `IDEA_APP.md`
   - `IDEA_DEBUG.md`
   - `IDEA_INGEST.md`
@@ -78,6 +79,7 @@ one-СПА pilot, показывает четыре персональных tea
 authenticated independent JPEG upload for selected СПА/date
 → searchable inventory
 → automatic sensor-triggered reference series
+→ browser-local face proposals
 → best-effort face search
 → четыре low-quality preview без watermark
 → QR continuation без повторного selfie
@@ -96,11 +98,25 @@ Post-pilot paid product продаёт весь найденный пакет з
 Photo Inventory Operations используют тот же Photo inventory: role-scoped soft
 delete/restore, два глобальных admin actions и прямые recent-statistics queries.
 
+`SpaPromoClient` работает как единый browser-native Chromium client с
+центрального HTTPS origin, без local bridge и local web server. Он получает
+triggers напрямую от одного локального ESP32 через mDNS и HTTP long-poll с
+10-секундным timeout. MediaPipe BlazeFace Full-range является единственным
+реализуемым local proposal detector, а YuNet — только fallback при его
+доказанной технической непригодности. Client формирует не более первых 20 face
+proposal occurrences в хронологическом порядке и отправляет их одним
+синхронным request. Он не ранжирует, не отслеживает и не дедуплицирует людей;
+server по-прежнему authoritative для validation, ranking и выбора не более
+пяти detections.
+
 ## 7. MVP Scope
 
 - одна выбранная СПА и ограниченная группа тестировщиков;
 - 43-inch landscape display, baseline 16:9 / 1920×1080;
 - automatic sensor-triggered capture с дистанции 3–5 метров;
+- proposal crops используют принятый в BR-004 bounded square/JPEG contract, а
+  configuration/debug page даёт выбор JPEG quality из `0.7`, `0.75`, `0.8`,
+  `0.85`, `0.9`, `0.95` с default `0.85`;
 - authenticated direct web upload готовых JPEG после выбора СПА и
   authoritative `visit_date`, с независимым результатом для каждого файла и
   без Batch/manifest/confirmation;
@@ -149,6 +165,10 @@ delete/restore, два глобальных admin actions и прямые recent
   полноценный kiosk.
 - отдельный purge worker, per-photo `purge_pending`, purge jobs table,
   materialized recent counters и WebSocket/SSE для queue statistics.
+- representative benchmark как prerequisite или design/tasking gate для
+  выбранного FT-003 client route;
+- параллельные browser/bridge, BlazeFace/YuNet или generic detector/runtime
+  implementations.
 
 ## 9. Success Metrics
 
@@ -204,11 +224,16 @@ delete/restore, два глобальных admin actions и прямые recent
 - У каждого тестировщика заранее есть минимум четыре searchable фотографии.
 - Фотограф загружает JPEG сразу после законченной съёмочной серии.
 - Serving pipeline и reference threshold откалиброваны до acceptance run.
-- Конкретные camera, lens, sensor и lighting выбираются после обследования СПА.
+- Конкретные camera, lens, lighting и максимальный camera input size выбираются
+  после обследования СПА; это site configuration, а не FT-003 design gate.
 
 ## 12. Risks
 
 - group algorithm может повторно выбрать одного человека и пропустить другого;
+- first-20 chronological proposal cap может не включить лицо, появившееся в
+  более позднем кадре; это принятая KISS-граница pilot, а не quality selection;
+- local sensor route зависит от доступности ESP32 и управляемой kiosk
+  configuration в локальной сети;
 - motion blur, pose, lighting и размер лица могут сорвать поиск;
 - поздний upload лишает Promo актуальных снимков;
 - поиск может временно видеть неполный набор фотографий выбранных СПА/date, пока
@@ -230,7 +255,9 @@ delete/restore, два глобальных admin actions и прямые recent
 ## 13. Open Questions
 
 - Какая СПА и геометрия прохода выбраны для pilot?
-- Какие camera, lens, passage sensor и lighting проходят validation?
+- Какие camera, lens и lighting проходят site validation?
+- Какой deployment-configured maximum camera input size используется на
+  выбранной площадке?
 - Какая field validation обязательна перед запуском на реальных посетителях?
 - Кто является экономическим заказчиком post-pilot продукта?
 - Какие package threshold, payment, receipt/refund и download rules применяются
@@ -253,6 +280,14 @@ delete/restore, global restore-all, fixed-snapshot resumable hard purge с
 Promo session/Attempt/evidence retention, restore rejection для snapshot members
 и per-СПА 1/5/60-minute statistics с five-second polling. Payment и originals
 остаются post-pilot context.
+
+Для FT-003 PRD должен закрепить один browser-native route из BR-004: центральный
+HTTPS `SpaPromoClient`, прямой ESP32 mDNS/HTTP long-poll trigger, один
+release-owned BlazeFace detector, первые 20 chronological occurrences без
+client-side ranking/deduplication, bounded JPEG crops и один synchronous request.
+Representative benchmark не является prerequisite или design/tasking gate;
+точный request schema и crop mechanics остаются в BR-004 как downstream
+spec-layer input.
 
 ## 15. Decision
 

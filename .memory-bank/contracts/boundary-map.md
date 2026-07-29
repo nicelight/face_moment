@@ -1,7 +1,7 @@
 ---
 description: Canonical capability ownership, public application boundaries and cross-slice write rules for the greenfield pilot.
 status: active
-last_updated: 2026-07-28
+last_updated: 2026-07-29
 source_of_truth:
   - .memory-bank/contracts/boundary-map.md
 ---
@@ -22,7 +22,7 @@ code.
 | `serving_control` | Read immutable `ServingContext`/`IngestTarget`; apply audited manual setting and serving-revision changes. | СПА/timezone, active `visit_date`, pipeline/settings revision, display token lifecycle and change audit. | Photos, processing results, Attempts, sessions, evidence or Calibration recommendations. | Command `processing` revision validation; use platform auth/runtime adapters. | Client input cannot override СПА/date; one Attempt sees one immutable snapshot; failed revision changes require explicit operator recovery. |
 | `inventory` | Admit one JPEG; query authorized Photos; soft-delete/restore; restore-all; start/read one global hard purge; read recent per-СПА counters and configured primary-storage free capacity. | Photo identity, uploader, authoritative date, effective capture time, accepted time, checksum/original reference, active marker, authorization and global purge orchestration/progress. | Pipeline transition rules, embeddings, Promo integrity, core Attempt or evidence retention. | Read `serving_control` targets and published `processing` state/timestamp projections; command `processing`; use platform auth/storage/host-capacity adapters. | Duplicate arbitration; owner-scoped visibility; processing-projection counters; separate PostgreSQL/MinIO free-capacity values; fixed-snapshot purge recovery. |
 | `processing` | Create initial `pending`; report readiness; validate a pipeline revision; process Photo; exact compatible search; offline evaluate; clean Photo-derived state on inventory purge. | Pipeline catalog, processing state, derivatives/faces/embeddings, quality gates, exact-search, validation and evaluation rules. | Photo admission/visibility, live setting mutation, Promo Attempt/session assembly or evidence retention. | Read Photo/serving projections; use storage/model adapters. | Restart from `processing`, one final face set, compatible exact search, revision validation and idempotent cleanup. |
-| `promo` | Execute fresh attempt; accept display outcome; exchange/read QR continuation; skip unavailable hard-purged media during an existing session read; run/read retention cleanup. | Core Attempt, result/session, candidate union, teasers, `N`, QR ticket, session-wide browser access and latest retention result. | Photo/processing/settings writes or detailed diagnostic evidence. | Read `serving_control`/`inventory`; command `processing`; command `diagnostics` best-effort evidence and retention expiry. | All-occurrence, zero-proposal and oversize request behavior; four unique teasers; correct issued `N`; display acknowledgement; session expiry; missing-media skip and observable retention outcome. |
+| `promo` | Execute fresh attempt; accept display outcome; exchange/read QR continuation; skip unavailable hard-purged media during an existing session read; run/read retention cleanup. | Core Attempt, result/session, candidate union, teasers, `N`, QR ticket, session-wide browser access and latest retention result. | Photo/processing/settings writes or detailed diagnostic evidence. | Read `serving_control`/`inventory`; command `processing`; command `diagnostics` best-effort evidence and retention expiry. | Chronological first-at-most-20 and zero-proposal request behavior; four unique teasers; correct issued `N`; display acknowledgement; session expiry; missing-media skip and observable retention outcome. |
 | `diagnostics` | Record/search evidence and logs under their data-specific access rules; annotate; run evaluation; request audited manual apply; expire owned logs/evidence and report Attempt-deletion eligibility. | Detailed evidence/logs, access views, annotations, curated Calibration cases, recommendations and diagnostic-data expiry. | Core Attempt/result/session, aggregate cleanup result or direct serving-setting change. | Read `promo`; command `processing` evaluation and `serving_control` apply. | Sanitized/developer split for protected detail, capture-media classification, visible incomplete evidence, promotion whitelist and 30/90-day expiry. |
 
 Shared PostgreSQL access does not grant shared write authority. A slice may read
@@ -80,7 +80,8 @@ transition.
 | Boundary | Contract | Owner | Required constraints |
 |---|---|---|---|
 | Staff browser -> application | HTTPS staff authentication, independent JPEG upload and authorized Admin UI commands. | `platform/auth` authenticates; the target capability authorizes and handles the command. | MinIO/PostgreSQL stay private; no Batch/manifest/confirmation. |
-| `SpaPromoClient` -> realtime | One bounded synchronous request with client-generated `attempt_id`, server-derived СПА and crop plus metadata for every local-detector occurrence; zero proposals use metadata only. | `promo` orchestrates; `processing` performs the already accepted compatible inference/search contract. | No client ranking/top-5/gating/tracking/clustering/deduplication; duplicates are allowed; an oversize complete set fails explicitly without a subset. Concurrent admitted request returns `busy`; closed maintenance/readiness returns `503` before admission and creates no core Attempt. |
+| Central HTTPS `SpaPromoClient` -> ESP32 | While active, one HTTP long-poll request to the sensor's fixed mDNS `.local` name with a 10-second timeout; open the next immediately after an event or timeout. | The browser client owns request continuation; ESP32 owns passage-event delivery. | Managed kiosk pre-authorizes the central origin for Local Network Access through `LocalNetworkAccessAllowedForUrls`. ESP32 allows that exact origin through CORS, handles OPTIONS for Authorization and validates one manually provisioned Bearer secret kept out of URLs/logs. No WebSocket, local bridge, separate local client web server, discovery service, pairing, PKI or rotation lifecycle. |
+| `SpaPromoClient` -> realtime | One synchronous `multipart/form-data` request with client-generated `attempt_id`, server-derived СПА, versioned manifest and the first at most 20 chronological BlazeFace crop parts; zero proposals use the same endpoint with the manifest only. | `promo` orchestrates; `processing` performs the already accepted compatible inference/search contract. | No client ranking/top-5/gating/tracking/clustering/deduplication; repeated people are allowed. The request has structural 20-occurrence and 512-pixel crop-side bounds plus a `20 MiB` total-body transport limit; a larger body returns `413` before admission and creates no domain outcome. Concurrent admitted request returns `busy`; closed maintenance/readiness returns `503` before admission and creates no core Attempt. |
 | Display -> application | Idempotent acknowledgement after four teasers decode and QR is fully visible. | `promo`. | Server result issue alone is not Promo success. |
 | QR browser -> application | Ticket exchange and authorized no-store session reads. | `promo`. | 30-minute first-open, shared 60-minute idle state, no per-device grants. |
 | Application/worker -> PostgreSQL | Owner-scoped state writes and published projections. | Each capability owns its rows/invariants. | Direct foreign writes are forbidden even in one database. |
@@ -93,13 +94,18 @@ transition.
   hashing, hashed opaque PostgreSQL sessions with one short absolute TTL,
   logout/revoke and CSRF protection. Photographer, operator and developer
   authorization remains in the owning capability.
-- SpaPromoClient sends a high-entropy token in the Authorization header;
+- SpaPromoClient sends its central-service high-entropy token in the
+  Authorization header;
   PostgreSQL stores only its hash and the server derives `spa_id`. Client input
   cannot override that identity.
-- Public capture/continuation requests have bounded compressed bytes and decoded
-  dimensions/pixels, crop decode validation and simple per-token/IP rate
-  limits. Use same-origin delivery where possible; otherwise allow only the
-  configured SpaPromoClient origin.
+- The sensor Bearer secret is a distinct manually provisioned kiosk-profile
+  setting used only in the Authorization header of ESP32 requests. It never
+  enters URLs or logs. The sensor permits only the exact central client origin
+  through CORS and handles its Authorization preflight.
+- Public capture/continuation requests validate the accepted structural and
+  decoded-media constraints plus simple per-token/IP rate limits. The FT-003
+  proposal request has a `20 MiB` total request-body transport limit enforced
+  before domain admission.
 - Commercial Photo originals/previews/teasers and personalized session data
   remain backend-proxied, authorized and `no-store`. Raw MinIO keys and
   participant-facing presigned URLs are outside the pilot.
@@ -140,7 +146,7 @@ without a project-specific error framework:
 |---|---|
 | `401` | Authentication is missing or invalid. |
 | `403` | The authenticated principal lacks permission. |
-| `413` | The request exceeds an accepted payload bound. |
+| `413` | The request exceeds an accepted payload bound. An FT-003 total multipart body larger than `20 MiB` is rejected before domain admission and creates no core Attempt or oversize domain outcome. |
 | `422` | Request validation fails. |
 | `429` | The applicable rate limit is exceeded. |
 | `503` | Serving maintenance or runtime readiness is closed; capture/search is rejected before admission and creates no core Attempt. |
@@ -164,16 +170,48 @@ domain outcomes.
 
 ## SpaPromoClient Proposal Contract
 
-- One ready reference series yields one crop plus metadata for every occurrence
-  returned by the local detector. Repeated occurrences of one person are valid.
+- The browser-native Chromium client loads from the central HTTPS origin.
+  MediaPipe BlazeFace Full-range runs in its browser runtime with a separate
+  release-versioned model asset; TensorFlow.js and a second project-selected ML
+  runtime are absent. YuNet 2026may FP32 is a sequential replacement only after
+  concrete BlazeFace incompatibility, never a parallel implementation or
+  generic detector abstraction.
+- Frames above the deployment-configured maximum are downscaled before entering
+  the ring buffer or detector. The client traverses a ready reference series
+  from earliest pre-trigger to latest post-trigger, preserves BlazeFace output
+  order within each frame and stops processing immediately at occurrence 20.
+  Repeated occurrences of one person are valid.
 - The client does not rank, select a top-5, authoritatively quality-gate, track,
   cluster, deduplicate, embed or search proposals.
-- The complete proposal set travels in one bounded request. If it cannot fit
-  accepted bounds, the attempt fails explicitly without a ranked or arbitrary
-  subset; exact bounds and machine response shape remain unresolved.
+- Each occurrence becomes a centered square crop with side
+  `1.2 × max(bbox_width, bbox_height)`, clipped to the source frame without
+  alignment, landmark normalization or upscaling. A crop longer than 512 pixels
+  is proportionally downscaled to 512 and encoded as ordinary sRGB JPEG without
+  EXIF/source metadata.
+- JPEG quality is selected on the configuration/debug page from exactly `0.7`,
+  `0.75`, `0.8`, `0.85`, `0.9`, `0.95`; default `0.85`. Kiosk-profile
+  `localStorage` retains it, the value applies from the next Attempt and is
+  recorded in that request's manifest.
+- One ready series yields one synchronous `multipart/form-data` request with a
+  versioned JSON manifest and one JPEG part for each of the first at most 20
+  occurrences. Structural bounds are 20 occurrence parts and a 512-pixel
+  encoded crop side. The server rejects a total body larger than `20 MiB` with
+  HTTP `413` before domain admission. There are no separate aggregate-pixel,
+  per-JPEG-byte or manifest-size caps and no oversize domain outcome.
 - Zero proposals produce a metadata-only request with the same correlation and
   client timings; server admission creates the core Attempt and an explicit
   non-success outcome.
+- Manifest identity contains only `schema_version: 1`, UUID `attempt_id`,
+  `trigger_source`, `client_release`, `detector_id`, `model_version` and
+  `jpeg_quality`; camera context adds only `camera_device_id`.
+- Timing contains wall-clock `reference_series_ready_at` for correlation plus
+  monotonic `local_detection_completed_ms` and `request_started_ms` offsets
+  from ready-series zero. Client/server wall clocks are never subtracted.
+- Each occurrence contains only request-local `occurrence_index`,
+  `frame_index`, `frame_offset_ms`, `detector_confidence` and `crop_part`.
+  The manifest omits `spa_client_token`, `spa_id`, every other secret, an
+  occurrence UUID, camera label/config snapshot, `bbox_px`, `crop_rect_px`,
+  `source_frame_width_px` and `source_frame_height_px`.
 - This client payload contract does not define server ranking, selection or
   search internals; their existing canonical owners retain authority.
 - The normal flow requires neither full/downscaled reference-frame upload nor
@@ -182,6 +220,9 @@ domain outcomes.
   begins, then includes local processing and request sending on one client
   monotonic clock. Diagnostics exposes the client-local processing-start,
   request-send-start and response-received markers.
+- Exact endpoint path, multipart part naming/serialization, validation detail
+  and compact machine outcome names remain feature-level design before FT-003
+  task planning. They must preserve this allow/omit and structural contract.
 
 ## Realtime Idempotency And Client Retry
 

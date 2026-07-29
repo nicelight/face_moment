@@ -1,7 +1,7 @@
 ---
 description: Canonical greenfield system shape, capability ownership and Architecture Spine for the Face Moment pilot.
 status: active
-last_updated: 2026-07-28
+last_updated: 2026-07-30
 source_of_truth:
   - .memory-bank/architecture/system-architecture.md
 ---
@@ -28,9 +28,11 @@ speculative distributed infrastructure.
 
 - One central CPU-only server, one display client and one configured replica of
   each long-running server role.
-- Ordinary process/browser crashes recover automatically; background work
-  restarts safely from durable state. Maintenance downtime and manual restart
-  for a rare native hang are accepted.
+- Ordinary process crashes recover automatically. Chromium/display restarts
+  automatically and reloads once the central HTTPS origin is reachable; no
+  cold-start advertising guarantee applies while that origin is unavailable.
+  Background work restarts safely from durable state. Maintenance downtime and
+  manual restart for a rare native hang are accepted.
 - Five capability packages for the current pilot:
   `serving_control`, `inventory`, `processing`, `promo`, `diagnostics`.
 - PostgreSQL/pgvector owns durable state and exact vector search; private MinIO
@@ -40,9 +42,11 @@ speculative distributed infrastructure.
   stream; slice write ownership remains semantic, not schema-based.
 - Public browser traffic crosses the HTTPS application boundary. PostgreSQL,
   MinIO and internal process ports stay private.
-- `SpaPromoClient` submits crop and metadata for every local-detector face
-  occurrence in one bounded request. It performs no local ranking, top-5,
-  authoritative quality gate, tracking, clustering or deduplication.
+- `SpaPromoClient` is browser-native Chromium loaded from the central HTTPS
+  origin. It owns local capture/proposal preparation and crosses the ESP32 and
+  realtime boundaries defined in the
+  [boundary map](../contracts/boundary-map.md); server-side selection and search
+  ownership remain unchanged.
 - Technical HTTP failures use standard statuses; admitted capture/search
   requests use typed domain outcomes rather than a custom error framework.
 - No Batch, broker, ANN, multi-worker coordination, backup guarantee,
@@ -123,22 +127,23 @@ speculative distributed infrastructure.
 
 #### AD-006 — Bounded realtime request and explicit display success
 - Binds: automatic capture, search, Promo and performance acceptance.
-- Prevents: client-side ranking/top-5/deduplication, hidden oversize subsets, a
-  realtime waiter queue, durable replay and treating a server response as
-  visible Promo success.
-- Rule: one client-generated `attempt_id`, one bounded request, one inference
-  slot and one server deadline govern the synchronous attempt. The request
-  carries every local-detector occurrence as crop plus metadata; duplicates are
-  allowed. If the complete proposal set cannot fit the accepted bounds, the
-  attempt fails explicitly without sending a subset; zero proposals use a
-  metadata-only request. Concurrency returns `busy`. Only an idempotent client
-  acknowledgement after four teasers and QR are visible sets display success.
-  Missing acknowledgement becomes derived `unconfirmed` after the
-  result-display window; no scheduler or acknowledgement outbox exists.
-- Verification: Required FT-003..FT-005 proof of the proposal/zero/oversize
-  paths plus the controlled 20-attempt outcome, not currently runnable.
-- Source: [.memory-bank/prd.md](../prd.md) `FR-CAP-01..12`,
-  `FR-UX-01..09` and the [lifecycle map](../states/lifecycle-map.md).
+- Prevents: client takeover of server-side selection/search, unbounded
+  proposal submission, a realtime waiter queue, durable replay and treating a
+  server response as visible Promo success.
+- Rule: one client-generated `attempt_id`, one bounded proposal request, one
+  inference slot and one server deadline govern the synchronous attempt.
+  `promo` owns admission and orchestration; `processing` owns inference,
+  selection and search. Request structure and transport rejection semantics
+  are owned by the [boundary map](../contracts/boundary-map.md). Only an
+  idempotent client acknowledgement after four teasers and QR are visible sets
+  display success; the [lifecycle map](../states/lifecycle-map.md) owns its
+  terminal states.
+- Verification: Required FT-003..FT-005 boundary, orchestration and
+  post-render acknowledgement proof plus the controlled 20-attempt outcome,
+  not currently runnable.
+- Source: [.memory-bank/prd.md](../prd.md) `FR-CAP-01..17`,
+  `FR-UX-01..09`, the [boundary map](../contracts/boundary-map.md) and the
+  [lifecycle map](../states/lifecycle-map.md).
 
 #### AD-007 — Core Attempt survives best-effort evidence
 - Binds: Promo, diagnostics, retention and hard purge.
@@ -268,7 +273,9 @@ private network
 └── BackgroundPhotoWorker: one sequential operation
 
 SpaPromoClient
-└── ring buffer, local face proposals, all-occurrence request, Promo/display
+├── central HTTPS browser runtime and local camera/proposal pipeline
+├── ESP32 passage-event boundary
+└── realtime attempt and Promo/display boundary
 ```
 
 All server roles use the same release image and capability packages. Process
@@ -364,8 +371,12 @@ shared-schema ownership and cascade limits.
   fast; realtime is ready only after exact active-model warmup.
 - Restart policies cover the Compose services and a systemd user service covers
   SpaPromoClient/Chromium; the HTTPS edge returns `502/503` while an upstream is
-  unavailable. Photo work restarts from the beginning, while realtime work is
-  not replayed; serving-revision recovery follows AD-012.
+  unavailable. The user service restarts Chromium, but successful client reload
+  requires the central HTTPS origin; an already loaded client may continue
+  advertising through a server/network failure, while restart during that
+  failure has no offline-start guarantee. Photo work restarts from the
+  beginning, while realtime work is not replayed; serving-revision recovery
+  follows AD-012.
 - Native-operation timing/health remains observable. A rare native hang may
   require manual `docker compose restart`; no watchdog/subprocess isolation is
   required without reproduced hangs.
@@ -386,8 +397,7 @@ shared-schema ownership and cascade limits.
 
 | Decision | Deferred because | Revisit when |
 |---|---|---|
-| Client runtime and site integration | The browser-native versus narrow-bridge route, exact camera/sensor hardware and ESP32 transport are not accepted decisions. | Operator/site owner selects one pilot route before FT-003 tasking. |
-| Proposal detector and request contract | Detector/runtime/model/update choices, crop parameters, schema and exact byte/pixel bounds require representative client-hardware evidence. ONNX Runtime Web and YuNet remain non-normative technical context, not a requirement or gate. | Operator accepts one evidenced FT-003 contract. |
+| Camera/site geometry | Exact camera model, lens, lighting and maximum input dimensions depend on the selected site; frames above the configured maximum are already required to downscale before the ring buffer/detector. | Configure and verify the pilot site. |
 | Client-side embeddings/search | Current accepted boundary keeps embeddings and search off the client. | A future benchmark and explicit operator decision justify reconsideration. |
 | Multiple worker/realtime replicas and coordination | Singleton topology is accepted. | Measured throughput/availability failure. |
 | Leases, fencing and claim-scoped derived keys | One configured worker prevents stale concurrent publication. | More than one worker or overlapping deployments are accepted. |

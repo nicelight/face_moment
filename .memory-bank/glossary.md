@@ -1,7 +1,7 @@
 ---
 description: Канонический словарь терминов со специальным значением в Face Moment.
 status: active
-last_updated: 2026-07-28
+last_updated: 2026-07-29
 source_of_truth:
   - .memory-bank/glossary.md
 ---
@@ -15,7 +15,7 @@ source_of_truth:
 | `СПА` | Каноническое русское обозначение физической СПА-площадки/venue, к которой привязаны фотографии, client token, рабочая дата, serving pipeline и search scope. | Англоязычной аббревиатурой `single-page application`. `one-СПА pilot` означает одну площадку, а не один frontend. |
 | `one-СПА pilot` | Контролируемый smoke pilot на одной СПА-площадке и группе тестировщиков. Он заканчивается проверенной QR continuation page. | Target capacity на 10–15 СПА, публичным rollout, payment или выдачей originals. |
 | `Promo display` / `display mode` | Экран с локальной рекламой между попытками, автоматическим capture и успешным Promo из четырёх teasers и QR. | Полноценным kiosk: на экране нет touch-навигации, оплаты или скачивания. |
-| `SpaPromoClient` | Логический display/capture client одной СПА: формирует reference series, отправляет crop и metadata каждого local-detector occurrence без local ranking/top-5/deduplication и управляет display states и client-local timings. | Backend, server-side processing/search или самой СПА-площадкой. |
+| `SpaPromoClient` | Единый browser-native Chromium display/capture client одной СПА, загружаемый с центрального HTTPS origin. Он получает локальный ESP32 trigger, формирует reference series, отправляет первые не более 20 chronological local-detector occurrences без ranking/tracking/person deduplication и управляет display states и client-local timings. | Backend, local bridge, local web server, server-side processing/search или самой СПА-площадкой. |
 | `Photographer` | Product role, которая загружает Photo и может soft-delete/restore только собственные uploads в выбранной СПА/date/time-range. | Operator/developer с правом управлять любыми Photo в доступной СПА или глобальными admin actions. |
 | `Face Moment / СПА operator` | Роль, которая управляет рабочей датой и операционным состоянием, управляет Photo в доступной СПА, запускает разрешённые global inventory actions и видит sanitized attempt summary: outcome, timeline, latency и issue tags. | `Application developer`, которому доступны role-restricted names, annotations, detailed logs и Calibration. |
 | `Application developer` | Product role с доступом к role-restricted diagnostic data/actions, включая participant names в annotations, detailed logs, Log Explorer и Calibration, а также staff-доступом к Photo Inventory Operations; serving-setting changes применяет вручную. | Единственным владельцем доступа к capture-derived media или OS user `facemoment`. |
@@ -48,8 +48,8 @@ source_of_truth:
 
 | Термин | Значение в Face Moment | Не путать с |
 |---|---|---|
-| Reference series | Sensor/test-triggered набор кадров из client ring buffer, используемый для формирования request по PRD `FR-CAP-03`. | Набором коммерческих upload-файлов, обязательным diagnostic frame upload или standalone selfie. |
-| Face proposal occurrence | Одно обнаружение лица local detector в одном кадре reference series; один человек может дать несколько occurrences. | Распознанной person identity или server-side `Selected detection`. |
+| Reference series | Sensor/test-triggered набор кадров из client ring buffer, который local detector обходит хронологически до конца либо до получения первых 20 face proposal occurrences. | Набором коммерческих upload-файлов, обязательным diagnostic frame upload или standalone selfie. |
+| Face proposal occurrence | Одно обнаружение лица local detector в одном кадре reference series; один человек может дать несколько occurrences, и client не выполняет person deduplication. | Распознанной person identity или server-side `Selected detection`. |
 | Selected detection | Полученный face occurrence, выбранный server-side contract для отдельного поиска; всего обрабатывается не более пяти. | Client-side top-5 или уникальным физическим человеком. |
 | Best-effort group search | Server-side обработка до пяти selected detections без гарантии полного покрытия группы. | Client-side ranking или обещанием отдельного slot для каждого участника. |
 | Promo candidate pools | `matched_candidates` — threshold-valid scoped matches текущей detection с готовым preview; `diverse_candidates` — глобально предпочтённые по pHash diversity; `fallback_candidates` — threshold-valid резерв; `reserved_photo_ids` не допускает повтор одной фотографии при обработке следующих detections. | `session_result_photo_ids`: candidate pools выбирают четыре teasers, а session result хранит полный unique union matches. |
@@ -106,12 +106,16 @@ source_of_truth:
   semantics.
 - [.memory-bank/analysis/product-brief.md](analysis/product-brief.md): accepted
   pilot scope and actor/value framing.
+- [.memory-bank/analysis/brainstorming/BR-004.md](analysis/brainstorming/BR-004.md):
+  accepted FT-003 browser route, first-20 proposal boundary and KISS client
+  constraints.
 - [IDEA_APP.md](../IDEA_APP.md): application, face-search, Promo/session and
   pipeline terminology.
 - [IDEA_DEBUG.md](../IDEA_DEBUG.md): attempts, logs, annotations and Calibration
   terminology.
-- [IDEA_CLIENT.md](../IDEA_CLIENT.md): accepted SpaPromoClient, timing and
-  capture-derived media terminology; unresolved technical choices stay open.
+- [IDEA_CLIENT.md](../IDEA_CLIENT.md): earlier accepted SpaPromoClient, timing
+  and capture-derived media terminology; BR-004 supplies the later accepted
+  FT-003 choices.
 - [IDEA_INGEST.md](../IDEA_INGEST.md): historical ingest evidence; current
   per-photo admission and metric semantics come from the PRD.
 - [IDEA_OS.md](../IDEA_OS.md): display topology, OS-user boundary and deployment
