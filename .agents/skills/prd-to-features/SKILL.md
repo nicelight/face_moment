@@ -96,6 +96,16 @@ Each feature records:
   `### FT-<NNN>-AC-<NNN>` block per accepted criterion. Each block names at
   least one governing `REQ-*` on an exact `- REQ: REQ-<NNN>[, ...]` line, the
   observable criterion, and its verification method;
+- acceptance closure for every material product outcome: each observable
+  edge/failure outcome that can itself block acceptance or realize a
+  significant accepted risk names one or more covering AC IDs, or records an
+  authoritative `Disposition: out_of_scope` with its source and
+  `Change route: /write-prd`. Several related outcomes may share one AC;
+- for each material NFR, an owning `REQ-*` that preserves the observable
+  quality, accepted numeric target or qualitative criterion, and general
+  pass/fail-changing conditions. Its feature AC preserves the feature-specific
+  application, observable criterion, and verification method; do not duplicate
+  the full requirement across artifacts;
 - optional evidence-backed source artifacts, normative inputs,
   constraints/invariants, and verification targets;
 - optional `## Behavior specs` routing only; do not create behavior JSON;
@@ -113,6 +123,11 @@ clarification_status: pending|blocked
 last_clarified: null
 clarification_questions: 0
 ```
+
+If a material outcome has neither a covering AC nor an authoritative exclusion,
+or a material NFR lacks an accepted target/criterion or decisive condition,
+stop the affected decomposition. PRD-owned acceptance changes route to
+`/write-prd`; decomposition-only repair remains owned here.
 
 Update `.memory-bank/index.md` with annotated links.
 </required_outputs>
@@ -145,6 +160,8 @@ Verify:
 - every requirement has a stable `REQ-*` ID;
 - every product feature AC has a unique stable ID matching its feature and at
   least one existing governing `REQ-*`;
+- every material product outcome satisfies the acceptance-closure contract
+  above;
 - each epic/feature traces to requirements or an explicit accepted delta;
 - each feature boundary was checked proportionally to evidence, and no concrete
   independently acceptable product outcome remains hidden inside another
