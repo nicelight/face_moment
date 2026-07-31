@@ -93,4 +93,5 @@ status: active
 - [.memory-bank/epics/EP-003.md](epics/EP-003.md): explainable diagnostics,
   annotation and Calibration.
 - [.memory-bank/features/index.md](features/index.md): feature-level outcomes,
-  acceptance, failure behavior and SDD gate routing.
+  stable `FT-<NNN>-AC-<NNN>` acceptance closure, failure behavior,
+  requirement traceability and SDD gate routing.

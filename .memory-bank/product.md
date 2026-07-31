@@ -1,7 +1,7 @@
 ---
 description: Product definition (C4 L1) for the Face Moment one-СПА pilot.
 status: draft
-last_updated: 2026-07-29
+last_updated: 2026-07-31
 ---
 # Face Moment Product
 
@@ -168,3 +168,6 @@ Calibration; recommendations never update serving settings automatically.
   bounded-autonomy rules.
 - [.memory-bank/invariants.md](invariants.md): cross-cutting MUST/NEVER rules.
 - [.memory-bank/requirements.md](requirements.md): stable requirements and RTM.
+- [.memory-bank/features/index.md](features/index.md): feature outcomes with
+  stable acceptance-criterion IDs, governing requirements and observable
+  verification methods.

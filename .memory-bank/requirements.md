@@ -1,7 +1,7 @@
 ---
 description: Stable product requirements and REQ-to-epic-to-feature traceability for the one-СПА pilot.
 status: draft
-last_updated: 2026-07-29
+last_updated: 2026-07-31
 ---
 # Requirements
 
@@ -11,6 +11,10 @@ last_updated: 2026-07-29
 - RTM `Lifecycle`: `planned|implemented|verified`.
 - This decomposition preserves the clarified PRD contract; it does not replace
   the detailed FR/NFR wording in [.memory-bank/prd.md](prd.md).
+- Product verification targets below route to stable feature AC IDs. Each
+  feature AC carries its governing `REQ-*`, observable criterion and
+  verification method; PRD AC references remain the source-level acceptance
+  basis rather than a duplicate feature numbering scheme.
 
 ## REQ List
 
@@ -51,6 +55,29 @@ last_updated: 2026-07-29
 | `REQ-DATA-001` | Logs MUST expire after 30 days and ordinary Attempts/evidence, including persisted capture-derived diagnostic media, after 90 days. Only the curated promoted subset may survive until explicit deletion; participant names remain annotation-only, and the latest cleanup outcome MUST be visible. | NFR-REL-05, NFR-DATA-01..04 |
 | `REQ-ARCH-001` | The pilot MUST retain the one-СПА, one central CPU-only server and simple backend/worker/realtime/PostgreSQL/object-storage baseline; hardware is site-validated and added complexity requires measured evidence. | NFR-ARCH-01..04 |
 
+## Material NFR Ownership
+
+This router makes ownership explicit without duplicating the full requirement.
+The named `REQ-*` row above preserves the observable target or qualitative
+criterion and the conditions that change pass/fail.
+
+| PRD NFR | Owning REQ | Preserved decision surface |
+|---|---|---|
+| `NFR-PERF-01`, `NFR-PERF-02`, `NFR-PERF-04`, `NFR-PERF-05` | `REQ-PERF-001` | Same 19/20 joint correctness and one-clock `<10 s` QR gate; timeout/no-match remain failures and diagnostic timing stays observable. |
+| `NFR-PERF-03` | `REQ-ING-004`, `REQ-CAL-003` | Full-population 95% `<15 min` ingest SLO with the explicit developer-Calibration delay condition. |
+| `NFR-REL-01`, `NFR-REL-02`, `NFR-REL-03` | `REQ-REL-001` | Independent central runtime, recoverable advertising and singleton realtime slot/deadline without waiter replay. |
+| `NFR-REL-04`, `NFR-REL-05` | `REQ-REL-002`, `REQ-DATA-001` | Restart-safe idempotent Photo queue, separate primary-capacity visibility and observable rerunnable cleanup result. |
+| `NFR-REL-06` | `REQ-INV-003` | One fixed-snapshot hard purge resumes without target loss or duplication. |
+| `NFR-SEC-01`, `NFR-SEC-02`, `NFR-SEC-03` | `REQ-SEC-001` | HTTPS/private topology, hashed-token СПА binding, rate limiting, key-only SSH and sandboxed display. |
+| `NFR-SEC-04` | `REQ-DIAG-003` | Sanitized operator view and developer-only protected diagnostic detail. |
+| `NFR-SEC-05` | `REQ-INV-002`, `REQ-INV-003` | Owner/access-СПА inventory scope and admin-only global actions. |
+| `NFR-SEC-06` | `REQ-DIAG-002`, `REQ-DIAG-003`, `REQ-LOG-001` | Capture-media classification without weakening credential, commercial-media, personalized-data or diagnostic-detail protection. |
+| `NFR-SEC-07` | `REQ-SEC-002` | Managed Local Network Access plus exact-origin CORS/OPTIONS and non-leaking sensor Bearer secret. |
+| `NFR-DATA-01`, `NFR-DATA-02`, `NFR-DATA-03`, `NFR-DATA-04` | `REQ-DATA-001` | 30/90-day cutoffs, curated promoted subset, explicit deletion and annotation-only names. |
+| `NFR-ARCH-01`, `NFR-ARCH-02`, `NFR-ARCH-03`, `NFR-ARCH-04` | `REQ-ARCH-001` | One-СПА CPU-only KISS baseline, site-validated hardware and evidence-gated complexity. |
+| `NFR-ARCH-05` | `REQ-INV-003`, `REQ-INV-004` | Shared-worker/durable-Photo reuse without purge-job, extra-worker or realtime-statistics machinery. |
+| `NFR-ARCH-06` | `REQ-CAP-002` | Accepted browser-native route and structural bounds without a representative-benchmark prerequisite. |
+
 ## Out of Scope
 
 - Public rollout, multi-СПА production scale and production-readiness claims.
@@ -72,36 +99,36 @@ last_updated: 2026-07-29
 | REQ | Epic | Feature | Test / evidence target | Lifecycle |
 |---|---|---|---|---|
 | `REQ-000` | Foundation (no product epic) | [FT-000](features/FT-000-foundation.md) | [Executable Baseline Contract](testing/index.md), [final-gate verification](../.tasks/TASK-002-T2-FT-000-W0/TASK-002-T2-FT-000-W0-S-VERIFY-final-report-docs-01.md), and [REQ-000 evidence map](../.tasks/TASK-002-T2-FT-000-W0/req-foundation-evidence-map.md) | verified |
-| `REQ-ING-001` | [EP-001](epics/EP-001.md) | [FT-001](features/FT-001.md) | PRD AC-08 | planned |
-| `REQ-ING-002` | [EP-001](epics/EP-001.md) | [FT-001](features/FT-001.md) | PRD AC-08 | planned |
-| `REQ-ING-003` | [EP-001](epics/EP-001.md) | [FT-001](features/FT-001.md), [FT-002](features/FT-002.md) | PRD AC-17 | planned |
-| `REQ-ING-004` | [EP-001](epics/EP-001.md) | [FT-002](features/FT-002.md) | PRD AC-06/08 | planned |
-| `REQ-INV-001` | [EP-001](epics/EP-001.md) | [FT-012](features/FT-012.md) | PRD AC-18 | planned |
-| `REQ-INV-002` | [EP-001](epics/EP-001.md) | [FT-012](features/FT-012.md) | PRD AC-18 | planned |
-| `REQ-INV-003` | [EP-001](epics/EP-001.md) | [FT-012](features/FT-012.md) | PRD AC-18/20 and restore-all e2e | planned |
-| `REQ-INV-004` | [EP-001](epics/EP-001.md) | [FT-012](features/FT-012.md) | PRD AC-19 | planned |
-| `REQ-SRCH-001` | [EP-001](epics/EP-001.md), [EP-002](epics/EP-002.md) | [FT-002](features/FT-002.md), [FT-004](features/FT-004.md) | PRD AC-03/10 | planned |
-| `REQ-SRCH-002` | [EP-002](epics/EP-002.md) | [FT-004](features/FT-004.md) | PRD AC-01/03 | planned |
-| `REQ-SRCH-003` | [EP-002](epics/EP-002.md) | [FT-004](features/FT-004.md) | PRD controlled setup, AC-03/05 | planned |
-| `REQ-CAP-001` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md) | PRD AC-01/14/23/25 | planned |
-| `REQ-CAP-002` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md) | PRD AC-21/24/26 | planned |
-| `REQ-CAP-003` | [EP-002](epics/EP-002.md) | [FT-004](features/FT-004.md) | PRD AC-01/03 | planned |
-| `REQ-UX-001` | [EP-002](epics/EP-002.md) | [FT-005](features/FT-005.md) | PRD AC-01/07/16 | planned |
-| `REQ-UX-002` | [EP-002](epics/EP-002.md) | [FT-006](features/FT-006.md) | PRD AC-04 | planned |
-| `REQ-UX-003` | [EP-002](epics/EP-002.md) | [FT-006](features/FT-006.md) | PRD AC-15 | planned |
-| `REQ-UX-004` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md), [FT-005](features/FT-005.md) | PRD AC-14 | planned |
-| `REQ-PERF-001` | [EP-002](epics/EP-002.md), [EP-003](epics/EP-003.md) | [FT-003](features/FT-003.md), [FT-004](features/FT-004.md), [FT-005](features/FT-005.md), [FT-007](features/FT-007.md) | PRD AC-01..03/05/07 | planned |
-| `REQ-DIAG-001` | [EP-003](epics/EP-003.md) | [FT-007](features/FT-007.md), [FT-008](features/FT-008.md) | PRD AC-05/10/22 | planned |
-| `REQ-DIAG-002` | [EP-003](epics/EP-003.md) | [FT-007](features/FT-007.md) | PRD AC-05/10/13 | planned |
-| `REQ-DIAG-003` | [EP-003](epics/EP-003.md) | [FT-008](features/FT-008.md) | PRD AC-09/10 | planned |
-| `REQ-LOG-001` | [EP-003](epics/EP-003.md) | [FT-009](features/FT-009.md) | PRD AC-10/13 | planned |
-| `REQ-ANN-001` | [EP-003](epics/EP-003.md) | [FT-010](features/FT-010.md) | PRD AC-11 | planned |
-| `REQ-CAL-001` | [EP-003](epics/EP-003.md) | [FT-011](features/FT-011.md) | PRD AC-12 | planned |
-| `REQ-CAL-002` | [EP-003](epics/EP-003.md) | [FT-011](features/FT-011.md) | PRD AC-12 | planned |
-| `REQ-CAL-003` | [EP-003](epics/EP-003.md) | [FT-011](features/FT-011.md) | PRD FR-DEV-11 worker-interruption evidence | planned |
-| `REQ-REL-001` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md), [FT-005](features/FT-005.md) | PRD AC-14, physical-site verification | planned |
-| `REQ-REL-002` | [EP-001](epics/EP-001.md) | [FT-002](features/FT-002.md) | PRD AC-06 and worker-restart recovery evidence | planned |
-| `REQ-SEC-001` | [EP-001](epics/EP-001.md), [EP-002](epics/EP-002.md) | [FT-001](features/FT-001.md), [FT-003](features/FT-003.md), [FT-004](features/FT-004.md), [FT-006](features/FT-006.md) | PRD NFR-SEC-01..03 boundary-conformance evidence | planned |
-| `REQ-SEC-002` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md) | PRD AC-25 | planned |
-| `REQ-DATA-001` | [EP-003](epics/EP-003.md) | [FT-007](features/FT-007.md), [FT-008](features/FT-008.md), [FT-009](features/FT-009.md), [FT-010](features/FT-010.md), [FT-011](features/FT-011.md) | PRD NFR-REL-05 and AC-13 | planned |
-| `REQ-ARCH-001` | [EP-001](epics/EP-001.md), [EP-002](epics/EP-002.md), [EP-003](epics/EP-003.md) | [FT-001](features/FT-001.md)–[FT-012](features/FT-012.md) | PRD controlled setup and architecture constraints | planned |
+| `REQ-ING-001` | [EP-001](epics/EP-001.md) | [FT-001](features/FT-001.md) | `FT-001-AC-001`, `FT-001-AC-004`; PRD AC-08 | planned |
+| `REQ-ING-002` | [EP-001](epics/EP-001.md) | [FT-001](features/FT-001.md) | `FT-001-AC-001`; PRD AC-08 | planned |
+| `REQ-ING-003` | [EP-001](epics/EP-001.md) | [FT-001](features/FT-001.md), [FT-002](features/FT-002.md) | `FT-001-AC-002..005`, `FT-002-AC-001`; PRD AC-17 | planned |
+| `REQ-ING-004` | [EP-001](epics/EP-001.md) | [FT-002](features/FT-002.md) | `FT-002-AC-001`, `FT-002-AC-004..005`; PRD AC-06/08 | planned |
+| `REQ-INV-001` | [EP-001](epics/EP-001.md) | [FT-012](features/FT-012.md) | `FT-012-AC-001`; PRD AC-18 | planned |
+| `REQ-INV-002` | [EP-001](epics/EP-001.md) | [FT-012](features/FT-012.md) | `FT-012-AC-001..002`; PRD AC-18 | planned |
+| `REQ-INV-003` | [EP-001](epics/EP-001.md) | [FT-012](features/FT-012.md) | `FT-012-AC-003..005`, `FT-012-AC-007`; PRD AC-18/20 and restore-all e2e | planned |
+| `REQ-INV-004` | [EP-001](epics/EP-001.md) | [FT-012](features/FT-012.md) | `FT-012-AC-006..007`; PRD AC-19 | planned |
+| `REQ-SRCH-001` | [EP-001](epics/EP-001.md), [EP-002](epics/EP-002.md) | [FT-002](features/FT-002.md), [FT-004](features/FT-004.md) | `FT-002-AC-001`, `FT-004-AC-001`; PRD AC-03/10 | planned |
+| `REQ-SRCH-002` | [EP-002](epics/EP-002.md) | [FT-004](features/FT-004.md) | `FT-004-AC-002`; PRD AC-01/03 | planned |
+| `REQ-SRCH-003` | [EP-002](epics/EP-002.md) | [FT-004](features/FT-004.md) | `FT-004-AC-001`, `FT-004-AC-006`; PRD controlled setup, AC-03/05 | planned |
+| `REQ-CAP-001` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md) | `FT-003-AC-001..003`, `FT-003-AC-007`; PRD AC-01/14/23/25 | planned |
+| `REQ-CAP-002` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md) | `FT-003-AC-004..006`, `FT-003-AC-010`; PRD AC-21/24/26 | planned |
+| `REQ-CAP-003` | [EP-002](epics/EP-002.md) | [FT-004](features/FT-004.md) | `FT-004-AC-003..004`, `FT-004-AC-006`; PRD AC-01/03 | planned |
+| `REQ-UX-001` | [EP-002](epics/EP-002.md) | [FT-005](features/FT-005.md) | `FT-005-AC-001..004`; PRD AC-01/07/16 | planned |
+| `REQ-UX-002` | [EP-002](epics/EP-002.md) | [FT-006](features/FT-006.md) | `FT-006-AC-001`, `FT-006-AC-004`; PRD AC-04 | planned |
+| `REQ-UX-003` | [EP-002](epics/EP-002.md) | [FT-006](features/FT-006.md) | `FT-006-AC-002..003`; PRD AC-15 | planned |
+| `REQ-UX-004` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md), [FT-005](features/FT-005.md) | `FT-003-AC-007..008`, `FT-005-AC-005`; PRD AC-14 | planned |
+| `REQ-PERF-001` | [EP-002](epics/EP-002.md), [EP-003](epics/EP-003.md) | [FT-003](features/FT-003.md), [FT-004](features/FT-004.md), [FT-005](features/FT-005.md), [FT-007](features/FT-007.md) | `FT-003-AC-010`, `FT-004-AC-004`, `FT-005-AC-002`, `FT-007-AC-001`; PRD AC-01..03/05/07 | planned |
+| `REQ-DIAG-001` | [EP-002](epics/EP-002.md), [EP-003](epics/EP-003.md) | [FT-003](features/FT-003.md), [FT-007](features/FT-007.md), [FT-008](features/FT-008.md) | `FT-003-AC-006`, `FT-003-AC-008`, `FT-007-AC-001`, `FT-007-AC-005`, `FT-008-AC-001`; PRD AC-05/10/22 | planned |
+| `REQ-DIAG-002` | [EP-003](epics/EP-003.md) | [FT-007](features/FT-007.md) | `FT-007-AC-002..004`; PRD AC-05/10/13 | planned |
+| `REQ-DIAG-003` | [EP-003](epics/EP-003.md) | [FT-008](features/FT-008.md) | `FT-008-AC-001..005`; PRD AC-09/10 | planned |
+| `REQ-LOG-001` | [EP-003](epics/EP-003.md) | [FT-009](features/FT-009.md) | `FT-009-AC-001..004`; PRD AC-10/13 | planned |
+| `REQ-ANN-001` | [EP-003](epics/EP-003.md) | [FT-010](features/FT-010.md) | `FT-010-AC-001..003`; PRD AC-11 | planned |
+| `REQ-CAL-001` | [EP-003](epics/EP-003.md) | [FT-011](features/FT-011.md) | `FT-011-AC-001`, `FT-011-AC-006`; PRD AC-12 | planned |
+| `REQ-CAL-002` | [EP-003](epics/EP-003.md) | [FT-011](features/FT-011.md) | `FT-011-AC-002..004`, `FT-011-AC-006`; PRD AC-12 | planned |
+| `REQ-CAL-003` | [EP-003](epics/EP-003.md) | [FT-011](features/FT-011.md) | `FT-011-AC-005`; PRD FR-DEV-11 worker-interruption evidence | planned |
+| `REQ-REL-001` | [EP-002](epics/EP-002.md), [EP-003](epics/EP-003.md) | [FT-003](features/FT-003.md), [FT-005](features/FT-005.md), [FT-007](features/FT-007.md) | `FT-003-AC-002`, `FT-003-AC-007..008`, `FT-005-AC-005`, `FT-007-AC-005`; PRD AC-14 and physical-site verification | planned |
+| `REQ-REL-002` | [EP-001](epics/EP-001.md) | [FT-002](features/FT-002.md) | `FT-002-AC-002..003`, `FT-002-AC-006`; PRD AC-06 and worker-restart recovery evidence | planned |
+| `REQ-SEC-001` | [EP-001](epics/EP-001.md), [EP-002](epics/EP-002.md) | [FT-001](features/FT-001.md), [FT-003](features/FT-003.md), [FT-004](features/FT-004.md), [FT-006](features/FT-006.md) | `FT-001-AC-004`, `FT-003-AC-003`, `FT-003-AC-009`, `FT-004-AC-005`, `FT-006-AC-004`; PRD NFR-SEC-01..03 | planned |
+| `REQ-SEC-002` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md) | `FT-003-AC-003`; PRD AC-25 | planned |
+| `REQ-DATA-001` | [EP-003](epics/EP-003.md) | [FT-007](features/FT-007.md), [FT-008](features/FT-008.md), [FT-009](features/FT-009.md), [FT-010](features/FT-010.md), [FT-011](features/FT-011.md) | `FT-007-AC-004`, `FT-008-AC-005`, `FT-009-AC-003`, `FT-010-AC-002`, `FT-010-AC-004`, `FT-011-AC-006`; PRD NFR-REL-05 and AC-13 | planned |
+| `REQ-ARCH-001` | [EP-001](epics/EP-001.md), [EP-002](epics/EP-002.md), [EP-003](epics/EP-003.md) | [FT-001](features/FT-001.md)–[FT-012](features/FT-012.md) | Feature SDD gates and cross-cutting `REQ-ARCH-001` AC lines; PRD controlled setup and NFR-ARCH-01..06 | planned |
