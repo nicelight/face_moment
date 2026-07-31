@@ -1,7 +1,7 @@
 ---
 description: Канонический словарь терминов со специальным значением в Face Moment.
 status: active
-last_updated: 2026-07-29
+last_updated: 2026-07-31
 source_of_truth:
   - .memory-bank/glossary.md
 ---
@@ -76,18 +76,18 @@ source_of_truth:
 
 | Термин | Значение в Face Moment | Не путать с |
 |---|---|---|
-| `diagnostic_session_id` / `correlation_id` | Один логический correlation identifier попытки, связывающий browser events, server stages, configuration, search decisions, logs и artifacts. Точное имя поля может быть унифицировано в SDD. | Promo/search session token или participant identity. |
+| `diagnostic_session_id` / `correlation_id` | Один логический correlation identifier попытки, связывающий browser events, server stages, configuration, search decisions, logs и artifacts. | Promo/search session token или participant identity. |
 | Diagnostic evidence | Best-effort набор evidence, связанный с core Attempt; optional capture-derived media и доступ регулируются PRD `FR-DIAG-04..07` и `NFR-SEC-06`. Незавершённый set отображается как `incomplete`. | Core Attempt или разрешением ослабить защиту других data classes. |
 | Capture-derived media | Reference images, normalized images и face crops автоматической попытки. Media content само по себе не требует developer-only authorization; logging, caching, storage и public delivery разрешены, но не обязательны. | Commercial Photo originals/previews/teasers, personalized data, credentials или публичным MinIO. |
 | Structured log record | Неблокирующее browser/server событие, связанное с correlation ID; content и retention регулируются PRD `FR-DEV-04` и `NFR-DATA-01`. | Diagnostic artifact или долговременный calibration dataset. |
 | `Attempts` | Role-scoped UI для поиска попыток и investigation по attempt-level timeline, parameters, decisions, logs и artifacts; operator получает sanitized subset, developer — полный разрешённый detail. | `Log Explorer`, который ищет отдельные log records глобально. |
 | `Log Explorer` | Developer-only UI глобального поиска structured browser/server logs через backend/PostgreSQL с переходом к связанной attempt. | Прямым browser-доступом к PostgreSQL или отдельным observability datastore. |
-| Annotation | Developer-only ground truth на уровне person/detection с разрешённым именем pilot participant и outcome `correct`, `wrong/false` или `missed`. Exact normalized storage vocabulary остаётся за SDD. | Автоматическим identity cluster или общей записью имени в technical logs. |
+| Annotation | Developer-only ground truth на уровне person/detection с разрешённым именем pilot participant и outcome `correct`, `wrong/false` или `missed`. | Автоматическим identity cluster или общей записью имени в technical logs. |
 | Promoted calibration case | Вручную выбранный воспроизводимый subset из PRD `NFR-DATA-03`, хранящийся до явного удаления. | Продлением retention всего diagnostic evidence set. |
 | `Calibration` | Developer-only UI, использующий annotated attempts для сравнения pipelines/releases/config sets и расчёта объяснимых recommendations. Run может занять общий `BackgroundPhotoWorker`; после interruption разработчик запускает его повторно вручную. | Автоматическим изменением serving settings, отдельной experimentation platform или отдельным Calibration worker. |
 | Calibration recommendation | Объяснимое предложение threshold или одного quality gate, рассчитанное по annotated attempts. Оно никогда не меняет serving settings автоматически. | Автоматическим optimizer или совместным подбором нескольких quality gates. |
 | `Best face match` | Threshold profile, минимизирующий false matches; при равенстве предпочитает больше correct matches. | `Balance` или `Minimum missed faces`. |
-| `Balance` | Threshold profile компромисса между correct, false и missed. Точная формула намеренно остаётся решением SDD. | Уже утверждённой численной формулой. |
+| `Balance` | Threshold profile компромисса между correct, false и missed. | Профилем с уже утверждённой численной формулой. |
 | `Minimum missed faces` | Threshold profile, минимизирующий missed results; при равенстве предпочитает меньше false matches. | Гарантией полного group coverage. |
 
 ## Metrics And Time Anchors

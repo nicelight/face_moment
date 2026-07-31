@@ -1,7 +1,7 @@
 ---
 description: Accepted global SDD backbone, coverage matrix and Foundation routing for the Face Moment pilot.
 status: active
-last_updated: 2026-07-30
+last_updated: 2026-07-31
 ---
 # SDD Spec Backbone
 
@@ -48,23 +48,6 @@ last_updated: 2026-07-30
 - Stop conditions: stop if reconciliation would change an actor, product
   outcome, non-goal or lifecycle without PRD authority. Do not reopen the
   accepted FT-003 route, detector, crop, request or structural bounds.
-
-## /spec-design Reconciliation
-
-- Global Backbone Status: complete at Planning Revision `4`.
-- Reconciled areas: FT-003 system ownership, client/realtime boundary,
-  admission/restart lifecycle and verification. Exact sensor and proposal
-  contracts live in the boundary map; architecture and lifecycle retain only
-  their own consequences and route to that owner.
-- Reused specs: the existing
-  [system architecture](architecture/system-architecture.md),
-  [boundary map](contracts/boundary-map.md),
-  [lifecycle map](states/lifecycle-map.md) and
-  [client realtime verification](testing/client-realtime.md); no new spec or
-  ADR was needed.
-- Remaining FT-003 gate: exact endpoint path, multipart part naming/
-  serialization, validation detail and compact machine outcome names remain a
-  routed feature-level design completion before product task planning.
 
 ## Global Backbone Status
 - Status: complete
@@ -122,7 +105,7 @@ define product behavior or override the Planning Revision `4` target.
 | security_safety | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md), [.memory-bank/prd.md](prd.md) | Capture-derived media is not protected solely as media; credentials, infrastructure, commercial/personalized data, names/annotations and admin actions retain protection. |
 | deployment | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/foundation.md](foundation.md) | The verified Compose walking skeleton provides the explicit build, typecheck, start, test and smoke substrate; production deployment remains outside Foundation. |
 | risks | authoritative | [.memory-bank/prd.md](prd.md), [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | Client proposal-order and site-camera trade-offs plus accepted pilot/deferred-complexity risks are explicit. |
-| open_questions | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/prd.md](prd.md) | No global blocker remains. FT-003 has only a routed concrete serialization completion; FT-011 `Balance` remains the unrelated operator-owned feature decision. |
+| open_questions | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/prd.md](prd.md) | No global architecture or product-design question remains unresolved. Feature-level completion stays with the owning feature. |
 
 ## Canonical Design Bundle
 
@@ -143,10 +126,7 @@ define product behavior or override the Planning Revision `4` target.
 - [.memory-bank/foundation.md](foundation.md): explicit greenfield Foundation
   Dev Path decision.
 
-This bundle is sufficient at the global boundary. Concrete endpoint
-serialization and feature-owned validation detail remain routed to later
-FT-003 feature design; they do not justify another global or feature-owned spec
-hub.
+This bundle is sufficient at the global boundary.
 
 ## Foundation Decision
 
@@ -160,61 +140,3 @@ hub.
   project-native build/typecheck/start/test path, while none existed.
 - Scope guard: Foundation establishes substrate only. Product Photo, Attempt,
   Promo, diagnostics and inventory behavior remains in FT-001..FT-012.
-
-## Feature Design Blockers
-
-These feature-level gates do not reopen the accepted global architecture,
-Foundation decision or Planning Revision `4`. They prevent only the affected
-feature from reaching an executable task handoff.
-
-### FT-003 — Endpoint serialization completion
-
-- Concrete missing detail: exact endpoint path, multipart part naming/
-  serialization, validation detail and compact machine outcome names.
-- Fixed surrounding contract: the
-  [boundary map](contracts/boundary-map.md) owns the accepted sensor/proposal
-  transport, payload and admission boundary; the
-  [lifecycle map](states/lifecycle-map.md) owns resulting state changes; and
-  [client realtime verification](testing/client-realtime.md) owns proof. The
-  feature-level completion may fill the named missing details but may not
-  redefine those contracts or add a representative-benchmark gate.
-- Affected artifacts/features: FT-003 and its request interface with FT-004;
-  server-authoritative validation, at-most-five selection, embeddings and
-  search remain fixed. FT-007 keeps the same server-admission/core-Attempt
-  boundary.
-- Completion route: later operator-authorized `/feature-to-tasks FT-003` or
-  `/spec-auto FT-003`. No further operator product/architecture decision is
-  required for this concrete detail.
-
-### FT-011 — `Balance` calibration objective
-
-- Exact question: What deterministic objective and tie-break order defines the
-  `Balance` threshold profile across correct, false and missed outcomes?
-- Alternatives and impact: an accepted balanced score or an explicit weighted
-  error objective may satisfy the named trade-off, but they can recommend
-  different thresholds on the same annotated sample. The choice fixes the
-  calculation and its repeatable verification; no agent default is
-  authoritative.
-- Affected artifacts/features: FT-011 threshold recommendation calculation and
-  verification only; annotation semantics, other two named profiles and
-  manual-only setting application remain fixed.
-- Decision owner and repair route: product owner/operator, informed by the
-  application developer's calibration needs, decides through
-  `/feature-doctor FT-011`, then reruns `/spec-auto FT-011`.
-
-## Handoff
-
-- Global backbone is ready at Planning Revision `4`.
-- The minimum FT-000 queue is complete and
-  `TASK-002-T2-FT-000-W0` is the scheduler-closed final gate with independent
-  `VERDICT: PASS`.
-- Planning Revision `4` is the baseline for future product task plans; none
-  currently exist. The completed FT-000 queue is unchanged.
-- FT-004 and FT-007 remain `spec_design_status: complete` after revalidation
-  against the revised client request/admission boundary.
-- FT-003 remains `spec_design_status: blocked` only for the concrete
-  endpoint/serialization completion above. FT-011's `Balance` blocker remains
-  unchanged and unrelated.
-- The operator has not authorized product feature decomposition/tasking in this
-  run. Stop at the reconciled spec layer; no product TASK, implementation plan,
-  task protocol or code/runtime change is part of this handoff.

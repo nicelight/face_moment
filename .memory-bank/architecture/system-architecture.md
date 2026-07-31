@@ -1,7 +1,7 @@
 ---
 description: Canonical greenfield system shape, capability ownership and Architecture Spine for the Face Moment pilot.
 status: active
-last_updated: 2026-07-30
+last_updated: 2026-07-31
 source_of_truth:
   - .memory-bank/architecture/system-architecture.md
 ---
@@ -78,8 +78,8 @@ speculative distributed infrastructure.
   use direct typed Python calls through the owning slice's application
   boundary. Cross-slice orchestration lives in the capability that owns the
   user-visible outcome.
-- Verification: Required feature-level integration proof, not currently
-  runnable: each cross-slice flow changes state only through the named owner.
+- Verification: Feature-level integration proof: each cross-slice flow changes
+  state only through the named owner.
 - Source: accepted operator architecture decision and the
   [boundary map](../contracts/boundary-map.md).
 
@@ -90,8 +90,8 @@ speculative distributed infrastructure.
 - Rule: one unique JPEG produces one short PostgreSQL transaction containing
   `Photo + accepted_at + serving pending`; uniqueness is
   `(spa_id, visit_date, checksum_sha256)`. MinIO remains outside the transaction.
-- Verification: Required FT-001/FT-002 proof, not currently runnable:
-  concurrent duplicates yield one Photo and accepted work survives restart.
+- Verification: FT-001/FT-002 proof: concurrent duplicates yield one Photo and
+  accepted work survives restart.
 - Source: [.memory-bank/prd.md](../prd.md) `FR-ING-01..08` and the
   [lifecycle map](../states/lifecycle-map.md).
 
@@ -103,8 +103,7 @@ speculative distributed infrastructure.
   sequential worker; stale `processing` returns to `pending` on startup.
   Calibration may block processing. A confirmed hard purge waits for the
   current operation and then reuses the same worker.
-- Verification: Required FT-002/FT-011/FT-012 restart proofs, not currently
-  runnable.
+- Verification: FT-002/FT-011/FT-012 restart proof.
 - Source: [.memory-bank/prd.md](../prd.md) `NFR-REL-04`, `FR-DEV-11`,
   `FR-INV-07..09` and the [lifecycle map](../states/lifecycle-map.md).
 
@@ -120,8 +119,8 @@ speculative distributed infrastructure.
   formation but not an already issued session; hard-purged media is skipped by
   clients without rebuilding the session or `N`. Per-СПА 1/5/60-minute counters
   are direct PostgreSQL queries polled every five seconds.
-- Verification: Required FT-012 proof, not currently runnable: authorization,
-  hide/restore, exact counters and restartable fixed-snapshot purge.
+- Verification: FT-012 proof: authorization, hide/restore, exact counters and
+  restartable fixed-snapshot purge.
 - Source: [.memory-bank/prd.md](../prd.md) `FR-INV-01..11` and the
   [boundary map](../contracts/boundary-map.md).
 
@@ -138,9 +137,8 @@ speculative distributed infrastructure.
   idempotent client acknowledgement after four teasers and QR are visible sets
   display success; the [lifecycle map](../states/lifecycle-map.md) owns its
   terminal states.
-- Verification: Required FT-003..FT-005 boundary, orchestration and
-  post-render acknowledgement proof plus the controlled 20-attempt outcome,
-  not currently runnable.
+- Verification: FT-003..FT-005 boundary, orchestration and post-render
+  acknowledgement proof plus the controlled 20-attempt outcome.
 - Source: [.memory-bank/prd.md](../prd.md) `FR-CAP-01..17`,
   `FR-UX-01..09`, the [boundary map](../contracts/boundary-map.md) and the
   [lifecycle map](../states/lifecycle-map.md).
@@ -159,8 +157,7 @@ speculative distributed infrastructure.
   and no logging, cache, storage or public-delivery mechanism is required.
   Photo hard purge retains existing Promo result/session data, the core Attempt
   and diagnostic evidence; clients skip unavailable media.
-- Verification: Required FT-007/FT-012 integration proof, not currently
-  runnable.
+- Verification: FT-007/FT-012 integration proof.
 - Source: [.memory-bank/prd.md](../prd.md) `FR-DIAG-01..05`,
   `NFR-DATA-01..04` and the [lifecycle map](../states/lifecycle-map.md).
 
@@ -171,8 +168,7 @@ speculative distributed infrastructure.
 - Rule: one Promo session has a 30-minute first-open window and one shared
   60-minute idle access state; commercial Photo media and personalized session
   data are served through authorized no-store backend reads.
-- Verification: Required FT-006 multi-phone expiry proof, not currently
-  runnable.
+- Verification: FT-006 multi-phone expiry proof.
 - Source: [.memory-bank/prd.md](../prd.md) `FR-UX-03..10` and the
   [boundary map](../contracts/boundary-map.md).
 
@@ -188,9 +184,9 @@ speculative distributed infrastructure.
   request returns `2xx` with a compact typed outcome such as `busy`, `deadline`,
   `unacceptable_query` or `insufficient_results`; clients branch on
   status/outcome, never `5xx` text.
-- Verification: Required boundary contract proof, not currently runnable:
-  representative transport failures map to the standard status and admitted
-  non-success search results remain typed domain outcomes.
+- Verification: Boundary contract proof: representative transport failures map
+  to the standard status and admitted non-success search results remain typed
+  domain outcomes.
 - Source: accepted contract recorded in the
   [boundary map](../contracts/boundary-map.md).
 
@@ -204,9 +200,9 @@ speculative distributed infrastructure.
   in owning slices; foreign keys and `ON DELETE` rules are explicit, and
   database cascade never crosses ownership boundaries or deletes core Attempts
   or diagnostic evidence with a Photo.
-- Verification: Required Foundation/feature proof, not currently runnable:
-  the single migration stream builds an empty database and deletion tests
-  preserve foreign-owned Attempt/evidence state.
+- Verification: Foundation/feature proof: the single migration stream builds
+  an empty database and deletion tests preserve foreign-owned Attempt/evidence
+  state.
 - Source: accepted contract recorded in the
   [boundary map](../contracts/boundary-map.md).
 
@@ -224,9 +220,8 @@ speculative distributed infrastructure.
   first makes data inaccessible, then performs idempotent object deletion, then
   finalizes the owning database cleanup. MinIO versioning and external volume
   snapshots stay disabled while the no-backup pilot decision is active.
-- Verification: Required FT-001/FT-002/FT-012 proof, not currently runnable:
-  duplicate/orphan handling and repeated cleanup converge without exposing
-  foreign or deleted media.
+- Verification: FT-001/FT-002/FT-012 proof: duplicate/orphan handling and
+  repeated cleanup converge without exposing foreign or deleted media.
 - Source: [.memory-bank/prd.md](../prd.md) `FR-ING-03..06`,
   `NFR-SEC-01`, the [boundary map](../contracts/boundary-map.md) and
   [lifecycle map](../states/lifecycle-map.md).
@@ -240,9 +235,9 @@ speculative distributed infrastructure.
   selects the prior revision; recovery never changes the revision
   automatically. Restart uses the committed revision and stays unavailable if
   it cannot serve.
-- Verification: Required serving-control/processing integration proof, not
-  currently runnable: an invalid revision never serves and every failed change
-  requires explicit operator recovery.
+- Verification: Serving-control/processing integration proof: an invalid
+  revision never serves and every failed change requires explicit operator
+  recovery.
 - Source: accepted operator KISS decision, [.memory-bank/prd.md](../prd.md)
   `NFR-REL-01` and the [boundary map](../contracts/boundary-map.md).
 
@@ -254,9 +249,9 @@ speculative distributed infrastructure.
 - Rule: `promo` owns the cleanup outcome; each capability deletes only its own
   data. Cleanup exposes the latest result defined by the boundary contract and
   is safe to rerun after failure or interruption.
-- Verification: Required FT-007..FT-011 integration proof, not currently
-  runnable: cleanup enforces both cutoffs, preserves the promoted subset,
-  avoids cross-owner writes and exposes the latest result.
+- Verification: FT-007..FT-011 integration proof: cleanup enforces both
+  cutoffs, preserves the promoted subset, avoids cross-owner writes and exposes
+  the latest result.
 - Source: [.memory-bank/prd.md](../prd.md) `NFR-REL-05`,
   `NFR-DATA-01..04` and the [boundary map](../contracts/boundary-map.md).
 

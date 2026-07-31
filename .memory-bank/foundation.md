@@ -1,7 +1,7 @@
 ---
 description: Foundation Dev Path evidence and feature pressure map for the greenfield Face Moment pilot.
 status: active
-last_updated: 2026-07-29
+last_updated: 2026-07-31
 ---
 # Foundation Dev Path
 
@@ -10,8 +10,6 @@ last_updated: 2026-07-29
 - Foundation Requirement: REQ-000
 - Foundation Pseudo-Feature: FT-000
 - Foundation Gate Task: TASK-002-T2-FT-000-W0
-- Foundation Lifecycle: verified
-- Foundation Gate Status: done
 
 ## Decision Evidence
 
@@ -21,7 +19,7 @@ Foundation decision boundary, the repository had no application code,
 package/build manifest, Compose definition, database schema, migration,
 entrypoint or project-native build/typecheck/start/test command. Product
 features therefore could not start with a reproducible executable baseline,
-which required the separate minimum Foundation queue now verified below.
+which required a separate minimum Foundation queue.
 
 Foundation establishes substrate only. Photo admission, processing, Promo,
 diagnostics and Photo Inventory Operations remain product-feature behavior.
@@ -67,31 +65,6 @@ Foundation does not define or override the accepted target architecture.
 | Crash/restart matrices | Owner-specific recovery is cheaper to prove with each feature. | FT-002, FT-007, FT-011 or FT-012 execution. |
 | Exact camera/site geometry | Camera model, lens, lighting and maximum input dimensions are deployment configuration; the browser/mDNS ESP32 route is already accepted and adds no Foundation work. | Configure and verify the pilot site. |
 | Backup, replicas and distributed coordination | Explicitly outside the accepted pilot. | New operator durability/scale decision. |
-
-## Foundation Queue
-
-- [TASK-001-T3-FT-000-W0](tasks/TASK-001-T3-FT-000-W0.task.json) implements
-  the cohesive executable walking skeleton and deterministic smoke harness.
-- [TASK-002-T2-FT-000-W0](tasks/TASK-002-T2-FT-000-W0.task.json) is the only
-  final Foundation gate and depends on TASK-001. It verifies the completed
-  baseline without repairing source or runtime configuration.
-- Both tasks use reserved wave `W0` and are scheduler-closed `done`.
-
-## Completion Evidence
-
-- [TASK-001-T3-FT-000-W0](tasks/TASK-001-T3-FT-000-W0.task.json) records the
-  independent functional `PASS`, adversarial `semantic-pass`, exact
-  `HUMAN_CHECKPOINT: done` and scheduler closure. The durable reports are the
-  [functional verification report](../.tasks/TASK-001-T3-FT-000-W0/TASK-001-T3-FT-000-W0-S-VERIFY-final-report-docs-01.md)
-  and
-  [semantic verification report](../.tasks/TASK-001-T3-FT-000-W0/TASK-001-T3-FT-000-W0-S-RED-VERIFY-final-report-docs-01.md).
-- [TASK-002-T2-FT-000-W0](tasks/TASK-002-T2-FT-000-W0.task.json) records the
-  independent final-gate `VERDICT: PASS` and scheduler closure. The
-  [verification report](../.tasks/TASK-002-T2-FT-000-W0/TASK-002-T2-FT-000-W0-S-VERIFY-final-report-docs-01.md)
-  and
-  [REQ-000/Foundation evidence map](../.tasks/TASK-002-T2-FT-000-W0/req-foundation-evidence-map.md)
-  ground every accepted exit target.
-- Foundation W0 is verified with no findings, fixes or follow-up tasks.
 
 ## Foundation Exit Criteria
 - minimal path passes

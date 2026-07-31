@@ -1,7 +1,7 @@
 ---
 description: Canonical pilot lifecycles for Photo admission, processing, inventory visibility, purge, Promo and diagnostics.
 status: active
-last_updated: 2026-07-30
+last_updated: 2026-07-31
 source_of_truth:
   - .memory-bank/states/lifecycle-map.md
 ---
@@ -125,8 +125,8 @@ advertising -> capturing -> searching -> result -> cooldown -> advertising
 - Client configuration changes apply from the next Attempt and do not mutate
   an active Attempt or add a server-side settings lifecycle.
 - Zero proposals follow the same admission boundary. Once admitted, the server
-  creates the core Attempt and returns a typed non-success; its exact machine
-  name remains unresolved.
+  creates the core Attempt and returns a typed non-success whose machine name
+  belongs to the API contract.
 - Transport rejection occurs before domain admission and creates no core
   Attempt or domain transition. Exact proposal, payload and failure contracts
   are defined in the [boundary map](../contracts/boundary-map.md).
@@ -243,7 +243,8 @@ collecting -> complete | incomplete -> expired
   protected solely because it contains an image. Other data keeps its
   data-specific authorization and delivery rules from the boundary contract.
 - Recommendations never transition serving settings automatically; an explicit
-  developer action is a separate boundary requiring later audit design.
+  developer action uses the audited `serving_control` command defined in the
+  [boundary map](../contracts/boundary-map.md).
 - Retention cleanup adds no separate lifecycle. Its ownership, observable
   result and safe-rerun contract are defined in the
   [boundary map](../contracts/boundary-map.md).
