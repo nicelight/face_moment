@@ -1,7 +1,7 @@
 ---
 description: Canonical capability ownership, public application boundaries and cross-slice write rules for the greenfield pilot.
 status: active
-last_updated: 2026-07-29
+last_updated: 2026-08-01
 source_of_truth:
   - .memory-bank/contracts/boundary-map.md
 ---
@@ -80,8 +80,8 @@ transition.
 | Boundary | Contract | Owner | Required constraints |
 |---|---|---|---|
 | Staff browser -> application | HTTPS staff authentication, independent JPEG upload and authorized Admin UI commands. | `platform/auth` authenticates; the target capability authorizes and handles the command. | MinIO/PostgreSQL stay private; no Batch/manifest/confirmation. |
-| Central HTTPS `SpaPromoClient` -> ESP32 | While active, one HTTP long-poll request to the sensor's fixed mDNS `.local` name with a 10-second timeout; open the next immediately after an event or timeout. | The browser client owns request continuation; ESP32 owns passage-event delivery. | Managed kiosk pre-authorizes the central origin for Local Network Access through `LocalNetworkAccessAllowedForUrls`. ESP32 allows that exact origin through CORS, handles OPTIONS for Authorization and validates one manually provisioned Bearer secret kept out of URLs/logs. No WebSocket, local bridge, separate local client web server, discovery service, pairing, PKI or rotation lifecycle. |
-| `SpaPromoClient` -> realtime | One synchronous `multipart/form-data` request with client-generated `attempt_id`, server-derived СПА, versioned manifest and the first at most 20 chronological BlazeFace crop parts; zero proposals use the same endpoint with the manifest only. | `promo` orchestrates; `processing` performs the already accepted compatible inference/search contract. | No client ranking/top-5/gating/tracking/clustering/deduplication; repeated people are allowed. The request has structural 20-occurrence and 512-pixel crop-side bounds plus a `20 MiB` total-body transport limit; a larger body returns `413` before admission and creates no domain outcome. Concurrent admitted request returns `busy`; closed maintenance/readiness returns `503` before admission and creates no core Attempt. |
+| Central HTTPS `SpaPromoClient` -> ESP32 | While active, one HTTP long-poll request to the sensor's fixed mDNS `.local` name with a 10-second timeout; open the next immediately after an event or timeout. Exact path, response and failure semantics are in the [Sensor Passage API](sensor-passage-api.md). | The browser client owns request continuation; ESP32 owns passage-event delivery. | Managed kiosk pre-authorizes the central origin for Local Network Access through `LocalNetworkAccessAllowedForUrls`. ESP32 allows that exact origin through CORS, handles OPTIONS for Authorization and validates one manually provisioned Bearer secret kept out of URLs/logs. No WebSocket, local bridge, separate local client web server, discovery service, pairing, PKI or rotation lifecycle. |
+| `SpaPromoClient` -> realtime | One synchronous `multipart/form-data` request with client-generated `attempt_id`, server-derived СПА, versioned manifest and the first at most 20 chronological BlazeFace crop parts; zero proposals use the same endpoint with the manifest only. Exact path, serialization, validation and outcomes are in the [Realtime Attempt API](realtime-attempt-api.md). | `promo` orchestrates; `processing` performs the already accepted compatible inference/search contract. | No client ranking/top-5/gating/tracking/clustering/deduplication; repeated people are allowed. The request has structural 20-occurrence and 512-pixel crop-side bounds plus a `20 MiB` total-body transport limit; a larger body returns `413` before admission and creates no domain outcome. Concurrent admitted request returns `busy`; closed maintenance/readiness returns `503` before admission and creates no core Attempt. |
 | Display -> application | Idempotent acknowledgement after four teasers decode and QR is fully visible. | `promo`. | Server result issue alone is not Promo success. |
 | QR browser -> application | Ticket exchange and authorized no-store session reads. | `promo`. | 30-minute first-open, shared 60-minute idle state, no per-device grants. |
 | Application/worker -> PostgreSQL | Owner-scoped state writes and published projections. | Each capability owns its rows/invariants. | Direct foreign writes are forbidden even in one database. |
@@ -95,9 +95,10 @@ transition.
   logout/revoke and CSRF protection. Photographer, operator and developer
   authorization remains in the owning capability.
 - SpaPromoClient sends its central-service high-entropy token in the
-  Authorization header;
-  PostgreSQL stores only its hash and the server derives `spa_id`. Client input
-  cannot override that identity.
+  Authorization header. PostgreSQL stores only its hash and the server derives
+  `spa_id` under the
+  [Display Client Access](../domains/display-client-access.md) specification.
+  Client input cannot override that identity.
 - The sensor Bearer secret is a distinct manually provisioned kiosk-profile
   setting used only in the Authorization header of ESP32 requests. It never
   enters URLs or logs. The sensor permits only the exact central client origin
@@ -220,9 +221,10 @@ domain outcomes.
   begins, then includes local processing and request sending on one client
   monotonic clock. Diagnostics exposes the client-local processing-start,
   request-send-start and response-received markers.
-- Exact endpoint path, multipart part naming/serialization, validation detail
-  and compact machine outcome names remain feature-level design before FT-003
-  task planning. They must preserve this allow/omit and structural contract.
+- `POST /api/realtime/attempts`, multipart part naming/serialization,
+  validation detail and compact machine outcome names are fixed by the
+  [Realtime Attempt API](realtime-attempt-api.md). They preserve this
+  allow/omit and structural contract.
 
 ## Realtime Idempotency And Client Retry
 

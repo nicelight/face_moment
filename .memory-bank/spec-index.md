@@ -1,7 +1,7 @@
 ---
 description: Pure SDD spec registry and planned-spec index.
 status: active
-last_updated: 2026-07-28
+last_updated: 2026-08-01
 source_of_truth:
   - .memory-bank/spec-index.md
 ---
@@ -21,6 +21,10 @@ source_of_truth:
 | glossary | [.memory-bank/glossary.md](glossary.md) | active | Canonical Face Moment vocabulary and disambiguation rules. | /brief, /spec-init, or /spec-design |
 | architecture | [.memory-bank/architecture/system-architecture.md](architecture/system-architecture.md) | active | Accepted greenfield system shape, capability ownership and Architecture Spine. | /spec-design |
 | contract | [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md) | active | Canonical capability/application boundaries, write authority and cross-slice orchestration. | /spec-design or /feature-to-tasks |
+| contract | [.memory-bank/contracts/sensor-passage-api.md](contracts/sensor-passage-api.md) | active | Exact central-origin browser to ESP32 long-poll, event, CORS and Bearer contract. | /feature-to-tasks |
+| contract | [.memory-bank/contracts/realtime-attempt-api.md](contracts/realtime-attempt-api.md) | active | Exact proposal-attempt endpoint, multipart serialization, validation, idempotency and typed outcome contract. | /feature-to-tasks |
+| data | [.memory-bank/domains/display-client-access.md](domains/display-client-access.md) | active | Serving-control display-client identity, token hash storage and authentication lifecycle. | /feature-to-tasks |
+| data | [.memory-bank/domains/promo-attempt.md](domains/promo-attempt.md) | active | Promo-owned core Attempt persistence, snapshot, transitions and idempotency. | /feature-to-tasks |
 | state | [.memory-bank/states/lifecycle-map.md](states/lifecycle-map.md) | active | Canonical pilot lifecycle and recovery rules. | /spec-design or /feature-to-tasks |
 | foundation | [.memory-bank/foundation.md](foundation.md) | active | Explicit Foundation Dev Path decision and minimum substrate evidence. | /spec-design or /foundation-to-tasks |
 | testing | [.memory-bank/testing/index.md](testing/index.md) | active | Bootstrap verification contract and project quality-gate router. | /spec-design or /foundation-to-tasks |

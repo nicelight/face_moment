@@ -4,6 +4,15 @@ status: active
 ---
 # Changelog
 
+## [2026-08-01] FT-003 canonical contract design
+- Completed the exact sensor long-poll and realtime multipart contracts plus
+  central display-client and core Attempt data specifications without changing
+  Global Planning Revision `4`.
+- Advanced `FT-003.spec_design_status` from `blocked` to `complete` and closed
+  the final unresolved `api_contracts` design row.
+- Preserved the representative-benchmark and site-camera-dimension exclusions;
+  no product behavior was changed.
+
 ## [2026-07-29] Client restart availability clarification
 - Kept local advertising during transient server/network failure for an already
   loaded client.

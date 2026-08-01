@@ -1,11 +1,22 @@
 ---
 description: Canonical verification contract for client proposal submission, one-clock Promo latency and related diagnostics.
 status: active
-last_updated: 2026-07-29
+last_updated: 2026-08-01
 source_of_truth:
   - .memory-bank/testing/client-realtime.md
 ---
 # Client Realtime Verification
+
+## Contract Inputs
+
+- [Sensor Passage API](../contracts/sensor-passage-api.md): exact long-poll,
+  versioned event, CORS/authentication and timeout behavior.
+- [Realtime Attempt API](../contracts/realtime-attempt-api.md): exact endpoint,
+  multipart serialization, validation, idempotency and typed outcomes.
+- [Display Client Access](../domains/display-client-access.md): central token
+  persistence, СПА derivation, reset/deactivation and redaction.
+- [Promo Attempt](../domains/promo-attempt.md): core Attempt persistence and
+  state/outcome mapping.
 
 ## Required Proof
 
@@ -75,9 +86,8 @@ source_of_truth:
   Site validation still proves the existing controlled performance acceptance.
 - No bridge/WebSocket comparison, dual-detector benchmark, model OTA, sensor
   discovery/pairing or credential-rotation proof is required.
-- Exact endpoint path, multipart part naming/serialization, validation detail
-  and compact machine outcome names remain feature-level design and must
-  preserve the canonical boundary contract.
+- Contract fixtures MUST use the exact endpoint paths, multipart part names,
+  validation rules and compact outcomes in the linked subject contracts.
 
 ## Evidence Route
 

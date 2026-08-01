@@ -1,7 +1,7 @@
 ---
 description: Accepted global SDD backbone, coverage matrix and Foundation routing for the Face Moment pilot.
 status: active
-last_updated: 2026-07-31
+last_updated: 2026-08-01
 ---
 # SDD Spec Backbone
 
@@ -99,7 +99,7 @@ define product behavior or override the Planning Revision `4` target.
 | domain_model | authoritative | [.memory-bank/prd.md](prd.md), [lifecycle map](states/lifecycle-map.md), [.memory-bank/glossary.md](glossary.md) | Product entities, face proposal occurrences, Photo visibility, purge, Attempt and session semantics are explicit. |
 | data_flow | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | Client proposals, existing server-owned search, Promo, diagnostics, inventory, revision recovery and retention have named owners and failure paths. |
 | storage | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md), [lifecycle map](states/lifecycle-map.md) | Private PostgreSQL/MinIO authority, ownership-safe persistence, optional capture media, retention and restart semantics are explicit. |
-| api_contracts | needed_before_tasks | [boundary map](contracts/boundary-map.md) | Global transport, manifest allow/omit fields, first-at-most-20/512 structural bounds, zero-proposal behavior, standard HTTP failures and typed admitted outcomes are fixed. FT-003 still needs exact endpoint path, multipart serialization/validation and compact machine outcome names before its task planning. |
+| api_contracts | authoritative | [boundary map](contracts/boundary-map.md), [sensor passage API](contracts/sensor-passage-api.md), [realtime attempt API](contracts/realtime-attempt-api.md) | Global transport plus exact FT-003 sensor/realtime paths, multipart serialization/validation, structural bounds, zero-proposal behavior, standard HTTP failures and compact admitted outcomes are fixed. |
 | event_message_contracts | not_applicable | [system architecture](architecture/system-architecture.md) | No event broker/message protocol is part of the accepted pilot. |
 | agent_io_contracts | not_applicable | [.memory-bank/prd.md](prd.md) | No agent/tool I/O is a product or runtime boundary. |
 | security_safety | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md), [.memory-bank/prd.md](prd.md) | Capture-derived media is not protected solely as media; credentials, infrastructure, commercial/personalized data, names/annotations and admin actions retain protection. |
@@ -123,6 +123,12 @@ define product behavior or override the Planning Revision `4` target.
 - [Client realtime verification](testing/client-realtime.md): browser/ESP32
   transport, chronological first-at-most-20, crop/JPEG/manifest, zero-proposal,
   one-clock latency, diagnostics and related media/retention proof.
+- [Sensor Passage API](contracts/sensor-passage-api.md) and
+  [Realtime Attempt API](contracts/realtime-attempt-api.md): exact FT-003
+  external paths, payloads, validation, authentication and typed outcomes.
+- [Display Client Access](domains/display-client-access.md) and
+  [Promo Attempt](domains/promo-attempt.md): authoritative credential and core
+  Attempt persistence/state rules for FT-003.
 - [.memory-bank/foundation.md](foundation.md): explicit greenfield Foundation
   Dev Path decision.
 
