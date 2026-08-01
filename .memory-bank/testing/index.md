@@ -1,7 +1,7 @@
 ---
 description: Стратегия тестирования и верификации (quality gates, anti-cheat, UI/e2e).
 status: active
-last_updated: 2026-07-29
+last_updated: 2026-08-01
 ---
 # Testing & Verification
 
@@ -11,6 +11,9 @@ last_updated: 2026-07-29
   first-at-most-20 BlazeFace submission, browser/ESP32 transport, crop/JPEG/
   manifest contract, one-clock Promo latency, diagnostic markers,
   media/retention checks and explicit exclusions.
+- [Calibration verification](calibration.md): deterministic threshold-profile
+  oracle, one-dimensional quality analysis, before/after comparison,
+  manual-apply isolation, shared-worker recovery and promoted-case retention.
 
 ## Quality gates
 

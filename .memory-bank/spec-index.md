@@ -29,6 +29,7 @@ source_of_truth:
 | foundation | [.memory-bank/foundation.md](foundation.md) | active | Explicit Foundation Dev Path decision and minimum substrate evidence. | /spec-design or /foundation-to-tasks |
 | testing | [.memory-bank/testing/index.md](testing/index.md) | active | Bootstrap verification contract and project quality-gate router. | /spec-design or /foundation-to-tasks |
 | testing | [.memory-bank/testing/client-realtime.md](testing/client-realtime.md) | active | Client proposal, one-clock latency, diagnostics and related media/retention verification. | /spec-auto or /feature-to-tasks |
+| testing | [.memory-bank/testing/calibration.md](testing/calibration.md) | active | FT-011 threshold-profile oracle, one-dimensional quality analysis, manual apply, worker recovery and retention verification. | /spec-auto or /feature-to-tasks |
 
 ## Planned Specs
 | Area | Expected path | Needed by | Notes |

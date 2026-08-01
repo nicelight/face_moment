@@ -1,7 +1,7 @@
 ---
 description: Stable product requirements and REQ-to-epic-to-feature traceability for the one-СПА pilot.
 status: draft
-last_updated: 2026-07-31
+last_updated: 2026-08-01
 ---
 # Requirements
 
@@ -48,8 +48,9 @@ last_updated: 2026-07-31
 | `REQ-CAL-001` | Calibration MUST compare SFace and Buffalo M and show the three named threshold profiles with proposed value, counts, precision, recall, sample size and attempt drill-down. | FR-DEV-05..07 |
 | `REQ-CAL-002` | Calibration MUST analyze each input quality gate independently, support version/parameter before-after comparison and leave serving-setting application as an explicit manual developer action. | FR-DEV-08..10 |
 | `REQ-CAL-003` | Calibration MAY run on the shared `BackgroundPhotoWorker` and delay photo processing during debugging; interruption MUST become visible, photo processing MUST resume, and rerun remains manual without preemption, priority scheduling or a separate Calibration worker. | FR-DEV-11, NFR-PERF-03 |
-| `REQ-REL-001` | Central runtime MUST operate independently of the display session; the display MUST recover and retain local advertising, while realtime work uses one slot/deadline without a waiter queue and remains short-lived and non-replayed. | NFR-REL-01..03 |
+| `REQ-REL-001` | Central runtime MUST start and operate independently of the local display session. Chromium/display MUST restart automatically after browser failure and return to local advertising when the central HTTPS origin is reachable, while an already loaded client retains advertising through transient server/network failure. Realtime MUST use exactly one inference slot and one server deadline without a waiter queue; a concurrent admitted request receives typed `busy`, and unfinished realtime work is interrupted rather than replayed after restart. | NFR-REL-01..03 |
 | `REQ-REL-002` | The PostgreSQL photo-processing queue MUST preserve its `pending`/`processing` population across backend/worker restart, return unfinished work to `pending`, restart idempotently without duplicate final faces, and keep primary-storage capacity observable. | NFR-REL-04..05 |
+| `REQ-REL-003` | An authorized operator MUST have a documented, executable recovery procedure for browser failure and ordinary central-runtime/server restart while the primary PostgreSQL/MinIO volumes remain intact. Its steps and recovery checks MUST be verifiable without claiming recovery from irreversible loss of the sole primary disk/server. | NFR-REL-05 |
 | `REQ-SEC-001` | Public access MUST use HTTPS, internal stores/services MUST stay private, СПА identity MUST derive from a hashed client token, and required rate-limit, SSH and browser-sandbox controls MUST apply. | NFR-SEC-01..03 |
 | `REQ-SEC-002` | The managed kiosk MUST pre-authorize its central origin for Local Network Access. ESP32 MUST allow that exact origin through CORS, handle Authorization preflight and validate one manually provisioned Bearer secret stored in the kiosk browser profile and absent from URLs and logs; pairing, automatic rotation, PKI and a separate sensor-credential lifecycle are absent. | NFR-SEC-07, AC-25 |
 | `REQ-DATA-001` | Logs MUST expire after 30 days and ordinary Attempts/evidence, including persisted capture-derived diagnostic media, after 90 days. Only the curated promoted subset may survive until explicit deletion; participant names remain annotation-only, and the latest cleanup outcome MUST be visible. | NFR-REL-05, NFR-DATA-01..04 |
@@ -65,8 +66,8 @@ criterion and the conditions that change pass/fail.
 |---|---|---|
 | `NFR-PERF-01`, `NFR-PERF-02`, `NFR-PERF-04`, `NFR-PERF-05` | `REQ-PERF-001` | Same 19/20 joint correctness and one-clock `<10 s` QR gate; timeout/no-match remain failures and diagnostic timing stays observable. |
 | `NFR-PERF-03` | `REQ-ING-004`, `REQ-CAL-003` | Full-population 95% `<15 min` ingest SLO with the explicit developer-Calibration delay condition. |
-| `NFR-REL-01`, `NFR-REL-02`, `NFR-REL-03` | `REQ-REL-001` | Independent central runtime, recoverable advertising and singleton realtime slot/deadline without waiter replay. |
-| `NFR-REL-04`, `NFR-REL-05` | `REQ-REL-002`, `REQ-DATA-001` | Restart-safe idempotent Photo queue, separate primary-capacity visibility and observable rerunnable cleanup result. |
+| `NFR-REL-01`, `NFR-REL-02`, `NFR-REL-03` | `REQ-REL-001` | Independent central-runtime start/operation, automatic Chromium recovery when the origin is reachable, loaded-client advertising through transient failure, and singleton realtime slot/deadline with typed `busy`, no waiter queue and no restart replay. |
+| `NFR-REL-04`, `NFR-REL-05` | `REQ-REL-002`, `REQ-REL-003`, `REQ-DATA-001` | Restart-safe idempotent Photo queue, separate primary-capacity visibility, observable rerunnable cleanup result and a verifiable browser/intact-volume recovery procedure. |
 | `NFR-REL-06` | `REQ-INV-003` | One fixed-snapshot hard purge resumes without target loss or duplication. |
 | `NFR-SEC-01`, `NFR-SEC-02`, `NFR-SEC-03` | `REQ-SEC-001` | HTTPS/private topology, hashed-token СПА binding, rate limiting, key-only SSH and sandboxed display. |
 | `NFR-SEC-04` | `REQ-DIAG-003` | Sanitized operator view and developer-only protected diagnostic detail. |
@@ -126,8 +127,9 @@ criterion and the conditions that change pass/fail.
 | `REQ-CAL-001` | [EP-003](epics/EP-003.md) | [FT-011](features/FT-011.md) | `FT-011-AC-001`, `FT-011-AC-006`; PRD AC-12 | planned |
 | `REQ-CAL-002` | [EP-003](epics/EP-003.md) | [FT-011](features/FT-011.md) | `FT-011-AC-002..004`, `FT-011-AC-006`; PRD AC-12 | planned |
 | `REQ-CAL-003` | [EP-003](epics/EP-003.md) | [FT-011](features/FT-011.md) | `FT-011-AC-005`; PRD FR-DEV-11 worker-interruption evidence | planned |
-| `REQ-REL-001` | [EP-002](epics/EP-002.md), [EP-003](epics/EP-003.md) | [FT-003](features/FT-003.md), [FT-005](features/FT-005.md), [FT-007](features/FT-007.md) | `FT-003-AC-002`, `FT-003-AC-007..008`, `FT-005-AC-005`, `FT-007-AC-005`; PRD AC-14 and physical-site verification | planned |
+| `REQ-REL-001` | [EP-002](epics/EP-002.md), [EP-003](epics/EP-003.md) | [FT-003](features/FT-003.md), [FT-004](features/FT-004.md), [FT-005](features/FT-005.md), [FT-007](features/FT-007.md) | `FT-003-AC-002`, `FT-003-AC-007..008`, `FT-003-AC-011..012`, `FT-004-AC-007..008`, `FT-005-AC-005`, `FT-007-AC-005`; PRD AC-14, NFR-REL-01..03 and physical-site verification | planned |
 | `REQ-REL-002` | [EP-001](epics/EP-001.md) | [FT-002](features/FT-002.md) | `FT-002-AC-002..003`, `FT-002-AC-006`; PRD AC-06 and worker-restart recovery evidence | planned |
+| `REQ-REL-003` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md) | `FT-003-AC-013`; PRD NFR-REL-05 browser/intact-volume recovery-procedure evidence | planned |
 | `REQ-SEC-001` | [EP-001](epics/EP-001.md), [EP-002](epics/EP-002.md) | [FT-001](features/FT-001.md), [FT-003](features/FT-003.md), [FT-004](features/FT-004.md), [FT-006](features/FT-006.md) | `FT-001-AC-004`, `FT-003-AC-003`, `FT-003-AC-009`, `FT-004-AC-005`, `FT-006-AC-004`; PRD NFR-SEC-01..03 | planned |
 | `REQ-SEC-002` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md) | `FT-003-AC-003`; PRD AC-25 | planned |
 | `REQ-DATA-001` | [EP-003](epics/EP-003.md) | [FT-007](features/FT-007.md), [FT-008](features/FT-008.md), [FT-009](features/FT-009.md), [FT-010](features/FT-010.md), [FT-011](features/FT-011.md) | `FT-007-AC-004`, `FT-008-AC-005`, `FT-009-AC-003`, `FT-010-AC-002`, `FT-010-AC-004`, `FT-011-AC-006`; PRD NFR-REL-05 and AC-13 | planned |
