@@ -68,8 +68,10 @@ status: active
 - [.memory-bank/guides/](guides/): Valid HOW docs для использования, запуска и troubleshooting.
 - [.memory-bank/adrs/](adrs/): ADR решения.
 
-- [.memory-bank/domains/](domains/): Subject-based domain models, storage, schemas, migrations, and persistence rules.
-- [.memory-bank/contracts/](contracts/): Контракты и boundary specs (prefer when present).
+- [.memory-bank/domains/index.md](domains/index.md): subject-based domain
+  models, storage, schemas, migrations and persistence rules.
+- [.memory-bank/contracts/index.md](contracts/index.md): canonical boundary and
+  API contract router.
 - [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md): Canonical
   capability ownership, cross-store/auth/media contracts, application
   boundaries and cross-slice write rules.

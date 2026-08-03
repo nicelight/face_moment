@@ -1,0 +1,135 @@
+{
+  "id": "TASK-003-T2-FT-001-W1",
+  "title": "Implement atomic Photo admission and recovery",
+  "status": "ready",
+  "wave": "W1",
+  "feature": "FT-001",
+  "reqs": [
+    "REQ-ING-003",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0"
+  ],
+  "touched_files": [
+    "pyproject.toml",
+    "migrations/versions/",
+    "src/face_moment/inventory/",
+    "src/face_moment/serving_control/",
+    "src/face_moment/processing/",
+    "src/face_moment/infrastructure/database.py",
+    "src/face_moment/infrastructure/object_store.py",
+    "src/face_moment/infrastructure/settings.py",
+    "tests/",
+    "scripts/verify-photo-admission.sh"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Compose configuration",
+      "command": "docker compose config --quiet",
+      "required": true
+    },
+    {
+      "name": "Application image build",
+      "command": "docker compose build",
+      "required": true
+    },
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Python tests",
+      "command": "docker compose run --rm --no-deps backend python -m pytest tests/test_foundation.py tests/unit",
+      "required": true
+    },
+    {
+      "name": "Isolated Photo admission verification",
+      "command": "bash scripts/verify-photo-admission.sh",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "evidence_required": [
+    "FT-001-AC-002 RED: before changing production behavior, an isolated sequential/concurrent same-scope duplicate probe must fail to obtain exactly one accepted winner plus duplicate losers with one Photo, one serving-pending row and one retained original; retain the failing assertion and disposable-state conditions under .tasks/TASK-003-T2-FT-001-W1/.",
+    "FT-001-AC-002 GREEN: the claim-equivalent isolated probe must record request outcomes, configured scope/checksum, Photo/pending/object counts, loser-candidate deletion, pass/fail comparison and owned cleanup artifact.",
+    "FT-001-AC-003 RED: an isolated success/exception-before-commit probe must show that the absent implementation cannot establish the required all-or-none Photo plus serving-pending publication; retain the claim-scoped failure.",
+    "FT-001-AC-003 GREEN: success and injected rollback must record the transaction boundary, exactly one complete pair or zero database admission, decisive row counts, comparison and artifact.",
+    "FT-001-AC-005 RED: an isolated post-object/pre-commit interruption and re-upload fixture must fail before implementation to demonstrate the accepted no-database-admission/recovery behavior; the probe uses only a disposable bucket prefix and database state.",
+    "FT-001-AC-005 GREEN: the same fixture must record the inaccessible orphan condition, zero Photo/pending rows, successful ordinary re-upload, final object/database counts, safe rerun and owned cleanup.",
+    "Migration evidence records the pre-task linear head, the feature revision's direct down_revision, upgrade/downgrade/re-upgrade results, schema constraints and preservation of the Foundation migration without treating a later mutable head as an FT-001 requirement.",
+    "Independent /verify evidence includes a fresh verifier-owned outcome probe and VERDICT: PASS for every task-scoped AC/REQ/spec claim before closure."
+  ],
+  "purpose": "Create the owner-safe data and application boundary that independently admits one valid unique JPEG and recovers according to the accepted PostgreSQL/MinIO contract.",
+  "success_outcome": "From isolated configured state, one valid unique candidate becomes one inventory-owned Photo and one processing-owned serving-revision pending row in a single PostgreSQL commit; rejects and sequential/concurrent duplicates create no extra state, and a post-object/pre-commit interruption leaves no database admission while ordinary re-upload succeeds.",
+  "anti_goals": [
+    "Do not expose an HTTP/UI upload route, implement staff credentials/sessions or claim the authenticated public-boundary outcome owned by TASK-004.",
+    "Do not implement background claiming, inference, retries or ready/no_faces/failed publication from FT-002.",
+    "Do not implement Photo listing, visibility, soft delete/restore, statistics or hard purge from FT-012.",
+    "Do not add Batch, manifest, confirmation, resumable upload, outbox, broker, distributed transaction, orphan lifecycle or generic settings/job machinery."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "FT-002 processing behavior beyond immutable serving-revision identity and initial pending creation",
+      "FT-012 inventory-management behavior and state",
+      "Staff HTTP authentication/session/UI behavior assigned to TASK-004",
+      "Production deployment, production credentials, operator/default persistent-volume mutation or public object-store access"
+    ],
+    "stop_conditions": [
+      "The Photo, serving target, pending-state, uniqueness, transaction or accepted orphan-recovery contract would need to change.",
+      "Implementation requires direct foreign repository writes, business orchestration in an HTTP handler/generic utility/composition root, or a new capability owner.",
+      "The linear Alembic stream or one shared Base/MetaData cannot be preserved.",
+      "The RED/GREEN or integration probe cannot use isolated disposable PostgreSQL/MinIO state with safe rerun and owned cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md#FT-001-AC-002",
+    ".memory-bank/features/FT-001.md#FT-001-AC-003",
+    ".memory-bank/features/FT-001.md#FT-001-AC-005",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md",
+    ".protocols/FT-001/decision-log.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/architecture/system-architecture.md#AD-002",
+    ".memory-bank/architecture/system-architecture.md#AD-003",
+    ".memory-bank/architecture/system-architecture.md#AD-010",
+    ".memory-bank/architecture/system-architecture.md#AD-011",
+    ".memory-bank/contracts/boundary-map.md#postgresql-and-minio-convergence",
+    ".memory-bank/contracts/boundary-map.md#independent-photo-admission",
+    ".memory-bank/states/lifecycle-map.md#independent-photo-admission",
+    ".memory-bank/invariants.md",
+    ".memory-bank/testing/index.md"
+  ],
+  "constraints": [
+    "Primary owner and orchestration root: inventory at src/face_moment/inventory/; serving_control supplies immutable IngestTarget and processing owns only the initial pending command used here.",
+    "Create only the minimum owner-backed active Spa and immutable eligible pipeline-revision records defined by the Photo Admission spec; no production seed, operator settings UI, inference behavior or revision-switch lifecycle is authorized.",
+    "Use direct typed Python application boundaries under the inventory owner; one physical schema and one transaction do not permit direct foreign repository writes or shared business ownership.",
+    "Write candidate bytes under a unique opaque key in the configured private MinIO bucket, calculate SHA-256 over the exact bytes, and keep the accepted key without move/copy.",
+    "Treat uploader_id as an application-supplied immutable UUID in this non-public core task; isolated tests may use a synthetic UUID, and TASK-004 supplies the authenticated principal without requiring a cross-capability database foreign key.",
+    "Use deployment-configured positive compressed-byte, decoded-side and decoded-pixel limits with explicit deterministic test values.",
+    "Author the migration from the current linear Alembic head and verify its own direct ancestry, upgrade/downgrade, schema transition and data behavior.",
+    "Exact owner-local Python filenames and the migration revision filename remain implementation discretion; capability roots, public boundaries and persistence identities do not."
+  ],
+  "invariants": [
+    "PostgreSQL uniqueness on (spa_id, visit_date, checksum_sha256) is the only concurrent winner arbiter.",
+    "A committed accepted result publishes one Photo, server accepted_at and one serving-revision pending row together; rollback publishes none.",
+    "Rejected and duplicate candidates never enter Photo, pipeline, searchable, teaser or N populations and delete only their request-owned object when handled.",
+    "A crash after private object upload but before commit may leave one inaccessible orphan; it creates no database admission and ordinary re-upload remains sufficient recovery.",
+    "The photographer-selected visit_date remains authoritative even when reliable EXIF differs; effective captured_at follows the canonical fallback order."
+  ],
+  "verification_targets": [
+    "FT-001-AC-002: isolated sequential and concurrent duplicate probes compare outcomes plus Photo, serving-pending and MinIO object counts before/after, including loser cleanup.",
+    "FT-001-AC-003: isolated success and injected pre-commit rollback prove the complete Photo+pending pair or zero database admission.",
+    "FT-001-AC-005: isolated post-object/pre-commit interruption proves no exposed/database admission, successful ordinary re-upload, safe rerun and owned cleanup.",
+    "REQ-ARCH-001: static/integration evidence locates inventory as the primary owner, crosses only typed serving_control/processing boundaries and finds no handler, generic-util or composition-root business orchestration.",
+    ".memory-bank/domains/photo-admission.md#migration-and-verification-targets"
+  ]
+}

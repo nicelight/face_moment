@@ -52,10 +52,47 @@ work and report potential or evident problems.
 
 ## Creator Vibe Lens
 
-Treat `creator-vibe` as the persistent interpretive lens for every user message, before classifying the task or acting on its literal wording.
-Silently look beneath the words for what the user is truly trying to make possible: how the result should feel, what it should give the person on the other side, what must remain recognizably theirs, and what standard of quality they are reaching for. Carry that intent through decisions, implementation, language, defaults, failure states, and verification. Do not preserve the words and lose the point.
-This lens is always active, but it never overrides explicit instructions, factual accuracy, safety boundaries, or exact-output requests. Do not invent requirements or expand scope in its name. For factual, mechanical, or fully specified tasks, let it show only as care, clarity, and respect for the user's time. When success materially depends on taste, voice, human experience, or unstated choices, load and follow the installed `creator-vibe` skill before narrower skills.
-Do not explain this interpretation back to the user unless asked. Let it show in the work.
+Apply `creator-vibe` only when a user message introduces a new idea or materially
+changes an existing one. Before classifying or acting on that message literally,
+silently look beneath its words for what the user is trying to make possible:
+how the result should feel, what it should give the person on the other side,
+and what must remain recognizably theirs. Carry that intent through the work.
+
+The lens never overrides explicit instructions, factual accuracy, safety
+boundaries, exact-output requests, or strict scope. Do not invent requirements
+or expand scope in its name. Do not apply or carry the lens forward for factual,
+mechanical, fully specified, or follow-up messages that introduce no new idea.
+
+When a qualifying idea materially depends on taste, voice, human experience, or
+unstated choices, load and follow the installed `creator-vibe` skill before
+narrower skills. Do not explain the interpretation unless asked; let it show in
+the work.
+
+## Reasoning Policy: Selection Before Expansion
+
+**Core rule:** A sufficient solution is a reason to stop expanding, not an
+invitation to add optional improvements!
+
+Within the discretion left to you, keep any material solution you create or
+choose as a candidate until its necessity, sufficiency, material consequences,
+and total ownership cost support it as the simplest known way to satisfy the
+requested outcome and required contracts.
+
+Once a sufficient solution exists, do not propose or add improvements by
+inertia. Treat every additional mechanism, abstraction, safeguard, edge-case
+handling, future-proofing measure, or process as a separate candidate. Include
+it only when an accepted requirement, applicable constraint, or evidenced
+material risk justifies its total implementation, verification, and ownership
+cost. Possible usefulness, best practice, or a desire for greater completeness
+is not sufficient justification.
+
+If an additional mechanism compensates for a weakness introduced by the base
+solution, first revise or simplify the base candidate. Stop when the outcome and
+required contracts are satisfied. Do not include optional improvements or
+rejected candidates unless the user explicitly asks for them.
+
+This gate does not authorize reopening accepted requirements, explicit operator
+decisions, or governing sources.
 
 ## KISS / Complexity and Requirement Gate
 
@@ -148,6 +185,24 @@ After finishing a meaningful unit of work:
 - Operational artifacts: `.tasks/` (NOT part of Memory Bank)
 - Long-running plans/logs: `.protocols/`
 
+## Log papercuts
+
+When minor workflow friction occurs—a failed tool call, confusing setup, flaky
+command, stale cache, misleading error, missing helper, or non-obvious
+gotcha—record it.
+
+Use one Markdown file per agent session. Create it only when the first papercut
+occurs, at `PAPERCUTS/<model> __ MM-DD-YYYY HH.MM.md`, using the current model
+identifier and the local time of that first papercut. Replace filename-unsafe
+characters in the model identifier with `-`. Reuse that file for every later
+papercut in the same session; do not create a file for each note and do not add
+timestamps inside the file.
+
+Log papercuts proactively when they occur, but do not interrupt the main task.
+Do not record a papercut already present in `PAPERCUTS/`. Papercuts are minor
+workflow friction, distinct from completed-work logs, real bugs, tracked issues,
+and technical debt.
+
 ## Where skills live (don’t confuse)
 - Codex CLI reads project skills from `.agents/skills/<name>/SKILL.md` (not from `.codex/`).
 - Claude Code reads project skills from `.claude/skills/<name>/SKILL.md`.
@@ -166,7 +221,6 @@ After finishing a meaningful unit of work:
 - Scheduler mode: T2 requires full protocol state, applicable task/spec gates, and `/verify` `VERDICT: PASS`; per-task `/red-verify` is not required for T2 task closure.
 - Scheduler mode: T2 feature completion requires `/red-verify --feature FT-<ID>` with `SEMANTIC_VERDICT: semantic-pass` after all feature tasks are implemented, recorded in the feature doc. Run it when the last T2 feature task closes, before the wave-boundary `/mb-sync` and strict doctor.
 - Scheduler mode: T3 requires full protocol state, applicable task/spec gates, `/verify` `VERDICT: PASS`, and per-task `/red-verify` `SEMANTIC_VERDICT: semantic-pass` before the scheduler marks `done`.
-- Scheduler mode: T3 also requires the exact marker line `HUMAN_CHECKPOINT: done`.
 - Manual mode: T0/T1 may close in `/exe` with compact evidence when the explicit manual top-level owner conditions are met; standalone `/verify` is optional for uncertainty, widened scope, or explicit request. T2 becomes closure-eligible after `/verify PASS` when full protocol plus applicable task/spec gates are satisfied; the explicit owner writes the lifecycle decision. T3 must run per-task `/red-verify` before final closure; full `/mb-sync` runs at the end of the current wave unless an earlier reconciled-state dependency or explicit owner request requires it.
 - If `/exe` or `/verify` discovers a required higher tier, stop scope growth and route the original task ID through `/feature-to-tasks FT-<NNN>` for controlled rebuild/split; rerun task-plan review and applicable doctor gates before executing the replacement task ID.
 - T2/T3 use the indexed task card as the complete task-scoped handoff; `/mb-doctor` checks structural completeness and `/review-tasks-plan` checks semantic applicability and sufficiency.

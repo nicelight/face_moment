@@ -74,7 +74,8 @@ status: active
 - [ ] Если используются spec-driven support docs, они явно маршрутизированы через `spec-index.md` и не противоречат `architecture/*`, `guides/*`, `contracts/*`, `states/*`, `runbooks/*`, `testing/*`.
 - [ ] If responsibility/scope boundaries changed, existing
   `contracts/boundary-map.md` or related contracts are updated/recommended;
-  task records still use existing link fields plus `runtime_context`.
+  accepted links agree with owning artifacts and tasks use existing fields.
+  Sync repairs links but never changes semantic edges.
 
 ### 2) SDD design state
 - [ ] `.memory-bank/spec-backbone.md` Global Backbone Status and Backbone Area
@@ -148,9 +149,6 @@ status: active
 
 ### 9) Index
 - [ ] `.memory-bank/index.md` содержит аннотированные ссылки на все новые/изменённые документы.
-- [ ] Router-индексы в project documentation folders с >3 документами
-      присутствуют; exact framework-owned `.memory-bank/templates/protocols/`
-      leaf исключён.
 
 ## Формат changelog
 

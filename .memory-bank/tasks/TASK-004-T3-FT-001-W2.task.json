@@ -1,0 +1,136 @@
+{
+  "id": "TASK-004-T3-FT-001-W2",
+  "title": "Expose the authenticated independent uploader",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-001",
+  "reqs": [
+    "REQ-ING-001",
+    "REQ-ING-002",
+    "REQ-SEC-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-003-T2-FT-001-W1"
+  ],
+  "touched_files": [
+    "pyproject.toml",
+    "migrations/versions/",
+    "src/face_moment/platform/auth/",
+    "src/face_moment/inventory/",
+    "src/face_moment/entrypoints/backend.py",
+    "src/face_moment/infrastructure/settings.py",
+    "compose.yaml",
+    "deploy/Caddyfile",
+    "tests/",
+    "scripts/verify-photo-admission.sh"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Compose configuration",
+      "command": "docker compose config --quiet",
+      "required": true
+    },
+    {
+      "name": "Application image build",
+      "command": "docker compose build",
+      "required": true
+    },
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Python tests",
+      "command": "docker compose run --rm --no-deps backend python -m pytest tests/test_foundation.py tests/unit",
+      "required": true
+    },
+    {
+      "name": "Isolated authenticated uploader verification",
+      "command": "bash scripts/verify-photo-admission.sh",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/contracts/photo-admission-api.md",
+    ".memory-bank/domains/staff-access.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "evidence_required": [
+    "FT-001-AC-001 RED: before production behavior changes, add and run the isolated same-origin photographer journey; retain the claim-scoped failure showing that login, target selection and independent valid/invalid/undecodable/mixed-EXIF outcome reporting are absent.",
+    "FT-001-AC-001 GREEN: the claim-equivalent journey must record each file's HTTP/UI outcome, selected spa_id/visit_date, persisted authoritative date, EXIF warning behavior, decisive comparison and screenshot/response/database artifact without one file changing another.",
+    "FT-001-AC-004 RED: in disposable state, the pre-implementation auth/role/CSRF/rate/topology/redaction probe must fail the accepted boundary claims rather than using an artificial syntax or setup failure; retain all independently harm-driving failed assertions.",
+    "FT-001-AC-004 GREEN: fresh probes must record unauthenticated 401, wrong-role and CSRF 403, successful below-limit requests, configured above-limit 429, HTTPS-only host publication, private PostgreSQL/MinIO/internal ports, and absence of passwords/session/CSRF tokens, headers, hashes, object keys and storage credentials from URLs/logs, with pass/fail comparisons and artifacts.",
+    "Staff lifecycle evidence records Argon2id-only password persistence, CLI provision/reset/deactivate, absolute expiry, logout, session revocation after reset/deactivation, cookie attributes and safe repeated deactivation using isolated test credentials.",
+    "The T3 probe records its unique Compose project, disposable volumes/test credentials, explicit limit values, task-owned MinIO prefix, safe rerun and cleanup; it never touches operator/default state or expands permissions.",
+    "Independent /verify evidence supplies fresh functional proof for every harm-driving claim and VERDICT: PASS; per-task /red-verify supplies SEMANTIC_VERDICT: semantic-pass and the explicit owner records HUMAN_CHECKPOINT: done before closure."
+  ],
+  "purpose": "Expose the complete FT-001 photographer outcome through a minimal same-origin staff session and a secure, rate-limited one-file HTTPS upload UI/API that delegates all admission behavior to inventory.",
+  "success_outcome": "An active photographer can log in, select one configured СПА and authoritative visit_date, submit multiple ready-JPEG candidates as independent requests, and see truthful accepted/rejected/duplicate results while wrong/expired/revoked roles, CSRF failures and excess rates are rejected and internal stores, ports and secrets remain private.",
+  "anti_goals": [
+    "Do not duplicate Photo admission, serving-target or pending-state business logic in FastAPI/UI/platform-auth/composition code; use TASK-003's inventory boundary.",
+    "Do not add OAuth, MFA, self-registration, browser password recovery, multi-role policy machinery, distributed rate limiting or a custom HTTP error framework.",
+    "Do not add Batch/manifest/confirmation, external ingest, RAW, resumable upload, direct/presigned MinIO access or a second upload API.",
+    "Do not implement FT-002 processing/searchability or FT-012 Photo inventory management."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Direct HTTP/UI/platform-auth writes to Photo, Spa, processing or MinIO repositories",
+      "FT-002 processing/searchable behavior and FT-012 inventory operations",
+      "Production deployment/certificates, public service/store ports, real operator credentials or operator/default persistent data",
+      "OAuth/MFA/self-registration/recovery, distributed limiter/cache, custom error registry or additional ingest channels"
+    ],
+    "stop_conditions": [
+      "Execution requires changing the canonical endpoint, response, staff role, session/CSRF, rate-limit, authoritative-date or standard failure contract.",
+      "Business orchestration cannot remain under inventory or would need direct cross-slice writes or placement in a handler, generic utility or composition root.",
+      "A public PostgreSQL/MinIO/internal port, browser-visible object key/credential or plaintext/digest secret in URL/logs becomes necessary.",
+      "Any harm-driving RED/GREEN or security verification cannot run in already authorized isolated disposable state with safe rerun and owned cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md#FT-001-AC-001",
+    ".memory-bank/features/FT-001.md#FT-001-AC-004",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md",
+    ".protocols/FT-001/decision-log.md",
+    ".memory-bank/tasks/TASK-003-T2-FT-001-W1.task.json"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/photo-admission-api.md",
+    ".memory-bank/domains/staff-access.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/architecture/system-architecture.md#AD-001",
+    ".memory-bank/architecture/system-architecture.md#AD-002",
+    ".memory-bank/architecture/system-architecture.md#AD-009",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries",
+    ".memory-bank/contracts/boundary-map.md#authentication-and-data-specific-delivery",
+    ".memory-bank/contracts/boundary-map.md#http-failure-contract",
+    ".memory-bank/testing/index.md"
+  ],
+  "constraints": [
+    "Primary business owner remains inventory at src/face_moment/inventory/; platform/auth authenticates, the inventory application boundary authorizes and admits, and FastAPI/UI only adapt transport.",
+    "Implement the exact same-origin routes, fields, response shapes and standard status mappings from the Photo Admission API without a parallel API or shared error framework.",
+    "Use Argon2id, opaque high-entropy hashed sessions, one configured positive absolute TTL, Secure/HttpOnly/SameSite session cookie, matching CSRF cookie/header and owner-backed provision/reset/deactivate commands.",
+    "Use deployment-configured positive username/IP login and principal/session/IP upload limits with deterministic test values; the one-backend pilot adds no distributed store or waiter queue.",
+    "Keep PostgreSQL, MinIO and internal application ports private behind the existing HTTPS edge; never expose object keys or credentials to the browser.",
+    "Exact owner-local module/template/static filenames and dependency package versions remain implementation discretion where they preserve the canonical API, data and security contracts."
+  ],
+  "invariants": [
+    "Only an active photographer principal may enter Photo admission; missing/invalid/expired/revoked authentication returns 401 and wrong role or CSRF returns 403.",
+    "Every selected file is one independent request and visible row; there is no Batch, manifest, confirmation or cross-file commit/result dependency.",
+    "The submitted visit_date stays authoritative; mixed EXIF may warn but cannot rewrite, regroup or reject that scope solely for mismatch.",
+    "Configured excess upload rate returns standard HTTP 429 without weakening authentication, CSRF or private-service topology.",
+    "Passwords, plaintext/digest session and CSRF tokens, auth headers, object keys and storage credentials never enter URLs or application logs."
+  ],
+  "verification_targets": [
+    "FT-001-AC-001: isolated same-origin journey covers active login, target/date selection and independent valid, invalid, undecodable, mixed-EXIF and duplicate file results with persisted authoritative-date comparison.",
+    "FT-001-AC-004: fresh isolated probes cover 401, role/CSRF 403, below-limit success, above-limit 429, HTTPS-only publication, private internal services and secret/object-key redaction.",
+    "REQ-SEC-001: record configured rate conditions, cookie/CSRF attributes, observed statuses, effective Compose topology, redacted logs and explicit pass/fail comparison artifacts.",
+    "REQ-ARCH-001: boundary evidence locates orchestration in inventory and proves transport/platform-auth/composition code performs no foreign business writes.",
+    ".memory-bank/contracts/photo-admission-api.md#verification-targets",
+    ".memory-bank/domains/staff-access.md#verification-targets"
+  ]
+}
