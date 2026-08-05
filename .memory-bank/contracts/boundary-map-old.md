@@ -1,281 +1,144 @@
 ---
-description: Canonical capability ownership, public application boundaries and cross-slice write rules for the greenfield pilot.
+description: Canonical accepted module/change-unit dependency graph and boundary contracts for the Face Moment pilot.
 status: active
-last_updated: 2026-08-01
+last_updated: 2026-08-04
 source_of_truth:
   - .memory-bank/contracts/boundary-map.md
 ---
 # Boundary Map
 
-## Status And Scope
+## Purpose
 
-The verified Foundation supplies runtime substrate but no product behavior.
-This map constrains the accepted target implementation together with the
-[system architecture](../architecture/system-architecture.md) and
-[lifecycle map](../states/lifecycle-map.md); it does not describe existing
-code.
+- Keep one accepted inventory of project modules/change units and every allowed
+  significant dependency between them.
+- Treat `Consumer -> Provider` as the direction of dependency. Observed imports
+  or calls are evidence, not accepted edges by themselves.
+- Constrain the target product implementation together with the
+  [system architecture](../architecture/system-architecture.md) and
+  [lifecycle map](../states/lifecycle-map.md). The verified Foundation supplies
+  runtime substrate but no product behavior.
 
-## Capability Boundaries
+## Modules
 
-| Owner | Public application boundary | Owned mutable state and transitions | Forbidden ownership | Allowed dependencies | Minimum credible proof |
-|---|---|---|---|---|---|
-| `serving_control` | Read immutable `ServingContext`/`IngestTarget`; apply audited manual setting and serving-revision changes. | СПА/timezone, active `visit_date`, pipeline/settings revision, display token lifecycle and change audit. | Photos, processing results, Attempts, sessions, evidence or Calibration recommendations. | Command `processing` revision validation; use platform auth/runtime adapters. | Client input cannot override СПА/date; one Attempt sees one immutable snapshot; failed revision changes require explicit operator recovery. |
-| `inventory` | Admit one JPEG; query authorized Photos; soft-delete/restore; restore-all; start/read one global hard purge; read recent per-СПА counters and configured primary-storage free capacity. | Photo identity, uploader, authoritative date, effective capture time, accepted time, checksum/original reference, active marker, authorization and global purge orchestration/progress. | Pipeline transition rules, embeddings, Promo integrity, core Attempt or evidence retention. | Read `serving_control` targets and published `processing` state/timestamp projections; command `processing`; use platform auth/storage/host-capacity adapters. | Duplicate arbitration; owner-scoped visibility; processing-projection counters; separate PostgreSQL/MinIO free-capacity values; fixed-snapshot purge recovery. |
-| `processing` | Create initial `pending`; report readiness; validate a pipeline revision; process Photo; exact compatible search; offline evaluate; clean Photo-derived state on inventory purge. | Pipeline catalog, processing state, derivatives/faces/embeddings, quality gates, exact-search, validation and evaluation rules. | Photo admission/visibility, live setting mutation, Promo Attempt/session assembly or evidence retention. | Read Photo/serving projections; use storage/model adapters. | Restart from `processing`, one final face set, compatible exact search, revision validation and idempotent cleanup. |
-| `promo` | Execute fresh attempt; accept display outcome; exchange/read QR continuation; skip unavailable hard-purged media during an existing session read; run/read retention cleanup. | Core Attempt, result/session, candidate union, teasers, `N`, QR ticket, session-wide browser access and latest retention result. | Photo/processing/settings writes or detailed diagnostic evidence. | Read `serving_control`/`inventory`; command `processing`; command `diagnostics` best-effort evidence and retention expiry. | Chronological first-at-most-20 and zero-proposal request behavior; four unique teasers; correct issued `N`; display acknowledgement; session expiry; missing-media skip and observable retention outcome. |
-| `diagnostics` | Record/search evidence and logs under their data-specific access rules; annotate; run evaluation; request audited manual apply; expire owned logs/evidence and report Attempt-deletion eligibility. | Detailed evidence/logs, access views, annotations, curated Calibration cases, recommendations and diagnostic-data expiry. | Core Attempt/result/session, aggregate cleanup result or direct serving-setting change. | Read `promo`; command `processing` evaluation and `serving_control` apply. | Sanitized/developer split for protected detail, capture-media classification, visible incomplete evidence, promotion whitelist and 30/90-day expiry. |
-
-Shared PostgreSQL access does not grant shared write authority. A slice may read
-a published projection; only the owner may validate and perform its command or
-transition.
-
-## Shared PostgreSQL Contract
-
-- The modular monolith uses one PostgreSQL application schema, one SQLAlchemy
-  `Base/MetaData`, one Alembic configuration and one sequential migration
-  stream.
-- Table models and repositories remain in their owning capability packages.
-  One physical schema does not permit a slice to issue foreign commands,
-  mutate foreign-owned state or duplicate another slice's business rules.
-- Cross-slice transactions are allowed only through public application
-  boundaries under the named orchestration owner; they do not create shared
-  business ownership.
-- Foreign keys and `ON DELETE` behavior are deliberate per relation. Database
-  cascade MUST NOT cross a capability ownership boundary. In particular,
-  deleting a Photo MUST NOT cascade into Promo sessions, core Attempts or
-  diagnostic evidence; the inventory-owned hard-purge flow calls only the
-  `processing` cleanup boundary and preserves those records.
-- Deleting a core Attempt MUST NOT cascade into `diagnostics` rows. Each
-  capability deletes only its own retention data; `promo` removes only Attempts
-  reported eligible by `diagnostics`.
-- `promo` owns one project-wide latest retention result, not cleanup history or
-  a jobs lifecycle.
-- Per-slice PostgreSQL schemas, database users/ACLs and independent migration
-  pipelines are outside the accepted pilot.
-
-## PostgreSQL And MinIO Convergence
-
-- The backend writes each upload candidate under a unique opaque MinIO key,
-  then validates JPEG type, compressed size, decoded dimensions/pixels and
-  SHA-256. The browser never receives direct MinIO access.
-- PostgreSQL uniqueness on `(spa_id, visit_date, checksum_sha256)` is the
-  concurrent-admission arbiter. A duplicate creates no Photo or processing
-  state and deletes only its own candidate object; an accepted Photo keeps its
-  initial key without object move/copy.
-- The per-Photo PostgreSQL commit publishes `Photo + accepted_at + pending`.
-  A crash before commit may leave a private orphan and lose that admission;
-  retrying the upload is sufficient.
-- Derived media keys are deterministic by
-  `(photo_id, pipeline_revision_id, artifact_kind)`, so the singleton worker may
-  overwrite them safely before atomically replacing face rows and terminal
-  processing state.
-- Retryable cleanup first makes data inaccessible through owner state, then
-  performs idempotent MinIO deletion, then finalizes owning database cleanup.
-  No distributed transaction or per-object recovery lifecycle is required.
-- MinIO versioning and external volume snapshots remain disabled while the
-  no-backup pilot decision is active.
-
-## External And Runtime Boundaries
-
-| Boundary | Contract | Owner | Required constraints |
+| Module / Change Unit | Parent Architecture Unit | Code Root | Responsibility |
 |---|---|---|---|
-| Staff browser -> application | HTTPS staff authentication, independent JPEG upload and authorized Admin UI commands. | `platform/auth` authenticates; the target capability authorizes and handles the command. | MinIO/PostgreSQL stay private; no Batch/manifest/confirmation. |
-| Central HTTPS `SpaPromoClient` -> ESP32 | While active, one HTTP long-poll request to the sensor's fixed mDNS `.local` name with a 10-second timeout; open the next immediately after an event or timeout. Exact path, response and failure semantics are in the [Sensor Passage API](sensor-passage-api.md). | The browser client owns request continuation; ESP32 owns passage-event delivery. | Managed kiosk pre-authorizes the central origin for Local Network Access through `LocalNetworkAccessAllowedForUrls`. ESP32 allows that exact origin through CORS, handles OPTIONS for Authorization and validates one manually provisioned Bearer secret kept out of URLs/logs. No WebSocket, local bridge, separate local client web server, discovery service, pairing, PKI or rotation lifecycle. |
-| `SpaPromoClient` -> realtime | One synchronous `multipart/form-data` request with client-generated `attempt_id`, server-derived СПА, versioned manifest and the first at most 20 chronological BlazeFace crop parts; zero proposals use the same endpoint with the manifest only. Exact path, serialization, validation and outcomes are in the [Realtime Attempt API](realtime-attempt-api.md). | `promo` orchestrates; `processing` performs the already accepted compatible inference/search contract. | No client ranking/top-5/gating/tracking/clustering/deduplication; repeated people are allowed. The request has structural 20-occurrence and 512-pixel crop-side bounds plus a `20 MiB` total-body transport limit; a larger body returns `413` before admission and creates no domain outcome. Concurrent admitted request returns `busy`; closed maintenance/readiness returns `503` before admission and creates no core Attempt. |
-| Display -> application | Idempotent acknowledgement after four teasers decode and QR is fully visible. | `promo`. | Server result issue alone is not Promo success. |
-| QR browser -> application | Ticket exchange and authorized no-store session reads. | `promo`. | 30-minute first-open, shared 60-minute idle state, no per-device grants. |
-| Application/worker -> PostgreSQL | Owner-scoped state writes and published projections. | Each capability owns its rows/invariants. | Direct foreign writes are forbidden even in one database. |
-| Application/worker -> MinIO | Opaque-key private binary read/write/delete behind owner state and applicable authorization. | `inventory` owns originals; `processing` owns derivatives; `diagnostics` owns persisted diagnostic media. | PostgreSQL state determines usability; all stored objects remain private from direct browser access regardless of media classification. |
+| `serving_control` | [Capability-sliced server application](../architecture/system-architecture.md#capability-ownership) | `src/face_moment/serving_control/` | Supply immutable serving context and audited setting/revision changes. |
+| `inventory` | [Capability-sliced server application](../architecture/system-architecture.md#capability-ownership) | `src/face_moment/inventory/` | Admit and manage commercial Photo inventory. |
+| `processing` | [Capability-sliced server application](../architecture/system-architecture.md#capability-ownership) | `src/face_moment/processing/` | Produce compatible searchable Photo and query results. |
+| `promo` | [Capability-sliced server application](../architecture/system-architecture.md#capability-ownership) | `src/face_moment/promo/` | Run participant Attempts, Promo results and QR continuation. |
+| `diagnostics` | [Capability-sliced server application](../architecture/system-architecture.md#capability-ownership) | `src/face_moment/diagnostics/` | Explain and calibrate Attempts from protected evidence. |
+| `staff_access` | [Capability-sliced server application](../architecture/system-architecture.md#capability-ownership) | `src/face_moment/platform/auth/` | Authenticate staff and maintain browser-session security state. |
 
-## Authentication And Data-Specific Delivery
+`SpaPromoClient`, ESP32, PostgreSQL and MinIO are external/runtime boundary
+parties, not registered project change units in this graph. Their accepted
+interfaces are linked below. No finer product-module identity or code root is
+added until an owning canonical specification makes it explicit.
 
-- `platform/auth` owns staff principals, credentials and server sessions only.
-  It supports CLI provision/reset/deactivate, Argon2id or bcrypt password
-  hashing, hashed opaque PostgreSQL sessions with one short absolute TTL,
-  logout/revoke and CSRF protection. Photographer, operator and developer
-  authorization remains in the owning capability.
-- SpaPromoClient sends its central-service high-entropy token in the
-  Authorization header. PostgreSQL stores only its hash and the server derives
-  `spa_id` under the
-  [Display Client Access](../domains/display-client-access.md) specification.
-  Client input cannot override that identity.
-- The sensor Bearer secret is a distinct manually provisioned kiosk-profile
-  setting used only in the Authorization header of ESP32 requests. It never
-  enters URLs or logs. The sensor permits only the exact central client origin
-  through CORS and handles its Authorization preflight.
-- Public capture/continuation requests validate the accepted structural and
-  decoded-media constraints plus simple per-token/IP rate limits. The FT-003
-  proposal request has a `20 MiB` total request-body transport limit enforced
-  before domain admission.
-- Commercial Photo originals/previews/teasers and personalized session data
-  remain backend-proxied, authorized and `no-store`. Raw MinIO keys and
-  participant-facing presigned URLs are outside the pilot.
-- Capture-derived reference images, normalized images and face crops are not
-  developer-only solely because they contain media. They may be logged, cached,
-  stored or delivered, but no endpoint, cache or logging path is required. If
-  stored in MinIO, they remain behind the private object-store boundary; any
-  HTTP delivery still enters through the application/edge.
-- Credentials, authentication headers/cookies/tokens, private infrastructure,
-  commercial Photo media, personalized data, participant names/annotations,
-  detailed logs, Calibration and administrative actions retain their existing
-  protection.
-- Display media reads require the SpaPromoClient token plus opaque
-  Attempt/session references. Phone media reads require the Promo session
-  cookie.
+## Dependency Graph
 
-QR ticket exchange is fixed:
+`Consumer -> Provider` means Consumer depends on Provider through the linked
+contract.
 
-1. `GET /q?ticket=<opaque>` validates the ticket hash and 30-minute first-open
-   window.
-2. The backend opens or reuses the Promo session's single browser access state,
-   sets the opaque credential in an `HttpOnly Secure SameSite=Lax` cookie and
-   returns `303` to a token-free session URL.
-3. This route omits the query string from access logs and returns
-   `Cache-Control: no-store` and `Referrer-Policy: no-referrer`.
+| Consumer | Provider | Contract |
+|---|---|---|
+| `inventory` | `staff_access` | [Independent Photo admission](#independent-photo-admission) |
+| `inventory` | `serving_control` | [Independent Photo admission](#independent-photo-admission) |
+| `inventory` | `processing` | [Independent Photo admission](#independent-photo-admission) |
+| `processing` | `inventory` | [Processing input projections](#processing-input-projections) |
+| `processing` | `serving_control` | [Processing input projections](#processing-input-projections) |
+| `promo` | `serving_control` | [Participant Promo](#participant-promo) |
+| `promo` | `inventory` | [Participant Promo](#participant-promo) |
+| `promo` | `processing` | [Participant Promo](#participant-promo) |
+| `promo` | `diagnostics` | [Participant Promo](#participant-promo) |
+| `diagnostics` | `promo` | [Diagnostic evidence and access](#diagnostic-evidence-and-access) |
+| `diagnostics` | `processing` | [Calibration and serving change](#calibration-and-serving-change) |
+| `diagnostics` | `serving_control` | [Calibration and serving change](#calibration-and-serving-change) |
+| `serving_control` | `processing` | [Manual serving-revision switch](#manual-serving-revision-switch) |
+| `promo` | `diagnostics` | [Retention cleanup](#retention-cleanup) |
+| `inventory` | `processing` | [Photo Inventory Operations](#photo-inventory-operations) |
 
-The session stores one `qr_ticket_hash`, `browser_opened_at` and shared
-`browser_last_seen_at`. Explicit navigation/action from any opened phone
-extends the shared 60-minute idle state; asset loads and background polling do
-not.
+## Inline Contracts
 
-## HTTP Failure Contract
+The graph alone owns module topology and dependency direction. The blocks below
+define the allowed interaction, state authority, failure/compatibility rules,
+and forbidden bypasses. Complex external payload, data and verification
+contracts remain in their registered subject specifications.
 
-The application and realtime boundaries use standard HTTP transport semantics
-without a project-specific error framework:
+### Capability application boundaries
 
-| Status | Contract |
-|---|---|
-| `401` | Authentication is missing or invalid. |
-| `403` | The authenticated principal lacks permission. |
-| `413` | The request exceeds an accepted payload bound. An FT-003 total multipart body larger than `20 MiB` is rejected before domain admission and creates no core Attempt or oversize domain outcome. |
-| `422` | Request validation fails. |
-| `429` | The applicable rate limit is exceeded. |
-| `503` | Serving maintenance or runtime readiness is closed; capture/search is rejected before admission and creates no core Attempt. |
-| `5xx` | An internal or upstream technical failure occurred. |
+| Module | Public application boundary | Owned mutable state and transitions | Forbidden ownership |
+|---|---|---|---|
+| `serving_control` | Read immutable `ServingContext`/`IngestTarget`; apply audited manual setting and serving-revision changes. | СПА/timezone, active `visit_date`, pipeline/settings revision, display-token lifecycle and change audit. | Photos, processing results, Attempts, sessions, evidence or Calibration recommendations. |
+| `inventory` | Admit one JPEG; query authorized Photos; soft-delete/restore; restore-all; start/read one global hard purge; read recent per-СПА counters and primary-storage capacity. | Photo identity, uploader, authoritative date, effective capture time, accepted time, original reference, visibility, authorization and purge progress. | Pipeline transition rules, embeddings, Promo integrity, core Attempts or evidence retention. |
+| `processing` | Create initial `pending`; report readiness; validate a pipeline revision; process Photo; exact compatible search; offline evaluate; clean Photo-derived state on purge. | Pipeline catalog, processing state, derivatives/faces/embeddings, quality gates, exact search, validation and evaluation. | Photo admission/visibility, live setting mutation, Promo Attempt/session assembly or evidence retention. |
+| `promo` | Execute a fresh attempt; accept display outcome; exchange/read QR continuation; skip unavailable hard-purged media; run/read retention cleanup. | Core Attempt, result/session, candidate union, teasers, `N`, QR/browser access and latest retention result. | Photo, processing or settings writes and detailed diagnostic evidence. |
+| `diagnostics` | Record/search evidence and logs; expose role-scoped views; annotate; run evaluation; request explicit apply; expire owned data. | Detailed evidence/logs, access views, annotations, curated Calibration cases, recommendations and diagnostic-data expiry. | Core Attempt/result/session, aggregate cleanup result or direct serving-setting mutation. |
+| `staff_access` | Authenticate staff browser sessions and return the current principal. | Staff principals, password hashes, opaque session/CSRF token hashes, expiry and revocation. | Photo or other capability authorization, domain state or business orchestration. |
 
-An admitted capture/search request returns `2xx` with a compact typed domain
-result even when its outcome is `busy`, `deadline`, `unacceptable_query` or
-`insufficient_results`. These outcomes are not transport errors. `429` is a
-rate-limit rejection, while `busy` describes the valid request's singleton-slot
-condition; `422` is request validation failure, while `unacceptable_query`
-describes evaluated query quality. Clients make decisions from the HTTP status
-and typed outcome; response prose, especially `5xx` text, is never a control
-contract. A technical failure may also be persisted on the core Attempt for
-diagnostics, but its transport signal remains `5xx`.
+Shared PostgreSQL access does not grant shared write authority. A module may read
+a published projection only through an accepted edge; only the owner may
+validate and perform its commands or transitions.
 
-Feature-level endpoint design may define the smallest required success payload,
-but MUST NOT add a shared custom error envelope, error-code registry or mapping
-framework. Contract verification must cover representative standard-status
-mappings and prove that admitted non-success capture/search outcomes remain
-domain outcomes.
-
-## SpaPromoClient Proposal Contract
-
-- The browser-native Chromium client loads from the central HTTPS origin.
-  MediaPipe BlazeFace Full-range runs in its browser runtime with a separate
-  release-versioned model asset; TensorFlow.js and a second project-selected ML
-  runtime are absent. YuNet 2026may FP32 is a sequential replacement only after
-  concrete BlazeFace incompatibility, never a parallel implementation or
-  generic detector abstraction.
-- Frames above the deployment-configured maximum are downscaled before entering
-  the ring buffer or detector. The client traverses a ready reference series
-  from earliest pre-trigger to latest post-trigger, preserves BlazeFace output
-  order within each frame and stops processing immediately at occurrence 20.
-  Repeated occurrences of one person are valid.
-- The client does not rank, select a top-5, authoritatively quality-gate, track,
-  cluster, deduplicate, embed or search proposals.
-- Each occurrence becomes a centered square crop with side
-  `1.2 × max(bbox_width, bbox_height)`, clipped to the source frame without
-  alignment, landmark normalization or upscaling. A crop longer than 512 pixels
-  is proportionally downscaled to 512 and encoded as ordinary sRGB JPEG without
-  EXIF/source metadata.
-- JPEG quality is selected on the configuration/debug page from exactly `0.7`,
-  `0.75`, `0.8`, `0.85`, `0.9`, `0.95`; default `0.85`. Kiosk-profile
-  `localStorage` retains it, the value applies from the next Attempt and is
-  recorded in that request's manifest.
-- One ready series yields one synchronous `multipart/form-data` request with a
-  versioned JSON manifest and one JPEG part for each of the first at most 20
-  occurrences. Structural bounds are 20 occurrence parts and a 512-pixel
-  encoded crop side. The server rejects a total body larger than `20 MiB` with
-  HTTP `413` before domain admission. There are no separate aggregate-pixel,
-  per-JPEG-byte or manifest-size caps and no oversize domain outcome.
-- Zero proposals produce a metadata-only request with the same correlation and
-  client timings; server admission creates the core Attempt and an explicit
-  non-success outcome.
-- Manifest identity contains only `schema_version: 1`, UUID `attempt_id`,
-  `trigger_source`, `client_release`, `detector_id`, `model_version` and
-  `jpeg_quality`; camera context adds only `camera_device_id`.
-- Timing contains wall-clock `reference_series_ready_at` for correlation plus
-  monotonic `local_detection_completed_ms` and `request_started_ms` offsets
-  from ready-series zero. Client/server wall clocks are never subtracted.
-- Each occurrence contains only request-local `occurrence_index`,
-  `frame_index`, `frame_offset_ms`, `detector_confidence` and `crop_part`.
-  The manifest omits `spa_client_token`, `spa_id`, every other secret, an
-  occurrence UUID, camera label/config snapshot, `bbox_px`, `crop_rect_px`,
-  `source_frame_width_px` and `source_frame_height_px`.
-- This client payload contract does not define server ranking, selection or
-  search internals; their existing canonical owners retain authority.
-- The normal flow requires neither full/downscaled reference-frame upload nor
-  proof or annotation of local-detector misses.
-- The `<10 s` interval starts when the capture window ends and local processing
-  begins, then includes local processing and request sending on one client
-  monotonic clock. Diagnostics exposes the client-local processing-start,
-  request-send-start and response-received markers.
-- `POST /api/realtime/attempts`, multipart part naming/serialization,
-  validation detail and compact machine outcome names are fixed by the
-  [Realtime Attempt API](realtime-attempt-api.md). They preserve this
-  allow/omit and structural contract.
-
-## Realtime Idempotency And Client Retry
-
-- The client creates one UUID `attempt_id` when an idle sensor trigger is
-  accepted. For a server-admitted request, `(spa_id, attempt_id)` is the
-  idempotency/correlation key; a repeat returns existing state and never starts
-  inference twice.
-- `promo` persists the core Attempt before inference. The server deadline is
-  shorter than the client timeout; a late native return cannot publish a
-  result.
-- Serving maintenance/readiness rejection occurs before `promo` admission,
-  returns `503` and creates no core Attempt or idempotency record.
-- Browser-retryable commands are idempotent. Upload retry uses ordinary checksum
-  arbitration; there is no resumable-upload lifecycle.
-- An authenticated client-event upsert may accept delayed offline metadata by
-  `(spa_id, attempt_id)`. The client outbox contains only short-lived diagnostic
-  metadata and `cooldown_until`; frames, tokens and personalized results remain
-  memory-only. Delivery is best-effort and may be lost on expiry or restart.
-
-## Cross-Slice Orchestration
+Outcome-specific verification remains with the linked subject specifications.
+At this boundary, proof must show that state changes only through the named
+owner and accepted dependency edge.
 
 ### Independent Photo admission
 
-`inventory` is the orchestration owner:
+`inventory` owns the per-file outcome:
 
-1. read immutable `IngestTarget` from `serving_control`;
-2. persist the unique Photo and ask `processing` to create its serving
+1. use the authenticated principal from `staff_access` and authorize the
+   photographer action inside `inventory`;
+2. read an immutable `IngestTarget` from `serving_control`;
+3. persist the unique Photo and ask `processing` to create the serving
    `pending` state in one short PostgreSQL transaction;
-3. return the per-file accepted/rejected/duplicate outcome.
+4. return the independent accepted/rejected/duplicate outcome.
 
-No HTTP handler, shared helper or composition root owns this flow.
+No HTTP handler, shared helper or composition root owns this flow or writes the
+three modules' state directly. The exact browser contract is the
+[Photo Admission API](photo-admission-api.md); persistence, uniqueness and
+recovery are owned by [Photo Admission](../domains/photo-admission.md).
+
+### Processing input projections
+
+`processing` may read the Photo identity/visibility and immutable serving
+projections required for compatible work. Read access grants no authority to
+change Photo admission/visibility, active СПА/date or serving settings.
+Processing publishes only its owned state/timestamp projections for accepted
+consumers.
 
 ### Participant Promo
 
-`promo` is the orchestration owner:
+`promo` owns the participant-visible attempt outcome:
 
-1. read immutable serving and active-Photo projections;
-2. persist the core Attempt and immutable serving snapshot for the
-   server-admitted request;
+1. read one immutable serving snapshot and active-Photo projection;
+2. persist the core Attempt and snapshot before inference for every admitted
+   request;
 3. call `processing` for one exact compatible reference search;
-4. persist the result/session when search succeeds;
-5. write detailed diagnostics best-effort through `diagnostics`.
+4. persist the result/session only when the search yields a valid result;
+5. write detailed evidence best-effort through `diagnostics`.
 
-`promo` cannot make a Photo active or mutate pipeline/search rules.
+`promo` MUST NOT activate Photos, mutate pipeline/search rules, change serving
+settings or write diagnostic-owned detail. The exact transport, idempotency and
+outcome surface is the [Realtime Attempt API](realtime-attempt-api.md); core
+Attempt persistence is owned by [Promo Attempt](../domains/promo-attempt.md).
+
+### Diagnostic evidence and access
+
+`diagnostics` may read the `promo` Attempt/correlation projection and attach
+detailed evidence best-effort. It MUST NOT create an empty replacement anchor,
+mutate the core Attempt/result/session or make evidence completion a
+participant-flow prerequisite. Operator, photographer and developer views
+remain data-class-specific; missing finalization stays visibly `incomplete`.
 
 ### Calibration and serving change
 
-`diagnostics` owns evidence selection and recommendation. It calls
-`processing` for offline evaluation. Only `serving_control` may apply a
-developer-confirmed setting through its audited command. A change that selects
-a different pipeline revision additionally follows the manual switch below.
+`diagnostics` owns evidence selection and Calibration recommendations. It calls
+`processing` for offline evaluation. A recommendation never changes serving
+state automatically; only a separate explicit developer action may ask
+`serving_control` to apply the accepted setting through its audited command.
+The reproducible oracle is owned by
+[Calibration verification](../testing/calibration.md).
 
 ### Manual serving-revision switch
 
@@ -283,51 +146,146 @@ a different pipeline revision additionally follows the manual switch below.
 - Input: an authenticated operator's explicit target revision.
 - Output: an audited success/failure result naming the requested and currently
   committed revisions.
-- Invariants:
-  - only a revision validated by `processing` may serve;
-  - any failure leaves participant service unavailable and never changes the
-    committed revision automatically;
-  - recovery is an explicit retry or manual selection of the prior revision;
-  - ordinary restart uses the committed revision and stays unavailable if that
-    revision cannot serve.
+- `serving_control` asks `processing` to validate the target; only a validated
+  revision may serve.
+- Any failure leaves participant service unavailable and never changes the
+  committed revision automatically. Recovery is an explicit retry or manual
+  selection of the prior revision; restart uses the committed revision and
+  stays unavailable if that revision cannot serve.
 
 ### Retention cleanup
 
-- Owner: `promo`.
-- Input: the applied 30-day log and 90-day ordinary-data cutoffs.
-- Outputs:
-  - `diagnostics` reports which promo-owned Attempts are eligible for deletion;
-  - authorized users can read one latest result with the applied cutoffs,
-    confirmed deleted/preserved counts and outcome/error.
-- Invariants:
-  - each capability deletes only its own data;
-  - persisted capture-derived diagnostic media follows the ordinary 90-day
-    cutoff without a separate media lifecycle;
-  - the promoted Calibration subset is preserved;
-  - failure remains observable and cleanup is safe to rerun;
-  - no cleanup history or generic jobs lifecycle is introduced.
+`promo` owns the project-wide latest cleanup result and calls `diagnostics` to
+expire diagnostic-owned data and report which promo-owned Attempts are eligible
+for deletion. Each module deletes only its own rows/objects. Exact cutoffs and
+promoted-subset retention are owned by the
+[lifecycle map](../states/lifecycle-map.md#diagnostic-and-calibration-retention).
+Failure remains observable and rerun is safe. No cleanup history, generic jobs
+lifecycle or cross-owner cascade is introduced.
 
 ### Photo Inventory Operations
 
-`inventory` owns the operator-visible outcome:
+`inventory` owns selection, authorization, visibility and purge commands. It
+commands only the `processing` cleanup boundary before deleting its own
+Photo/media and MUST NOT mutate or cascade into Promo sessions/results, core
+Attempts or diagnostic evidence. Exact visibility, session continuity and
+fixed-snapshot purge transitions are owned by the
+[lifecycle map](../states/lifecycle-map.md#photo-inventory-visibility); selection,
+authorization and observable outcomes remain in
+[REQ-INV-001..004](../requirements.md#req-list).
 
-- effective `captured_at` is reliable EXIF in the СПА timezone, otherwise the
-  file's server-side upload-start time, otherwise 01:00 on `visit_date`;
-- photographer soft-delete/restore is restricted to `uploader_id`; an
-  operator/developer may act on any Photo in an accessible СПА;
-- soft delete/restore changes only the inventory-owned active marker;
-  new participant-facing search/result formation and recent-statistics reads
-  must filter the marker, while an already issued session may continue reading
-  the referenced media while it exists;
-- restore-all clears the marker for every soft-deleted Photo in the project
-  except members of a confirmed non-terminal hard-purge snapshot; restore of
-  those members is rejected until completion;
-- hard purge follows the [runtime contract](#hard-purge-runtime-contract) and
-  [global-run lifecycle](../states/lifecycle-map.md);
-  `inventory` commands only `processing` cleanup before deleting its own
-  Photo/media and sends no purge command to `promo` or `diagnostics`.
+### Shared PostgreSQL contract
 
-## Recent Statistics Read Contract
+- The modular monolith uses one PostgreSQL application schema, one SQLAlchemy
+  `Base/MetaData`, one Alembic configuration and one sequential migration
+  stream.
+- Models and repositories remain in their owning modules. One physical schema
+  does not permit foreign commands, foreign writes or duplicated business
+  rules.
+- Cross-module transactions are allowed only through public application
+  boundaries under the named orchestration owner; they do not create shared
+  business ownership.
+- Foreign keys and `ON DELETE` behavior are deliberate. Database cascade MUST
+  NOT cross an ownership boundary: Photo deletion cannot cascade into Promo
+  sessions, core Attempts or diagnostic evidence, and Attempt deletion cannot
+  cascade into diagnostics rows.
+- Per-module PostgreSQL schemas, database users/ACLs and independent migration
+  streams are outside the accepted pilot.
+
+### PostgreSQL and MinIO convergence
+
+- The backend writes each upload candidate under a unique opaque private MinIO
+  key before JPEG validation and SHA-256 arbitration. The browser never gets
+  direct MinIO access.
+- PostgreSQL uniqueness on `(spa_id, visit_date, checksum_sha256)` arbitrates
+  concurrent admission. A duplicate creates no Photo/processing state and
+  deletes only its candidate object; an accepted Photo keeps its initial key.
+- The per-Photo PostgreSQL commit publishes
+  `Photo + accepted_at + pending`. A pre-commit crash may leave a private orphan
+  and lose that admission; ordinary re-upload is sufficient recovery.
+- Derived keys are deterministic by
+  `(photo_id, pipeline_revision_id, artifact_kind)`, allowing idempotent
+  replacement before terminal processing publication.
+- Retryable cleanup first makes data inaccessible through owner state, then
+  deletes MinIO objects idempotently, then finalizes owner database cleanup.
+  No distributed transaction or per-object recovery lifecycle is required.
+- MinIO versioning and external volume snapshots remain disabled while the
+  accepted no-backup pilot decision is active.
+
+### External and runtime boundaries
+
+These are external/runtime interfaces, not project-module graph edges:
+
+- Staff browser traffic crosses the HTTPS application boundary. Exact login,
+  CSRF, uploader and response behavior is in the
+  [Photo Admission API](photo-admission-api.md) and
+  [Staff Access](../domains/staff-access.md).
+- Central-origin `SpaPromoClient` keeps one authenticated 10-second HTTP
+  long-poll to the fixed-name mDNS ESP32. Exact event, CORS and failure behavior
+  is in the [Sensor Passage API](sensor-passage-api.md).
+- `SpaPromoClient` submits one synchronous bounded multipart request to
+  realtime. Exact serialization, validation, idempotency and outcomes are in
+  the [Realtime Attempt API](realtime-attempt-api.md).
+- Display and QR continuation cross the HTTPS application boundary. Their
+  success, expiry and missing-media states are owned by the
+  [lifecycle map](../states/lifecycle-map.md#promo-qr-and-browser-session);
+  authorization and delivery rules are below.
+- PostgreSQL and MinIO remain private; application access follows the
+  [shared database](#shared-postgresql-contract) and
+  [cross-store convergence](#postgresql-and-minio-convergence) contracts.
+
+### Authentication and data-specific delivery
+
+- `serving_control` owns central display-client token lifecycle under
+  [Display Client Access](../domains/display-client-access.md). The server
+  stores only its hash and derives authoritative `spa_id`; client input cannot
+  override it.
+- The sensor Bearer secret is distinct, manually provisioned and sent only in
+  ESP32 Authorization headers. It never enters URLs or logs.
+- Commercial Photo media and personalized session data are backend-proxied,
+  authorized and `no-store`; raw MinIO keys and participant-facing presigned
+  URLs are outside the pilot.
+- Capture-derived media is not developer-only solely because it contains image
+  content. If stored, it stays behind private object storage; any HTTP delivery
+  still crosses the application boundary. No logging, cache, persistence or
+  delivery mechanism is required merely because it is allowed.
+- Credentials/authentication state, infrastructure access, commercial Photo
+  media, personalized data, participant names/annotations, detailed logs,
+  Calibration and administrative actions retain their own protection.
+
+QR ticket exchange remains:
+
+1. `GET /q?ticket=<opaque>` validates the ticket hash and first-open window.
+2. The backend opens/reuses the session-wide browser access state, sets an
+   `HttpOnly Secure SameSite=Lax` cookie and returns `303` to a token-free URL.
+3. The route omits the query string from access logs and returns
+   `Cache-Control: no-store` plus `Referrer-Policy: no-referrer`.
+
+Explicit participant navigation/action extends the shared idle state; asset
+loads and background polling do not.
+
+### HTTP failure contract
+
+The application and realtime boundaries use standard transport semantics and
+no project-specific error framework:
+
+| Status | Contract |
+|---|---|
+| `401` | Authentication is missing or invalid. |
+| `403` | The authenticated principal lacks permission. |
+| `413` | The request exceeds an accepted payload bound; the FT-003 total-body case is rejected before domain admission. |
+| `422` | Request validation fails. |
+| `429` | The applicable rate limit is exceeded. |
+| `503` | Serving maintenance/readiness is closed before capture/search admission. |
+| `5xx` | An internal or upstream technical failure occurred. |
+
+An admitted capture/search request returns `2xx` with a compact typed outcome,
+including `busy`, `deadline`, `unacceptable_query` or
+`insufficient_results`. Clients branch on status/outcome, never response prose.
+Feature contracts may define their smallest success payload but MUST NOT add a
+shared custom error envelope, code registry or mapping framework.
+
+### Recent statistics read contract
 
 The `inventory` read boundary returns separate 1-, 5- and 60-minute values for
 one СПА. Every counter excludes soft-deleted Photos:
@@ -339,24 +297,26 @@ one СПА. Every counter excludes soft-deleted Photos:
 | `processed` | Photo whose current processing state transitioned to `ready \| no_faces` inside the window. |
 | `failed` | Photo whose current processing state transitioned to `failed` inside the window. |
 
-The Admin UI polls this read boundary every five seconds. Direct PostgreSQL
-aggregation is the initial contract; WebSocket, SSE, a metrics store and
-materialized counters are outside the pilot.
+The Admin UI polls every five seconds. Direct PostgreSQL aggregation is the
+initial contract; WebSocket, SSE, a metrics store and materialized counters are
+outside the pilot.
 
-## Hard-Purge Runtime Contract
+## Update Rules
 
-- Confirmation fixes all currently soft-deleted Photos across every СПА.
-- If the shared worker is busy, purge waits without preemption and the UI shows
-  `Начну удаление, как только закончится процесс {human-readable process name}`.
-- During execution, destructive settings are replaced by completed/total
-  progress for the fixed snapshot.
-- Restore and restore-all reject snapshot members until the run reaches
-  `completed`.
-- Restart resumes the same run and may repeat idempotent cleanup.
-- An upload already in progress is not interrupted. Ordinary uploads may
-  continue and accumulate normal `pending` work while purge occupies the
-  worker.
-- Hard purge removes Photo, original/preview/thumbnail, faces and pipeline
-  states. It preserves existing Promo results/sessions, core Attempts and
-  diagnostic evidence; historical references and issued `N` may remain while
-  UI/device loading skips deleted media.
+- `Module / Change Unit` is the unique graph key. Use stable functional
+  responsibility names, not feature/task IDs, current paths or generic
+  technical layers.
+- Every graph row names registered modules and links to one exact contract
+  heading. The graph row alone owns consumer, provider and direction.
+- Include every accepted significant inter-module dependency. An absent edge is
+  not authorized.
+- Add a module or edge only when an accepted canonical specification makes its
+  identity, parent, responsibility and interaction explicit. A feature/task or
+  observed import cannot create target authority by itself.
+- `/feature-to-tasks` owns feature-level leaf modules, consumers and edges
+  inside unchanged global boundaries; it MUST NOT infer them from this map's
+  silence.
+- Keep the detailed module inventory here. `system-architecture.md` owns only
+  the larger architecture unit and links to `#modules`.
+- Plans and tasks link relevant graph/contract blocks through existing fields;
+  they do not copy subgraphs or introduce graph-specific task fields.

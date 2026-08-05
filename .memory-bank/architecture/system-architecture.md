@@ -1,7 +1,7 @@
 ---
 description: Canonical greenfield system shape, capability ownership and Architecture Spine for the Face Moment pilot.
 status: active
-last_updated: 2026-07-31
+last_updated: 2026-08-04
 source_of_truth:
   - .memory-bank/architecture/system-architecture.md
 ---
@@ -282,38 +282,28 @@ are the initial CPU policy.
 
 ## Capability Ownership
 
-| Slice | Project-relative discovery root | Write ownership | Must not own | Minimum proof |
-|---|---|---|---|---|
-| `serving_control` | `src/face_moment/serving_control/` | СПА/timezone, active date/pipeline/settings, display token lifecycle and audited manual revision changes. | Photo, pipeline results, attempts, Promo sessions or recommendations. | Client cannot override СПА/date; one Attempt gets one immutable serving snapshot; revision recovery is operator-owned. |
-| `inventory` | `src/face_moment/inventory/` | Photo admission/identity/uploader/effective time/visibility, inventory authorization, direct recent counters and global hard-purge orchestration. | ML transitions, result/session rules, Attempts or evidence. | Independent admission; owner-scoped hide/restore; processing-projection counters; configured primary-storage free capacity; fixed-snapshot purge and 1/5/60 counters. |
-| `processing` | `src/face_moment/processing/` | Pipeline revisions, Photo processing states, derivatives/faces/embeddings, quality gates, revision validation, exact search and offline evaluation. | Photo visibility, settings mutation or Promo Attempt/session assembly. | Restart from `processing`; one final face set; exact compatible search; invalid revisions do not serve. |
-| `promo` | `src/face_moment/promo/` | Core Attempt, result/session, four teasers, `N`, QR ticket/access, participant continuation and retention-cleanup outcome. | Inventory/processing/settings writes or detailed evidence. | Four unique teasers; truthful `N`; display acknowledgement; QR expiry; observable retention result. |
-| `diagnostics` | `src/face_moment/diagnostics/` | Detailed evidence/logs, views, annotations, curated cases, recommendations and diagnostic-data expiry. | Core Attempt/result/session or direct settings mutation. | Role split, complete/incomplete evidence, promotion whitelist and 30/90-day cleanup. |
+The server application is the parent architecture unit for the accepted
+`serving_control`, `inventory`, `processing`, `promo` and `diagnostics`
+capability slices plus the narrow supporting `staff_access` component. The
+detailed module identities, discovery roots, responsibilities, forbidden
+ownership and proof paths are owned by the
+[Boundary Map module inventory](../contracts/boundary-map.md#modules).
 
-`src/face_moment/platform/auth/` is a narrow technical component for staff
-principals, credentials and sessions. Business authorization stays in the five
-capability slices. `src/face_moment/entrypoints/` and
-`src/face_moment/infrastructure/` are wiring/adapters, not capability owners.
-These roots are discovery locations, not task write boundaries.
+All server roles compose these modules from the same release.
+`src/face_moment/entrypoints/` and `src/face_moment/infrastructure/` remain
+wiring/adapters rather than business change units. Discovery roots do not
+become task write boundaries.
 
 ## Cross-Slice Orchestration
 
-- `inventory` owns per-photo admission and calls `serving_control` for the
-  immutable ingest target and `processing` to create `pending` in the same
-  per-photo PostgreSQL transaction.
-- `promo` owns the participant attempt and calls `serving_control` for a
-  snapshot, `processing` for exact search and `diagnostics` best-effort.
-- `diagnostics` owns Calibration analysis and calls `processing` for offline
-  evaluation; an accepted setting is applied only through `serving_control`.
-- `inventory` owns hard purge and calls the `processing` cleanup boundary.
-  `promo` and `diagnostics` receive no purge command because existing sessions,
-  Attempts and diagnostic evidence are retained; UI/device reads skip missing
-  hard-purged media.
-- `serving_control` owns manual serving-revision changes and asks `processing`
-  to validate a target.
-- `promo` owns retention cleanup and calls `diagnostics` for diagnostic-data
-  expiry. Each capability deletes only its own data; promoted Calibration
-  subsets remain under `diagnostics` ownership.
+Cross-slice use cases are owned by the capability responsible for the
+user/operator-visible outcome. HTTP/UI handlers, generic helpers and the
+composition root never own business orchestration or write foreign state.
+
+The accepted `Consumer -> Provider` topology and exact interaction contracts
+are canonical only in the
+[Boundary Map dependency graph](../contracts/boundary-map.md#dependency-graph).
+Shared PostgreSQL access does not add an edge or write authority.
 
 ## Serving Snapshot And Revision Change
 

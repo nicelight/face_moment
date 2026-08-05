@@ -33,7 +33,9 @@ Require:
 - pure `.memory-bank/spec-index.md` plus applicable linked canonical specs;
 - `.memory-bank/tasks/index.json` and
   `.memory-bank/schemas/task.schema.json`;
-- `.memory-bank/workflows/tier-policy.md`.
+- `.memory-bank/workflows/tier-policy.md#tier-classification-and-escalation`,
+  `#hard-write-boundary`, `#task-scoped-acceptance-evidence`, and
+  `#claim-linked-red--green-for-t2t3`.
 
 Read enough of those sources to prove the selected baseline, spec identity,
 task shape, dependencies, and tier. The agent chooses the efficient reading
@@ -71,8 +73,8 @@ route to `/spec-design`.
 - Task IDs use `TASK-NNN-TN-FT-000-WN`; ID tier/feature/wave segments match the
   record. Existing IDs are not renumbered.
 - Lifecycle and closure ownership come from
-  `.memory-bank/workflows/tier-policy.md`. This command creates/reconciles
-  planning state only and never marks the final gate `done`.
+  `.memory-bank/workflows/tier-policy.md#closure-authority`. This command
+  creates/reconciles planning state only and never marks the final gate `done`.
 - `touched_files` is advisory and non-exhaustive. A non-empty
   `runtime_context.write_boundary` is a deliberate hard boundary, never a
   mechanical copy of `touched_files`; `forbidden_scope` and stop conditions
@@ -130,6 +132,13 @@ mandatory analysis sequence or a requirement to create every spec family.
 </agent_discretion>
 
 <required_outputs>
+Edit the required outputs only when durable Foundation planning state,
+accepted decisions, canonical contracts, evidence basis, task records,
+registry links, or gate anchors have changed, or the existing contract needs
+repair. Do not append per-run audit/reconciliation history, changed-artifact
+inventories, or mirror the final chat handoff; preserve durable decision
+provenance, blockers, lifecycle evidence, and protocol resume state.
+
 When `Foundation Required: false`:
 - require `Foundation Gate Task: not_required` and concise evidence/rationale;
 - create no `REQ-000`, `FT-000`, foundation plans, protocols, or task records.
@@ -190,7 +199,8 @@ Task-record rules:
 - use `feature: "FT-000"`, normally `reqs: ["REQ-000"]`, and `W0` only for
   executable-baseline work; later probe/integration waves may use `W1+`;
 - `ready` requires no unmet dependency or blocker; otherwise use `planned`;
-- choose tier only from `tier-policy.md`;
+- choose tier only from
+  `tier-policy.md#tier-classification-and-escalation`;
 - populate schema fields only from evidence and leave optional grounded-only
   fields empty/absent rather than inventing filler;
 - link task-relevant substrate, architecture, and boundary specs through
@@ -232,14 +242,15 @@ Before handoff, prove:
 - Gate Anchors name the final gate or `not_required` truthfully;
 - no affected material operator decision remains unresolved.
 
-Report queue action, specs reused/extended/created, task IDs, final gate ID or
-`not_required`, and blockers/questions.
-
 Do not fabricate or backfill RED/GREEN evidence for historical
 `in_progress|done|failed` Foundation records.
 </validation>
 
 <handoff_contract>
+In the final chat response, report queue action, specs
+reused/extended/created, task IDs, final gate ID or `not_required`, and
+blockers/questions.
+
 - Queue created/reconciled: stop before execution and hand off immediately to
   `/mb-doctor --strict` for the FT-000 queue. In an unattended run, return to
   the `/autonomous`-owned Foundation phase; never hand FT-000 execution to

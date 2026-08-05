@@ -47,7 +47,9 @@ Before any durable plan or task write, require:
 - `.memory-bank/tasks/index.json`, every existing indexed task for the target,
   and existing plan/protocol/behavior evidence used for reconciliation;
 - parsed `.memory-bank/schemas/task.schema.json` and
-  `.memory-bank/workflows/tier-policy.md` before drafting even provisional task
+  `.memory-bank/workflows/tier-policy.md#tier-classification-and-escalation`,
+  `#hard-write-boundary`, `#task-scoped-acceptance-evidence`, and
+  `#claim-linked-red--green-for-t2t3` before drafting even provisional task
   records.
 
 Block task drafting when clarification is explicitly `pending|blocked`, feature
@@ -70,9 +72,9 @@ new execution mode.
   record fields. Product tasks use dependency-driven `W1+`; `W0` belongs only
   to `FT-000`.
 - Lifecycle/status ownership is defined by
-  `.memory-bank/workflows/tier-policy.md`. Planning writes `planned`, or
-  `ready` only when dependencies and blockers are already satisfied; it does
-  not claim scheduler closure/promotion ownership.
+  `.memory-bank/workflows/tier-policy.md#closure-authority`. Planning writes
+  `planned`, or `ready` only when dependencies and blockers are already
+  satisfied; it does not claim scheduler closure/promotion ownership.
 - Existing queue reconciliation is the default. Preserve ID, feature, wave,
   tier, dependencies, lifecycle status, verification evidence, protocol links,
   and the semantic basis of `in_progress|done|failed` records. Full re-slicing
@@ -148,6 +150,14 @@ not force irrelevant categories or fabricate `not_applicable` filler.
 </agent_discretion>
 
 <required_outputs>
+Edit the required outputs only when durable feature design/planning state,
+accepted decisions, canonical contracts, task records, registry links, or
+routing have changed, or the existing contract needs repair. Do not append
+per-run audit/reconciliation history, changed-spec/task inventories,
+queue-action summaries, or mirror the final chat handoff; preserve durable
+decision provenance, blockers, task lifecycle/evidence, and protocol resume
+state.
+
 ## Planning artifacts
 
 Create/update only the existing artifacts:
@@ -396,16 +406,16 @@ Before handoff:
 Do not fabricate or backfill RED/GREEN evidence for historical
 `in_progress|done|failed` records. Preserve their identity, lifecycle, and
 accumulated evidence under the reconciliation rules above.
+</validation>
 
-Final report:
+<handoff_contract>
+In the final chat response, report:
 - feature ID and queue action `created|reconciled|rebuild_required`;
 - final design status and specs reused/extended/created;
 - task records created/updated;
 - blockers/questions or `none`;
 - immediate next step.
-</validation>
 
-<handoff_contract>
 - Successful single-feature result -> `/review-tasks-plan FT-<NNN>`.
 - Successful `--all` -> one fresh-context `/review-tasks-plan FT-<NNN>` per
   task-linked product feature.

@@ -4,103 +4,22 @@ status: draft
 type: prd
 clarification_status: complete
 constitution_checked: true
-last_updated: 2026-07-29
+last_updated: 2026-08-05
 ---
 # PRD
 
 ## Source Inputs
 
-### Primary and governing sources
-
-- [.memory-bank/analysis/product-brief.md](analysis/product-brief.md): current
-  Product Brief and scope contract for the one-СПА pilot.
-- [.memory-bank/constitution.md](constitution.md): top governing policy;
-  Constitution gate passed for this draft, and no amendment candidate was
-  found.
-- [.memory-bank/invariants.md](invariants.md): current cross-cutting priority for
-  measurable Promo/QR latency and stability.
-
-### Supporting discovery and decision records
-
-- [.memory-bank/analysis/brainstorming/BR-001.md](analysis/brainstorming/BR-001.md):
-  initial broad product exploration; directions superseded by BR-002 and the
-  Product Brief are not pilot requirements.
-- [.memory-bank/analysis/brainstorming/BR-002.md](analysis/brainstorming/BR-002.md):
-  user-confirmed pilot slice, automatic Promo/QR flow and acceptance baseline.
-- [.memory-bank/analysis/brainstorming/BR-003.md](analysis/brainstorming/BR-003.md):
-  user-confirmed developer diagnostics, logging, annotation and calibration
-  decisions.
-- [.memory-bank/analysis/brainstorming/BR-004.md](analysis/brainstorming/BR-004.md):
-  operator-selected browser-native FT-003 route, local proposal contract and
-  structural pilot bounds.
-- [IDEA_APP.md](../IDEA_APP.md): application behavior, current best-effort
-  search algorithm, data concepts and accepted KISS architecture boundaries.
-- [IDEA_INGEST.md](../IDEA_INGEST.md): historical ingest evidence; the current
-  per-photo admission and `ingest_to_searchable` rules in this PRD supersede
-  its grouping and confirmation model.
-- [IDEA_OS.md](../IDEA_OS.md): server, display, security and deployment
-  boundaries; recommendations explicitly marked there are not pilot gates.
-- [IDEA_DEBUG.md](../IDEA_DEBUG.md): concise normative input for the first
-  developer diagnostics version.
-- [IDEA_CLIENT.md](../IDEA_CLIENT.md): accepted operator clarification of
-  client behavior, timing and capture-derived media policy.
-
-### Readiness and verification context
-
-- [.memory-bank/spec-backbone.md](spec-backbone.md): current global SDD
-  readiness, coverage and clarification routing; its status must reflect the
-  project-wide reconciliation of this clarified product source.
-- [.memory-bank/spec-index.md](spec-index.md): registry of current and planned
-  canonical specs.
-- [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md): canonical
-  capability ownership, application boundaries and cross-slice write rules for
-  the target greenfield implementation; it does not describe existing code.
-- [.memory-bank/testing/index.md](testing/index.md): baseline quality gates and
-  critical-flow e2e guidance.
-
-### Source precedence used in this draft
-
-The Constitution governs all decisions. The current Product Brief defines the
-pilot scope. Explicitly selected directions in BR-002, BR-003 and BR-004 refine
-that scope. BR-004 supersedes older conflicting `IDEA_CLIENT.md` wording about
-the FT-003 client route, detector, crop, request and bounds; the remaining
-accepted `IDEA_CLIENT.md` decisions continue to govern client behavior, timing
-and capture-derived media without defining server-internal processing, ranking
-or search. Remaining `IDEA_*` material supplies accepted behavior and
-constraints where it does not conflict with those sources. Historical ideas,
-post-pilot candidates and items explicitly labelled as recommendations are not
-converted into pilot acceptance gates.
+The [Project Constitution](constitution.md), accepted operator decisions and
+[.memory-bank/analysis/product-brief.md](analysis/product-brief.md) govern this
+consolidated one-СПА pilot contract. Historical brainstorming and `IDEA_*`
+files remain discovery evidence only; they do not add or reopen requirements
+beyond the resolved behavior, constraints and acceptance criteria below.
 
 ## Clarifications
 
-### 2026-07-27 — `SpaPromoClient` and capture-derived media
-
-- `IDEA_CLIENT.md` is accepted for the client behavior, timing and media-policy
-  contracts below. It does not decide server internals or the deferred client
-  technical choices.
-
-- Clarification status is complete for the one-СПА pilot, including Photo
-  Inventory Operations. The resolved scope, actors, behavior, data semantics,
-  non-goals and acceptance contract are expressed below.
-- Remaining site/hardware selection and post-pilot commercial questions do not
-  change current actors, core scenarios, feature boundaries, or acceptance and
-  must not be converted into pilot requirements without a new product decision.
-- The current operator decision supersedes any historical Batch/manifest/
-  confirmation model: each Photo is admitted independently under the selected
-  СПА/date, and readers may observe a partial current-day photo set while
-  uploads are still in progress.
-- Source precedence and superseded `IDEA_*` defaults are recorded in
-  [.memory-bank/spec-backbone.md](spec-backbone.md) for decomposition and later
-  SDD work.
-
-### 2026-07-29 — FT-003 browser-native client contract
-
-- The operator accepted the BR-004 browser-native route and proposal contract.
-  Its normative behavior is captured by FR-CAP-03, FR-CAP-09..17, NFR-SEC-07,
-  NFR-ARCH-06 and AC-21/23..26.
-- Exact endpoint serialization and site-specific camera choices remain
-  downstream inputs; neither reopens product clarification nor creates a
-  representative-benchmark gate.
+Clarification is complete. Resolved operator decisions are incorporated into
+the FR, NFR and acceptance criteria below rather than repeated as a dated log.
 
 ## Product Summary
 
@@ -878,17 +797,12 @@ pilot actor or blocker.
   camera, lens, lighting and maximum input dimensions remain site choices.
 - Managed Chromium, Local Network Access and the BlazeFace model asset are
   client dependencies governed by FR-CAP-13..17 and NFR-SEC-07.
-- Target backend/admin product behavior remains to be delivered by this project.
-  The repository already contains the verified Foundation backend,
-  background-worker and realtime substrate, but no working product application
-  or deployed pilot runtime.
 - PostgreSQL with pgvector for metadata, state, exact vector search, structured
   logs and indexed diagnostic events.
 - MinIO/S3-compatible private object storage for originals, previews and
   diagnostic images.
 - SFace/YuNet and Buffalo M/SCRFD pipelines with native preprocessing.
-- QR generation performed locally in the client without an external QR service;
-  the specific package is an implementation recommendation, not a product gate.
+- QR generation performed locally in the client without an external QR service.
 - HTTPS as the public integration boundary.
 - Separately delivered main Face Moment selfie-search/purchase page as the
   expired-session redirect target; this pilot does not implement it.
@@ -1091,77 +1005,12 @@ payment/fiscal providers, external observability stores and message brokers.
 The smoke run validates the pilot path only. It does not demonstrate public
 production readiness, target 10-15-СПА capacity or complete group coverage.
 
-## Verification Strategy
-
-1. **Static and unit verification**
-   - configured build/typecheck and relevant unit tests;
-   - per-photo admission/checksum/idempotency, same-СПА/date duplicate deletion,
-     atomic `Photo + pending` creation and metric-population rules;
-   - effective capture-time fallback order, owner-scoped authorization,
-     soft-delete exclusion/restoration and exact 1/5/60-minute counter
-     calculations;
-   - pipeline-revision isolation, threshold gates, pHash-only ranking and `N`
-     union/deduplication;
-   - chronological first-20 traversal/stop behavior, crop geometry and
-     downscale/no-upscale rules, JPEG-quality configuration and manifest
-     allow/omit fields;
-   - attempt timing calculations, recommendation metrics, retention rules and
-     latest-cleanup outcome;
-   - secret/redaction checks for structured logs.
-2. **Integration verification**
-   - uploader -> object storage -> background processing -> searchable state;
-   - soft delete -> search/media/statistics exclusion -> restore;
-   - confirmed global purge snapshot -> restore rejection -> shared-worker wait
-     -> progress -> restart/resume -> complete Photo/media cleanup with
-     result/session/Attempt/evidence retention and missing-media skip;
-   - worker crash/restart -> the existing queued population remains durable,
-     unfinished work returns to `pending` and processing resumes from the
-     beginning;
-   - central-origin Chromium -> authenticated mDNS ESP32 long-poll -> capture
-     -> BlazeFace -> multipart request -> synchronous realtime service -> exact
-     scoped search -> QR session;
-   - server-admitted core Attempt/browser/server correlation -> Attempts/Log
-     Explorer -> optional evidence and explicit `incomplete` state;
-   - retention expiry -> promoted-subset preservation -> latest result -> safe
-     rerun after failure or interruption;
-   - client-only offline failure -> non-blocking 5–10-second notice and
-     best-effort metadata delivery without durable-Attempt guarantee;
-   - annotation -> Calibration calculations -> manual-only application boundary.
-3. **Critical-flow e2e verification**
-   - authenticated photographer journey;
-   - photographer-owned and staff-authorized Photo Inventory journeys;
-   - project-wide restore-all and confirmed hard-purge progress journeys;
-   - successful automatic single-person and best-effort group Promo journeys;
-   - phone continuation without selfie and valid-session purchase-button
-     navigation to the separately delivered target page;
-   - `<4` results, low quality, timeout, network loss, stale response, QR
-     first-open expiry and session-wide browser idle expiry;
-   - developer investigation, annotation and calibration journeys.
-4. **Physical-site verification**
-   - target distance, face size, motion blur, pose, lighting and exposure;
-   - actual 43-inch display layout, QR quiet zone/contrast and real-phone scans;
-   - browser/display recovery and local-advertising degraded mode.
-5. **Controlled acceptance run**
-   - execute 20 instrumented attempts under the agreed setup;
-   - retain the per-attempt outcome, `reference_ready_to_qr_ms`, phone-context
-     consistency, ground-truth validation of all four teasers and every unique
-     `photo_id` in `N`, and diagnostic evidence;
-   - evaluate AC-01..07 and AC-21..26, requiring the same 19 attempts to pass
-     both latency/QR and correctness without silently removing no-match/timeout
-     failures.
-
 ## Downstream SDD Inputs
 
-- Exact endpoint paths, JSON serialization, multipart part naming and validation
-  details are owned by downstream SDD. They MUST preserve FR-CAP-03 and
-  FR-CAP-09..17 rather than reopening the accepted route or adding a benchmark
-  gate.
-- Exact camera model, lens, lighting and deployment-configured maximum input
-  dimensions are site choices and do not block feature design or tasking.
-- Any future move of embeddings or search to the client requires a new explicit
-  product decision.
+Exact interface serialization and site-specific hardware/configuration remain
+owned by their canonical specs and deployment configuration. They do not reopen
+the accepted FR, NFR or acceptance criteria without a new product decision.
 
 ## Unresolved Blockers
 
-None at product level. The remaining downstream serialization and site
-configuration choices do not change `clarification_status: complete`.
+None at product level.

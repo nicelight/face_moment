@@ -1,7 +1,7 @@
 ---
 description: Stable product requirements and REQ-to-epic-to-feature traceability for the one-СПА pilot.
 status: draft
-last_updated: 2026-08-01
+last_updated: 2026-08-04
 ---
 # Requirements
 
@@ -58,42 +58,31 @@ last_updated: 2026-08-01
 
 ## Material NFR Ownership
 
-This router makes ownership explicit without duplicating the full requirement.
-The named `REQ-*` row above preserves the observable target or qualitative
-criterion and the conditions that change pass/fail.
+This reverse router maps each material PRD NFR to the `REQ-*` rows above,
+which retain the full observable target and pass/fail conditions.
 
-| PRD NFR | Owning REQ | Preserved decision surface |
-|---|---|---|
-| `NFR-PERF-01`, `NFR-PERF-02`, `NFR-PERF-04`, `NFR-PERF-05` | `REQ-PERF-001` | Same 19/20 joint correctness and one-clock `<10 s` QR gate; timeout/no-match remain failures and diagnostic timing stays observable. |
-| `NFR-PERF-03` | `REQ-ING-004`, `REQ-CAL-003` | Full-population 95% `<15 min` ingest SLO with the explicit developer-Calibration delay condition. |
-| `NFR-REL-01`, `NFR-REL-02`, `NFR-REL-03` | `REQ-REL-001` | Independent central-runtime start/operation, automatic Chromium recovery when the origin is reachable, loaded-client advertising through transient failure, and singleton realtime slot/deadline with typed `busy`, no waiter queue and no restart replay. |
-| `NFR-REL-04`, `NFR-REL-05` | `REQ-REL-002`, `REQ-REL-003`, `REQ-DATA-001` | Restart-safe idempotent Photo queue, separate primary-capacity visibility, observable rerunnable cleanup result and a verifiable browser/intact-volume recovery procedure. |
-| `NFR-REL-06` | `REQ-INV-003` | One fixed-snapshot hard purge resumes without target loss or duplication. |
-| `NFR-SEC-01`, `NFR-SEC-02`, `NFR-SEC-03` | `REQ-SEC-001` | HTTPS/private topology, hashed-token СПА binding, rate limiting, key-only SSH and sandboxed display. |
-| `NFR-SEC-04` | `REQ-DIAG-003` | Sanitized operator view and developer-only protected diagnostic detail. |
-| `NFR-SEC-05` | `REQ-INV-002`, `REQ-INV-003` | Owner/access-СПА inventory scope and admin-only global actions. |
-| `NFR-SEC-06` | `REQ-DIAG-002`, `REQ-DIAG-003`, `REQ-LOG-001` | Capture-media classification without weakening credential, commercial-media, personalized-data or diagnostic-detail protection. |
-| `NFR-SEC-07` | `REQ-SEC-002` | Managed Local Network Access plus exact-origin CORS/OPTIONS and non-leaking sensor Bearer secret. |
-| `NFR-DATA-01`, `NFR-DATA-02`, `NFR-DATA-03`, `NFR-DATA-04` | `REQ-DATA-001` | 30/90-day cutoffs, curated promoted subset, explicit deletion and annotation-only names. |
-| `NFR-ARCH-01`, `NFR-ARCH-02`, `NFR-ARCH-03`, `NFR-ARCH-04` | `REQ-ARCH-001` | One-СПА CPU-only KISS baseline, site-validated hardware and evidence-gated complexity. |
-| `NFR-ARCH-05` | `REQ-INV-003`, `REQ-INV-004` | Shared-worker/durable-Photo reuse without purge-job, extra-worker or realtime-statistics machinery. |
-| `NFR-ARCH-06` | `REQ-CAP-002` | Accepted browser-native route and structural bounds without a representative-benchmark prerequisite. |
+| PRD NFR | Owning REQ |
+|---|---|
+| `NFR-PERF-01`, `NFR-PERF-02`, `NFR-PERF-04`, `NFR-PERF-05` | `REQ-PERF-001` |
+| `NFR-PERF-03` | `REQ-ING-004`, `REQ-CAL-003` |
+| `NFR-REL-01`, `NFR-REL-02`, `NFR-REL-03` | `REQ-REL-001` |
+| `NFR-REL-04`, `NFR-REL-05` | `REQ-REL-002`, `REQ-REL-003`, `REQ-DATA-001` |
+| `NFR-REL-06` | `REQ-INV-003` |
+| `NFR-SEC-01`, `NFR-SEC-02`, `NFR-SEC-03` | `REQ-SEC-001` |
+| `NFR-SEC-04` | `REQ-DIAG-003` |
+| `NFR-SEC-05` | `REQ-INV-002`, `REQ-INV-003` |
+| `NFR-SEC-06` | `REQ-DIAG-002`, `REQ-DIAG-003`, `REQ-LOG-001` |
+| `NFR-SEC-07` | `REQ-SEC-002` |
+| `NFR-DATA-01`, `NFR-DATA-02`, `NFR-DATA-03`, `NFR-DATA-04` | `REQ-DATA-001` |
+| `NFR-ARCH-01`, `NFR-ARCH-02`, `NFR-ARCH-03`, `NFR-ARCH-04` | `REQ-ARCH-001` |
+| `NFR-ARCH-05` | `REQ-INV-003`, `REQ-INV-004` |
+| `NFR-ARCH-06` | `REQ-CAP-002` |
 
-## Out of Scope
+## Scope Boundary
 
-- Public rollout, multi-СПА production scale and production-readiness claims.
-- Payment/fiscal flows, actual original delivery and implementation of the
-  redirect target's selfie-search/purchase experience.
-- External ingest, RAW, standalone/repeated selfie capture and watermarking.
-- Guaranteed complete group coverage, tracking, identity clustering,
-  cross-pipeline linking and participant-facing ensembles.
-- Mandatory proof or annotation of local-detector misses and mandatory full or
-  downscaled reference-frame upload.
-- Speculative ANN, broker, distributed, multi-worker, GPU-first or external
-  observability infrastructure.
-- Automatic Calibration application or multidimensional joint optimization.
-- Backup, replication or recovery from irreversible loss of the sole primary
-  disk/server.
+Canonical exclusions remain in the PRD
+[Non-goals](prd.md#non-goals). This decomposition introduces no additional
+product scope; feature and task anti-goals only narrow their assigned work.
 
 ## Traceability Matrix (RTM)
 

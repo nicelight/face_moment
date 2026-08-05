@@ -15,7 +15,6 @@ status: active
 | <code>autopilot</code> | yes | yes |
 | <code>brainstorm</code> | yes | yes |
 | <code>brief</code> | yes | yes |
-| <code>cold-start</code> | yes | yes |
 | <code>constitution</code> | yes | yes |
 | <code>context-manifest</code> | yes | yes |
 | <code>creator-vibe</code> | yes | yes |
@@ -40,6 +39,7 @@ status: active
 | <code>spec-auto</code> | yes | yes |
 | <code>spec-design</code> | yes | yes |
 | <code>spec-init</code> | yes | yes |
+| <code>start</code> | yes | yes |
 | <code>tech-debt</code> | yes | yes |
 | <code>technical-premortem</code> | yes | yes |
 | <code>verify</code> | yes | yes |

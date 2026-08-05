@@ -1,7 +1,7 @@
 ---
 description: Accepted global SDD backbone, coverage matrix and Foundation routing for the Face Moment pilot.
 status: active
-last_updated: 2026-08-01
+last_updated: 2026-08-05
 ---
 # SDD Spec Backbone
 
@@ -107,42 +107,7 @@ define product behavior or override the Planning Revision `4` target.
 | risks | authoritative | [.memory-bank/prd.md](prd.md), [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | Client proposal-order and site-camera trade-offs plus accepted pilot/deferred-complexity risks are explicit. |
 | open_questions | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/prd.md](prd.md) | No global architecture or product-design question remains unresolved. Feature-level completion stays with the owning feature. |
 
-## Canonical Design Bundle
-
-- [System architecture](architecture/system-architecture.md): system shape,
-  Architecture Spine, runtime, slice roots, ownership, HTTP/storage decisions,
-  recovery, extension seams, deferred decisions, accepted risks and Foundation
-  proof pressure.
-- [Boundary map](contracts/boundary-map.md): application boundaries, write
-  authority, PostgreSQL/MinIO convergence, data-specific delivery,
-  HTTP/realtime semantics, cross-slice orchestration, revision switch,
-  retention, statistics and hard-purge contracts.
-- [Lifecycle map](states/lifecycle-map.md): Photo admission/processing/
-  visibility, global purge, Promo/QR, Attempt/display, client-restart,
-  evidence and Calibration states.
-- [Client realtime verification](testing/client-realtime.md): browser/ESP32
-  transport, chronological first-at-most-20, crop/JPEG/manifest, zero-proposal,
-  one-clock latency, diagnostics and related media/retention proof.
-- [Sensor Passage API](contracts/sensor-passage-api.md) and
-  [Realtime Attempt API](contracts/realtime-attempt-api.md): exact FT-003
-  external paths, payloads, validation, authentication and typed outcomes.
-- [Display Client Access](domains/display-client-access.md) and
-  [Promo Attempt](domains/promo-attempt.md): authoritative credential and core
-  Attempt persistence/state rules for FT-003.
-- [.memory-bank/foundation.md](foundation.md): explicit greenfield Foundation
-  Dev Path decision.
-
-This bundle is sufficient at the global boundary.
-
 ## Foundation Decision
 
-- Foundation Decision Status: accepted
-- Foundation Required: true
-- Foundation Gate Task: TASK-002-T2-FT-000-W0
-- Foundation Gate Status: done
-- Foundation Lifecycle: verified
-- Reason: at the decision boundary, the accepted target needed one executable
-  release, three server roles, one storage/migration baseline and a
-  project-native build/typecheck/start/test path, while none existed.
-- Scope guard: Foundation establishes substrate only. Product Photo, Attempt,
-  Promo, diagnostics and inventory behavior remains in FT-001..FT-012.
+Canonical decision, gate anchors and evidence:
+[.memory-bank/foundation.md](foundation.md).
