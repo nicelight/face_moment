@@ -1,7 +1,7 @@
 ---
 description: Canonical greenfield system shape, capability ownership and Architecture Spine for the Face Moment pilot.
 status: active
-last_updated: 2026-08-04
+last_updated: 2026-08-06
 source_of_truth:
   - .memory-bank/architecture/system-architecture.md
 ---
@@ -111,66 +111,49 @@ speculative distributed infrastructure.
 - Binds: FT-012 and every consumer of Photo/media.
 - Prevents: a deletion service, per-photo `purge_pending`, purge jobs, counter
   materialization and WebSocket/SSE statistics.
-- Rule: one Photo visibility marker controls search/media/statistics. One
-  durable global run fixes the project-wide hard-purge snapshot and progress,
-  rejects restore of snapshot members until completion, resumes after restart
-  and removes Photo-owned data while preserving already issued Promo sessions,
-  core Attempts and diagnostic evidence. Soft delete blocks new result
-  formation but not an already issued session; hard-purged media is skipped by
-  clients without rebuilding the session or `N`. Per-СПА 1/5/60-minute counters
-  are direct PostgreSQL queries polled every five seconds.
-- Verification: FT-012 proof: authorization, hide/restore, exact counters and
-  restartable fixed-snapshot purge.
+- Rule: `inventory` is the sole owner of Photo visibility, recent-statistics
+  reads and permanent removal. It uses one visibility marker, direct PostgreSQL
+  aggregates and one restartable global purge run through the shared worker;
+  foreign Promo/diagnostic state remains with its owner.
+- Verification: FT-012 ownership, aggregation and restart proof.
 - Source: [.memory-bank/prd.md](../prd.md) `FR-INV-01..11` and the
-  [boundary map](../contracts/boundary-map.md).
+  [Photo inventory lifecycle](../states/lifecycle-map.md#photo-inventory-visibility).
 
-#### AD-006 — Bounded realtime request and explicit display success
+#### AD-006 — Bounded realtime request with owner-separated orchestration
 - Binds: automatic capture, search, Promo and performance acceptance.
 - Prevents: client takeover of server-side selection/search, unbounded
-  proposal submission, a realtime waiter queue, durable replay and treating a
-  server response as visible Promo success.
-- Rule: one client-generated `attempt_id`, one bounded proposal request, one
-  inference slot and one server deadline govern the synchronous attempt.
-  `promo` owns admission and orchestration; `processing` owns inference,
-  selection and search. Request structure and transport rejection semantics
-  are owned by the [boundary map](../contracts/boundary-map.md). Only an
-  idempotent client acknowledgement after four teasers and QR are visible sets
-  display success; the [lifecycle map](../states/lifecycle-map.md) owns its
-  terminal states.
-- Verification: FT-003..FT-005 boundary, orchestration and post-render
-  acknowledgement proof plus the controlled 20-attempt outcome.
+  proposal submission, a realtime waiter queue and durable replay.
+- Rule: one bounded synchronous request uses one inference slot and one server
+  deadline. `promo` owns admission/orchestration; `processing` owns inference,
+  selection and search. Exact transport and display transitions belong to the
+  boundary and lifecycle contracts.
+- Verification: FT-003..FT-005 boundedness and owner-boundary proof.
 - Source: [.memory-bank/prd.md](../prd.md) `FR-CAP-01..17`,
   `FR-UX-01..09`, the [boundary map](../contracts/boundary-map.md) and the
-  [lifecycle map](../states/lifecycle-map.md).
+  [Attempt/display lifecycle](../states/lifecycle-map.md#automatic-attempt-and-display).
 
 #### AD-007 — Core Attempt survives best-effort evidence
 - Binds: Promo, diagnostics, retention and hard purge.
-- Prevents: diagnostic evidence blocking participant flow, an empty anchor,
-  mandatory reference-frame upload or local-detector miss proof, a server-side
-  reliable-delivery outbox or hard-purge cascade into sessions/Attempts/
-  evidence.
-- Rule: `promo` persists a core Attempt before inference for every
-  server-admitted request; `diagnostics` attaches detailed evidence
-  best-effort and exposes missing finalization as `incomplete`. Client-only
-  offline triggers are best-effort and may have no durable Attempt.
-  Capture-derived media is not developer-only merely because it is an image,
-  and no logging, cache, storage or public-delivery mechanism is required.
-  Photo hard purge retains existing Promo result/session data, the core Attempt
-  and diagnostic evidence; clients skip unavailable media.
-- Verification: FT-007/FT-012 integration proof.
+- Prevents: diagnostic evidence blocking participant flow, a reliable-delivery
+  outbox and cross-owner purge/retention cascades.
+- Rule: `promo` persists the core Attempt before processing an admitted
+  request; `diagnostics` owns optional detailed evidence. Evidence failure does
+  not change the participant outcome, and each owner controls its own cleanup.
+- Verification: FT-007/FT-012 independence and ownership proof.
 - Source: [.memory-bank/prd.md](../prd.md) `FR-DIAG-01..05`,
-  `NFR-DATA-01..04` and the [lifecycle map](../states/lifecycle-map.md).
+  `NFR-DATA-01..04` and the
+  [Attempt/evidence lifecycle](../states/lifecycle-map.md#core-attempt-and-diagnostic-evidence).
 
-#### AD-008 — Session-wide QR continuation
+#### AD-008 — Session-wide access with private media delivery
 - Binds: Promo session authorization and participant media delivery.
 - Prevents: per-device grant rows and public MinIO/presigned participant URLs in
   the pilot.
-- Rule: one Promo session has a 30-minute first-open window and one shared
-  60-minute idle access state; commercial Photo media and personalized session
-  data are served through authorized no-store backend reads.
-- Verification: FT-006 multi-phone expiry proof.
+- Rule: `promo` owns one session-wide access state; commercial Photo media and
+  personalized session data cross authorized no-store backend reads. Exact
+  first-open, idle and expiry behavior belongs to the lifecycle contract.
+- Verification: FT-006 shared-access and private-delivery proof.
 - Source: [.memory-bank/prd.md](../prd.md) `FR-UX-03..10` and the
-  [boundary map](../contracts/boundary-map.md).
+  [Promo/QR lifecycle](../states/lifecycle-map.md#promo-qr-and-browser-session).
 
 #### AD-009 — Standard HTTP failures and typed domain outcomes
 - Binds: every public/staff HTTPS endpoint and the SpaPromoClient realtime
@@ -320,32 +303,11 @@ accept maintenance downtime.
 
 ## Data And Storage Flow
 
-- PostgreSQL is authoritative for identities, relationships, mutable state,
-  serving settings, counters' source timestamps, Attempts, sessions and
-  structured evidence.
-- PostgreSQL uses one application schema, one SQLAlchemy `Base/MetaData` and
-  one sequential Alembic migration stream. Capability packages still own their
-  table models, repositories, invariants and commands.
-- MinIO is authoritative for binary bytes only. A PostgreSQL visibility/state
-  decision determines whether a private object may be read.
-- Persisted capture-derived diagnostic media follows the ordinary 90-day
-  evidence cutoff. Its image content alone does not require developer-only
-  authorization, and persistence is optional rather than a new storage path.
-- Effective `captured_at` is reliable EXIF interpreted in the СПА timezone,
-  otherwise the file's server-side upload-start time, otherwise 01:00 on its
-  authoritative `visit_date`.
-- Soft deletion preserves all data and excludes the Photo from new
-  search/result formation and counters. An already issued session continues to
-  use the media while it exists. Restore reuses the preserved state.
-- Hard purge rejects restore of fixed-snapshot members until completion and
-  deletes Photo/media/face/pipeline data. Existing Promo sessions, Attempts and
-  diagnostic evidence retain historical identifiers; clients skip removed
-  media without invalidating or rebuilding the session or recalculating `N`.
-
-Detailed lifecycle rules are in the
-[lifecycle map](../states/lifecycle-map.md); write directions are in the
-[boundary map](../contracts/boundary-map.md), including HTTP failure semantics,
-shared-schema ownership and cascade limits.
+AD-010 and AD-011 define PostgreSQL/MinIO authority, the single migration
+stream and cross-store convergence. The
+[boundary map](../contracts/boundary-map.md) owns capability write authority
+and cascade limits; the [lifecycle map](../states/lifecycle-map.md) owns Photo,
+media, Attempt, session, deletion and retention behavior.
 
 ## Deployment And Recovery
 
@@ -418,12 +380,3 @@ These risks do not authorize extra lifecycle or recovery machinery:
   restart without creating a server Attempt.
 - Hard purge may leave an issued session with fewer loadable media items and an
   historical `N`; clients skip missing media without session reconstruction.
-
-## Verification Route
-
-The verified Foundation supplies build/typecheck/start/test commands, one
-linear migration-from-empty proof and one storage/runtime smoke; it does not
-verify product behavior. Feature work owns the HTTP, client-proposal,
-cross-slice, owner-ordered retention and ownership-safe deletion proofs named
-in the Architecture Spine. The bootstrap
-[testing policy](../testing/index.md) remains the quality-gate router.
