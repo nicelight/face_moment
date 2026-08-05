@@ -4,6 +4,16 @@ status: active
 ---
 # Changelog
 
+## [2026-08-06] Canonical boundary-map recovery
+- Restored `.memory-bank/contracts/boundary-map.md` after framework sync had
+  replaced it with an empty draft and preserved the accepted target without
+  changing Global Planning Revision `4`.
+- Retained the reconciled module inventory, explicit dependency graph, exact
+  inline-contract headings and subject-spec routing required by the current
+  DevRails boundary contract.
+- Removed the duplicate `boundary-map-old.md`; the pre-overwrite and reconciled
+  backup states remain recoverable from Git history.
+
 ## [2026-08-01] FT-003 canonical contract design
 - Completed the exact sensor long-poll and realtime multipart contracts plus
   central display-client and core Attempt data specifications without changing
