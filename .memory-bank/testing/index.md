@@ -10,7 +10,7 @@ last_updated: 2026-08-06
 - [Client realtime verification](client-realtime.md): chronological
   first-at-most-20 BlazeFace submission, browser/ESP32 transport, crop/JPEG/
   manifest contract, one-clock Promo latency, diagnostic markers,
-  media/retention checks and explicit exclusions.
+  QR phone continuation, media/retention checks and explicit exclusions.
 - [Calibration verification](calibration.md): deterministic threshold-profile
   oracle, one-dimensional quality analysis, before/after comparison,
   manual-apply isolation, shared-worker recovery and promoted-case retention.

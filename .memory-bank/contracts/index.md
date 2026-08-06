@@ -10,6 +10,10 @@ status: active
   per-file responses, standard failures and UI behavior.
 - [Photo Processing API](photo-processing-api.md): authenticated per-Photo
   processing status, controlled-interval SLO and primary-storage health.
+- [Promo Display API](promo-display-api.md): authenticated display
+  configuration, teaser delivery and post-render acknowledgement.
+- [QR Continuation API](qr-continuation-api.md): public ticket exchange,
+  session-wide browser access, protected phone reads and expiry redirects.
 - [Realtime Attempt API](realtime-attempt-api.md): proposal-attempt multipart
   request, validation, idempotency and outcomes.
 - [Sensor Passage API](sensor-passage-api.md): browser-to-ESP32 long-poll,

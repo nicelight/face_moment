@@ -289,7 +289,8 @@ These are external/runtime interfaces, not project-module graph edges:
 - Display and QR continuation cross the HTTPS application boundary. Their
   success, expiry and missing-media states are owned by the
   [lifecycle map](../states/lifecycle-map.md#promo-qr-and-browser-session);
-  authorization and delivery rules are below.
+  exact exchange, phone read, activity, media and redirect behavior is in the
+  [QR Continuation API](qr-continuation-api.md).
 - PostgreSQL and MinIO remain private; application access follows the
   [shared database](#shared-postgresql-contract) and
   [cross-store convergence](#postgresql-and-minio-convergence) contracts.
@@ -313,7 +314,7 @@ These are external/runtime interfaces, not project-module graph edges:
   media, personalized data, participant names/annotations, detailed logs,
   Calibration and administrative actions retain their own protection.
 
-QR ticket exchange remains:
+The exact [QR ticket exchange](qr-continuation-api.md#ticket-exchange) remains:
 
 1. `GET /q?ticket=<opaque>` validates the ticket hash and first-open window.
 2. The backend opens/reuses the session-wide browser access state, sets an

@@ -7,7 +7,8 @@ status: active
 - [Display Client Access](display-client-access.md): SpaPromoClient identity,
   token hash and authentication lifecycle.
 - [Promo Attempt](promo-attempt.md): core Attempt persistence, immutable
-  serving snapshot, result assembly/session and terminal transitions.
+  serving snapshot, result assembly/session, display and shared QR browser
+  access transitions.
 - [Realtime Reference Search](realtime-search.md): server-authoritative query
   selection, native query preparation and exact compatible Photo search.
 - [Photo Admission](photo-admission.md): Photo/original/pending data,

@@ -1,5 +1,5 @@
 ---
-description: Promo-owned core Attempt, realtime result assembly and result-session persistence specification.
+description: Promo-owned core Attempt, realtime result assembly, result-session persistence and shared QR browser-access specification.
 status: active
 last_updated: 2026-08-06
 source_of_truth:
@@ -38,6 +38,8 @@ table with:
 | `processing_status` | `accepted \| searching \| result_issued \| no_success \| interrupted \| deadline \| internal_failure`. |
 | `domain_outcome` | Nullable `result \| no_proposals \| busy \| deadline \| unacceptable_query \| insufficient_results \| interrupted`. |
 | `display_status` | `not_applicable \| pending \| confirmed \| failed`; `unconfirmed` is derived on read and is not stored as scheduler work. |
+| `display_expires_at`, `display_reported_at` | Nullable server timestamps. A result fixes a positive display window; the first accepted terminal report records its receipt time. |
+| `qr_fully_visible_elapsed_ms` | Nullable non-negative client monotonic offset from `reference_series_ready`; present only for a confirmed display. |
 | `created_at`, `updated_at` | Server timestamps. |
 
 The migration MUST use the project-wide `face_moment` schema, shared
@@ -56,10 +58,13 @@ delete the core Attempt with a Photo or diagnostic record.
 - `no_proposals`, `busy`, `unacceptable_query` and `insufficient_results` map to
   `no_success`; `result` maps to `result_issued`; `deadline` and `interrupted`
   map to the like-named processing states.
-- A `result_issued` Attempt starts with `display_status=pending`; every other
-  terminal processing outcome uses `not_applicable`. Display confirmation and
+- A `result_issued` Attempt starts with `display_status=pending` and fixes
+  `display_expires_at = qr_issued_at + result_display_ms` from the positive
+  independent result-display setting; every other terminal processing outcome
+  uses `not_applicable` with no display window. Display confirmation, failure and
   later derived `unconfirmed` remain governed by the
-  [lifecycle map](../states/lifecycle-map.md).
+  [lifecycle map](../states/lifecycle-map.md) and exact
+  [Promo Display API](../contracts/promo-display-api.md).
 - Repeating a key reads the existing row/result. It MUST NOT overwrite the
   immutable snapshot, create another row or start inference twice.
 - Realtime startup changes stale `accepted|searching` rows to `interrupted` and
@@ -142,6 +147,7 @@ One successful Attempt creates one `face_moment.promo_sessions` row owned by
 | `n` | Integer equal to the union cardinality and at least four. |
 | `qr_ticket_hash_sha256` | Required unique digest of the opaque QR ticket; plaintext is not stored. |
 | `qr_issued_at`, `qr_first_open_expires_at` | Server timestamps separated by the accepted 30-minute first-open interval. |
+| `browser_first_opened_at`, `browser_last_seen_at` | Nullable server timestamps for the one session-wide browser-access state; both are null before first open, otherwise both are present and `browser_last_seen_at >= browser_first_opened_at`. |
 | `created_at` | Server timestamp. |
 
 Photo IDs are durable historical references rather than ownership-crossing
@@ -152,14 +158,78 @@ The opaque ticket is deterministically regenerated for an idempotent terminal
 response as URL-safe HMAC-SHA-256 over the persisted session identity and issue
 time using one deployment QR-ticket secret; only its SHA-256 digest is stored.
 The secret and ticket MUST NOT enter logs. Rotation/recovery machinery is not
-part of FT-004. FT-006 owns ticket exchange, shared browser-access state,
-participant reads and expiry enforcement.
+part of FT-004. The nullable browser fields are added by the later FT-006
+linear migration and remain null for every newly issued session until first
+open; they do not change FT-004 publication or terminal-repeat behavior.
 
 Publishing a result inserts this row and transitions its Attempt to
-`processing_status=result_issued`, `domain_outcome=result` and
-`display_status=pending` in one `promo` transaction. Any failure publishes
-neither half. A terminal idempotent repeat reconstructs the exact accepted API
-response from persisted session data without rerunning search.
+`processing_status=result_issued`, `domain_outcome=result`,
+`display_status=pending` and its fixed `display_expires_at` in one `promo`
+transaction. Any failure publishes neither half. A terminal idempotent repeat
+reconstructs the exact accepted API response from persisted session data
+without rerunning search.
+
+## QR Browser Access
+
+`promo` implements the exact
+[QR Continuation API](../contracts/qr-continuation-api.md) against the existing
+result-session row. The stored `qr_ticket_hash_sha256` validates both the QR
+query and the shared `fm_promo_access` cookie; plaintext remains only in the
+issued QR URL/browser cookie and is never persisted or logged.
+
+First open atomically changes both nullable browser timestamps from null to the
+same server time only while that time is strictly before
+`qr_first_open_expires_at`. A valid repeated scan or explicit participant
+activity advances the one `browser_last_seen_at` only while the derived shared
+context is active. Concurrent phones update the same row; there is no
+per-device identifier, grant row or independent deadline. Passive session
+reads, asset/media loads, polling and local timers never write either field.
+
+Active browser access is derived as
+`server_now < browser_last_seen_at + 60 minutes`. Expiry is not stored and
+cannot be reversed by a stale cookie or late activity; no scheduler or cleanup
+row exists. The migration adds the two nullable columns and a constraint that
+they are both null or both non-null with `last_seen >= first_opened`; existing
+issued rows preserve their ticket, first-open deadline, teaser arrays, union
+and `N` unchanged.
+
+Participant response assembly reads the immutable session plus accepted
+СПА/media projections. Soft-deleted referenced media remains eligible for the
+issued session. Hard-purged/unavailable teaser IDs are skipped in original
+teaser order without choosing from the wider union, mutating arrays or
+recalculating `N`. Access, media and redirect behavior never writes Photo,
+processing or serving-control state.
+
+## Display Outcome
+
+The authenticated display report uses the exact
+[Promo Display API](../contracts/promo-display-api.md) and is owned entirely by
+`promo`:
+
+- while effective state is `pending`, the first timely `confirmed` report
+  atomically records `display_status=confirmed`, `display_reported_at` and the
+  non-negative `qr_fully_visible_elapsed_ms` supplied on the same client
+  monotonic timeline as `reference_series_ready`;
+- the first timely `failed` report records `display_status=failed` and
+  `display_reported_at` with no QR-visible elapsed value;
+- repeating the same stored terminal status is idempotent and returns the
+  original values; a conflicting terminal report changes nothing;
+- when `pending` has reached `display_expires_at`, reads return effective
+  `unconfirmed`; that terminal derivation is never replaced by a late report
+  and adds no scheduler/update row;
+- no display transition mutates the result session, QR ticket/issue/first-open
+  times, teaser IDs, complete union or `N`.
+
+The display setting and successful-capture cooldown remain independent positive
+deployment values projected through the display API. No settings table,
+acknowledgement outbox, background expiry job or reliable client-retry queue is
+introduced.
+
+The linear migration backfills a pre-existing `result_issued`/`pending` row's
+`display_expires_at` from its already persisted `updated_at`. Since no compliant
+pre-FT-005 acknowledgement could have been stored, the first post-migration read
+truthfully derives it as `unconfirmed` instead of inventing a new display window.
+Existing session/ticket/result fields remain unchanged.
 
 ## Edge Cases And Errors
 
@@ -172,6 +242,12 @@ response from persisted session data without rerunning search.
   not roll back an already valid core Attempt outcome.
 - A deadline, restart or fewer-than-four result creates no session and cannot
   publish a late result after the Attempt is terminal.
+- A missing/invalid display-duration setting prevents result publication with
+  the applicable readiness/technical failure; it never silently copies the
+  success-cooldown value.
+- A foreign-СПА, conflicting or late display report changes no Attempt/session
+  state. Missing or hard-purged teaser media never causes replacement selection
+  or `N` recalculation.
 - Migration downgrade removes only this feature revision in an isolated test;
   it MUST NOT introduce another migration stream or cross-owner cascade.
 
@@ -193,3 +269,17 @@ response from persisted session data without rerunning search.
 - Result publication and idempotent-repeat tests prove one Attempt/session
   transaction, exact response reconstruction, digest-only QR ticket storage and
   no result/session after insufficient, deadline, interrupted or failed work.
+- Display tests prove authenticated principal scope, fixed positive expiry,
+  timely confirmed/failed transitions, duplicate idempotency, conflicting/late
+  rejection, derived `unconfirmed`, one-clock QR-visible persistence and no
+  mutation of session/ticket/teaser/union/`N` truth.
+- QR-access migration and repository tests prove nullable-pair constraints,
+  preserved historical sessions, atomic first open, one shared monotonic
+  `last_seen` across concurrent phones, passive-read non-extension, derived
+  irreversible idle expiry and persistence across database restart without a
+  grant table or expiry job.
+- Phone assembly tests prove same-session СПА/date/available teaser/historical
+  `N`, soft-delete continuity, ordered hard-purged-media skip, protected
+  no-store delivery and zero foreign-owner writes or session reconstruction.
+- Migration proof separately covers the deterministic historical-pending
+  backfill and resulting derived `unconfirmed` without a stored terminal rewrite.

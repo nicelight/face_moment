@@ -17,6 +17,8 @@ source_of_truth:
   persistence, СПА derivation, reset/deactivation and redaction.
 - [Promo Attempt](../domains/promo-attempt.md): core Attempt persistence and
   state/outcome mapping.
+- [QR Continuation API](../contracts/qr-continuation-api.md): exact ticket
+  exchange, shared browser access, protected phone reads and expiry redirects.
 - [Display and central restart recovery](../runbooks/display-and-central-restart.md):
   operator procedure, limits and success checks.
 
@@ -120,6 +122,83 @@ source_of_truth:
   missing-date `503` with no admission/search, display-token-derived СПА,
   client override rejection, rate limiting, private topology and complete token
   redaction.
+
+## Promo Presentation And Display Outcome Proof
+
+- The server display-boundary proof covers display-token authentication,
+  principal scope, rate limiting, redaction, private topology, configuration,
+  authorized teaser media, acknowledgement and display-state integration
+  defined by the [Promo Display API](../contracts/promo-display-api.md).
+- Migration/repository proof fixes one positive result-display expiry for every
+  newly issued result and records confirmed/failed receipt plus the client
+  monotonic QR-visible offset. Duplicate same-status acknowledgement is
+  idempotent; conflict and late acknowledgement change nothing; pending expiry
+  derives terminal `unconfirmed` without scheduler or outbox. Every branch
+  proves that session/ticket/first-open expiry/teasers/union/`N` remain unchanged.
+- Display-media proof uses only the authenticated same-origin proxy, returns
+  `no-store` low-quality no-watermark JPEGs for the four issued teasers and
+  rejects unknown, foreign or hard-purged references without raw MinIO keys,
+  presigned participant URLs, replacement selection or partial Promo.
+- Client integration proof covers camera/stale/fresh retry, advertising and
+  communication-notice behavior, managed restart, typed result/non-success,
+  server-correctness rows, the display boundary, result-aware rendering, local
+  QR, post-render acknowledgement, independent display/cooldown timers and
+  optional-asset/non-success integration.
+- Complete and malformed/incomplete result fixtures at the logical 1920x1080
+  target prove exactly four unique decoded teasers, exact truthful copy, a
+  fully visible high-contrast locally generated QR and no partial/stale Promo.
+  Missing optional audio/animation is silent and does not block a valid result.
+- A confirmed report is emitted only after all four JPEGs decode and the QR is
+  fully visible. Render failure may report `failed`; duplicate, late, lost and
+  conflicting report fixtures retain the server-authoritative terminal result
+  while the client returns safely to advertising.
+- Result-display and success-cooldown clocks use the two independent positive
+  configuration values. Display expiry returns to advertising and emits no
+  session invalidation; failure starts no success cooldown. The display-expiry
+  evidence row is joinable to FT-006 continuation evidence, which owns the
+  actual phone read and final independent-session-lifetime verdict.
+- The controlled 20-attempt run reuses the stable FT-004 `attempt_id` set. An
+  authorized pilot evaluator records, for every attempt, the server-correctness
+  row, one-clock `qr_fully_visible_elapsed_ms`, `<10_000 ms` comparison,
+  complete target-screen render, programmatic QR decode and representative-real-
+  phone scan. The final joint result requires at least 19 of the same 20 rows
+  to pass every conjunct; timeout/no-match rows remain failures.
+
+## Phone Continuation And Expiry Proof
+
+- FT-006 continuation proof treats independently accepted session/ticket
+  issuance, immutable session truth, authorized no-store media, QR rendering
+  and display expiry as prerequisites. Its own proof covers ticket exchange,
+  shared browser fields, phone session/media/activity paths, local expiry
+  handling and post-display phone-read integration.
+- A controlled server clock and concurrent browser fixtures prove first open
+  strictly before the 30-minute boundary, safe redirect at the exact/late
+  boundary, repeated scans from multiple phones, one shared state row, atomic
+  first/last timestamps and one 60-minute idle deadline. Explicit activity on
+  either phone advances that deadline for both; passive session polling,
+  media/asset requests and timers do not. Exact idle expiry is irreversible and
+  survives a database restart without a scheduler or per-device grant.
+- Same-session fixtures compare issued and phone `session_id`, СПА,
+  authoritative `visit_date`, first available ordered teaser and historical
+  `N`. Soft deletion keeps the issued media readable. Each combination of one,
+  several and all hard-purged teaser objects proves ordered skip or `null`
+  without union replacement, session rebuild, invalidation or `N`
+  recalculation.
+- Expiry fixtures independently vary result-display duration, success cooldown,
+  QR first-open and browser idle clocks. The phone clears rendered personalized
+  state and redirects with no teaser, `N`, session/ticket query or referrer
+  data; later HTML/API/media/activity reads cannot revive or disclose it.
+- Public-boundary fixtures prove the exact QR query is omitted from logs, the
+  shared cookie has the required attributes, forged/foreign/late tickets and
+  cookies remain non-disclosing, all personalized responses are `no-store` and
+  `no-referrer`, rate limiting returns `429`, the purchase target cannot be
+  request-overridden and PostgreSQL/MinIO/internal ports remain private.
+- The feature-completion physical join scans the QR captured for the exact
+  issued session in display-expiry evidence after the screen has returned to
+  advertising. A representative phone must read that same still-active session
+  and its expected content, closing the actual-phone conjunct without rerunning
+  search, changing display status or claiming implementation of the target
+  purchase page.
 
 ## Data-policy Checks
 
