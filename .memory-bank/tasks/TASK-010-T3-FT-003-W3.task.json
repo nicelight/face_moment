@@ -1,0 +1,161 @@
+{
+  "id": "TASK-010-T3-FT-003-W3",
+  "title": "Prove managed display and intact-volume recovery",
+  "status": "planned",
+  "wave": "W3",
+  "feature": "FT-003",
+  "reqs": [
+    "REQ-CAP-001",
+    "REQ-CAP-002",
+    "REQ-UX-004",
+    "REQ-PERF-001",
+    "REQ-DIAG-001",
+    "REQ-REL-001",
+    "REQ-REL-003",
+    "REQ-SEC-001",
+    "REQ-SEC-002",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-004-T3-FT-001-W2",
+    "TASK-005-T2-FT-002-W2",
+    "TASK-008-T3-FT-003-W2",
+    "TASK-009-T3-FT-003-W2"
+  ],
+  "touched_files": [
+    "clients/spa_promo_client/",
+    "src/face_moment/promo/",
+    "src/face_moment/entrypoints/backend.py",
+    "src/face_moment/infrastructure/settings.py",
+    "deploy/systemd/user/spa-promo-client.service",
+    "deploy/chromium/policies/",
+    "deploy/ssh/sshd_config.d/",
+    "deploy/Caddyfile",
+    "compose.yaml",
+    "tests/",
+    "scripts/check-ft003-recovery.sh",
+    "scripts/verify-client-recovery.sh",
+    ".memory-bank/runbooks/display-and-central-restart.md"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Compose configuration",
+      "command": "docker compose config --quiet",
+      "required": true
+    },
+    {
+      "name": "Application image build",
+      "command": "docker compose build",
+      "required": true
+    },
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Python tests",
+      "command": "docker compose run --rm --no-deps backend python -m pytest tests/test_foundation.py tests/unit",
+      "required": true
+    },
+    {
+      "name": "Managed display and recovery verification",
+      "command": "bash scripts/verify-client-recovery.sh",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-003.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/runbooks/display-and-central-restart.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
+  "evidence_required": [
+    "Probe KIOSK-INTEGRATION covers FT-003-AC-001, FT-003-AC-002, FT-003-AC-003, FT-003-AC-006, FT-003-AC-007, FT-003-AC-008, FT-003-AC-010, REQ-CAP-001, REQ-CAP-002, REQ-UX-004, REQ-DIAG-001 and REQ-PERF-001. RED: before composition changes, an isolated managed-browser/fake-camera plus dedicated sensor/realtime run must fail at least one claim-wise result: trigger source/overlap and camera recovery/downscale; AC-003 fixed endpoint, exactly one continuous 10-second poll with immediate 200/204 renewal, strict event, managed LNA, exact-origin CORS/OPTIONS/Bearer/redaction and absence of bridge/local-server/WebSocket; AC-006 one synchronous request per ready series, manifest-first exact zero-to-twenty ordered parts/allow-list/omissions, admitted manifest-only zero case, 20,971,520-versus-20,971,521-byte core-Attempt relationship and absence of extra aggregate-pixel/per-JPEG/manifest caps; stale/fresh advertising/notice; or AC-010 separation of request-manifest timing fields from client-local ready-series processing start, request-send start and response receipt. GREEN: the same controlled attempt-id run records a distinguishable pass/fail row for every listed claim, persists the three request-manifest fields, records and orders the three client-local diagnostic moments through response receipt on one monotonic clock, compares their intervals with the controlled fixture schedule and retains the raw trace plus comparison under .tasks/TASK-010-T3-FT-003-W3/; it does not claim FT-004 search, FT-007 diagnostic UI, four-teaser Promo, QR visibility or the joint 20-attempt pass rate.",
+    "Probe HOST-SECURITY covers FT-003-AC-009, REQ-SEC-001, REQ-SEC-002 and REQ-ARCH-001. RED: an isolated host-policy/effective-topology probe must fail if the source-managed service/policy/SSH controls do not exist or if Chromium uses root/admin privileges, --no-sandbox, SSH passwords, Docker group/socket, deployment secrets, wildcard LNA/CORS, public PostgreSQL/MinIO/internal ports or credential-bearing URLs/logs. GREEN: the same probe records the display/facemoment identities and permissions, effective user service command/sandbox/restart, key-only SSH configuration, scoped LNA policy, public 22/443-only target topology and redaction checks with a distinguishable comparison for each harm-driving claim.",
+    "Probe CENTRAL-INDEPENDENCE covers FT-003-AC-011, REQ-REL-001 and REQ-ARCH-001. RED: with no KDE, Chromium process or display login, the absent final composition/recovery check must fail to prove central role readiness plus an authenticated backend request, queued Photo-state transition and fresh realtime admission. GREEN: the claim-equivalent isolated intact-volume run records each role/process readiness separately, authenticated request status, exact Photo locator/before-after owner state, realtime admission/Attempt locator and unchanged central operation while a display session starts and terminates.",
+    "Probe BROWSER-RECOVERY covers FT-003-AC-012, REQ-REL-001 and .memory-bank/testing/client-realtime.md#client-state-and-recovery-proof. RED: terminating Chromium in advertising and active/result states must show the absent managed service cannot automatically replace/reload it, cannot discard exactly the prior personalized result/reference frame/QR-session token/session state/active Attempt, or incorrectly loses/resets a managed display-client or sensor credential. GREEN: both reachable-origin cases record old/new process identity, service restart, reload, usable advertising, negative checks for the prior personalized result, reference frame, QR/session token, session state and active Attempt, plus redacted positive checks that the existing managed display-client credential still authenticates and the existing sensor secret still authorizes the poll without reset/reprovision; an origin-unreachable case records the accepted no-offline-start limit rather than a fabricated pass.",
+    "Probe RECOVERY-RUNBOOK covers FT-003-AC-013, REQ-REL-003 and every step/limit claim in .memory-bank/runbooks/display-and-central-restart.md. RED: a fresh authorized operator following only the pre-task runbook must encounter a missing source-managed command/check or fail one named browser/intact-volume success condition without improvising repair. GREEN: after implementation and runbook reconciliation, the operator follows only the documented steps from both failure states and records preconditions, central readiness, authenticated backend/realtime, queued Photo progress, preserved durable locator, automatic client reload/advertising, state discard, no destructive action and the no-offline-start/sole-primary-loss limits as separate pass/fail results.",
+    "All T3 probes use a unique disposable Compose project and browser profile plus a dedicated authorized test camera/sensor/host fixture where physical behavior is required. They preserve operator/default volumes and credentials, never disable sandbox or expand permissions, retain safe rerun/owned cleanup and redact protected payloads. Independent /verify supplies fresh functional evidence and VERDICT: PASS; per-task /red-verify supplies SEMANTIC_VERDICT: semantic-pass. After these tier obligations pass, the explicit lifecycle owner records the closure decision."
+  ],
+  "purpose": "Compose and independently prove the managed central-origin display, host security boundary and bounded operator recovery outcome after the browser, sensor and server-admission components exist.",
+  "success_outcome": "The central runtime starts and continues without the display session; the sandboxed non-privileged Chromium client loads from the central HTTPS origin, reaches capture/admission and safe advertising, restarts automatically after browser failure when the origin is reachable, discards personalized state while preserving managed display-client/sensor credentials, and an authorized operator restores browser and intact-volume central operation by following the documented non-destructive procedure alone.",
+  "anti_goals": [
+    "Do not implement or claim FT-004 search/selection, FT-005 four-teaser Promo/QR rendering/acknowledgement, FT-006 continuation/session expiry or the joint controlled 20-attempt success result.",
+    "Do not add offline client startup, backup/replication, sole-primary-loss recovery, watchdog/subprocess isolation, zero-downtime deployment or another service/user.",
+    "Do not disable Chromium sandbox, give display SSH/sudo/Docker/deployment-secret access, publish internal ports or rotate/reset credentials as a recovery shortcut.",
+    "Do not delete/recreate volumes, use docker compose down -v, repair migrations/serving settings inside the recovery proof or mutate an unapproved physical sensor/host."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "FT-004 through FT-012 behavior and joint four-teaser/QR performance acceptance",
+      "Production deployment action, production credentials/device flashing and operator/default data mutation",
+      "Primary-volume deletion/recreation, backup/replication and irreversible-loss recovery",
+      "Chromium sandbox disablement, display privilege expansion, public internal ports and new runtime services/users"
+    ],
+    "stop_conditions": [
+      "The accepted central-origin, systemd user-service, two-OS-user, key-only SSH, private-service or reachable-origin recovery contract would need to change.",
+      "Central independence cannot be proved without implementing or changing FT-004+ product behavior or bypassing owner boundaries.",
+      "Recovery would require deleting/replacing storage, changing a serving revision, rotating a credential, disabling sandbox or broadening permissions.",
+      "Any harm-driving host/restart probe cannot run in already authorized isolated/dedicated test state with safe rerun, redaction and owned cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-003.md#FT-003-AC-001",
+    ".memory-bank/features/FT-003.md#FT-003-AC-002",
+    ".memory-bank/features/FT-003.md#FT-003-AC-003",
+    ".memory-bank/features/FT-003.md#FT-003-AC-006",
+    ".memory-bank/features/FT-003.md#FT-003-AC-007",
+    ".memory-bank/features/FT-003.md#FT-003-AC-008",
+    ".memory-bank/features/FT-003.md#FT-003-AC-009",
+    ".memory-bank/features/FT-003.md#FT-003-AC-010",
+    ".memory-bank/features/FT-003.md#FT-003-AC-011",
+    ".memory-bank/features/FT-003.md#FT-003-AC-012",
+    ".memory-bank/features/FT-003.md#FT-003-AC-013",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md",
+    ".protocols/FT-003/decision-log.md",
+    ".memory-bank/tasks/TASK-004-T3-FT-001-W2.task.json",
+    ".memory-bank/tasks/TASK-005-T2-FT-002-W2.task.json",
+    ".memory-bank/tasks/TASK-008-T3-FT-003-W2.task.json",
+    ".memory-bank/tasks/TASK-009-T3-FT-003-W2.task.json"
+  ],
+  "normative_inputs": [
+    ".memory-bank/architecture/system-architecture.md#deployment-and-recovery",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries",
+    ".memory-bank/contracts/boundary-map.md#authentication-and-data-specific-delivery",
+    ".memory-bank/contracts/boundary-map.md#http-failure-contract",
+    ".memory-bank/contracts/sensor-passage-api.md",
+    ".memory-bank/contracts/realtime-attempt-api.md",
+    ".memory-bank/states/lifecycle-map.md#automatic-attempt-and-display",
+    ".memory-bank/states/lifecycle-map.md#client-restart-and-offline-metadata",
+    ".memory-bank/testing/client-realtime.md#client-state-and-recovery-proof",
+    ".memory-bank/runbooks/display-and-central-restart.md",
+    ".memory-bank/testing/index.md"
+  ],
+  "constraints": [
+    "SpaPromoClient remains the external/runtime owner at clients/spa_promo_client/; promo owns central delivery/admission integration and transport/composition only wire accepted boundaries.",
+    "Use exactly the source-managed display user service deploy/systemd/user/spa-promo-client.service with Restart=always, short restart delay, central HTTPS URL and ordinary Chromium sandbox.",
+    "Preserve exactly the facemoment administrative and display autologin users: key-only SSH/admin/Docker belongs only to facemoment; display has camera/browser/profile access only.",
+    "The non-destructive recovery check observes named application outcomes through public/owner boundaries and intact volumes; it does not read protected storage payloads or directly change business state to manufacture a pass.",
+    "Physical/site verification may select exact camera, input maximum and host paths as deployment configuration but cannot reopen the accepted client/API/security behavior."
+  ],
+  "invariants": [
+    "Stopping or crashing the display session never stops backend, BackgroundPhotoWorker or RealtimeFaceService.",
+    "Automatic browser recovery requires a reachable central origin and always discards prior personalized client state before returning to advertising.",
+    "Only 22/443 are public in the target host topology; Chromium stays sandboxed and the display user never gains administrative or deployment-secret access.",
+    "Ordinary central restart preserves the configured PostgreSQL/MinIO volumes and owner-held durable state; recovery performs no volume deletion, credential reset or serving revision change.",
+    "Browser restart discards personalized result, reference-frame, QR/session-token, session and active-Attempt state while preserving the managed display-client and sensor credentials without reset or reprovision.",
+    "The final integration proves FT-003 capture/admission/recovery only and does not claim later search, four-teaser Promo, QR/session or controlled 20-attempt completion."
+  ],
+  "verification_targets": [
+    "KIOSK-INTEGRATION -> FT-003-AC-001, FT-003-AC-002, FT-003-AC-003, FT-003-AC-006, FT-003-AC-007, FT-003-AC-008 and FT-003-AC-010 with separate trigger/camera; sensor endpoint, continuous poll, event, LNA/CORS/auth/redaction/topology; synchronous multipart structure/allow-list/omissions, zero admission, exact body-bound and no-extra-cap; freshness/advertising/notice; request-manifest fields; and client-local ready-series/request-send/response-receipt results.",
+    "HOST-SECURITY -> FT-003-AC-009, REQ-SEC-001, REQ-SEC-002 and REQ-ARCH-001 with separate user, sandbox, SSH, LNA/CORS, topology and redaction results.",
+    "CENTRAL-INDEPENDENCE -> FT-003-AC-011 and REQ-REL-001 with separate no-display role, authenticated backend, queued Photo and realtime admission results.",
+    "BROWSER-RECOVERY -> FT-003-AC-012 and REQ-REL-001 with separate advertising-state, active/result-state, personalized result/frame/QR-session/Attempt discard, managed display-client/sensor credential preservation and origin-unreachable-limit results.",
+    "RECOVERY-RUNBOOK -> FT-003-AC-013 and REQ-REL-003 with separate precondition, browser, central/intact-volume, destructive-exclusion and accepted-limit results.",
+    ".memory-bank/testing/client-realtime.md#client-state-and-recovery-proof",
+    ".memory-bank/runbooks/display-and-central-restart.md#verification-targets"
+  ]
+}

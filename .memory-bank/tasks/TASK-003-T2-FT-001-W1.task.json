@@ -5,6 +5,7 @@
   "wave": "W1",
   "feature": "FT-001",
   "reqs": [
+    "REQ-ING-002",
     "REQ-ING-003",
     "REQ-ARCH-001"
   ],
@@ -58,10 +59,18 @@
     ".memory-bank/tasks/plans/IMPL-FT-001.md"
   ],
   "evidence_required": [
+    "FT-001-AC-001 RED: before changing production behavior, an isolated inventory-boundary probe with a photographer-selected visit_date and a reliable EXIF calendar date that differs from it must fail the claim that the persisted Photo.visit_date remains the submitted authoritative date and that the mismatch is represented as warning data; retain the failing assertion, observed fields/rows, disposable state and configured timezone under .tasks/TASK-003-T2-FT-001-W1/.",
+    "FT-001-AC-001 GREEN: the claim-equivalent isolated probe must record the submitted and persisted authoritative visit_date, reliable EXIF value, effective captured_at, captured_at_source, exif_visit_date_mismatch warning and pass/fail comparison proving that EXIF never rewrites or regroups the selected scope, plus owned cleanup.",
+    "FT-001-AC-001 RED: before changing production behavior, an isolated fixture with reliable EXIF, missing/unreliable EXIF and a controlled absence of upload-start time must fail the claim-specific effective captured_at fallback order (EXIF, then upload_started_at, then 01:00 in the СПА timezone on authoritative visit_date); retain actual captured_at/source observations, decisive fixture conditions and disposable cleanup.",
+    "FT-001-AC-001 GREEN: the claim-equivalent fixture matrix must record effective captured_at and captured_at_source for reliable EXIF, upload-start fallback and visit_date 01:00 fallback, compare each result with the canonical order and retain the owned rerun/cleanup artifact.",
+    "FT-001-AC-001 RED: before changing production behavior, isolated candidates exceeding the configured compressed-byte, decoded-side or decoded-pixel bound, plus invalid or undecodable JPEG fixtures, must fail the claim-specific validation probe by showing that the implementation does not consistently reject them before Photo/pending admission; retain each failing assertion, explicit test limits, observed object/row counts and disposable cleanup.",
+    "FT-001-AC-001 GREEN: the claim-equivalent validation probe must record each configured bound and invalid/undecodable outcome, zero Photo and serving-pending rows, request-owned candidate cleanup where applicable, pass/fail comparison and safe rerun artifact.",
     "FT-001-AC-002 RED: before changing production behavior, an isolated sequential/concurrent same-scope duplicate probe must fail to obtain exactly one accepted winner plus duplicate losers with one Photo, one serving-pending row and one retained original; retain the failing assertion and disposable-state conditions under .tasks/TASK-003-T2-FT-001-W1/.",
     "FT-001-AC-002 GREEN: the claim-equivalent isolated probe must record request outcomes, configured scope/checksum, Photo/pending/object counts, loser-candidate deletion, pass/fail comparison and owned cleanup artifact.",
     "FT-001-AC-003 RED: an isolated success/exception-before-commit probe must show that the absent implementation cannot establish the required all-or-none Photo plus serving-pending publication; retain the claim-scoped failure.",
     "FT-001-AC-003 GREEN: success and injected rollback must record the transaction boundary, exactly one complete pair or zero database admission, decisive row counts, comparison and artifact.",
+    "FT-001-AC-004 RED: before changing production behavior, an isolated architecture-boundary probe over the core admission path must fail the accepted ownership claim because inventory-owned orchestration and its typed serving_control/processing calls do not yet exist; retain the missing owner/call assertions, inspected code roots and the check that no HTTP handler, generic utility or composition root supplies equivalent business orchestration.",
+    "FT-001-AC-004 GREEN: the claim-equivalent static/integration probe must record the concrete inventory owning entrypoint under src/face_moment/inventory/, typed serving_control and processing application-boundary calls, owner-scoped state writes, and a negative trace showing no handler, generic utility, composition-root orchestration or foreign repository write, with decisive pass/fail comparison and artifact.",
     "FT-001-AC-005 RED: an isolated post-object/pre-commit interruption and re-upload fixture must fail before implementation to demonstrate the accepted no-database-admission/recovery behavior; the probe uses only a disposable bucket prefix and database state.",
     "FT-001-AC-005 GREEN: the same fixture must record the inaccessible orphan condition, zero Photo/pending rows, successful ordinary re-upload, final object/database counts, safe rerun and owned cleanup.",
     "Migration evidence records the pre-task linear head, the feature revision's direct down_revision, upgrade/downgrade/re-upgrade results, schema constraints and preservation of the Foundation migration without treating a later mutable head as an FT-001 requirement.",
@@ -90,8 +99,10 @@
     ]
   },
   "source_artifacts": [
+    ".memory-bank/features/FT-001.md#FT-001-AC-001",
     ".memory-bank/features/FT-001.md#FT-001-AC-002",
     ".memory-bank/features/FT-001.md#FT-001-AC-003",
+    ".memory-bank/features/FT-001.md#FT-001-AC-004",
     ".memory-bank/features/FT-001.md#FT-001-AC-005",
     ".memory-bank/tasks/plans/IMPL-FT-001.md",
     ".protocols/FT-001/decision-log.md"
@@ -126,10 +137,13 @@
     "The photographer-selected visit_date remains authoritative even when reliable EXIF differs; effective captured_at follows the canonical fallback order."
   ],
   "verification_targets": [
+    "FT-001-AC-001 / REQ-ING-002: isolated inventory repository/integration proof compares submitted authoritative visit_date with persisted visit_date for a reliable EXIF calendar-date mismatch and records exif_visit_date_mismatch without scope rewrite.",
+    "FT-001-AC-001 / REQ-ING-002: isolated fixture-matrix proof compares effective captured_at and captured_at_source for reliable EXIF, upload-start fallback and 01:00-on-authoritative-visit_date fallback.",
+    "FT-001-AC-001 / REQ-ING-002: isolated validation proof exercises compressed-byte, decoded-side, decoded-pixel, invalid and undecodable JPEG conditions and compares rejection, candidate cleanup and zero Photo/serving-pending rows.",
     "FT-001-AC-002: isolated sequential and concurrent duplicate probes compare outcomes plus Photo, serving-pending and MinIO object counts before/after, including loser cleanup.",
     "FT-001-AC-003: isolated success and injected pre-commit rollback prove the complete Photo+pending pair or zero database admission.",
     "FT-001-AC-005: isolated post-object/pre-commit interruption proves no exposed/database admission, successful ordinary re-upload, safe rerun and owned cleanup.",
-    "REQ-ARCH-001: static/integration evidence locates inventory as the primary owner, crosses only typed serving_control/processing boundaries and finds no handler, generic-util or composition-root business orchestration.",
+    "FT-001-AC-004 / REQ-ARCH-001: static/integration proof locates inventory as the primary owner, traces only typed serving_control/processing calls and owner-scoped writes, and compares the inspected path against the prohibition on handler, generic-util, composition-root orchestration and foreign repository writes.",
     ".memory-bank/domains/photo-admission.md#migration-and-verification-targets"
   ]
 }

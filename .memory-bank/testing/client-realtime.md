@@ -1,7 +1,7 @@
 ---
 description: Canonical verification contract for client proposal submission, one-clock Promo latency and related diagnostics.
 status: active
-last_updated: 2026-08-01
+last_updated: 2026-08-06
 source_of_truth:
   - .memory-bank/testing/client-realtime.md
 ---
@@ -17,6 +17,8 @@ source_of_truth:
   persistence, СПА derivation, reset/deactivation and redaction.
 - [Promo Attempt](../domains/promo-attempt.md): core Attempt persistence and
   state/outcome mapping.
+- [Display and central restart recovery](../runbooks/display-and-central-restart.md):
+  operator procedure, limits and success checks.
 
 ## Required Proof
 
@@ -65,6 +67,59 @@ source_of_truth:
 - Retention proof applies 30 days to technical logs, 90 days to ordinary
   Attempts/evidence including persisted capture-derived media, and preserves
   only the curated promoted subset until explicit deletion.
+
+## Client State And Recovery Proof
+
+- Physical and test triggers enter the same trigger-acceptance path, retain
+  distinguishable source metadata, ignore overlap and use a fresh reference
+  series after every failure. Late response, timeout and reconnect fixtures
+  prove that stale work cannot replace the current advertising/result state.
+- Camera list, preview, explicit selection, disconnect/reconnect/port-change
+  and oversized-input fixtures prove recoverable reselection, no arbitrary
+  substitution and downscale before ring-buffer/detector work.
+- Named camera, sensor, model, optional-asset and central-service failures keep
+  the loaded client on usable advertising. The server-communication notice is
+  timed for 5–10 seconds and a newer notice may replace it immediately.
+- Central roles are started and exercised without KDE, Chromium or the
+  `display` login. Browser termination in advertising and active/result states
+  proves user-service restart, reachable-origin reload, advertising and discard
+  of prior personalized client state.
+- An authorized operator follows only the linked recovery runbook from browser
+  failure and intact-volume central restart and retains the named checks as
+  evidence. The proof must not claim offline reload or recovery after sole-
+  primary loss.
+
+## Reference Search And Joint Correctness Proof
+
+- Mixed revision, СПА, date, active/soft-deleted Photo, processing state and
+  confirmed/unconfirmed time-window fixtures prove the exact scope before
+  cosine comparison. Ordered/tied/repeated-person/low-quality crops prove
+  server-authoritative at-most-five selection, independent native queries and
+  every forbidden clustering/margin/cross-pipeline path.
+- Candidate-pool fixtures retain each selected detection, every threshold-valid
+  Photo match, pHash ranking decision, reserved Photo, four teaser IDs and the
+  complete unique `session_result_photo_ids` union. The artifact reconciles
+  `N` to the union and distinguishes weak-match, repeated-Photo, partial-ready
+  inventory and fewer-than-four outcomes.
+- The FT-004 implementation task runs a controlled 20-attempt corpus with
+  stable attempt IDs and manually reviewed participant/detection ground truth.
+  It retains a correctness row for all four teasers and every union member in
+  each attempt; missing group-member coverage alone remains a pass.
+- The final joint `19/20` feature verdict joins those same attempt IDs with the
+  physical one-clock fully-visible/scannable QR evidence owned by FT-005. The
+  FT-004 task may close after its server-owned correctness implementation and
+  evidence pass, but FT-004 feature completion MUST NOT claim the joint verdict
+  until that cross-feature evidence exists. This avoids a task dependency cycle
+  without weakening the accepted shared-attempt criterion.
+- A concurrency fixture holds the one inference slot, proves an admitted
+  second Attempt returns `busy` before release with no waiter/inference call,
+  and proves only a fresh later request can acquire the slot. Deadline and
+  restart fixtures prove no late session, `accepted|searching -> interrupted`,
+  no replay and fresh post-restart acquisition.
+- Active-date/security fixtures prove the operator-only setting boundary,
+  missing-date `503` with no admission/search, display-token-derived СПА,
+  client override rejection, rate limiting, private topology and complete token
+  redaction.
 
 ## Data-policy Checks
 

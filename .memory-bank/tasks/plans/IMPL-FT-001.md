@@ -1,7 +1,7 @@
 ---
 description: Implementation plan for authenticated independent Photo admission in FT-001.
 status: active
-last_updated: 2026-08-03
+last_updated: 2026-08-06
 ---
 # IMPL-FT-001 — Independent Photo Admission
 
@@ -126,10 +126,10 @@ transitive dependency of TASK-004.
 
 | Feature AC | Owning task | Planned proof |
 |---|---|---|
-| `FT-001-AC-001` | TASK-004 | Same-origin authenticated journey submits valid, invalid, undecodable and mixed-EXIF files independently and compares visible/API outcomes with persisted authoritative dates. |
+| `FT-001-AC-001` | TASK-003 (core data claims) + TASK-004 (public journey) | TASK-003 proves authoritative visit_date, EXIF mismatch/effective captured_at, JPEG validation/bounds and no-admission rejects; TASK-004 proves the exact uploader/target/upload route, method, field and response matrices, including independent valid, invalid, undecodable, mixed-EXIF and duplicate outcomes plus representative `422`. |
 | `FT-001-AC-002` | TASK-003 | Isolated sequential and concurrent same-scope duplicates yield exactly one Photo/pending/object winner and delete only losing candidates. |
 | `FT-001-AC-003` | TASK-003 | Success and injected pre-commit rollback show complete Photo+pending or no database admission. |
-| `FT-001-AC-004` | TASK-004 | Cookie/role/CSRF, configured below/above-limit requests, `429`, HTTPS-only topology and secret/object-key redaction are verified. |
+| `FT-001-AC-004` | TASK-003 (architecture ownership claim) + TASK-004 (public/security journey) | TASK-003 proves that `inventory` owns core admission, crosses only typed `serving_control`/`processing` boundaries and leaves no foreign-write or handler/generic-util/composition-root orchestration bypass; TASK-004 proves the exact staff-session surface, credential/token/cookie persistence, restart-safe sessions, cookie/role/CSRF behavior, separate deterministic login/upload limits, `429`, HTTPS-only topology, secret/object-key redaction and public-adapter delegation to `inventory` without foreign writes. |
 | `FT-001-AC-005` | TASK-003 | Post-object/pre-commit interruption leaves no database admission or exposure; re-upload succeeds and owned cleanup is safe. |
 
 Every governing `REQ-*` maps to at least one task, and no planned task proves a

@@ -1,0 +1,117 @@
+{
+  "id": "TASK-008-T3-FT-003-W2",
+  "title": "Deliver authenticated ESP32 passage transport",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-003",
+  "reqs": [
+    "REQ-CAP-001",
+    "REQ-UX-004",
+    "REQ-DIAG-001",
+    "REQ-REL-001",
+    "REQ-SEC-001",
+    "REQ-SEC-002",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-007-T2-FT-003-W1"
+  ],
+  "touched_files": [
+    "firmware/passage_sensor/",
+    "clients/spa_promo_client/",
+    "deploy/chromium/policies/",
+    "tests/",
+    "scripts/verify-sensor-passage.sh",
+    "scripts/verify-client-realtime.sh"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Application image build",
+      "command": "docker compose build",
+      "required": true
+    },
+    {
+      "name": "Client regression verification",
+      "command": "bash scripts/verify-client-realtime.sh",
+      "required": true
+    },
+    {
+      "name": "ESP32 passage contract and browser integration",
+      "command": "bash scripts/verify-sensor-passage.sh",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-003.md",
+    ".memory-bank/contracts/sensor-passage-api.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
+  "evidence_required": [
+    "Probe SENSOR-CONTRACT covers FT-003-AC-003, REQ-CAP-001, REQ-SEC-002 and every task-applicable claim in .memory-bank/contracts/sensor-passage-api.md#endpoint, #event-shape and #cors-and-failure-semantics. RED: before behavior changes, the firmware/protocol fixture must show the exact endpoint, 200/204 behavior, strict versioned event, 401/403/5xx mapping, exact-origin CORS/OPTIONS or Bearer validation is absent or non-conforming. GREEN: the same fixture records a distinct result for each referenced endpoint/event/auth/CORS/failure claim, including monotonic sequence within boot and no dynamic sensor selection, with configured test origin/secret, request/response observations, decisive comparisons and retained firmware build/protocol artifact.",
+    "Probe SENSOR-BROWSER covers FT-003-AC-001, FT-003-AC-003, FT-003-AC-008, REQ-CAP-001, REQ-UX-004, REQ-DIAG-001, REQ-REL-001 and the sensor/browser claims in .memory-bank/testing/client-realtime.md#required-proof and #client-state-and-recovery-proof. RED: a managed-browser fixture must show the absent adapter/policy cannot hold exactly one 10-second request, continue after event/204/recoverable failure, suppress only repeated (boot_id, sequence), enter the same physical/test trigger path, retain advertising/recoverable feedback or keep client-only offline metadata delivery best-effort and non-blocking. GREEN: the claim-equivalent run distinguishes concurrency/renewal, physical/test source, duplicate suppression, overlap handling, sensor-failure advertising/feedback and recovery, plus a separate result showing participant flow continues when client-only offline metadata is dropped rather than durably queued, using the configured central origin and fixed mDNS host.",
+    "Probe SENSOR-SECURITY covers FT-003-AC-003, REQ-SEC-001, REQ-SEC-002 and REQ-ARCH-001. RED: the isolated topology/redaction scan must fail if managed Local Network Access is not scoped to the central origin, the secret is absent from the intended profile flow, or a URL/log, wildcard CORS, bridge, local web server, WebSocket, discovery/pairing or PKI/rotation service is present. GREEN: the same scan records effective managed policy, exact-origin preflight/auth results, Authorization-only secret handling, redacted firmware/browser logs, one ESP32/client topology and a separate pass/fail result for every forbidden sensor route or secret-handling claim.",
+    "All T3 probes use a disposable browser profile, non-production test origin and secret, protocol-equivalent fixture or dedicated test ESP32 that is explicitly authorized for flashing; they never mutate an unapproved deployed sensor or broaden permissions, and they retain safe rerun/owned cleanup. Independent /verify supplies fresh functional evidence and VERDICT: PASS; per-task /red-verify supplies SEMANTIC_VERDICT: semantic-pass. After these tier obligations pass, the explicit lifecycle owner records the closure decision."
+  ],
+  "purpose": "Connect the accepted browser trigger adapter to one exact authenticated ESP32 long-poll implementation without adding another transport, credential lifecycle or privileged local process.",
+  "success_outcome": "A managed central-origin Chromium client keeps exactly one authenticated 10-second request to the configured fixed-name ESP32, accepts strict passage events into the same trigger path, immediately continues after event or timeout, and remains on recoverable advertising through malformed, unauthorized or unavailable sensor conditions without exposing its secret.",
+  "anti_goals": [
+    "Do not add a local bridge/web server, WebSocket, sensor discovery, pairing, automatic secret rotation, PKI, durable sensor queue or server-routed event channel.",
+    "Do not change browser capture/proposal semantics from TASK-007 or implement central realtime/core Attempt behavior from TASK-009.",
+    "Do not implement or verify TASK-010-owned host service, SSH, OS-user, browser-sandbox or public-port controls.",
+    "Do not flash or reconfigure an operator/production ESP32 without explicit authorization; protocol-equivalent and dedicated test-device proof is sufficient."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Central display-client token and server realtime/core Attempt implementation",
+      "FT-004+ search, Promo, QR/session and diagnostic UI/evidence storage behavior",
+      "Production sensor firmware/device state, production secrets and operator browser profiles",
+      "TASK-010 host service, SSH, OS-user, browser-sandbox and public-port controls; bridge/local-server/WebSocket/discovery/pairing/PKI infrastructure"
+    ],
+    "stop_conditions": [
+      "The exact sensor endpoint, event shape, long-poll, CORS, Bearer or fixed-mDNS contract would need to change.",
+      "Managed Chromium cannot access the accepted ESP32 boundary without a bridge, local server, fallback transport or TASK-010-owned host/security changes.",
+      "Firmware implementation requires a new credential lifecycle, persistent sensor queue or dynamic discovery/pairing subsystem.",
+      "Any harm-driving auth/secret/device probe cannot run in already authorized disposable or dedicated test state with safe rerun and cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-003.md#FT-003-AC-001",
+    ".memory-bank/features/FT-003.md#FT-003-AC-003",
+    ".memory-bank/features/FT-003.md#FT-003-AC-008",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md",
+    ".protocols/FT-003/decision-log.md",
+    ".memory-bank/tasks/TASK-007-T2-FT-003-W1.task.json"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/sensor-passage-api.md",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries",
+    ".memory-bank/contracts/boundary-map.md#authentication-and-data-specific-delivery",
+    ".memory-bank/states/lifecycle-map.md#automatic-attempt-and-display",
+    ".memory-bank/testing/client-realtime.md#required-proof",
+    ".memory-bank/testing/client-realtime.md#client-state-and-recovery-proof",
+    ".memory-bank/architecture/system-architecture.md#AD-006",
+    ".memory-bank/testing/index.md"
+  ],
+  "constraints": [
+    "The external/runtime owners remain SpaPromoClient at clients/spa_promo_client/ and the ESP32 target at firmware/passage_sensor/; neither becomes a server capability or owns capture/search state outside its contract.",
+    "Use one fixed configured mDNS host, one request at a time and one manually provisioned sensor Bearer secret stored only in the managed kiosk profile and sent only in Authorization.",
+    "Choose the smallest firmware build arrangement compatible with the target ESP32 and exact API; exact firmware source filenames and board profile remain executor discretion, while the configured target and reproducible build are retained as evidence.",
+    "Managed Local Network Access allows only the central Face Moment origin; ESP32 CORS echoes exactly that origin and supports Authorization preflight.",
+    "Use a protocol-equivalent fixture for deterministic failure coverage and a dedicated authorized test ESP32 when physical firmware proof is available."
+  ],
+  "invariants": [
+    "Exactly one long-poll is outstanding while active and the next starts immediately after a 200 or 204 response.",
+    "Only a strict valid passage event enters the trigger path; duplicate transport suppression uses only in-memory (boot_id, sequence).",
+    "The sensor secret never appears in host/path/query/response/URL/log and wildcard CORS is forbidden.",
+    "Malformed body, wrong origin/secret and transport failure never become a passage event and do not displace usable advertising.",
+    "No bridge, fallback transport, discovery, pairing, durable queue or separate sensor credential lifecycle is introduced."
+  ],
+  "verification_targets": [
+    "SENSOR-CONTRACT -> FT-003-AC-003, REQ-CAP-001 and REQ-SEC-002 with separate endpoint, event, CORS/auth and failure results.",
+    "SENSOR-BROWSER -> FT-003-AC-001, FT-003-AC-003, FT-003-AC-008, REQ-UX-004, REQ-DIAG-001 and REQ-REL-001 with separate one-request, continuation, duplicate, trigger, advertising/feedback and best-effort offline-metadata results.",
+    "SENSOR-SECURITY -> FT-003-AC-003, REQ-SEC-001, REQ-SEC-002 and REQ-ARCH-001 with separate policy, redaction, topology and forbidden sensor-route results."
+  ]
+}

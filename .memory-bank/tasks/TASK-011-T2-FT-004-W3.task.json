@@ -1,0 +1,119 @@
+{
+  "id": "TASK-011-T2-FT-004-W3",
+  "title": "Implement native exact realtime reference search",
+  "status": "planned",
+  "wave": "W3",
+  "feature": "FT-004",
+  "reqs": [
+    "REQ-SRCH-001",
+    "REQ-SRCH-002",
+    "REQ-SRCH-003",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-005-T2-FT-002-W2"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/",
+    "src/face_moment/inventory/",
+    "src/face_moment/serving_control/",
+    "tests/",
+    "scripts/verify-realtime-search.sh"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Application image build",
+      "command": "docker compose build",
+      "required": true
+    },
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Configured Python tests",
+      "command": "docker compose run --rm --no-deps backend python -m pytest tests/test_foundation.py tests/unit",
+      "required": true
+    },
+    {
+      "name": "Isolated realtime search verification",
+      "command": "bash scripts/verify-realtime-search.sh",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-004.md",
+    ".memory-bank/domains/realtime-search.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-004.md"
+  ],
+  "evidence_required": [
+    "Probe SEARCH-SCOPE covers FT-004-AC-001, REQ-SRCH-001, REQ-SRCH-003 and the immutable-context, exact-search and admitted technical-failure claims in .memory-bank/domains/realtime-search.md#exact-compatible-search and .memory-bank/domains/realtime-search.md#failure-and-deadline-behavior. RED: before production behavior changes, a disposable mixed revision, spa, visit_date, active/soft-deleted visibility, ready/non-ready publication and confirmed/unconfirmed time-window matrix must show the absent processing boundary cannot isolate the accepted context or return exact threshold-valid Photos; separate injected native query-engine, PostgreSQL repository, pgvector exact-query and private-preview/pHash failures must also show that the absent production boundary cannot surface a technical failure without leaking an exception as a partial selected-detection match set. GREEN: the claim-equivalent matrix records distinguishable results for native revision/prewarm, authoritative immutable-context spa, active date, active complete-ready state, exact cosine comparison, calibrated threshold, per-Photo best match, deterministic similarity/photo_id ordering, no unconfirmed time filter and on-demand pHash output; the fault branch records one separate processing-boundary technical-failure result for native query-engine, PostgreSQL repository, pgvector exact-query and private-preview/pHash injection, zero successful/partial match output for each failed call and no foreign state write. Retain rows/query observations, injected fault locator, boundary result, decisive comparisons, private-preview checks and owned cleanup under .tasks/TASK-011-T2-FT-004-W3/.",
+    "Probe SEARCH-SELECTION covers FT-004-AC-002, REQ-SRCH-001, REQ-SRCH-002 and the Reference Query Boundary claims in .memory-bank/domains/realtime-search.md. RED: ordered, tied, repeated-person and low-quality proposal fixtures must fail because server-authoritative quality inspection, at-most-five selection and independent native query preparation do not exist. GREEN: the claim-equivalent fixture records one separate result for quality score/tie order, selected count, repeated occurrence retention, query gate, per-selection native engine/revision/embedding trace and exact search call, plus negative results for client authority, tracking, clustering, deduplication, embedding merge, top-1/top-2 margin, cross-pipeline preparation and model-on-first-request; retain raw observations, comparisons and safe rerun artifact.",
+    "Probe SEARCH-OWNERSHIP covers FT-004-AC-001, FT-004-AC-002, REQ-ARCH-001 and .memory-bank/contracts/boundary-map.md#processing-input-projections. RED: a static/integration trace must fail because the processing-owned realtime search boundary and accepted inventory/serving_control projections do not exist. GREEN: the same trace locates the owner under src/face_moment/processing/, direct typed immutable projection reads and the selected-detection match output, and records separate negative results for Photo/settings/Attempt/session writes plus handler, infrastructure, generic-util and composition-root search orchestration or direct foreign repository access.",
+    "Every probe uses configured fake/native engine assets, synthetic Photos/proposals, a controlled clock and disposable PostgreSQL/MinIO state with one task-owned object prefix, safe rerun and owned cleanup. It records honest pre-implementation RED or pre-implementation GREEN and claim-equivalent GREEN without model downloads or production credentials. Independent /verify supplies a fresh outcome probe and VERDICT: PASS for every task-scoped claim before closure."
+  ],
+  "purpose": "Create the processing-owned boundary that converts bounded admitted proposal crops and one immutable serving context into deterministic selected-detection match sets without taking ownership of the participant result.",
+  "success_outcome": "In isolated configured state, the pre-warmed compatible engine ranks at most five received occurrences, prepares each selected acceptable query through its native revision, filters active complete-ready Photos by authoritative spa/date/revision before exact cosine comparison, and returns every threshold-valid per-detection Photo match with deterministic similarity and pHash observations.",
+  "anti_goals": [
+    "Do not implement display-token or staff authentication, active-date mutation, core Attempt/session persistence, singleton/deadline orchestration or candidate/teaser/N assembly owned by TASK-012.",
+    "Do not implement FT-005 Promo/QR display, FT-006 continuation/expiry, FT-007 diagnostics, Calibration or Photo inventory operations.",
+    "Do not add ANN, model auto-selection/download, pHash persistence/cache, tracking, identity clustering, reference deduplication, embedding merge, top-1/top-2 margin or cross-pipeline linking.",
+    "Do not move search behavior into transport, infrastructure, generic utilities or the composition root."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Changes to approved FT-001/FT-002/FT-003 task identities or public contracts",
+      "Display/staff credential state, active-date writes, core Attempt/result/session state and public realtime response orchestration",
+      "FT-005 through FT-012 behavior, production model acquisition/deployment and operator/default persistent data",
+      "ANN, broker/waiter/replay, pHash cache/lifecycle, tracking/clustering/deduplication and cross-pipeline search machinery"
+    ],
+    "stop_conditions": [
+      "Execution requires changing pipeline compatibility, native query preparation, exact scope, query-quality/threshold gates, at-most-five selection or the accepted processing output boundary.",
+      "The outcome requires direct foreign writes, a new module/edge or search orchestration in a handler, infrastructure adapter, generic helper or composition root.",
+      "A model cannot remain pre-warmed/revision-bound or exact search cannot run without ANN, automatic model switching or an unaccepted time-scope fallback.",
+      "A required RED/GREEN probe cannot run in isolated disposable state with safe rerun and owned cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-004.md#FT-004-AC-001",
+    ".memory-bank/features/FT-004.md#FT-004-AC-002",
+    ".memory-bank/tasks/plans/IMPL-FT-004.md",
+    ".protocols/FT-004/decision-log.md",
+    ".memory-bank/tasks/TASK-005-T2-FT-002-W2.task.json"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/realtime-search.md",
+    ".memory-bank/domains/photo-processing.md#pipeline-revision-and-engine-contract",
+    ".memory-bank/domains/photo-processing.md#searchable-truth-and-slo-projection",
+    ".memory-bank/contracts/boundary-map.md#processing-input-projections",
+    ".memory-bank/architecture/system-architecture.md#AD-002",
+    ".memory-bank/architecture/system-architecture.md#AD-006",
+    ".memory-bank/invariants.md",
+    ".memory-bank/testing/client-realtime.md#reference-search-and-joint-correctness-proof",
+    ".memory-bank/testing/index.md"
+  ],
+  "constraints": [
+    "Primary owner is processing at src/face_moment/processing/; it reads typed immutable inventory/serving_control projections and returns typed selected-detection match sets only.",
+    "Reuse TASK-005's two native engine implementations and immutable revision identity; add only reference-query inspection/preparation required by the accepted search path.",
+    "Use exact pgvector cosine search after every canonical scope filter and return one best threshold-valid match per photo_id per selected detection with deterministic ordering.",
+    "Compute pHash on demand from the private ready preview for ranking output; no persisted/cache lifecycle is authorized without measured latency evidence.",
+    "Exact owner-local Python/test filenames and configured quality-score internals remain executor discretion where the finite score, immutable settings and all accepted pass/fail behavior are retained."
+  ],
+  "invariants": [
+    "The client never chooses the server top five; repeated occurrences remain valid and every selected acceptable detection is searched independently.",
+    "Only active complete ready Photos in the exact immutable revision, token-bound spa and owner-selected visit_date participate; an unconfirmed clock never creates a time filter.",
+    "Query quality and calibrated threshold are gates; pHash is ranking data only and cannot admit a weak match.",
+    "Native SFace/Buffalo M preprocessing, alignment and embeddings never cross revisions or implementations.",
+    "Processing writes no active-date, Photo visibility, core Attempt, result/session, teaser or N state."
+  ],
+  "verification_targets": [
+    "SEARCH-SCOPE -> FT-004-AC-001, REQ-SRCH-001, REQ-SRCH-003 and .memory-bank/domains/realtime-search.md#failure-and-deadline-behavior with separate native revision/prewarm, spa/date/revision/visibility/readiness/time, exact-threshold, per-Photo grouping, ordering, pHash and injected native-query-engine/PostgreSQL-repository/pgvector-exact-query/private-preview technical-failure results; every failure returns zero partial match output.",
+    "SEARCH-SELECTION -> FT-004-AC-002, REQ-SRCH-001 and REQ-SRCH-002 with separate quality/tie, at-most-five, repeated occurrence, query gate, native preparation, independent search and forbidden-semantic results.",
+    "SEARCH-OWNERSHIP -> FT-004-AC-001, FT-004-AC-002 and REQ-ARCH-001 with separate owner, accepted-edge, typed-output, foreign-write and forbidden-placement results.",
+    ".memory-bank/domains/realtime-search.md#verification-targets"
+  ]
+}

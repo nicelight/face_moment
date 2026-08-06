@@ -44,8 +44,10 @@ contract.
 | `inventory` | `staff_access` | [Independent Photo admission](#independent-photo-admission) |
 | `inventory` | `serving_control` | [Independent Photo admission](#independent-photo-admission) |
 | `inventory` | `processing` | [Independent Photo admission](#independent-photo-admission) |
+| `inventory` | `processing` | [Processing status projections](#processing-status-projections) |
 | `processing` | `inventory` | [Processing input projections](#processing-input-projections) |
 | `processing` | `serving_control` | [Processing input projections](#processing-input-projections) |
+| `serving_control` | `staff_access` | [Active search date](#active-search-date) |
 | `promo` | `serving_control` | [Participant Promo](#participant-promo) |
 | `promo` | `inventory` | [Participant Promo](#participant-promo) |
 | `promo` | `processing` | [Participant Promo](#participant-promo) |
@@ -107,6 +109,61 @@ change Photo admission/visibility, active СПА/date or serving settings.
 Processing publishes only its owned state/timestamp projections for accepted
 consumers.
 
+For realtime reference search, this edge supplies the immutable active-search
+context and active compatible Photo/face projection defined by
+[Realtime Reference Search](../domains/realtime-search.md). `processing` may
+filter and search that projection but MUST NOT set the active date, change a
+threshold/quality setting, activate a Photo or publish a Promo result.
+
+### Processing status projections
+
+`inventory` may read `processing`-owned pipeline revision, current state,
+attempt/timestamp, safe failure, worker-operation and restart-recovery
+projections to assemble the authenticated per-Photo and operational views
+defined by the [Photo Processing API](photo-processing-api.md). It may also ask
+`processing` for the controlled-interval `ingest_to_searchable` classification
+defined by [Photo Processing](../domains/photo-processing.md), while supplying
+the owner-held Photo/visibility/acceptance projection.
+
+This edge grants no processing claim, transition, inference, face/derivative
+write or model-selection authority. `inventory` owns staff authorization and
+the user-visible read outcome; `processing` remains the only writer of its
+state. PostgreSQL/MinIO capacity probes are infrastructure observations
+assembled by `inventory`, not another module edge or shared business owner.
+
+### Active search date
+
+`serving_control` owns the operator-selected active `visit_date` used by
+automatic reference search. It authenticates through the existing
+`staff_access` principal and authorizes the setting inside `serving_control`;
+transport, `staff_access`, `promo` and `processing` MUST NOT write the value.
+
+The minimum same-origin staff surface is:
+
+- `GET /staff/search-settings`: active-operator settings page;
+- `GET /api/serving/spas/{spa_id}/active-visit-date`: return `200`
+  `application/json` with exactly `schema_version: 1`, UUID `spa_id`, nullable
+  ISO `YYYY-MM-DD` `active_visit_date`, positive integer `settings_revision`
+  and nullable UTC `updated_at`;
+- `PUT /api/serving/spas/{spa_id}/active-visit-date`: accept exactly one JSON
+  field, `{"visit_date":"YYYY-MM-DD"}`, require the existing matching
+  `fm_staff_csrf` cookie and `X-CSRF-Token`, update the active date and
+  increment the settings revision atomically, then return `200` with the same
+  response shape and the new date/revision/time.
+
+An active operator may read/change the one-СПА pilot value. Missing/invalid/
+revoked authentication returns `401`; wrong role, inaccessible СПА or missing/
+mismatched CSRF on `PUT` returns `403`; unknown СПА returns `404`; invalid JSON,
+unknown fields or an invalid calendar date returns `422`. The surface uses the
+existing HTTPS-only staff session and adds no settings framework, date history,
+automatic rollover or client override.
+
+Before the first successful setting, the value is absent. Realtime then reports
+closed serving readiness with `503` before `promo` admission, starts no search
+or core Attempt, and records only bounded token-free operational diagnostic
+evidence. The immutable context and threshold/quality inputs are defined by
+[Realtime Reference Search](../domains/realtime-search.md).
+
 ### Participant Promo
 
 `promo` owns the participant-visible attempt outcome:
@@ -119,9 +176,12 @@ consumers.
 5. write detailed evidence best-effort through `diagnostics`.
 
 `promo` MUST NOT activate Photos, mutate pipeline/search rules, change serving
-settings or write diagnostic-owned detail. The exact transport, idempotency and
-outcome surface is the [Realtime Attempt API](realtime-attempt-api.md); core
-Attempt persistence is owned by [Promo Attempt](../domains/promo-attempt.md).
+settings or write diagnostic-owned detail. Query selection and exact search are
+defined by [Realtime Reference Search](../domains/realtime-search.md). The exact
+transport, idempotency and outcome surface is the
+[Realtime Attempt API](realtime-attempt-api.md); core Attempt, result assembly
+and result-session persistence are owned by
+[Promo Attempt](../domains/promo-attempt.md).
 
 ### Diagnostic evidence and access
 

@@ -14,6 +14,9 @@ last_updated: 2026-08-06
 - [Calibration verification](calibration.md): deterministic threshold-profile
   oracle, one-dimensional quality analysis, before/after comparison,
   manual-apply isolation, shared-worker recovery and promoted-case retention.
+- [Photo processing verification](photo-processing.md): terminal and
+  compatibility states, idempotent retry/restart, full-population ingest SLO,
+  shared-worker delay and independent PostgreSQL/MinIO capacity evidence.
 
 ## Quality gates
 

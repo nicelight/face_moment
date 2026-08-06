@@ -79,6 +79,8 @@ status: active
 - [.memory-bank/states/lifecycle-map.md](states/lifecycle-map.md): Canonical
   Photo, processing, inventory, purge, Promo and diagnostics lifecycles.
 - [.memory-bank/runbooks/](runbooks/): Runbooks и operational procedures.
+- [.memory-bank/runbooks/display-and-central-restart.md](runbooks/display-and-central-restart.md):
+  verified browser and intact-volume central-runtime recovery procedure.
 - [.memory-bank/testing/index.md](testing/index.md): Testing strategy.
 - [.memory-bank/skills/index.md](skills/index.md): Skill registry.
 - [mermaids/README.md](../mermaids/README.md): обзорные diagrams of the accepted

@@ -1,0 +1,159 @@
+{
+  "id": "TASK-005-T2-FT-002-W2",
+  "title": "Implement compatible Photo processing and restart recovery",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-ING-003",
+    "REQ-ING-004",
+    "REQ-SRCH-001",
+    "REQ-REL-002",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-003-T2-FT-001-W1"
+  ],
+  "touched_files": [
+    "migrations/versions/",
+    "src/face_moment/processing/",
+    "src/face_moment/inventory/",
+    "src/face_moment/serving_control/",
+    "src/face_moment/entrypoints/background_worker.py",
+    "src/face_moment/infrastructure/database.py",
+    "src/face_moment/infrastructure/object_store.py",
+    "src/face_moment/infrastructure/settings.py",
+    "tests/",
+    "scripts/verify-photo-processing.sh"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Compose configuration",
+      "command": "docker compose config --quiet",
+      "required": true
+    },
+    {
+      "name": "Application image build",
+      "command": "docker compose build",
+      "required": true
+    },
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Python tests",
+      "command": "docker compose run --rm --no-deps backend python -m pytest tests/test_foundation.py tests/unit",
+      "required": true
+    },
+    {
+      "name": "Isolated Photo processing verification",
+      "command": "bash scripts/verify-photo-processing.sh",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    "FT-002-AC-001 RED: before changing production behavior, an isolated fixture containing one serving pending Photo and deterministic ready/no-face/fault engine outcomes must fail the claim that the absent processing owner can publish exactly ready, no_faces or failed with persisted timestamps, face/derivative completeness and compatible searchable truth; retain the failing state/object/face assertions and disposable setup under .tasks/TASK-005-T2-FT-002-W2/.",
+    "FT-002-AC-001 GREEN: the claim-equivalent terminal matrix must record pending, processing and each terminal row, attempt/status/searchable timestamps, derivative and face counts, current serving revision, active visibility, decisive searchable comparison and owned cleanup; only complete active current-revision ready may pass.",
+    "FT-002-AC-001 RED: before changing production behavior, separate SFace and Buffalo M adapter fixtures must fail the revision/native-path claim because complete immutable identity checks and production adapters do not yet exist; retain expected detector/recognizer/preprocessing/alignment calls, observed missing/mixed path and dimension/revision assertions.",
+    "FT-002-AC-001 GREEN: the same fixtures must record each configured immutable revision identity, weights checksum validation, native detector/recognizer/alignment call trace, embedding dimension, explicit absence of cross-adapter bbox/landmark/crop reuse and pass/fail comparison without downloading or auto-selecting a model.",
+    "FT-002-AC-002 RED: before changing production behavior, repeated delivery plus an injected interruption after deterministic derivative upload and before terminal commit must fail to converge on one terminal state, one preview/thumbnail pair and one unique face set for the photo/revision; retain conflicting rows/object checksums or the missing implementation assertion.",
+    "FT-002-AC-002 GREEN: the claim-equivalent repeat/interruption probe must record deterministic keys and checksums, face_index rows/count, terminal no-op behavior, before/after comparison and safe rerun proving no duplicate final face or derivative set.",
+    "FT-002-AC-003 RED: before changing production behavior, a worker restart with both queued pending and active processing rows must fail the claim that the full population survives, unfinished work resets to pending, recovery is recorded and processing restarts from the immutable original; retain before/after state counts and failing assertions.",
+    "FT-002-AC-003 GREEN: the same isolated restart probe must record the complete population before shutdown, post-startup pending population, worker_started_at, last_recovery_at, last_recovered_count, eventual terminals, object/face convergence, decisive comparisons and owned cleanup.",
+    "FT-002-AC-004 RED: before changing production behavior, a controlled-clock interval containing under-15 ready, late ready, no_faces, failed, aged pending/processing, young open, rejected, duplicate and non-serving fixtures must fail the exact full-population classification because no authoritative projection exists; retain every fixture locator/time and observed omission or misclassification.",
+    "FT-002-AC-004 GREEN: the claim-equivalent SLO matrix must map every independently accepted Photo to exactly success, breach or open, record every explicit exclusion, interval/evaluation times, population/counts/ratio, nullable-until-complete meets_95_percent verdict, decisive 95% and strict-under-15-minute comparison and retained artifact.",
+    "FT-002-AC-005 RED: before changing production behavior, a controlled Calibration operation holding the shared worker with newly accepted Photos must fail to keep one serialized worker operation, visible ordinary backlog/SLO effect and subsequent Photo resumption without priority/preemption or another worker; retain current-operation, state/count and process-topology assertions.",
+    "FT-002-AC-005 GREEN: the same fixture must record calibration as current operation, unchanged accepted population, delayed pending/open-or-breach classifications, release of the singleton operation, ordinary Photo completion, one worker process and negative checks for broker, priority, preemption, lease, fencing and automatic Calibration work.",
+    "FT-002-AC-006 RED: before changing production behavior, processing faults and startup recovery must fail to produce the bounded operator-safe failure and latest recovery projections required by the accepted health boundary; retain missing/unsafe fields, recovery counts and secret/path leakage assertions.",
+    "FT-002-AC-006 GREEN: the claim-equivalent projection probe must record current failed rows with bounded safe reasons, queue counts, latest worker/recovery values and negative checks for credentials, object/model/storage paths and tracebacks, with pass/fail comparison and disposable cleanup.",
+    "FT-002-AC-001 RED: before changing production behavior, a static/integration ownership trace must fail because processing-owned claim/engine/publication application boundaries and typed inventory/serving projections do not yet exist; retain inspected code roots and negative placement assertions.",
+    "FT-002-AC-001 GREEN: the claim-equivalent trace must locate the processing owner under src/face_moment/processing/, the inventory and serving_control typed projections, one background-worker composition path and no claim, inference, state publication or business orchestration in backend handlers, infrastructure, generic helpers or the composition root.",
+    "Migration evidence records the feature revision's actual direct down_revision, linear ancestry, upgrade, downgrade, re-upgrade, state/face/runtime constraints, pgvector dimension validation and preservation of the existing Photo plus initial pending contract without treating a mutable future head as an exact-head requirement.",
+    "The isolated gate records its unique Compose project, disposable volumes/test credentials, controlled clock, configured fake/native adapter fixtures, task-owned MinIO prefix, safe rerun and cleanup; it never downloads models, touches operator/default state or expands permissions.",
+    "Independent /verify evidence supplies fresh functional proof for every linked claim and VERDICT: PASS before the explicit owner or scheduler records closure."
+  ],
+  "purpose": "Turn the durable serving-pending row from FT-001 into one compatible, searchable or explicit terminal Photo outcome with bounded retry, idempotent cross-store publication, restart recovery and honest full-population SLO evidence.",
+  "success_outcome": "A configured singleton BackgroundPhotoWorker processes each serving pending Photo through its immutable native pipeline, publishes one deterministic derivative/face set and ready, no_faces or failed state, restores unfinished work after restart, and produces a complete controlled-interval ingest_to_searchable classification without lost or duplicated work.",
+  "anti_goals": [
+    "Do not implement staff HTTP/UI authorization, capacity volume mounts or the public health surface owned by TASK-006.",
+    "Do not implement realtime query search/ranking, thresholds, Promo/session behavior, Calibration calculations, inventory deletion/statistics or automatic serving-revision switching.",
+    "Do not add a broker, jobs table, lease, claim token, fencing, SKIP LOCKED, priority/preemption scheduler, second worker, ANN index, monitoring service or distributed transaction.",
+    "Do not select/download production model assets, deploy to production or change the accepted Foundation/runtime topology."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "FT-001 uploader/auth implementation and approved task identities",
+      "Realtime search, Promo/QR/session, diagnostics/Calibration calculation and FT-012 inventory operations",
+      "Production model acquisition, production deployment, operator/default data and destructive storage actions",
+      "Broker/jobs/lease/fencing/priority/extra-worker/ANN/monitoring machinery"
+    ],
+    "stop_conditions": [
+      "Execution requires changing the accepted pipeline compatibility identity, native engine isolation, retry limit, state lifecycle, full-population SLO target or searchable rule.",
+      "A claim/state transition must move outside processing or requires direct foreign writes, handler/generic-util/composition-root business orchestration or a new module/edge.",
+      "Idempotent convergence cannot be achieved with deterministic private derivatives and one terminal database transaction under the accepted single-worker topology.",
+      "A required RED/GREEN or restart/SLO probe cannot run in authorized isolated disposable state with safe rerun and owned cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-001",
+    ".memory-bank/features/FT-002.md#FT-002-AC-002",
+    ".memory-bank/features/FT-002.md#FT-002-AC-003",
+    ".memory-bank/features/FT-002.md#FT-002-AC-004",
+    ".memory-bank/features/FT-002.md#FT-002-AC-005",
+    ".memory-bank/features/FT-002.md#FT-002-AC-006",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md",
+    ".protocols/FT-002/decision-log.md",
+    ".memory-bank/tasks/TASK-003-T2-FT-001-W1.task.json"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/architecture/system-architecture.md#AD-002",
+    ".memory-bank/architecture/system-architecture.md#AD-004",
+    ".memory-bank/architecture/system-architecture.md#AD-010",
+    ".memory-bank/architecture/system-architecture.md#AD-011",
+    ".memory-bank/contracts/boundary-map.md#processing-input-projections",
+    ".memory-bank/contracts/boundary-map.md#postgresql-and-minio-convergence",
+    ".memory-bank/states/lifecycle-map.md#photo-pipeline-state",
+    ".memory-bank/states/lifecycle-map.md#calibration-run",
+    ".memory-bank/invariants.md",
+    ".memory-bank/testing/index.md"
+  ],
+  "constraints": [
+    "Primary owner is processing at src/face_moment/processing/; inventory and serving_control expose only typed immutable projections, and the background-worker entrypoint composes the owner.",
+    "Preserve one PostgreSQL schema/Base/Alembic stream, one configured worker, private MinIO and the exact revision/state/face/runtime shapes from the Photo Processing spec.",
+    "Use separate native OpenCV SFace and InsightFace Buffalo M adapters over configured immutable model assets; never share bbox, landmarks, crop, alignment or embeddings across revisions.",
+    "Claim the oldest eligible serving pending row atomically, do heavy work outside the claim transaction, and publish a complete replacement face set plus terminal state in one transaction.",
+    "Exact owner-local module filenames, configured derivative encoding values and model asset locations remain implementation discretion where their identities are retained and no accepted behavior changes."
+  ],
+  "invariants": [
+    "Only complete active ready state for the current serving revision is searchable; every partial, incompatible or other terminal/current state is not searchable.",
+    "The third failed claim becomes terminal failed; startup returns unfinished processing to pending and begins again from the immutable original.",
+    "One photo/revision converges on one deterministic preview/thumbnail pair, one unique face_index set and one terminal row under repeat or crash.",
+    "Every independently accepted unique Photo remains in its controlled SLO population; late ready, no_faces, failed and aged unfinished work are breaches, while rejects, duplicates and non-serving states are absent.",
+    "Calibration delay changes backlog/age but grants no exclusion, preemption, priority, automatic rerun or extra worker."
+  ],
+  "verification_targets": [
+    "FT-002-AC-001 / .memory-bank/testing/photo-processing.md#terminal-and-compatibility-matrix: isolated terminal and negative compatibility fixtures prove exact states, complete publication and searchable truth.",
+    "FT-002-AC-001 / REQ-SRCH-001: separate adapter traces prove immutable revision checks, native SFace/Buffalo M paths and no cross-revision face preparation or embedding use.",
+    "FT-002-AC-002 / .memory-bank/testing/photo-processing.md#idempotency-and-restart-matrix: repeat and post-derivative interruption converge on one derivative/face set and terminal row.",
+    "FT-002-AC-003 / REQ-REL-002: worker restart preserves the complete pending/processing population, records reset recovery and reaches idempotent outcomes.",
+    "FT-002-AC-004 / .memory-bank/testing/photo-processing.md#full-population-slo-matrix: controlled interval reconciles every inclusion/exclusion and strict under-15-minute 95% verdict.",
+    "FT-002-AC-005 / REQ-ARCH-001: controlled Calibration-held worker shows visible ordinary backlog/SLO effect, resumption and absence of scheduler/worker expansion.",
+    "FT-002-AC-006 / REQ-REL-002: processing failure and latest startup recovery projections are bounded, current and free of protected paths/secrets.",
+    "FT-002-AC-001 / REQ-ARCH-001: architecture trace locates processing ownership, accepted typed edges and no handler/infrastructure/generic-util/composition-root business bypass.",
+    ".memory-bank/domains/photo-processing.md#migration-and-verification-targets"
+  ]
+}
