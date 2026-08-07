@@ -4,7 +4,7 @@
 
 ```mermaid
 flowchart LR
-    photographer["Фотограф / admin browser"]
+    staff["Staff browsers:<br/>photographer / operator / developer"]
     participant_phone["Телефон участника"]
 
     subgraph spa_site["Pilot СПА"]
@@ -24,9 +24,9 @@ flowchart LR
     subgraph server["Центральный CPU-only сервер в РФ"]
         edge["HTTPS public boundary<br/>reverse proxy / rate limits"]
         backend["Backend + web UI<br/>upload, Photo Inventory Operations,<br/>QR, Attempts, Log Explorer, Calibration"]
-        worker["1 × BackgroundPhotoWorker<br/>Photo processing + Calibration + hard purge"]
+        worker["1 × BackgroundPhotoWorker<br/>Photo processing + Calibration + hard purge<br/>+ retention cleanup when routed here"]
         realtime["1 × RealtimeFaceService<br/>one inference slot + busy + deadline"]
-        packages["Shared modular-monolith packages<br/>serving_control | inventory | processing<br/>promo | diagnostics + platform/auth"]
+        packages["Shared modular-monolith packages<br/>serving_control | inventory | processing<br/>promo | diagnostics + staff_access"]
 
         subgraph engines["FaceEngine adapters"]
             face_engine["FaceEngine interface<br/>выбор compatible serving revision"]
@@ -50,16 +50,16 @@ flowchart LR
         worker -->|"claim pending / publish terminal state"| postgres
         worker -->|"read original / write derivatives"| minio
         worker --> face_engine
-        realtime -->|"scope + exact cosine search"| postgres
-        realtime -->|"read previews / write diagnostics"| minio
+        realtime -->|"Attempt/session writes +<br/>exact pgvector reads through owners"| postgres
+        realtime -->|"read private ready previews<br/>through processing projection"| minio
         realtime --> face_engine
 
     end
 
-    photographer -->|"HTTPS JPEG upload + admin"| edge
-    client -->|"sync HTTPS multipart<br/>first ≤20 chronological crops + metadata<br/>spa_client_token"| edge
-    edge -->|"4 preview URLs + QR session"| client
-    client -->|"idempotent display acknowledgement"| edge
+    staff -->|"authenticated HTTPS UI/API"| edge
+    client -->|"Bearer-authenticated sync HTTPS multipart<br/>first ≤20 chronological crops + metadata"| edge
+    edge -->|"compact typed outcome:<br/>4 opaque media refs + QR URL"| client
+    client -->|"Bearer-authenticated teaser GETs<br/>+ idempotent display acknowledgement"| edge
     participant_phone -->|"HTTPS QR continuation"| edge
 
     rules["KISS boundaries:<br/>no realtime waiter queue, Redis/broker or ANN<br/>no extra/purge worker, per-photo purge state,<br/>counter store, WS/SSE or backup guarantee"]
@@ -76,10 +76,12 @@ flowchart LR
   содержит только manifest.
 - Общий request body ограничен `20 MiB`: больший body получает HTTP `413` до
   domain admission без core Attempt, oversize domain outcome или выбора subset.
-- Serving pipeline заранее загружается и прогревается; второй pipeline нужен только при доказанной необходимости benchmark-а.
+- Realtime заранее загружает и прогревает только active serving revision;
+  worker/Calibration могут использовать обе зарегистрированные native engine
+  implementations, не смешивая revisions и не создавая ensemble.
 - `inventory` владеет active/soft-deleted marker, direct PostgreSQL counters и
   одним resumable global purge run; worker ждёт текущую операцию без preemption.
-- Hard purge удаляет Photo/media/faces/pipeline, но сохраняет Promo
+- Hard purge удаляет Photo/media/faces/pipeline states, но сохраняет Promo
   result/session, core Attempt и diagnostic evidence; clients пропускают
   отсутствующую media.
 - PostgreSQL, MinIO и внутренние service ports не публикуются наружу.
@@ -87,6 +89,8 @@ flowchart LR
 
 Источники:
 [Architecture](../.memory-bank/architecture/system-architecture.md),
-[IDEA_OS.md](../IDEA_OS.md),
-[IDEA_APP.md](../IDEA_APP.md), [IDEA_CLIENT.md](../IDEA_CLIENT.md),
-[PRD](../.memory-bank/prd.md).
+[Boundary map](../.memory-bank/contracts/boundary-map.md),
+[Realtime Attempt API](../.memory-bank/contracts/realtime-attempt-api.md),
+[Promo Display API](../.memory-bank/contracts/promo-display-api.md),
+[QR Continuation API](../.memory-bank/contracts/qr-continuation-api.md),
+[Foundation](../.memory-bank/foundation.md).

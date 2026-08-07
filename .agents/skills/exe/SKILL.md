@@ -59,7 +59,8 @@ Point-of-use preflight must confirm:
   selected task's owned outcome and integration delta;
 - no recorded blocker or unresolved required gate in the resolved task context;
 - success is observable from AC/REQ/spec/gates/verification targets;
-- task, feature, plan, backbone, and linked specs do not contradict;
+- the selected task, its direct feature/REQ context, and direct task-linked
+  canonical specs are mutually consistent;
 - for a product task, reviewed and current Planning Revision are equal;
 - T2/T3 direct canonical coverage is applicable and concrete enough to avoid
   guessing shape, rules, errors, and verification;

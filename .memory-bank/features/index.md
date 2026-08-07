@@ -4,6 +4,9 @@ status: active
 ---
 # Feature Index
 
+Обзорная карта размещения Features по capability owners и runtime-процессам:
+[mermaids/07-features-in-architecture-and-runtime.md](../../mermaids/07-features-in-architecture-and-runtime.md).
+
 ## Foundation pseudo-feature
 
 - [FT-000](FT-000-foundation.md): Verified minimum executable walking skeleton;

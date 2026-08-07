@@ -25,6 +25,7 @@ flowchart LR
     detail["Developer detail:<br/>detections, decisions, logs,<br/>annotations, Calibration"]
     annotation["Manual ground truth:<br/>participant name + correct / wrong / missed"]
     calibration["Calibration"]
+    evaluation["Offline evaluation:<br/>SFace ↔ Buffalo M<br/>annotated curated cases"]
 
     profiles["Threshold profiles:<br/>Best face match<br/>Balance<br/>Minimum missed faces"]
     gates["Одномерные quality-gate proposals:<br/>face size, confidence, blur,<br/>brightness, yaw/pitch/roll"]
@@ -52,9 +53,9 @@ flowchart LR
     logs --> detail
     evidence --> detail
     detail --> annotation --> calibration
-    calibration --> worker
-    worker --> profiles --> manual
-    worker --> gates --> manual
+    calibration --> worker --> evaluation
+    evaluation --> profiles --> manual
+    evaluation --> gates --> manual
     worker -. "restart" .-> interrupted
     developer -. "manual rerun" .-> calibration
 
@@ -62,6 +63,9 @@ flowchart LR
     logs -.-> retention
     attempt -.-> retention
     evidence -.-> retention
+
+    cleanup["Owner-ordered cleanup:<br/>promo orchestrates latest result;<br/>каждый capability удаляет только свои данные"]
+    cleanup -.-> retention
 
     prohibition["Никогда не применять recommendation автоматически"]
     prohibition -.-> calibration
@@ -95,6 +99,10 @@ evidence; missing media пропускается при UI/device loading.
 
 Источники: [Architecture](../.memory-bank/architecture/system-architecture.md),
 [Boundary map](../.memory-bank/contracts/boundary-map.md),
-[IDEA_DEBUG.md](../IDEA_DEBUG.md),
-[IDEA_CLIENT.md](../IDEA_CLIENT.md),
-[PRD](../.memory-bank/prd.md), [Glossary](../.memory-bank/glossary.md).
+[Lifecycle](../.memory-bank/states/lifecycle-map.md),
+[FT-007](../.memory-bank/features/FT-007.md),
+[FT-008](../.memory-bank/features/FT-008.md),
+[FT-009](../.memory-bank/features/FT-009.md),
+[FT-010](../.memory-bank/features/FT-010.md),
+[FT-011](../.memory-bank/features/FT-011.md),
+[Calibration verification](../.memory-bank/testing/calibration.md).

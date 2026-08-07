@@ -23,23 +23,27 @@ flowchart TD
         advertising["Локальная реклама"]
         trigger["ESP32 HTTP long-poll / test trigger"]
         reference["Client-generated attempt_id<br/>reference series → chronological BlazeFace<br/>first ≤20 crops + metadata in traversal order<br/>zero proposals → manifest only<br/>no client ranking / subset"]
-        too_large["HTTP 413 at transport boundary<br/>multipart body > 20 MiB<br/>no core Attempt / domain outcome"]
-        admitted{"Request admitted<br/>by server?"}
+        boundary{"Realtime boundary result"}
+        rejected["Pre-admission response:<br/>401 / 413 / 422 / 429 / 503 / technical 5xx<br/>no core Attempt / domain outcome"]
         offline["Client-only offline:<br/>вернуться к рекламе без cooldown<br/>5–10 sec: Попытка связи с сервером<br/>была не успешна в hh:mm:ss<br/>новое сообщение может заменить старое<br/>metadata best-effort, server record может отсутствовать"]
         attempt["Server-admitted core Attempt<br/>до inference"]
-        exact["Exact cosine search:<br/>revision + СПА + active visit_date + threshold"]
+        exact["Server quality-ranks/selects ≤5 occurrences;<br/>exact cosine search:<br/>revision + СПА + active visit_date + threshold"]
         assemble["session_result_photo_ids = unique union<br/>pHash ранжирует только valid matches"]
         enough{"Есть 4 уникальных<br/>threshold-valid teasers?"}
         failure["Finalize core Attempt<br/>evidence best-effort<br/>вернуться к рекламе без cooldown"]
         issued["result_issued<br/>display_status = pending"]
-        render["Decode 4 teasers<br/>показать полностью видимый QR"]
-        ack["Idempotent display acknowledgement<br/>display_status = confirmed"]
+        render["Получить и decode 4 teasers<br/>сгенерировать QR локально"]
+        visible{"Все 4 teasers и QR<br/>полностью видимы до expiry?"}
+        display_failed["Best-effort failed report<br/>или derived unconfirmed<br/>без Promo success/cooldown"]
+        ack["Idempotent confirmed acknowledgement<br/>display_status = confirmed<br/>success cooldown"]
     end
 
     subgraph phone_flow["C. QR continuation"]
         scan["Участник сканирует QR"]
-        valid{"30 min first-open / shared 60 min idle<br/>ещё действуют?"}
-        landing["Та же session:<br/>СПА + visit_date + teaser + N"]
+        first_open{"QR ticket открыт<br/>строго до 30 min boundary?"}
+        shared["Открыть/reuse один session-wide<br/>browser access context"]
+        idle{"Менее 60 min без explicit<br/>participant activity?"}
+        landing["Та же session:<br/>СПА + visit_date + доступный teaser + N"]
         redirect["Redirect на main Face Moment page<br/>без данных expired session"]
         external["Post-pilot selfie-search / purchase page"]
     end
@@ -53,14 +57,19 @@ flowchart TD
     searchable -- "нет" --> breach
 
     inventory --> advertising
-    advertising --> trigger --> reference --> admitted
-    reference -. "body > 20 MiB" .-> too_large --> advertising
-    admitted -- "нет: client-only offline" --> offline --> advertising
-    admitted -- "да" --> attempt --> exact --> assemble --> enough
+    advertising --> trigger --> reference --> boundary
+    boundary -- "нет HTTP response" --> offline --> advertising
+    boundary -- "transport/auth/validation/readiness reject" --> rejected --> advertising
+    boundary -- "200 admitted outcome" --> attempt --> exact --> assemble --> enough
     enough -- "нет" --> failure --> advertising
-    enough -- "да" --> issued --> render --> ack --> scan --> valid
-    valid -- "да" --> landing --> external
-    valid -- "нет" --> redirect --> external
+    enough -- "да" --> issued --> render --> visible
+    visible -- "нет" --> display_failed --> advertising
+    visible -- "да" --> ack --> advertising
+    visible -- "QR уже доступен; ack его не включает" --> scan --> first_open
+    first_open -- "нет" --> redirect --> external
+    first_open -- "да" --> shared --> idle
+    idle -- "да" --> landing --> external
+    idle -- "нет" --> redirect
 
     attempt -.-> evidence
     exact -.-> evidence
@@ -87,6 +96,8 @@ flowchart TD
 Источники: [PRD](../.memory-bank/prd.md),
 [Architecture](../.memory-bank/architecture/system-architecture.md),
 [Boundary map](../.memory-bank/contracts/boundary-map.md),
-[IDEA_CLIENT.md](../IDEA_CLIENT.md),
-[IDEA_INGEST.md](../IDEA_INGEST.md),
-[IDEA_APP.md](../IDEA_APP.md).
+[Photo Admission](../.memory-bank/domains/photo-admission.md),
+[Photo Processing](../.memory-bank/domains/photo-processing.md),
+[Realtime Attempt API](../.memory-bank/contracts/realtime-attempt-api.md),
+[Promo Display API](../.memory-bank/contracts/promo-display-api.md),
+[QR Continuation API](../.memory-bank/contracts/qr-continuation-api.md).

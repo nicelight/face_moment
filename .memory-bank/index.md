@@ -84,7 +84,8 @@ status: active
 - [.memory-bank/testing/index.md](testing/index.md): Testing strategy.
 - [.memory-bank/skills/index.md](skills/index.md): Skill registry.
 - [mermaids/README.md](../mermaids/README.md): обзорные diagrams of the accepted
-  product, runtime, lifecycle, Promo and diagnostics contracts.
+  product, runtime, lifecycle, Promo, diagnostics and Feature-to-runtime
+  allocation contracts.
 
 ## Product Decomposition
 

@@ -18,7 +18,7 @@ flowchart TD
         rejected["Rejected<br/>удалить candidate object<br/>не создавать Photo/pending"]
         duplicate_end["Duplicate<br/>idempotent delete нового object<br/>не создавать Photo/pending"]
         create["Один PostgreSQL commit:<br/>Photo + accepted_at + pending"]
-        orphan["Принятый crash-window:<br/>private orphan / повторный upload"]
+        orphan["Допустимый pre-commit crash-window:<br/>private orphan / повторный upload"]
 
         auth --> scope --> upload --> object --> decode
         object -. "crash до DB commit" .-> orphan
@@ -32,10 +32,10 @@ flowchart TD
         pending["pending"]
         claim["Один BackgroundPhotoWorker<br/>atomic claim"]
         processing["processing"]
-        derivatives["preview + thumbnail + pHash"]
+        derivatives["preview + thumbnail<br/>deterministic private keys"]
         engine["Native serving FaceEngine<br/>detect + align + embedding"]
         result{"Результат"}
-        ready["ready<br/>searchable_at + faces"]
+        ready["ready<br/>searchable_at + derivatives + faces"]
         nofaces["no_faces<br/>terminal, not searchable"]
         failed["failed<br/>status_changed_at + error"]
         retry{"attempts < 3?"}
@@ -57,11 +57,11 @@ flowchart TD
         select["СПА + visit_date + captured_at range<br/>photographer: own uploads<br/>operator/developer: accessible СПА"]
         restore_guard{"Target Photo входит в confirmed<br/>non-terminal purge snapshot?"}
         restore_all["restore all soft deleted<br/>весь проект"]
-        confirm["Confirm hard delete ALL softed media<br/>зафиксировать global snapshot"]
+        confirm["Confirm hard delete ALL soft-deleted Photos<br/>зафиксировать global snapshot"]
         reject_restore["Reject restore snapshot members<br/>до completed"]
         wait["confirmed_waiting<br/>ждать текущую worker operation<br/>human-readable process name"]
         purge["running<br/>same worker, completed / total<br/>restart resumes snapshot"]
-        remove["Удалить Photo + media + faces + pipeline"]
+        remove["Удалить Photo + original/derivatives<br/>+ face records + pipeline states"]
         retain["Сохранить Promo sessions + core Attempts<br/>и diagnostic evidence<br/>client skips missing media"]
         done["completed"]
         stats["Per-СПА direct PostgreSQL counters<br/>1 / 5 / 60 min, poll 5 sec<br/>active Photos only"]
@@ -78,7 +78,7 @@ flowchart TD
         active -.-> stats
     end
 
-    worker_busy["Shared worker current operation:<br/>Photo processing / Calibration / cleanup"]
+    worker_busy["Shared worker current operation:<br/>Photo processing / Calibration /<br/>retention cleanup / maintenance"]
     worker_busy --> wait
     ordinary_upload["Ordinary uploads may continue;<br/>in-progress upload is not interrupted"]
     ordinary_upload -.-> create
@@ -89,6 +89,8 @@ flowchart TD
 - `ready` означает searchable face records конкретной `pipeline_revision`;
   `no_faces` является terminal outcome, но остаётся searchable-SLO breach.
 - Повторное at-least-once выполнение не дублирует `photo_faces` или derivatives.
+- pHash не является ingest derivative: realtime search вычисляет его on demand
+  только для threshold-valid preview candidates.
 - Soft delete меняет один visibility marker и блокирует новые search/results,
   но не ломает уже выданную session; restore не запускает processing.
 - `new` использует `accepted_at`; `unprocessed` — in-window accepted и текущие
@@ -103,4 +105,7 @@ flowchart TD
 
 Источники: [Architecture](../.memory-bank/architecture/system-architecture.md),
 [Lifecycle](../.memory-bank/states/lifecycle-map.md),
-[IDEA_INGEST.md](../IDEA_INGEST.md), [PRD](../.memory-bank/prd.md).
+[Photo Admission API](../.memory-bank/contracts/photo-admission-api.md),
+[Photo Admission](../.memory-bank/domains/photo-admission.md),
+[Photo Processing API](../.memory-bank/contracts/photo-processing-api.md),
+[Photo Processing](../.memory-bank/domains/photo-processing.md).

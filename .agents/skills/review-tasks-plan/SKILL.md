@@ -125,17 +125,19 @@ Cover:
    - schema validation; unique/resolving index entries; ID/tier/feature/wave
      consistency; product `W1+`; concrete governing REQ links.
 2. Coverage and slicing
-   - complete feature AC/REQ and material-outcome closure, including ACs added
-     during `/feature-to-tasks` when grounded in accepted REQ/spec and providing
-     exact task ownership; their origin alone is not a reason to `REJECT`; no
-     orphan/duplicate/unrelated outcomes; cohesive independently verifiable
-     slicing; coherent plans, waves, dependencies, change surface, gates, and
-     verification targets;
-   - follow one plausible evidence-backed path only far enough to detect a
-     missing independent prerequisite/outcome, rollout/rollback unit, blocking
-     dependency, materially different risk route, or plan-level decision that
-     execution would otherwise have to invent. Stop after the boundary verdict;
-     do not repeat full implementation planning.
+   - complete feature AC/REQ and eligible exact-claim closure, including ACs
+     added during `/feature-to-tasks` when grounded in accepted REQ/spec and
+     providing exact task ownership; their origin alone is not a reason to
+     `REJECT`; no orphan/duplicate/unrelated outcomes; coherent plans, waves,
+     dependencies, change surface, gates, and verification targets;
+   - independently derive eligible exact claims and canonical semantic owners
+     from accepted sources, then try to partition each task into valid sibling
+     completion units. Reject when a material subset can be implemented and
+     proved without the rest or has its own grounded
+     failure/retry/rollout/rollback boundary. Complete AC coverage, shared
+     outcome, owner, tier, one end-to-end path, or a complete handoff does not
+     prove execution cohesion. Stop after the boundary verdict; do not repeat
+     full implementation planning.
 3. Design readiness
    - clarification not explicitly pending/blocked; truthful feature design
      status; no applicable `needed_before_tasks|blocked` row; one applicable

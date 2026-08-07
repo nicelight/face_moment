@@ -81,10 +81,16 @@ new execution mode.
   requires an explicit operator request.
 - If repair needs identity, tier, wave, dependency, AC, or material-scope
   changes, report `rebuild_required`; do not hide a new task behind repair.
-- One task has one cohesive independently verifiable outcome. Do not split by
-  file, module, layer, artifact, or tests. Split only for independent outcomes,
-  hard dependencies/waves, or materially different risk/rollback. Task count
-  is not an optimization target.
+- Task boundaries follow execution cohesion, not shared product outcome,
+  capability owner, or tier. Different exact task-owned proof claims or
+  canonical semantic owners normally use sibling tasks unless they require one
+  indivisible implementation-and-proof completion state. Split further when
+  material work can be implemented and proved to a useful completion state
+  without the rest, or has its own grounded failure/retry/rollout/rollback
+  boundary. When both shapes satisfy accepted contracts, prefer sibling tasks.
+  Do not split solely by files, layers, artifacts, tests, AC count, or modules
+  without distinct semantic ownership; task count is not an optimization
+  target.
 - Product feature, architecture slice/module, and task are distinct. A feature
   may cross slices and a slice may support several features. A task normally
   has one primary owning slice/module, but a cohesive cross-slice outcome is
@@ -273,37 +279,40 @@ Before task emission, internally separate authoritative acceptance, claim
 ownership across dependencies, slicing, and minimal proof. Do not persist this
 analysis or let generated detail create authority.
 
-Run one bounded acceptance-closure scan: material edge/failure outcomes have an
-AC or sourced authoritative exclusion, material NFRs have an accepted REQ/AC
-result and verification method, and every AC has one owning task. Reconcile an
-obvious missing locator; for an existing indexed queue, use `rebuild_required`
-for identity, tier, dependency, AC, accepted target/condition, or material-scope
-changes, and the owning blocker route for unresolved authority.
+Before candidate slicing, close the eligible exact proof-claim set from
+accepted feature ACs and applicable canonical specs. Add the minimally
+sufficient atomic AC for each independent material feature outcome not already
+covered by an exact AC. A distinct material technical acceptance result may
+instead use an exact single-obligation canonical locator under tier policy; a
+multi-obligation section is context, not a claim. Do not promote constraints,
+edge cases, safeguards, methods, or artifact formats into claims without
+accepted authority. Material edge/failure outcomes still require an AC or
+sourced authoritative exclusion, and material NFRs require an accepted REQ/AC
+result and verification method.
 
-For a provisional task with an independent material outcome but no exact
-feature AC, automatically add the minimally sufficient atomic ACs grounded in
-applicable accepted specs and REQ. Use task scope to identify missing acceptance
-ownership; specs are the authority. Choose AC count, boundaries, and proof
-mapping by KISS. This defines the required result, not analysis order or tactic.
+Use the exact claims and canonical semantic owners as provisional split signals
+under the hard invariant, and assign every eligible exact claim one task owner.
+Reconcile an obvious missing locator; for an existing indexed queue, use
+`rebuild_required` for identity, tier, dependency, AC, accepted
+target/condition, or material-scope changes, and the owning blocker route for
+unresolved authority. This defines the required result, not analysis order or
+tactic.
 Stop only at a real contradiction or unresolved material decision in
 authoritative sources.
 
 Before initially emitting JSON task records, form provisional candidates and
-run one bounded execution-path sanity check per candidate. Inspect only one
-plausible evidence-backed path from the first necessary change through the main
-implementation steps to the observable outcome and cheapest sufficient
-verification. Use the target feature, direct canonical specs, necessary
-dependency records, and the plausible code/change surface when available.
+run one bounded execution-cohesion check per candidate. Inspect only enough
+grounded implementation and proof surface, including applicable
+failure/retry/rollout/rollback branches, to apply the split rule. Use the target
+feature, direct canonical specs, necessary dependency records, and the
+plausible code/change surface when available.
 
-Look only for hidden work that changes the task boundary. Retain a cohesive
-candidate; re-slice when the path exposes an independent prerequisite or
-outcome, a separate rollout/rollback unit, a blocking dependency, or materially
-different risk/tier route; use the existing blocker and operator-decision route
-when a material branch remains unresolved. End the check as soon as that
-boundary decision is possible. Do not compare speculative architectures, write
-pseudocode, perform an unrelated full audit, persist the check, or add a field,
-artifact, status, or report. Newly produced candidates receive the same bounded
-check before emission.
+Use the existing blocker and operator-decision route when a material branch
+remains unresolved. End the check as soon as the boundary decision is
+supported. Do not compare speculative architectures, write pseudocode, perform
+an unrelated full audit, persist the check, or add a field, artifact, status,
+or report. Newly produced candidates receive the same bounded check before
+emission.
 
 This check does not silently re-slice an existing indexed queue. If it exposes
 a material identity, dependency, tier, AC, or scope change during
