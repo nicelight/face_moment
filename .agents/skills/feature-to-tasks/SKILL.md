@@ -318,6 +318,14 @@ surface to apply the split rule. Use the target feature, direct canonical
 specs, necessary dependency records, and the plausible code/change surface
 when available.
 
+In direct interactive use, before durable task emission show a concise
+provisional summary of feature size/complexity and candidate task outcomes,
+then wait for explicit acceptance or specific split/consolidation requests.
+Apply boundary feedback only when it preserves accepted contracts and
+execution cohesion; otherwise use the existing operator-decision route.
+Unattended orchestration skips this checkpoint. Do not persist the preview or
+add workflow state.
+
 Use the existing blocker and operator-decision route when a material branch
 remains unresolved. End the check as soon as the boundary decision is
 supported. Do not compare speculative architectures, write pseudocode, perform
