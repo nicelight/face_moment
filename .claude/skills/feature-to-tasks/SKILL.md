@@ -16,7 +16,7 @@ Close or safely reconcile one product feature's tasking surface:
 - applicable feature-level SDD concern coverage and canonical spec links;
 - one implementation plan;
 - optional evidence-grounded behavior examples;
-- the smallest cohesive schema-backed JSON task queue;
+- an execution-cohesive schema-backed JSON task queue;
 - verification-ready T2/T3 single-card handoff.
 
 This command plans; it never executes tasks.
@@ -87,7 +87,12 @@ new execution mode.
   indivisible implementation-and-proof completion state. Split further when
   material work can be implemented and proved to a useful completion state
   without the rest, or has its own grounded failure/retry/rollout/rollback
-  boundary. When both shapes satisfy accepted contracts, prefer sibling tasks.
+  boundary. Judge useful completion at task level, not by closure of a whole
+  feature AC. An independently implementable and verifiable material
+  prerequisite or integration delta may form a sibling task even when only
+  downstream composition closes the AC; shared end-to-end proof does not make
+  those units indivisible. When both shapes satisfy accepted contracts, prefer
+  sibling tasks.
   Do not split solely by files, layers, artifacts, tests, AC count, or modules
   without distinct semantic ownership; task count is not an optimization
   target.
