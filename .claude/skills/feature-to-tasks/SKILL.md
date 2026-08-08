@@ -98,8 +98,10 @@ new execution mode.
   target.
 - Product feature, architecture slice/module, and task are distinct. A feature
   may cross slices and a slice may support several features. A task normally
-  has one primary owning slice/module, but a cohesive cross-slice outcome is
-  valid when one orchestration owner and every crossed boundary are explicit.
+  has one primary owning slice/module. A task may cross slices only after the
+  execution-cohesion rule leaves one indivisible outcome; an orchestration
+  owner and explicit crossed boundaries establish ownership, not merge
+  evidence.
 - `boundary-map.md` alone owns module identity and topology; plans and tasks
   link relevant graph/contract blocks without copying the subgraph.
 - `touched_files` is advisory and non-exhaustive. A non-empty
@@ -179,8 +181,8 @@ Create/update only the existing artifacts:
 The implementation plan captures goals, scope/non-goals, cohesive strategy,
 dependencies, expected advisory change surface, tests/gates/UAT, applicable
 Constitution constraints, source/normative inputs, invariants, verification
-targets, and direct canonical links. A concise provisional outline may be kept
-in `plan.md` only when it improves resume safety; it is not another task model.
+targets, and direct canonical links. `.protocols/FT-<NNN>/plan.md` is bounded
+resume state, not another task model.
 
 Reconcile the feature with the canonical graph before handoff. Every
 task-relevant change unit and inter-module interaction must resolve to a
@@ -295,36 +297,49 @@ accepted authority. Material edge/failure outcomes still require an AC or
 sourced authoritative exclusion, and material NFRs require an accepted REQ/AC
 result and verification method.
 
-Before grouping, derive from accepted sources the unmerged set of grounded
-material execution units that can independently reach useful task-level
-implementation-and-proof completion, including separate
-failure/retry/rollout/rollback boundaries. Do not optimize task count or
-require a unit to close a whole feature AC. Use exact claims and canonical
-semantic owners as split signals under the hard invariant, and assign every
-eligible exact claim one task owner.
+Run one internal slicing pass before task emission:
+
+1. Discover units: recursively derive the unmerged set of grounded material
+   units from exact claims, canonical semantic owners, and independent
+   implementation, proof, failure/retry/rollout/rollback surfaces. Do not form
+   task candidates yet.
+2. Test independence: identify each unit's owner-valid useful task-level
+   implementation-and-proof completion. It need not be feature-visible, close
+   an AC, or complete the surrounding command, invariant, transaction, or
+   end-to-end flow.
+3. Merge with evidence: merge units only when grounded evidence from accepted
+   contracts and, when available, the bounded code/change surface shows that
+   they cannot reach such completion separately; otherwise keep sibling tasks.
+   Shared owner, transaction, AC, tier, flow, or KISS is insufficient. KISS
+   minimizes each task's scope and proof, not task count.
+
+Use exact claims and canonical semantic owners as split signals, and assign
+every eligible exact claim one resulting task owner.
 Reconcile an obvious missing locator; for an existing indexed queue, use
 `rebuild_required` for identity, tier, dependency, AC, accepted
 target/condition, or material-scope changes, and the owning blocker route for
-unresolved authority. This defines the required result, not analysis order or
-tactic.
+unresolved authority. Reading order remains discretionary; the three slicing
+results are required before task emission.
 Stop only at a real contradiction or unresolved material decision in
 authoritative sources.
 
 Before initially emitting JSON task records, merge units only when they cannot
-reach such completion independently; shared AC, outcome, owner, tier, or
-end-to-end proof is insufficient. Run one bounded execution-cohesion check per
-resulting candidate. Inspect only enough grounded implementation and proof
-surface to apply the split rule. Use the target feature, direct canonical
-specs, necessary dependency records, and the plausible code/change surface
-when available.
+reach such completion independently. Run one bounded execution-cohesion check
+per resulting candidate to confirm that no material subset was missed. Inspect
+only enough grounded implementation and proof surface to apply the split rule.
+Use the target feature, direct canonical specs, necessary dependency records,
+and the plausible code/change surface when available.
 
 In direct interactive use, before durable task emission show a concise
-provisional summary of feature size/complexity and candidate task outcomes,
-then wait for explicit acceptance or specific split/consolidation requests.
+provisional summary of feature size/complexity as
+`unmerged units -> justified merges -> final task candidates`, then wait for
+explicit acceptance or specific split/consolidation requests.
 Apply boundary feedback only when it preserves accepted contracts and
 execution cohesion; otherwise use the existing operator-decision route.
-Unattended orchestration skips this checkpoint. Do not persist the preview or
-add workflow state.
+Immediately after explicit acceptance of the resulting task boundaries,
+persist their concise outline in `.protocols/FT-<NNN>/plan.md` as the first
+durable task-planning write, then continue with the implementation plan and
+JSON task records. Unattended orchestration skips this checkpoint.
 
 Use the existing blocker and operator-decision route when a material branch
 remains unresolved. End the check as soon as the boundary decision is
