@@ -292,8 +292,9 @@ target/condition, or material-scope changes use `rebuild_required`; unresolved
 authority uses its existing blocker route.
 
 In direct interactive use, show the named
-`unmerged units -> justified merges -> final task candidates`: each unit, each
-merge with one brief grounded indivisibility reason, and each candidate outcome.
+`unmerged units -> justified merges -> final task candidates`: each unit with
+its useful implementation-and-proof completion, each merge with the source/code
+fact that makes those completions inseparable, and each final candidate outcome.
 Counts alone are insufficient. For a new queue, assign no task IDs, tiers,
 waves, concrete `depends_on`, or record fields before explicit boundary
 acceptance. Wait for acceptance or a specific split/consolidation request;
