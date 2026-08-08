@@ -26,6 +26,7 @@ chooses another task.
 Require and resolve:
 - `.memory-bank/tasks/index.json` and exactly one matching indexed task record;
 - `.memory-bank/workflows/tier-policy.md#tier-obligations`;
+- `#task-claim-and-dependency-ownership`;
 - `#tier-classification-and-escalation` only when observed scope may require a
   higher tier, `#closure-authority` only for manual T0/T1 closure,
   `#hard-write-boundary` only when a boundary/alias is non-empty,
