@@ -295,8 +295,13 @@ accepted authority. Material edge/failure outcomes still require an AC or
 sourced authoritative exclusion, and material NFRs require an accepted REQ/AC
 result and verification method.
 
-Use the exact claims and canonical semantic owners as provisional split signals
-under the hard invariant, and assign every eligible exact claim one task owner.
+Before grouping, derive from accepted sources the unmerged set of grounded
+material execution units that can independently reach useful task-level
+implementation-and-proof completion, including separate
+failure/retry/rollout/rollback boundaries. Do not optimize task count or
+require a unit to close a whole feature AC. Use exact claims and canonical
+semantic owners as split signals under the hard invariant, and assign every
+eligible exact claim one task owner.
 Reconcile an obvious missing locator; for an existing indexed queue, use
 `rebuild_required` for identity, tier, dependency, AC, accepted
 target/condition, or material-scope changes, and the owning blocker route for
@@ -305,19 +310,20 @@ tactic.
 Stop only at a real contradiction or unresolved material decision in
 authoritative sources.
 
-Before initially emitting JSON task records, form provisional candidates and
-run one bounded execution-cohesion check per candidate. Inspect only enough
-grounded implementation and proof surface, including applicable
-failure/retry/rollout/rollback branches, to apply the split rule. Use the target
-feature, direct canonical specs, necessary dependency records, and the
-plausible code/change surface when available.
+Before initially emitting JSON task records, merge units only when they cannot
+reach such completion independently; shared AC, outcome, owner, tier, or
+end-to-end proof is insufficient. Run one bounded execution-cohesion check per
+resulting candidate. Inspect only enough grounded implementation and proof
+surface to apply the split rule. Use the target feature, direct canonical
+specs, necessary dependency records, and the plausible code/change surface
+when available.
 
 Use the existing blocker and operator-decision route when a material branch
 remains unresolved. End the check as soon as the boundary decision is
 supported. Do not compare speculative architectures, write pseudocode, perform
-an unrelated full audit, persist the check, or add a field, artifact, status,
-or report. Newly produced candidates receive the same bounded check before
-emission.
+an unrelated full audit, persist the check or estimate, or add a field,
+artifact, status, gate, or report. Newly produced candidates receive the same
+bounded check before emission.
 
 This check does not silently re-slice an existing indexed queue. If it exposes
 a material identity, dependency, tier, AC, or scope change during
