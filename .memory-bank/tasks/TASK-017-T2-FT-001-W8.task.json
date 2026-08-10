@@ -1,0 +1,87 @@
+{
+  "id": "TASK-017-T2-FT-001-W8",
+  "title": "Implement the independent per-file uploader UI",
+  "status": "planned",
+  "wave": "W8",
+  "feature": "FT-001",
+  "reqs": [
+    "REQ-ING-001",
+    "REQ-ING-002"
+  ],
+  "depends_on": [
+    "TASK-015-T3-FT-001-W3",
+    "TASK-016-T3-FT-001-W7"
+  ],
+  "touched_files": [
+    "src/face_moment/inventory/",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/inventory/test_photo_upload_ui.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Uploader page tests",
+      "command": "docker compose run --rm backend python -m pytest tests/inventory/test_photo_upload_ui.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/contracts/photo-admission-api.md",
+    ".memory-bank/testing/index.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "evidence_required": [
+    "FT-001-AC-001 RED: no photographer page preserves one independent visible result per selected file; GREEN: a real-browser flow selects one eligible СПА and authoritative visit_date, submits valid, invalid, undecodable, mixed-EXIF and duplicate files independently, preserves every completed row regardless of completion order and shows the matching accepted/rejected/duplicate outcome with persisted authoritative date; decisive comparison: visible rows, API observations and database date projection all match; artifact: browser trace/screenshots plus redacted integration output."
+  ],
+  "purpose": "Complete the photographer-visible FT-001 outcome over the separately secured context and upload endpoints.",
+  "success_outcome": "An authenticated photographer can select one СПА/date, upload multiple JPEGs without Batch confirmation and retain a truthful independent visible result for every completed file.",
+  "anti_goals": [
+    "Do not implement processing-status progression, inventory administration, resumable upload, drag-and-drop framework or external ingest.",
+    "Do not move admission orchestration, authorization or storage access into browser code."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Processing/searchable-state UI owned by FT-002",
+      "Photo delete/restore/purge UI owned by FT-012",
+      "Direct browser access to storage, database or internal services"
+    ],
+    "stop_conditions": [
+      "The page would require Batch, group confirmation or another accepted product change.",
+      "A file result cannot remain independent of other request completion order.",
+      "Real-browser proof cannot run in authorized isolated state or would require production data."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md#FT-001-AC-001",
+    ".protocols/FT-001/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/photo-admission-api.md#independent-uploader-page",
+    ".memory-bank/contracts/photo-admission-api.md#photo-upload-endpoint",
+    ".memory-bank/states/lifecycle-map.md#independent-photo-admission",
+    ".memory-bank/testing/index.md#ui-verification"
+  ],
+  "constraints": [
+    "GET /staff/photo-upload requires an active photographer session and uses only same-origin application endpoints.",
+    "The page sends one independent request per file and keeps one visible row per file.",
+    "Use an available Playwright, agent-browser or CDP path for real-browser proof without requiring a new product runtime."
+  ],
+  "invariants": [
+    "Completion order never changes or removes another file result.",
+    "Mixed EXIF may warn but never rewrites or regroups the selected visit_date.",
+    "No Batch, manifest, aggregate confirmation or direct storage access appears in the UI."
+  ],
+  "verification_targets": [
+    "FT-001-AC-001 via .memory-bank/features/FT-001.md#FT-001-AC-001",
+    ".memory-bank/contracts/photo-admission-api.md#independent-uploader-page",
+    "Real-browser UAT covers valid, invalid, undecodable, mixed-EXIF, duplicate and deliberately reordered completion cases and stores screenshots/traces under the task artifact directory."
+  ]
+}

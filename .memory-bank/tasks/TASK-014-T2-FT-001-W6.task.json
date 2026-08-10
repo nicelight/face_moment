@@ -1,0 +1,86 @@
+{
+  "id": "TASK-014-T2-FT-001-W6",
+  "title": "Prove pre-commit crash recovery by re-upload",
+  "status": "planned",
+  "wave": "W6",
+  "feature": "FT-001",
+  "reqs": [
+    "REQ-ING-003",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-012-T2-FT-001-W5"
+  ],
+  "touched_files": [
+    "src/face_moment/inventory/",
+    "tests/inventory/test_crash_recovery.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Crash recovery tests",
+      "command": "docker compose run --rm backend python -m pytest tests/inventory/test_crash_recovery.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "evidence_required": [
+    "FT-001-AC-005 RED: after dependency completion, an isolated pre-commit termination yields at least one claim-equivalent failure: a Photo or pending row survives, media becomes browser-accessible, or ordinary re-upload cannot complete exactly one normal admission; PRE_IMPLEMENTATION_GREEN: if the first safe probe already leaves zero database rows, keeps any orphan private and permits one complete re-upload, preserve that result and make no unnecessary production-behavior change; GREEN: the same probe satisfies all three observations; decisive comparison: post-crash database count is zero, forbidden access is absent and post-re-upload count is one complete pair; artifact: isolated fault-injection timeline, database projection and object-access probe."
+  ],
+  "purpose": "Establish the accepted KISS recovery behavior for the object-upload/PostgreSQL pre-commit crash window as its own sibling outcome.",
+  "success_outcome": "A pre-commit process failure leaves no database admission or exposed media, and ordinary photographer re-upload succeeds without an orphan lifecycle or distributed transaction.",
+  "anti_goals": [
+    "Do not implement orphan scanning/cleanup, durable upload resume, outbox, object move/copy or distributed transaction emulation.",
+    "Do not adopt duplicate or atomic-publication claims beyond trusting their completed outcomes."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Orphan cleanup lifecycle or background job",
+      "Distributed PostgreSQL/MinIO transaction machinery",
+      "Production process termination or non-disposable storage"
+    ],
+    "stop_conditions": [
+      "The crash probe cannot be isolated, safely rerun or limited to task-owned disposable state.",
+      "A successful verdict would require cleanup/recovery machinery excluded by the accepted contract.",
+      "The failure injection could affect operator/default or production resources."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md#FT-001-AC-005",
+    ".protocols/FT-001/plan.md",
+    ".protocols/FT-001/decision-log.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/architecture/system-architecture.md#AD-011",
+    ".memory-bank/contracts/boundary-map.md#postgresql-and-minio-convergence",
+    ".memory-bank/domains/photo-admission.md#pre-commit-crash-recovery",
+    ".memory-bank/states/lifecycle-map.md#independent-photo-admission"
+  ],
+  "constraints": [
+    "The probe starts from known disposable PostgreSQL/MinIO state, records the injection point and cleans only task-owned recoverable data.",
+    "A possible orphan remains private and is not required to be deleted for success.",
+    "Recovery is one ordinary re-upload through the existing admission boundary."
+  ],
+  "invariants": [
+    "Pre-commit failure creates no Photo or pending row.",
+    "No orphan object is browser-accessible or authoritative without committed PostgreSQL state.",
+    "Re-upload yields one normal complete admission without a recovery subsystem."
+  ],
+  "verification_targets": [
+    "FT-001-AC-005 via .memory-bank/features/FT-001.md#FT-001-AC-005",
+    ".memory-bank/domains/photo-admission.md#pre-commit-crash-recovery",
+    "A safe isolated fault-injection probe records known initial state, crash point, zero database admission, private orphan observation, successful re-upload and owned cleanup."
+  ]
+}

@@ -1,7 +1,7 @@
 ---
 description: Canonical staff identity, role, password, session and CSRF data contract.
 status: active
-last_updated: 2026-08-03
+last_updated: 2026-08-08
 source_of_truth:
   - .memory-bank/domains/staff-access.md
 ---
@@ -66,12 +66,18 @@ database rows, URLs or application logs.
 
 ## Provisioning And Lifecycle
 
-An owner-backed CLI/application command supports provision, password reset and
-deactivation. It accepts secrets without echoing or logging them, uses Argon2id,
-and never exposes stored hashes. Reset and deactivation revoke all current
-sessions for that user; repeated deactivation is safe. Reactivation, self-
-registration, password recovery email, OAuth, MFA and automatic credential
-rotation are outside the pilot.
+### Initial Provisioning
+
+An owner-backed CLI/application command provisions a staff principal. It
+accepts the password without echoing or logging it, persists only its Argon2id
+hash and never exposes the stored hash.
+
+### Password Reset And Deactivation
+
+The owner-backed command also supports password reset and deactivation. Both
+revoke all current sessions for that user; repeated deactivation is safe.
+Reactivation, self-registration, password recovery email, OAuth, MFA and
+automatic credential rotation are outside the pilot.
 
 ## Verification Targets
 
@@ -85,4 +91,3 @@ rotation are outside the pilot.
 - Deterministic rate-limit and redaction probes prove `429` behavior and absence
   of passwords, cookies, headers, plaintext tokens and token digests in URLs or
   logs.
-

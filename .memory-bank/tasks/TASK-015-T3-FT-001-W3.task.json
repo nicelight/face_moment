@@ -1,0 +1,89 @@
+{
+  "id": "TASK-015-T3-FT-001-W3",
+  "title": "Implement the authenticated ingest-target context endpoint",
+  "status": "planned",
+  "wave": "W3",
+  "feature": "FT-001",
+  "reqs": [
+    "REQ-ING-001",
+    "REQ-SEC-001"
+  ],
+  "depends_on": [
+    "TASK-004-T3-FT-001-W2",
+    "TASK-007-T2-FT-001-W2"
+  ],
+  "touched_files": [
+    "src/face_moment/inventory/",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/inventory/test_ingest_targets_api.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Ingest-target API tests",
+      "command": "docker compose run --rm backend python -m pytest tests/inventory/test_ingest_targets_api.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/contracts/photo-admission-api.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "evidence_required": [
+    "FT-001-AC-012 RED: an active disposable photographer cannot obtain the exact eligible ingest-target projection through GET /api/inventory/ingest-targets; GREEN: the endpoint returns schema_version 1 and only active eligible СПА id/name/timezone entries, maps missing/revoked sessions to 401 and wrong roles to 403, and obtains principal/targets through accepted owner boundaries without direct writes or protected configuration in output/logs; decisive comparison: exact response/authorization matrix and boundary/redaction assertions match the contract; artifact: redacted isolated API, integration and log-scan output."
+  ],
+  "purpose": "Expose the smallest authenticated context needed for the photographer to select one authoritative upload scope without merging it into upload admission.",
+  "success_outcome": "An active photographer session can read the exact eligible ingest-target list, while unauthenticated and wrong-role requests fail without exposing storage or internal configuration.",
+  "anti_goals": [
+    "Do not implement the Photo upload endpoint, uploader page, target mutation or operator settings.",
+    "Do not expose pipeline identities, storage data, credentials or a generic settings API."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Photo upload and admission outcomes",
+      "Serving-target mutation or operator settings",
+      "Direct repository writes from HTTP handlers"
+    ],
+    "stop_conditions": [
+      "The exact response shape, photographer role or serving-target ownership would need to change.",
+      "The handler would need direct database/storage access or business orchestration.",
+      "Protected configuration or credentials would enter output or logs."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md#FT-001-AC-012",
+    ".protocols/FT-001/plan.md",
+    ".protocols/FT-001/decision-log.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/architecture/system-architecture.md#AD-002",
+    ".memory-bank/architecture/system-architecture.md#AD-009",
+    ".memory-bank/contracts/boundary-map.md#independent-photo-admission",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries",
+    ".memory-bank/contracts/photo-admission-api.md#authenticated-ingest-target-context"
+  ],
+  "constraints": [
+    "The route is GET /api/inventory/ingest-targets and returns exactly schema_version plus active eligible СПА id/name/timezone entries.",
+    "staff_access authenticates; inventory authorizes the photographer read and consumes serving_control projections.",
+    "The handler owns transport only and performs no repository write or business orchestration."
+  ],
+  "invariants": [
+    "Missing, invalid, expired or revoked sessions return 401 and wrong roles return 403.",
+    "The response contains no storage identity, credential or mutable serving command.",
+    "The photographer still selects and submits authoritative visit_date."
+  ],
+  "verification_targets": [
+    "FT-001-AC-012 via .memory-bank/features/FT-001.md#FT-001-AC-012",
+    ".memory-bank/contracts/photo-admission-api.md#authenticated-ingest-target-context",
+    "Proof starts in an isolated application/PostgreSQL state with task-unique disposable staff sessions and serving-target fixtures created through their owner boundaries; transaction rollback or owner cleanup removes only those fixtures, discards the task-local captured log buffer, resets the request client, and makes rerun start from the same empty scoped state.",
+    "Exact API/authorization/boundary/redaction tests cover valid photographer, unauthenticated, revoked, wrong-role and inactive-target observations."
+  ]
+}

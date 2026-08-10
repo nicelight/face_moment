@@ -1,0 +1,86 @@
+{
+  "id": "TASK-009-T2-FT-001-W4",
+  "title": "Implement the initial processing pending boundary",
+  "status": "planned",
+  "wave": "W4",
+  "feature": "FT-001",
+  "reqs": [
+    "REQ-ING-003"
+  ],
+  "depends_on": [
+    "TASK-006-T2-FT-001-W1",
+    "TASK-008-T2-FT-001-W3"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/",
+    "migrations/versions/",
+    "tests/processing/test_initial_pending.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Initial pending tests",
+      "command": "docker compose run --rm backend python -m pytest tests/processing/test_initial_pending.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/domains/photo-admission.md#face_momentphoto_pipeline_states RED: processing exposes no owner-controlled initial pending operation; GREEN: its typed application boundary creates exactly one serving-revision row with pending, attempt_count zero and a server timestamp inside a caller-supplied transaction; decisive comparison: caller commit retains the row and caller rollback removes it; artifact: migration and transaction-integration output."
+  ],
+  "purpose": "Provide the processing-owned side of later atomic Photo publication without implementing the processing lifecycle.",
+  "success_outcome": "Inventory can call one typed processing boundary that participates in its PostgreSQL transaction and creates exactly the canonical initial serving pending row.",
+  "anti_goals": [
+    "Do not implement work claiming, inference, retry, terminal transitions, derivatives, faces or searchable publication.",
+    "Do not let inventory, handlers or shared helpers write photo_pipeline_states directly."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "FT-002 processing lifecycle and FaceEngine behavior",
+      "Inventory-owned Photo mutation",
+      "Direct foreign writes or cross-owner cascades"
+    ],
+    "stop_conditions": [
+      "The initial row cannot participate in the caller transaction without changing the accepted application boundary.",
+      "A processing transition beyond initial pending becomes necessary.",
+      "The implementation would give inventory direct processing repository access."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md",
+    ".protocols/FT-001/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/architecture/system-architecture.md#AD-002",
+    ".memory-bank/architecture/system-architecture.md#AD-003",
+    ".memory-bank/contracts/boundary-map.md#independent-photo-admission",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/domains/photo-admission.md#face_momentphoto_pipeline_states"
+  ],
+  "constraints": [
+    "processing owns the model, repository and typed initial-pending application boundary.",
+    "The row key is photo_id plus pipeline_revision_id and uses deliberate no-cross-owner-cascade behavior.",
+    "The boundary accepts the existing caller transaction rather than opening or committing a foreign transaction."
+  ],
+  "invariants": [
+    "Initial status is pending, attempt_count is zero and the state timestamp is server assigned.",
+    "Caller rollback removes the pending row.",
+    "No later processing state or final face data is created."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/photo-admission.md#face_momentphoto_pipeline_states",
+    "Isolated migration and transaction-integration proof distinguishes caller commit from rollback and confirms the forbidden transition surface remains absent."
+  ]
+}

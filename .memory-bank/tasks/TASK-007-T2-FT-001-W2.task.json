@@ -1,0 +1,88 @@
+{
+  "id": "TASK-007-T2-FT-001-W2",
+  "title": "Implement the serving-owned ingest target",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-001",
+  "reqs": [
+    "REQ-ING-001",
+    "REQ-ING-003",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-006-T2-FT-001-W1"
+  ],
+  "touched_files": [
+    "src/face_moment/serving_control/",
+    "migrations/versions/",
+    "tests/serving_control/test_ingest_target.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Ingest target tests",
+      "command": "docker compose run --rm backend python -m pytest tests/serving_control/test_ingest_target.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "evidence_required": [
+    "FT-001-AC-010 RED: serving_control cannot publish an immutable ingest target for an active СПА with valid timezone and already eligible serving revision; GREEN: its owner-backed configuration/test path resolves that target while rejecting unknown, inactive, invalid-timezone and ineligible targets before object or Photo persistence; decisive comparison: accepted and rejected projections match the canonical target rules and no foreign state changes; artifact: isolated migration/repository/application output."
+  ],
+  "purpose": "Supply the immutable serving context that inventory must validate before staging or admitting a photographer JPEG.",
+  "success_outcome": "serving_control can publish an immutable IngestTarget only for an active configured СПА with a valid timezone and already eligible serving revision.",
+  "anti_goals": [
+    "Do not implement operator settings UI, active search date, automatic rollover or serving-revision switching.",
+    "Do not create production СПА or revision seed identities."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Photo admission or processing-owned state writes",
+      "Operator serving-setting and active-search-date behavior",
+      "Production СПА configuration"
+    ],
+    "stop_conditions": [
+      "The accepted serving_control ownership or ingest-target fields would need to change.",
+      "Resolving a target would require direct processing writes or model execution.",
+      "The task expands into manual serving-revision lifecycle or public UI."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md#FT-001-AC-010",
+    ".protocols/FT-001/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/architecture/system-architecture.md#AD-002",
+    ".memory-bank/architecture/system-architecture.md#AD-010",
+    ".memory-bank/contracts/boundary-map.md#independent-photo-admission",
+    ".memory-bank/domains/photo-admission.md#required-target-records",
+    ".memory-bank/domains/photo-admission.md#face_momentspas"
+  ],
+  "constraints": [
+    "serving_control owns СПА configuration and target publication under src/face_moment/serving_control/.",
+    "The revision reference uses deliberate RESTRICT/no-cascade behavior and consumes processing eligibility without writing it.",
+    "The owner-backed path is for pilot configuration and isolated tests, not a production seed or settings framework."
+  ],
+  "invariants": [
+    "Unknown, inactive or invalid targets fail before object or Photo persistence.",
+    "The photographer-selected visit_date remains input to admission and is never replaced by the target provider.",
+    "Inventory and transport cannot write serving-control state directly."
+  ],
+  "verification_targets": [
+    "FT-001-AC-010 via .memory-bank/features/FT-001.md#FT-001-AC-010",
+    ".memory-bank/domains/photo-admission.md#face_momentspas",
+    "Isolated migration/repository/application proof covers valid target publication, IANA timezone validation, eligible revision use and rejected target classes."
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "id": "TASK-005-T3-FT-001-W3",
+  "title": "Integrate password reset and deactivation with session revocation",
+  "status": "planned",
+  "wave": "W3",
+  "feature": "FT-001",
+  "reqs": [
+    "REQ-ING-001",
+    "REQ-SEC-001"
+  ],
+  "depends_on": [
+    "TASK-004-T3-FT-001-W2"
+  ],
+  "touched_files": [
+    "src/face_moment/platform/auth/",
+    "tests/staff_access/test_credential_lifecycle.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Credential lifecycle tests",
+      "command": "docker compose run --rm backend python -m pytest tests/staff_access/test_credential_lifecycle.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/domains/staff-access.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "evidence_required": [
+    "FT-001-AC-008 RED: password reset or deactivation leaves at least one already authenticated disposable session usable; GREEN: each owner-controlled command updates the principal lifecycle and revokes every current session, inactive login and old sessions return generic 401, repeated deactivation is safe, and credential/token markers remain absent from command output and logs; decisive comparison: all pre-command sessions authenticate, all post-command sessions fail generically and the redacted lifecycle projection matches the contract; artifact: isolated integration output, database projection and security scan."
+  ],
+  "purpose": "Complete the accepted staff credential lifecycle so revoked or changed principals cannot retain uploader access through old sessions.",
+  "success_outcome": "Password reset and deactivation revoke every current browser session, inactive principals cannot authenticate, and repeated deactivation is safe without secret disclosure.",
+  "anti_goals": [
+    "Do not add reactivation, self-service reset, email recovery, session administration UI or automatic credential rotation.",
+    "Do not absorb normal browser-session behavior or Photo endpoint authorization."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "New staff roles or authorization policy",
+      "Inventory and Photo state",
+      "Production user lifecycle operations"
+    ],
+    "stop_conditions": [
+      "Reset or deactivation cannot revoke all current sessions in one owner-controlled operation.",
+      "The change would require a new credential lifecycle or external identity provider.",
+      "Any secret would be echoed, persisted in plaintext or logged."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md#FT-001-AC-008",
+    ".protocols/FT-001/plan.md",
+    ".protocols/FT-001/decision-log.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/architecture/system-architecture.md#AD-002",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/domains/staff-access.md#browser-session-contract",
+    ".memory-bank/domains/staff-access.md#password-reset-and-deactivation"
+  ],
+  "constraints": [
+    "The staff_access owner performs principal mutation and session revocation without foreign business writes.",
+    "Password reset stores a new Argon2id hash and updates password_changed_at; deactivation sets active false and deactivated_at.",
+    "Existing session authentication observes reset/deactivation revocation as generic 401."
+  ],
+  "invariants": [
+    "Reset and deactivation revoke all current sessions for the target user.",
+    "Repeated deactivation is safe and does not recreate or extend sessions.",
+    "No plaintext credential, token or stored hash enters command output or logs."
+  ],
+  "verification_targets": [
+    "FT-001-AC-008 via .memory-bank/features/FT-001.md#FT-001-AC-008",
+    ".memory-bank/domains/staff-access.md#password-reset-and-deactivation",
+    "Proof starts with one task-unique disposable active principal and multiple sessions in isolated PostgreSQL/application state; each rerun cleanup removes only those sessions/principal and discards task-local captured logs, recreates the known fixture, and performs no production lifecycle operation.",
+    "Integration proof covers password reset, deactivation, repeated deactivation, session revocation, inactive login rejection and redaction."
+  ]
+}

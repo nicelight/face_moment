@@ -1,7 +1,7 @@
 ---
 description: Canonical Photo admission data, storage, transaction and recovery specification.
 status: active
-last_updated: 2026-08-03
+last_updated: 2026-08-08
 source_of_truth:
   - .memory-bank/domains/photo-admission.md
 ---
@@ -128,25 +128,36 @@ boundary; later physical cleanup calls the processing boundary explicitly.
 
 ## Admission And Convergence
 
-1. `inventory` obtains the immutable `IngestTarget` and authenticated
-   `uploader_id` before persistence.
-2. The candidate is written once under a unique opaque key in the configured
-   private MinIO bucket. The browser never receives that key or direct MinIO
-   access.
-3. The backend validates the configured byte/decode bounds, JPEG and EXIF data,
-   then calculates the digest and effective capture time.
-4. One short PostgreSQL transaction attempts the unique Photo insert and calls
-   the typed `processing` application boundary to add its initial `pending`
-   row using the same transaction.
-5. A committed unique Photo returns `accepted`. A uniqueness conflict returns
-   `duplicate`, creates no new Photo or pipeline state and deletes only the
-   request's candidate object.
+### Private Candidate Staging And Request-Owned Cleanup
 
-Any handled rejection before commit SHOULD delete its candidate object. A
-process crash after object upload but before commit may leave one inaccessible
-orphan and no database admission; ordinary re-upload is the accepted recovery.
-No outbox, distributed transaction, object move/copy or orphan lifecycle is
-introduced. An accepted Photo keeps its original opaque key.
+`inventory` obtains the immutable `IngestTarget` and authenticated
+`uploader_id`, then writes the candidate once under a unique opaque key in the
+configured private MinIO bucket. The browser never receives that key or direct
+MinIO access. Handled rejection before commit SHOULD delete only its
+request-owned candidate; repeated cleanup is safe.
+
+### Atomic Photo And Pending Transaction
+
+After configured byte/decode, JPEG and EXIF validation produces the digest and
+effective capture time, one short PostgreSQL transaction attempts the unique
+Photo insert and calls the typed `processing` application boundary to add its
+initial `pending` row using the same transaction. Commit publishes both rows;
+rollback publishes neither.
+
+### Duplicate Arbitration And Candidate Cleanup
+
+A committed unique Photo returns `accepted`. PostgreSQL uniqueness arbitrates
+concurrent same-scope candidates. A conflict returns `duplicate`, creates no
+new Photo or pipeline state and deletes only the losing request's candidate
+object.
+
+### Pre-Commit Crash Recovery
+
+A process crash after object upload but before commit may leave one
+inaccessible orphan and no database admission; ordinary re-upload is the
+accepted recovery. No outbox, distributed transaction, object move/copy or
+orphan lifecycle is introduced. An accepted Photo keeps its original opaque
+key.
 
 ## Errors And Invariants
 

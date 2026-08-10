@@ -1,7 +1,7 @@
 ---
 description: Exact authenticated staff-browser API and UI contract for independent Photo admission.
 status: active
-last_updated: 2026-08-03
+last_updated: 2026-08-08
 source_of_truth:
   - .memory-bank/contracts/photo-admission-api.md
 ---
@@ -34,12 +34,17 @@ envelope is part of FT-001.
 
 ## Upload Context And Page
 
-- `GET /staff/photo-upload` requires an active `photographer` session and
-  renders the same-origin uploader.
+### Authenticated Ingest Target Context
+
 - `GET /api/inventory/ingest-targets` requires the same role and returns
   `{"schema_version":1,"spas":[...]}`. Each active one-СПА pilot entry
   contains exactly `spa_id`, `name` and IANA `timezone`; the photographer still
   selects and submits authoritative `visit_date`.
+
+### Independent Uploader Page
+
+- `GET /staff/photo-upload` requires an active `photographer` session and
+  renders the same-origin uploader.
 - The page lets the photographer select one returned СПА, one `visit_date` and
   multiple local files. It sends one independent request per file, keeps one
   visible row per file and never adds Batch, manifest or confirmation state.
@@ -117,4 +122,3 @@ external ingest, resumable upload or aggregate confirmation path.
 - Topology and redaction probes confirm that only the HTTPS edge is browser-
   reachable and no password, session/CSRF token, authorization header, object
   key or storage credential appears in URL or application logs.
-

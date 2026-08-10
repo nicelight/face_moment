@@ -1,0 +1,99 @@
+{
+  "id": "TASK-016-T3-FT-001-W7",
+  "title": "Implement the secured Photo upload endpoint",
+  "status": "planned",
+  "wave": "W7",
+  "feature": "FT-001",
+  "reqs": [
+    "REQ-ING-001",
+    "REQ-SEC-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-005-T3-FT-001-W3",
+    "TASK-013-T2-FT-001-W6",
+    "TASK-014-T2-FT-001-W6"
+  ],
+  "touched_files": [
+    "src/face_moment/inventory/",
+    "src/face_moment/entrypoints/backend.py",
+    "src/face_moment/infrastructure/settings.py",
+    "tests/inventory/test_photo_upload_api.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Photo upload API tests",
+      "command": "docker compose run --rm backend python -m pytest tests/inventory/test_photo_upload_api.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/contracts/photo-admission-api.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "evidence_required": [
+    "FT-001-AC-004 RED: the public uploader lacks decisive staff-session, role and CSRF enforcement or exact standard failure mapping; GREEN: the exact multipart POST accepts an authorized photographer and returns 401/403/413/422/5xx for the canonical transport/technical classes without a custom envelope; decisive comparison: the authorization and response matrix matches the contract and no request bypasses inventory; artifact: redacted API contract output.",
+    "FT-001-AC-004 RED: no configured upload rate boundary rejects excess requests through standard HTTP 429 while preserving normal below-limit behavior; GREEN: requests below the positive configured principal/session-plus-IP limit retain their ordinary outcome and the first excess request receives 429; decisive comparison: deterministic counts meet the configured boundary; artifact: isolated rate-limit output.",
+    "FT-001-AC-004 PRE_IMPLEMENTATION_GREEN: done Foundation records TASK-001-T3-FT-000-W0 and TASK-002-T2-FT-000-W0 already prove that only the HTTPS edge is browser-reachable while PostgreSQL, MinIO and internal role ports remain private; current-task integration delta: the upload endpoint adds no browser route, response or log exposure for storage/database credentials, object keys or internal ports; decisive comparison: retained Foundation evidence stays applicable and endpoint topology/redaction scans find no new exposure; artifact: Foundation evidence references plus redacted endpoint topology/log-scan output."
+  ],
+  "purpose": "Expose one secured per-file upload boundary over the completed admission outcomes while preserving private storage and capability ownership.",
+  "success_outcome": "The exact multipart Photo upload endpoint authenticates and authorizes a photographer, enforces CSRF and the configured rate limit, maps standard HTTP failures and returns canonical accepted/duplicate responses without exposing internal services.",
+  "anti_goals": [
+    "Do not implement the ingest-target context endpoint, uploader UI, Batch/resumable upload, direct MinIO access or a custom error framework.",
+    "Do not re-prove or absorb sibling atomic, duplicate or crash claims; consume their done outcomes as prerequisites."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Ingest-target endpoint and uploader-page claims",
+      "Direct handler writes to Photo, processing, serving-control or MinIO repositories",
+      "Production rate-limit values, credentials or deployment actions"
+    ],
+    "stop_conditions": [
+      "The exact API, authorization, rate-limit or standard failure contract would need to change.",
+      "Passing would require direct internal-service browser access or a distributed limiter.",
+      "The handler would need to own business orchestration or sibling admission claims."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md#FT-001-AC-004",
+    ".memory-bank/tasks/TASK-001-T3-FT-000-W0.task.json",
+    ".memory-bank/tasks/TASK-002-T2-FT-000-W0.task.json",
+    ".protocols/FT-001/plan.md",
+    ".protocols/FT-001/decision-log.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/architecture/system-architecture.md#AD-002",
+    ".memory-bank/architecture/system-architecture.md#AD-009",
+    ".memory-bank/contracts/boundary-map.md#independent-photo-admission",
+    ".memory-bank/contracts/boundary-map.md#http-failure-contract",
+    ".memory-bank/contracts/photo-admission-api.md#photo-upload-endpoint",
+    ".memory-bank/contracts/photo-admission-api.md#rejection-and-failure-contract",
+    ".memory-bank/domains/staff-access.md#browser-session-contract"
+  ],
+  "constraints": [
+    "POST /api/inventory/photos accepts exactly one spa_id, visit_date and JPEG photo part.",
+    "The request crosses the inventory application boundary once after staff authentication; the handler performs no direct business-state write.",
+    "The single-backend limiter uses authenticated principal/session plus IP and deployment-configured positive limits."
+  ],
+  "invariants": [
+    "Only the HTTPS application edge is browser-facing; PostgreSQL, MinIO and internal role ports stay private.",
+    "Authentication/permission/payload/rate/technical failures use standard HTTP classes and no custom error framework.",
+    "Passwords, cookies, CSRF/session tokens, authorization headers, object keys and storage credentials never enter URLs or logs."
+  ],
+  "verification_targets": [
+    "FT-001-AC-004 via .memory-bank/features/FT-001.md#FT-001-AC-004",
+    "Preserve the private-topology pre-implementation GREEN recorded by TASK-001/TASK-002 and prove only the upload-endpoint integration delta against it.",
+    ".memory-bank/contracts/photo-admission-api.md#photo-upload-endpoint",
+    ".memory-bank/contracts/photo-admission-api.md#rejection-and-failure-contract",
+    "Exact multipart, response, auth, CSRF, rate-limit, owner-boundary, topology and redaction probes run with deterministic disposable state."
+  ]
+}

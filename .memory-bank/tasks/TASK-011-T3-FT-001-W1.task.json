@@ -1,0 +1,91 @@
+{
+  "id": "TASK-011-T3-FT-001-W1",
+  "title": "Implement private MinIO candidate staging and cleanup",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-001",
+  "reqs": [
+    "REQ-ING-001",
+    "REQ-ING-003",
+    "REQ-SEC-001"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0"
+  ],
+  "touched_files": [
+    "src/face_moment/inventory/",
+    "src/face_moment/infrastructure/object_store.py",
+    "tests/inventory/test_candidate_staging.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Candidate staging tests",
+      "command": "docker compose run --rm backend python -m pytest tests/inventory/test_candidate_staging.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "evidence_required": [
+    "FT-001-AC-011 RED: inventory cannot stage one request-scoped candidate under a unique opaque private key and idempotently delete only that owned object; GREEN: disposable put/read/delete/repeat observations affect exactly the owned candidate and no other object; decisive comparison: before/after object inventory contains only the expected task-owned change and returns to the known empty scoped state; artifact: isolated MinIO probe output and object inventory.",
+    "FT-001-AC-011 RED_NOT_APPLICABLE: before a candidate path exists, absence of browser/log exposure cannot reveal a leak, and deliberately exposing real commercial bytes or credentials would violate the authorized proof boundary; alternative proof: use synthetic byte, opaque-key and dummy-credential markers after implementation, preserve the Foundation private-MinIO topology, and assert that browser-facing output, URLs and application logs contain none of those markers; decisive comparison: all marker scans are empty and only the HTTPS edge is browser-reachable; artifact: redacted security/topology output plus Foundation evidence references."
+  ],
+  "purpose": "Provide the private, request-owned object boundary used before JPEG validation and PostgreSQL arbitration.",
+  "success_outcome": "Inventory can stage one candidate under a unique opaque private MinIO key and idempotently clean only that request-owned object without exposing storage identity or credentials.",
+  "anti_goals": [
+    "Do not persist Photos, arbitrate duplicates, open database transactions or implement orphan cleanup lifecycle.",
+    "Do not expose presigned/direct-MinIO browser access, object keys, storage credentials, versioning or external snapshots."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "PostgreSQL Photo/pending admission and duplicate decisions",
+      "Public media delivery or browser storage access",
+      "Production MinIO data, credentials or bucket changes"
+    ],
+    "stop_conditions": [
+      "The candidate cannot remain private without changing the accepted deployment boundary.",
+      "Cleanup would need to discover or delete objects not owned by the current request.",
+      "A distributed transaction, object versioning or orphan lifecycle becomes necessary."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md#FT-001-AC-011",
+    ".memory-bank/tasks/TASK-001-T3-FT-000-W0.task.json",
+    ".memory-bank/tasks/TASK-002-T2-FT-000-W0.task.json",
+    ".protocols/FT-001/plan.md",
+    ".protocols/FT-001/decision-log.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/architecture/system-architecture.md#AD-011",
+    ".memory-bank/contracts/boundary-map.md#postgresql-and-minio-convergence",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries",
+    ".memory-bank/domains/photo-admission.md#private-candidate-staging-and-request-owned-cleanup"
+  ],
+  "constraints": [
+    "inventory owns candidate semantics; infrastructure supplies only the S3 adapter.",
+    "Every candidate key is unique, opaque and scoped to one request in the configured private bucket.",
+    "Isolated probes use disposable task-owned objects and retain safe-rerun cleanup evidence."
+  ],
+  "invariants": [
+    "The browser receives no object key, storage credential or direct MinIO access.",
+    "Handled cleanup affects only the request-owned candidate and is idempotent.",
+    "This task creates no database admission or durable orphan lifecycle."
+  ],
+  "verification_targets": [
+    "FT-001-AC-011 via .memory-bank/features/FT-001.md#FT-001-AC-011",
+    ".memory-bank/domains/photo-admission.md#private-candidate-staging-and-request-owned-cleanup",
+    "Isolated MinIO write/read/delete/repeat and topology/redaction proof records known initial state, owned cleanup and zero forbidden exposure."
+  ]
+}

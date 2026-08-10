@@ -1,0 +1,87 @@
+{
+  "id": "TASK-003-T3-FT-001-W1",
+  "title": "Implement staff principals and initial provisioning",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-001",
+  "reqs": [
+    "REQ-ING-001",
+    "REQ-SEC-001"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0"
+  ],
+  "touched_files": [
+    "src/face_moment/platform/auth/",
+    "migrations/versions/",
+    "tests/staff_access/test_principals.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Staff principal tests",
+      "command": "docker compose run --rm backend python -m pytest tests/staff_access/test_principals.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/domains/staff-access.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "evidence_required": [
+    "FT-001-AC-006 RED: an owner cannot provision an active photographer through the canonical path, so no normalized unique principal with a verifiable Argon2id credential exists; GREEN: one disposable photographer is provisioned with a normalized unique username and only an Argon2id hash persisted while supplied-secret and stored-hash markers remain absent from command output and application logs; decisive comparison: repository/authentication observations satisfy the principal contract and redaction scan finds no protected marker; artifact: redacted CLI/repository test output and database projection."
+  ],
+  "purpose": "Create the minimum owner-backed staff identity and initial credential path required before the photographer can authenticate.",
+  "success_outcome": "An owner can provision an active photographer principal whose normalized identity and Argon2id credential persist in the shared schema without exposing the supplied password or stored hash.",
+  "anti_goals": [
+    "Do not implement browser sessions, password reset, deactivation or Photo authorization.",
+    "Do not add self-registration, password-recovery email, OAuth, MFA, a generic IAM service or production seed identities."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Browser session and CSRF behavior",
+      "Photo admission, processing and serving-target behavior",
+      "Production identities, secrets or deployment actions"
+    ],
+    "stop_conditions": [
+      "Provisioning would require changing the accepted staff roles or authentication architecture.",
+      "Passing the task would require storing, echoing or logging plaintext credentials.",
+      "Work expands into session, reset/deactivation or business authorization outcomes owned by sibling tasks."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md#FT-001-AC-006",
+    ".protocols/FT-001/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#AD-002",
+    ".memory-bank/architecture/system-architecture.md#AD-010",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/domains/staff-access.md#face_momentstaff_users",
+    ".memory-bank/domains/staff-access.md#initial-provisioning"
+  ],
+  "constraints": [
+    "staff_access owns principal and credential persistence under src/face_moment/platform/auth/.",
+    "The migration uses the single shared Base and linear Alembic stream; its direct down_revision is the current head at execution.",
+    "The command accepts secrets without echoing them and persists only Argon2id encoded hashes."
+  ],
+  "invariants": [
+    "Only photographer, operator and developer are valid staff roles.",
+    "Plaintext passwords and stored password hashes never enter URLs or application logs.",
+    "Initial provisioning creates no browser session or Photo-domain state."
+  ],
+  "verification_targets": [
+    "FT-001-AC-006 via .memory-bank/features/FT-001.md#FT-001-AC-006",
+    ".memory-bank/domains/staff-access.md#initial-provisioning",
+    "Isolated migration/repository/CLI proof covers provision success, normalized uniqueness, Argon2id verification and redaction with task-owned cleanup."
+  ]
+}

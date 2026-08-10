@@ -1,0 +1,84 @@
+{
+  "id": "TASK-013-T2-FT-001-W6",
+  "title": "Implement duplicate arbitration and candidate cleanup",
+  "status": "planned",
+  "wave": "W6",
+  "feature": "FT-001",
+  "reqs": [
+    "REQ-ING-003"
+  ],
+  "depends_on": [
+    "TASK-012-T2-FT-001-W5"
+  ],
+  "touched_files": [
+    "src/face_moment/inventory/",
+    "tests/inventory/test_duplicate_admission.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Duplicate admission tests",
+      "command": "docker compose run --rm backend python -m pytest tests/inventory/test_duplicate_admission.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "evidence_required": [
+    "FT-001-AC-002 RED: same-scope sequential or concurrent candidates can create more than one admitted identity or retain the losing object; GREEN: PostgreSQL uniqueness returns exactly one accepted and one duplicate, deletes only the losing candidate and leaves Photo/pending/downstream counts unchanged beyond the winner; decisive comparison: before/after database and object inventories contain one admitted pair and one retained original; artifact: concurrent integration output and count projection."
+  ],
+  "purpose": "Complete the database-arbitrated duplicate branch without merging it back into atomic publication or crash recovery.",
+  "success_outcome": "Sequential and concurrent same-СПА/date/checksum candidates yield one accepted Photo, visible duplicate outcomes and deletion of each losing candidate without extra state.",
+  "anti_goals": [
+    "Do not change the atomic success transaction, own crash-window recovery, or add client-side deduplication.",
+    "Do not expose the existing Photo/object identity or create Batch/idempotency infrastructure."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Atomic-publication claim owned by TASK-012",
+      "Crash-window/re-upload claim owned by TASK-014",
+      "HTTP/UI response mapping"
+    ],
+    "stop_conditions": [
+      "Database uniqueness cannot be the sole concurrent arbitration authority.",
+      "Cleanup would delete the winner or any object not owned by the losing request.",
+      "The task would require a lock service, queue or distributed coordination."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md#FT-001-AC-002",
+    ".protocols/FT-001/plan.md",
+    ".protocols/FT-001/decision-log.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/architecture/system-architecture.md#AD-003",
+    ".memory-bank/architecture/system-architecture.md#AD-011",
+    ".memory-bank/contracts/boundary-map.md#postgresql-and-minio-convergence",
+    ".memory-bank/domains/photo-admission.md#duplicate-arbitration-and-candidate-cleanup"
+  ],
+  "constraints": [
+    "PostgreSQL uniqueness on spa_id, visit_date and checksum_sha256 decides the winner.",
+    "A duplicate exposes no existing photo_id or object identity.",
+    "Candidate deletion is idempotent and scoped only to the losing request key."
+  ],
+  "invariants": [
+    "A duplicate creates no Photo, pending state, searchable result, teaser candidate or contribution to N.",
+    "Concurrent same-scope attempts admit exactly one winner.",
+    "The winner retains its original opaque object and the loser deletes only its candidate."
+  ],
+  "verification_targets": [
+    "FT-001-AC-002 via .memory-bank/features/FT-001.md#FT-001-AC-002",
+    ".memory-bank/domains/photo-admission.md#duplicate-arbitration-and-candidate-cleanup",
+    "Sequential and concurrent disposable PostgreSQL/MinIO probes compare exact winner/loser outcomes and owned cleanup."
+  ]
+}

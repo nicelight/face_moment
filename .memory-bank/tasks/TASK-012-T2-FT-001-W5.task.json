@@ -1,0 +1,89 @@
+{
+  "id": "TASK-012-T2-FT-001-W5",
+  "title": "Implement atomic Photo and pending publication",
+  "status": "planned",
+  "wave": "W5",
+  "feature": "FT-001",
+  "reqs": [
+    "REQ-ING-003"
+  ],
+  "depends_on": [
+    "TASK-007-T2-FT-001-W2",
+    "TASK-008-T2-FT-001-W3",
+    "TASK-009-T2-FT-001-W4",
+    "TASK-010-T2-FT-001-W1",
+    "TASK-011-T3-FT-001-W1"
+  ],
+  "touched_files": [
+    "src/face_moment/inventory/",
+    "tests/inventory/test_atomic_admission.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Atomic admission tests",
+      "command": "docker compose run --rm backend python -m pytest tests/inventory/test_atomic_admission.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "evidence_required": [
+    "FT-001-AC-003 RED: the inventory admission operation cannot publish Photo and serving pending as one observable unit; GREEN: one valid unique staged candidate commits exactly one Photo with server accepted_at and exactly one serving pending row, while an injected pre-commit exception leaves neither row; decisive comparison: success is the complete pair and rollback is zero database admission; artifact: isolated PostgreSQL transaction test output and before/after row projection."
+  ],
+  "purpose": "Implement the inventory-owned cross-slice transaction that atomically publishes one accepted Photo and its initial serving work.",
+  "success_outcome": "A valid unique staged candidate is published by one short PostgreSQL transaction as exactly one Photo plus one serving pending state, or rollback leaves no database admission.",
+  "anti_goals": [
+    "Do not implement duplicate outcome arbitration, pre-commit crash-window recovery, HTTP/UI behavior or later processing transitions.",
+    "Do not let inventory write processing-owned state directly or add distributed transaction machinery."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Duplicate outcome and candidate cleanup claim",
+      "Crash-window/re-upload claim",
+      "HTTP/UI and FT-002 processing behavior"
+    ],
+    "stop_conditions": [
+      "Photo and pending cannot share one short PostgreSQL transaction through the accepted processing boundary.",
+      "The outcome would require direct foreign repository writes or a distributed transaction.",
+      "Work expands into a sibling claim or changes the accepted admission transaction."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md#FT-001-AC-003",
+    ".protocols/FT-001/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/architecture/system-architecture.md#AD-002",
+    ".memory-bank/architecture/system-architecture.md#AD-003",
+    ".memory-bank/contracts/boundary-map.md#independent-photo-admission",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/domains/photo-admission.md#atomic-photo-and-pending-transaction"
+  ],
+  "constraints": [
+    "inventory owns orchestration and calls the processing initial-pending boundary inside the same caller transaction.",
+    "accepted_at and the pending state timestamp are server assigned inside the successful operation.",
+    "A synthetic non-secret uploader UUID is allowed only in isolated core tests before the public auth integration."
+  ],
+  "invariants": [
+    "Observers see both Photo and serving pending, or neither.",
+    "The transaction creates no later processing state, searchable result, teaser or metric contribution beyond the accepted Photo identity.",
+    "Cross-slice state changes use only the named owner boundaries."
+  ],
+  "verification_targets": [
+    "FT-001-AC-003 via .memory-bank/features/FT-001.md#FT-001-AC-003",
+    ".memory-bank/domains/photo-admission.md#atomic-photo-and-pending-transaction",
+    "Isolated success and injected-rollback integration probes compare complete Photo/pending row sets and clean only task-owned state."
+  ]
+}

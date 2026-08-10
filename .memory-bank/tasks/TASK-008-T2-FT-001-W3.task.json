@@ -1,0 +1,84 @@
+{
+  "id": "TASK-008-T2-FT-001-W3",
+  "title": "Implement Photo identity persistence",
+  "status": "planned",
+  "wave": "W3",
+  "feature": "FT-001",
+  "reqs": [
+    "REQ-ING-002",
+    "REQ-ING-003"
+  ],
+  "depends_on": [
+    "TASK-007-T2-FT-001-W2"
+  ],
+  "touched_files": [
+    "src/face_moment/inventory/",
+    "migrations/versions/",
+    "tests/inventory/test_photo_persistence.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Photo persistence tests",
+      "command": "docker compose run --rm backend python -m pytest tests/inventory/test_photo_persistence.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/domains/photo-admission.md#face_momentphotos RED: no inventory-owned Photo persistence shape exists; GREEN: migration and repository metadata expose every required field, authoritative date/time sources, private original reference and the exact same-scope SHA-256 uniqueness constraint without a public create command; decisive comparison: schema introspection and repository contract match the canonical table; artifact: migration and repository test output."
+  ],
+  "purpose": "Create the inventory-owned Photo identity and constraint substrate required by later atomic admission without prematurely exposing an admission command.",
+  "success_outcome": "The shared schema contains the complete inventory-owned Photo persistence shape and exact logical uniqueness constraint, with ownership-safe references and no partial public admission path.",
+  "anti_goals": [
+    "Do not publish Photo rows through an API or implement pending-state creation, duplicate outcome handling, object staging or crash recovery.",
+    "Do not add Batch, manifest, confirmation, purge or processing-transition fields."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Public Photo admission commands or endpoints",
+      "Processing-owned pipeline-state models",
+      "Inventory deletion, purge and later processing/search behavior"
+    ],
+    "stop_conditions": [
+      "The accepted Photo identity, ownership or uniqueness key would need to change.",
+      "The migration would require a cross-owner delete cascade.",
+      "The task would expose a Photo without the later atomic pending-state boundary."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md",
+    ".protocols/FT-001/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/architecture/system-architecture.md#AD-003",
+    ".memory-bank/architecture/system-architecture.md#AD-010",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/domains/photo-admission.md#face_momentphotos"
+  ],
+  "constraints": [
+    "inventory owns Photo models/repositories under src/face_moment/inventory/.",
+    "The exact uniqueness key is spa_id, visit_date and checksum_sha256.",
+    "uploader_id is an immutable audit reference; no cross-capability foreign key is required."
+  ],
+  "invariants": [
+    "visit_date is authoritative and captured_at has an explicit source.",
+    "The table contains no Batch, confirmation or per-photo purge state.",
+    "No database cascade crosses from inventory into processing, Promo or diagnostics ownership."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/photo-admission.md#face_momentphotos",
+    "Migration ancestry, upgrade, downgrade, re-upgrade, schema introspection and repository-shape proof run in isolated PostgreSQL state."
+  ]
+}

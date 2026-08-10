@@ -1,0 +1,86 @@
+{
+  "id": "TASK-006-T2-FT-001-W1",
+  "title": "Implement immutable processing-revision eligibility",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-001",
+  "reqs": [
+    "REQ-ING-003",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/",
+    "migrations/versions/",
+    "tests/processing/test_revision_eligibility.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Processing revision tests",
+      "command": "docker compose run --rm backend python -m pytest tests/processing/test_revision_eligibility.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "evidence_required": [
+    "FT-001-AC-009 RED: processing cannot publish an immutable eligible revision for an accepted pipeline code without loading model behavior; GREEN: a controlled configuration/test path persists the immutable identity with non-null validated_at and repository reads distinguish eligible from ineligible revisions without model loading or foreign writes; decisive comparison: accepted, rejected and immutability observations match the canonical projection; artifact: isolated migration and repository test output."
+  ],
+  "purpose": "Provide the minimum processing-owned revision identity and pre-established eligibility fact required by Photo admission.",
+  "success_outcome": "The shared schema contains processing-owned immutable pipeline revisions, and callers can resolve only revisions already marked eligible without invoking model behavior.",
+  "anti_goals": [
+    "Do not implement model artifacts, inference, embedding dimensions, revalidation, serving switching or background processing.",
+    "Do not create production seed identities or a generic revision-management framework."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "FaceEngine inference and Photo-processing transitions",
+      "Serving revision mutation or operator UI",
+      "Production model assets and deployment configuration"
+    ],
+    "stop_conditions": [
+      "The immutable pipeline revision shape or accepted pipeline_code set would need to change.",
+      "Eligibility proof requires loading or validating a production model.",
+      "The task expands into serving-control or FT-002 outcomes."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md#FT-001-AC-009",
+    ".protocols/FT-001/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/architecture/system-architecture.md#AD-002",
+    ".memory-bank/architecture/system-architecture.md#AD-010",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/boundary-map.md#independent-photo-admission",
+    ".memory-bank/domains/photo-admission.md#face_momentpipeline_revisions"
+  ],
+  "constraints": [
+    "processing owns pipeline revision models and repositories under src/face_moment/processing/.",
+    "The migration uses the current linear Alembic head and shared Base/MetaData.",
+    "Only opencv_sface and insightface_buffalo_m are accepted pipeline_code values."
+  ],
+  "invariants": [
+    "Revision identity and validated_at are immutable eligibility facts in this scope.",
+    "No model artifact, inference or processing transition is executed.",
+    "Other modules consume eligibility through the processing-owned boundary rather than direct writes."
+  ],
+  "verification_targets": [
+    "FT-001-AC-009 via .memory-bank/features/FT-001.md#FT-001-AC-009",
+    ".memory-bank/domains/photo-admission.md#face_momentpipeline_revisions",
+    "Isolated migration/repository proof covers accepted codes, required eligibility, immutability and downgrade/re-upgrade against the execution-time linear head."
+  ]
+}

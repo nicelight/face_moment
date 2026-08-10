@@ -1,0 +1,90 @@
+{
+  "id": "TASK-004-T3-FT-001-W2",
+  "title": "Implement secure staff browser sessions",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-001",
+  "reqs": [
+    "REQ-ING-001",
+    "REQ-SEC-001"
+  ],
+  "depends_on": [
+    "TASK-003-T3-FT-001-W1"
+  ],
+  "touched_files": [
+    "src/face_moment/platform/auth/",
+    "src/face_moment/entrypoints/backend.py",
+    "migrations/versions/",
+    "tests/staff_access/test_sessions.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Staff session tests",
+      "command": "docker compose run --rm backend python -m pytest tests/staff_access/test_sessions.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/contracts/photo-admission-api.md",
+    ".memory-bank/domains/staff-access.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "evidence_required": [
+    "FT-001-AC-007 RED: valid disposable staff credentials cannot establish and use the canonical absolute-expiry browser session through login/current/logout; GREEN: the same isolated flow satisfies exact cookie and token-hash persistence, expiry, current/logout, generic invalid-session, matching/mismatched CSRF, configured login-rate and redaction branches; decisive comparison: the response/cookie/repository matrix and deterministic rate counts match the contract with no plaintext credential or token marker; artifact: redacted API, repository, CSRF and rate-limit output."
+  ],
+  "purpose": "Provide the HTTPS staff-session prerequisite used by the photographer uploader and later credential revocation.",
+  "success_outcome": "A provisioned active staff user can log in, read the current principal and log out through secure absolute-expiry browser sessions with CSRF and deterministic login-rate enforcement.",
+  "anti_goals": [
+    "Do not implement password reset/deactivation integration, Photo authorization or uploader endpoints.",
+    "Do not add refresh tokens, sliding expiry, session listing, a distributed limiter or a custom error envelope."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Password reset/deactivation and cross-session revocation",
+      "Inventory business authorization and Photo state",
+      "Production credentials or externally reachable internal services"
+    ],
+    "stop_conditions": [
+      "The accepted cookie, CSRF, role or absolute-expiry contract would need to change.",
+      "A plaintext password, session token, CSRF token or token digest would enter URLs or logs.",
+      "The work requires a distributed session or rate-limit subsystem."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md#FT-001-AC-007",
+    ".protocols/FT-001/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/architecture/system-architecture.md#AD-002",
+    ".memory-bank/architecture/system-architecture.md#AD-009",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/photo-admission-api.md#staff-session-endpoints",
+    ".memory-bank/domains/staff-access.md#face_momentstaff_sessions",
+    ".memory-bank/domains/staff-access.md#browser-session-contract"
+  ],
+  "constraints": [
+    "staff_access authenticates and returns only staff_user_id, username and role; target capabilities retain business authorization.",
+    "Both plaintext tokens contain at least 32 random bytes before URL-safe encoding and only token digests persist.",
+    "Login limiting uses normalized username plus IP inside the single-backend pilot."
+  ],
+  "invariants": [
+    "Missing, malformed, expired, revoked or inactive-owner sessions return generic 401.",
+    "Every unsafe authenticated request requires matching session, CSRF cookie and X-CSRF-Token.",
+    "Session expiry is absolute and requests never extend it."
+  ],
+  "verification_targets": [
+    "FT-001-AC-007 via .memory-bank/features/FT-001.md#FT-001-AC-007",
+    ".memory-bank/domains/staff-access.md#browser-session-contract",
+    "Proof starts in an isolated application instance and disposable PostgreSQL state with one task-unique active staff fixture, no scoped sessions and reset limiter counters; rerun cleanup tears down that instance and removes only task-created session/principal rows before recreating the same known state.",
+    "API/repository proof covers login, current principal, logout, cookie attributes, expiry, CSRF, rate limiting and secret redaction."
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "id": "TASK-010-T2-FT-001-W1",
+  "title": "Implement JPEG and authoritative time validation",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-001",
+  "reqs": [
+    "REQ-ING-001",
+    "REQ-ING-002"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0"
+  ],
+  "touched_files": [
+    "src/face_moment/inventory/",
+    "tests/inventory/test_jpeg_validation.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "JPEG validation tests",
+      "command": "docker compose run --rm backend python -m pytest tests/inventory/test_jpeg_validation.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/domains/photo-admission.md#jpeg-and-time-contract RED: no inventory-owned validator produces a bounded decoded JPEG candidate with authoritative date/time metadata; GREEN: deterministic fixtures accept valid JPEGs, reject media/bounds/decode/orientation failures, hash exact bytes and derive EXIF, upload-start or 01:00 fallback captured_at without changing visit_date; decisive comparison: every fixture matches the canonical result and warning; artifact: unit test output and fixture manifest."
+  ],
+  "purpose": "Turn one uploaded byte stream into a deterministic validated Photo candidate while preserving the photographer-selected date.",
+  "success_outcome": "Inventory produces a validated JPEG candidate with exact SHA-256, dimensions, byte size, effective captured_at/source and optional EXIF-date warning, or a decisive rejection with no persistence.",
+  "anti_goals": [
+    "Do not stage objects, persist Photos, emit HTTP responses or normalize/rewrite original JPEG bytes.",
+    "Do not add RAW support, EXIF auto-grouping, image enhancement or processing-pipeline behavior."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Object-store and PostgreSQL admission",
+      "HTTP/UI behavior",
+      "RAW or non-JPEG ingest and downstream face processing"
+    ],
+    "stop_conditions": [
+      "A validation choice would change accepted product behavior or configured limit ownership.",
+      "The implementation would rewrite original bytes or silently replace visit_date.",
+      "A new ingest format or grouping lifecycle becomes necessary."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md",
+    ".protocols/FT-001/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/invariants.md",
+    ".memory-bank/domains/photo-admission.md#jpeg-and-time-contract",
+    ".memory-bank/states/lifecycle-map.md#independent-photo-admission"
+  ],
+  "constraints": [
+    "Deployment supplies positive compressed-byte, decoded-side and decoded-pixel limits; deterministic tests bind explicit values.",
+    "SHA-256 covers the exact uploaded byte stream before decode normalization.",
+    "Reliable EXIF is interpreted with its valid offset or the configured СПА IANA timezone."
+  ],
+  "invariants": [
+    "visit_date remains authoritative and an EXIF date mismatch only produces the allowed warning.",
+    "Fallback order is reliable EXIF, upload-start instant, then 01:00 in the СПА timezone.",
+    "Invalid or undecodable input produces no persistence side effect."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/photo-admission.md#jpeg-and-time-contract",
+    "Deterministic fixtures cover valid, media-type, byte, decoded-size, pixel, decode, EXIF-orientation, timezone, mismatch and fallback cases."
+  ]
+}
