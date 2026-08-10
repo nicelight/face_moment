@@ -1,7 +1,7 @@
 {
   "id": "TASK-007-T2-FT-001-W2",
   "title": "Implement the serving-owned ingest target",
-  "status": "in_progress",
+  "status": "done",
   "wave": "W2",
   "feature": "FT-001",
   "reqs": [
@@ -30,7 +30,27 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "completed_at": "2026-08-10T22:20:59+05:00",
+      "summary": "Fresh independent T2 verification passed both exact current-image gates. The focused PostgreSQL probe observed valid frozen ingest-target publication; unknown, inactive, invalid-timezone and ineligible rejection; deliberate revision-FK RESTRICT; and linear migration round-trip. Source inspection confirmed serving-control ownership, the registered eligibility-validation boundary, shared Base/MetaData and no foreign writes or anti-goal expansion.",
+      "protocol": ".protocols/TASK-007-T2-FT-001-W2/verification.md",
+      "report": ".tasks/TASK-007-T2-FT-001-W2/TASK-007-T2-FT-001-W2-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "completed_at": "2026-08-10T22:23:18+05:00",
+      "summary": "The autopilot scheduler closed TASK-007 after fresh independent functional PASS satisfied all T2 obligations; task-level red-verification is not required.",
+      "evidence": [
+        ".protocols/TASK-007-T2-FT-001-W2/handoff.md",
+        ".protocols/TASK-007-T2-FT-001-W2/verification.md",
+        ".tasks/TASK-007-T2-FT-001-W2/TASK-007-T2-FT-001-W2-S-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-001.md",
     ".memory-bank/contracts/boundary-map.md",
