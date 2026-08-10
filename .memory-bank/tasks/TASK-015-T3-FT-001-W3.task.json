@@ -1,7 +1,7 @@
 {
   "id": "TASK-015-T3-FT-001-W3",
   "title": "Implement the authenticated ingest-target context endpoint",
-  "status": "planned",
+  "status": "ready",
   "wave": "W3",
   "feature": "FT-001",
   "reqs": [
