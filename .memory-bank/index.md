@@ -41,6 +41,8 @@ status: active
   identity, value, flow, constraints and non-goals (C4 L1).
 - [.memory-bank/requirements.md](requirements.md): stable `REQ-*` requirements
   and `REQ -> Epic -> Feature -> Test` traceability.
+- [.memory-bank/changelog.md](changelog.md): durable Memory Bank change history
+  and wave-boundary reconciliation record.
 - [.memory-bank/epics/index.md](epics/index.md): router for the three product
   epics (C4 L2).
 - [.memory-bank/features/index.md](features/index.md): router for the twelve product

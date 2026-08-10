@@ -4,6 +4,18 @@ status: active
 ---
 # Changelog
 
+## [2026-08-10] Wave W2 — reconciled staff-session and ingest-target closures
+- Reconciled the scheduler-owned `done` closures for
+  `TASK-004-T3-FT-001-W2` and `TASK-007-T2-FT-001-W2` with their indexed
+  verification and closure evidence. TASK-004 ends with fresh functional
+  `PASS` and required `semantic-pass`; TASK-007 ends with fresh functional
+  `PASS` under its T2 obligations.
+- Kept `EP-001`, `FT-001`, and the affected `REQ-ING-001`, `REQ-ING-003`,
+  `REQ-SEC-001`, and `REQ-ARCH-001` RTM rows `planned`: remaining acceptance
+  criteria and indexed feature tasks are not complete.
+- No task promotion, dependency change, feature/epic lifecycle transition,
+  or product/design/spec decision was made by this reconciliation.
+
 ## [2026-08-10] Wave W1 — completed FT-001 admission foundations
 - Reconciled the already-recorded `done` closures for
   `TASK-003-T3-FT-001-W1`, `TASK-006-T2-FT-001-W1`,
