@@ -7,6 +7,9 @@ from sqlalchemy import engine_from_config, pool
 
 from face_moment.infrastructure.database import Base
 from face_moment.infrastructure.settings import Settings
+from face_moment.platform.auth import principals as staff_principals
+
+_ = staff_principals
 
 config = context.config
 if config.config_file_name is not None:
@@ -48,4 +51,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-

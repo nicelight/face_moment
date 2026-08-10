@@ -9,6 +9,7 @@ description = "Executable Foundation walking skeleton for Face Moment."
 requires-python = ">=3.11,<3.12"
 dependencies = [
   "alembic==1.16.4",
+  "argon2-cffi==25.1.0",
   "boto3==1.39.14",
   "fastapi==0.116.1",
   "insightface==0.7.3",
@@ -27,6 +28,7 @@ face-moment-backend = "face_moment.entrypoints.backend:main"
 face-moment-background-worker = "face_moment.entrypoints.background_worker:main"
 face-moment-realtime = "face_moment.entrypoints.realtime:main"
 face-moment-migrate = "face_moment.entrypoints.migrate:main"
+face-moment-provision-staff = "face_moment.platform.auth.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
