@@ -1,7 +1,7 @@
 {
   "id": "TASK-010-T2-FT-001-W1",
   "title": "Implement JPEG and authoritative time validation",
-  "status": "planned",
+  "status": "done",
   "wave": "W1",
   "feature": "FT-001",
   "reqs": [
@@ -28,7 +28,27 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "completed_at": "2026-08-10T17:02:19+05:00",
+      "summary": "Fresh independent T2 verification passed the 11-case JPEG fixture suite, mypy and a separate read-only targeted probe. Exact-byte sentinel hashing, media/decode/bounds/orientation rejection, EXIF Original/Digitized offset and IANA handling, upload-start/01:00 fallbacks, unchanged authoritative visit_date and absence of persistence or cross-module hooks were observed.",
+      "protocol": ".protocols/TASK-010-T2-FT-001-W1/verification.md",
+      "report": ".tasks/TASK-010-T2-FT-001-W1/TASK-010-T2-FT-001-W1-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "completed_at": "2026-08-10T17:04:12+05:00",
+      "summary": "The autopilot scheduler closed TASK-010 after fresh independent functional PASS satisfied all T2 obligations; one task-local implementation typing correction did not constitute an unsuccessful execution attempt.",
+      "evidence": [
+        ".protocols/TASK-010-T2-FT-001-W1/handoff.md",
+        ".protocols/TASK-010-T2-FT-001-W1/verification.md",
+        ".tasks/TASK-010-T2-FT-001-W1/TASK-010-T2-FT-001-W1-S-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-001.md",
     ".memory-bank/domains/photo-admission.md",

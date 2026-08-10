@@ -112,9 +112,11 @@ filenames remain executor discretion. No hard write boundary is inferred.
 - Staff-session, credential-lifecycle and ingest-target T3 probes name their
   task-unique disposable fixtures, isolated application/database state, safe
   rerun behavior and owner-bounded cleanup directly in each task card.
-- Final UAT logs in as a photographer, selects one СПА/date and independently
-  uploads valid, invalid, undecodable, mixed-EXIF and duplicate files while
-  preserving every completed row.
+- Final UAT runs through the installed Playwright CLI (`playwright cli`), logs
+  in as a photographer, selects one СПА/date and independently uploads valid,
+  invalid, undecodable, mixed-EXIF and duplicate files while preserving every
+  completed row; retain the CLI transcript, screenshots and trace in the
+  TASK-017 artifact directory.
 - Tier-routed `/verify` applies to every task; each T3 task additionally needs
   per-task `/red-verify`. Feature completion later requires feature-level
   `/red-verify --feature FT-001`.

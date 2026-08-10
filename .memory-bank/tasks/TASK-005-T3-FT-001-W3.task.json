@@ -1,7 +1,7 @@
 {
   "id": "TASK-005-T3-FT-001-W3",
   "title": "Integrate password reset and deactivation with session revocation",
-  "status": "planned",
+  "status": "ready",
   "wave": "W3",
   "feature": "FT-001",
   "reqs": [

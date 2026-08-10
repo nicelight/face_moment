@@ -4,6 +4,18 @@ status: active
 ---
 # Changelog
 
+## [2026-08-10] Wave W1 — completed FT-001 admission foundations
+- Reconciled the already-recorded `done` closures for
+  `TASK-003-T3-FT-001-W1`, `TASK-006-T2-FT-001-W1`,
+  `TASK-010-T2-FT-001-W1`, and `TASK-011-T3-FT-001-W1` with their indexed
+  functional verification, required T3 semantic verification, and durable
+  task evidence.
+- Kept `FT-001` and its `REQ-ING-*`, `REQ-SEC-001`, and `REQ-ARCH-001` RTM
+  rows `planned`: their remaining acceptance criteria and linked product
+  tasks are not yet complete.
+- No task promotion, dependency change, spec/design change, or Planning
+  Revision change was made by this reconciliation.
+
 ## [2026-08-06] Canonical boundary-map recovery
 - Restored `.memory-bank/contracts/boundary-map.md` after framework sync had
   replaced it with an empty draft and preserved the accepted target without

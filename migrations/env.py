@@ -8,8 +8,14 @@ from sqlalchemy import engine_from_config, pool
 from face_moment.infrastructure.database import Base
 from face_moment.infrastructure.settings import Settings
 from face_moment.platform.auth import principals as staff_principals
+from face_moment.platform.auth import sessions as staff_sessions
+from face_moment.processing import revisions as pipeline_revisions
+from face_moment.serving_control import ingest_target as serving_ingest_target
 
 _ = staff_principals
+_ = staff_sessions
+_ = pipeline_revisions
+_ = serving_ingest_target
 
 config = context.config
 if config.config_file_name is not None:

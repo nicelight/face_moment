@@ -46,6 +46,7 @@ Before any durable plan or task write, require:
   transitive dependency of every product task;
 - `.memory-bank/tasks/index.json`, every existing indexed task for the target,
   and existing plan/protocol/behavior evidence used for reconciliation;
+- `.memory-bank/testing/index.md` as the project-wide verification-tool policy;
 - `.memory-bank/workflows/execute-loop.md#execution-cohesive-task-boundary` and
   `.memory-bank/workflows/tier-policy.md#task-claim-and-dependency-ownership`
   before slicing;
@@ -338,6 +339,10 @@ Additionally require:
 - carry an applicable existing project-native architecture check through
   `gates` or `verification_targets`. If an accepted rule requires a missing
   check, plan that accepted work instead of emitting a nonexistent command;
+- when a task requires agent-run real-browser proof, carry the applicable
+  method from `.memory-bank/testing/index.md#ui-verification` into its
+  `constraints`, and put the concrete browser flow and required artifacts in
+  `verification_targets`; do not leave the method only in a feature or plan;
 - when a linked runtime/state rule requires reproducibility, carry its known
   initial state, safe rerun, observable result, and cleanup/isolation proof;
   do not infer this process for simple/stateless work;

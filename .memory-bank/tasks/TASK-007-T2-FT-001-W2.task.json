@@ -1,7 +1,7 @@
 {
   "id": "TASK-007-T2-FT-001-W2",
   "title": "Implement the serving-owned ingest target",
-  "status": "planned",
+  "status": "in_progress",
   "wave": "W2",
   "feature": "FT-001",
   "reqs": [

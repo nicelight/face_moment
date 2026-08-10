@@ -1,7 +1,7 @@
 ---
 description: Стратегия тестирования и верификации (quality gates, anti-cheat, UI/e2e).
 status: active
-last_updated: 2026-08-06
+last_updated: 2026-08-10
 ---
 # Testing & Verification
 
@@ -52,8 +52,13 @@ A fresh final gate MUST:
 
 ## UI verification
 
-- Prefer Playwright / agent-browser / CDP for UI flows when available
-- Store screenshots/videos/traces in .tasks/TASK-NNN-TN-FT-NNN-WN/
+- The installed Playwright CLI (`playwright cli`) is the project-default driver
+  for agent-run real-browser UI/UAT.
+- A task that requires real-browser proof MUST name `playwright cli` in its
+  `constraints` and specify the concrete browser flow and artifacts in
+  `verification_targets`.
+- Store the Playwright CLI transcript and screenshots/videos/traces in
+  `.tasks/TASK-NNN-TN-FT-NNN-WN/`.
 - In Memory Bank keep only links + short conclusions
 
 ## Artifacts

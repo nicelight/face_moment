@@ -38,7 +38,7 @@
     ".memory-bank/tasks/plans/IMPL-FT-001.md"
   ],
   "evidence_required": [
-    "FT-001-AC-001 RED: no photographer page preserves one independent visible result per selected file; GREEN: a real-browser flow selects one eligible СПА and authoritative visit_date, submits valid, invalid, undecodable, mixed-EXIF and duplicate files independently, preserves every completed row regardless of completion order and shows the matching accepted/rejected/duplicate outcome with persisted authoritative date; decisive comparison: visible rows, API observations and database date projection all match; artifact: browser trace/screenshots plus redacted integration output."
+    "FT-001-AC-001 RED: no photographer page preserves one independent visible result per selected file; GREEN: a real-browser flow selects one eligible СПА and authoritative visit_date, submits valid, invalid, undecodable, mixed-EXIF and duplicate files independently, preserves every completed row regardless of completion order and shows the matching accepted/rejected/duplicate outcome with persisted authoritative date; decisive comparison: visible rows, API observations and database date projection all match; artifact: Playwright CLI command transcript, browser trace/screenshots plus redacted integration output."
   ],
   "purpose": "Complete the photographer-visible FT-001 outcome over the separately secured context and upload endpoints.",
   "success_outcome": "An authenticated photographer can select one СПА/date, upload multiple JPEGs without Batch confirmation and retain a truthful independent visible result for every completed file.",
@@ -72,7 +72,7 @@
   "constraints": [
     "GET /staff/photo-upload requires an active photographer session and uses only same-origin application endpoints.",
     "The page sends one independent request per file and keeps one visible row per file.",
-    "Use an available Playwright, agent-browser or CDP path for real-browser proof without requiring a new product runtime."
+    "Use the installed Playwright CLI through `playwright cli` for real-browser proof; agent-browser, direct CDP, browser-free HTTP/DOM probes and a new product runtime are not substitutes."
   ],
   "invariants": [
     "Completion order never changes or removes another file result.",
@@ -82,6 +82,6 @@
   "verification_targets": [
     "FT-001-AC-001 via .memory-bank/features/FT-001.md#FT-001-AC-001",
     ".memory-bank/contracts/photo-admission-api.md#independent-uploader-page",
-    "Real-browser UAT covers valid, invalid, undecodable, mixed-EXIF, duplicate and deliberately reordered completion cases and stores screenshots/traces under the task artifact directory."
+    "Playwright CLI real-browser UAT covers valid, invalid, undecodable, mixed-EXIF, duplicate and deliberately reordered completion cases and stores the CLI transcript plus screenshots/traces under the task artifact directory."
   ]
 }
