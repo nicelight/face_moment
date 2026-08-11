@@ -1,7 +1,7 @@
 {
   "id": "TASK-014-T2-FT-001-W6",
   "title": "Prove pre-commit crash recovery by re-upload",
-  "status": "planned",
+  "status": "in_progress",
   "wave": "W6",
   "feature": "FT-001",
   "reqs": [

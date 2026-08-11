@@ -34,7 +34,7 @@ COPY --chown=app:app migrations ./migrations
 COPY --chown=app:app scripts/runtime-storage-probe.py ./scripts/runtime-storage-probe.py
 COPY --chown=app:app src ./src
 COPY --chown=app:app tests ./tests
+COPY --chown=app:app deploy/Caddyfile ./deploy/Caddyfile
 
 USER app
 CMD ["face-moment-backend"]
-

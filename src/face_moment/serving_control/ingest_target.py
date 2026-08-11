@@ -4,7 +4,7 @@ import uuid
 from dataclasses import dataclass
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from sqlalchemy import Boolean, ForeignKey, String, Uuid
+from sqlalchemy import Boolean, ForeignKey, String, Uuid, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from face_moment.infrastructure.database import Base
@@ -100,6 +100,19 @@ class IngestTargetRepository:
         self._validate_timezone(spa.timezone)
         revision = self._resolve_eligible_revision(spa.serving_pipeline_revision_id)
         return self._as_ingest_target(spa, revision)
+
+    def list_active_eligible_ingest_targets(self) -> list[IngestTarget]:
+        """Publish only active, valid targets for an authorized consumer read."""
+        active_spas = self._session.scalars(
+            select(Spa).where(Spa.active.is_(True)).order_by(Spa.name, Spa.id)
+        )
+        targets: list[IngestTarget] = []
+        for spa in active_spas:
+            try:
+                targets.append(self.resolve_ingest_target(spa.id))
+            except (InvalidIngestTargetTimezoneError, IneligibleIngestTargetError):
+                continue
+        return targets
 
     @staticmethod
     def _normalize_name(name: str) -> str:

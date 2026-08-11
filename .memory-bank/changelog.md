@@ -4,6 +4,42 @@ status: active
 ---
 # Changelog
 
+## [2026-08-11] Wave W5 — reconciled atomic Photo publication closure
+- Reconciled the scheduler-owned `done` closure for
+  `TASK-012-T2-FT-001-W5` with its indexed execution, fresh independent T2
+  verification and isolated PostgreSQL evidence for atomic Photo plus initial
+  serving `pending` publication and rollback.
+- Kept `EP-001`, `FT-001`, and the affected `REQ-ING-003` RTM row `planned`:
+  this closure verifies only `FT-001-AC-003`; duplicate exclusion, crash
+  recovery, upload behavior and downstream FT-002 obligations remain indexed
+  work.
+- No task promotion, dependency change, feature/epic lifecycle transition,
+  or product/design/spec decision was made by this reconciliation.
+
+## [2026-08-11] Wave W4 — reconciled initial pending boundary closure
+- Reconciled the scheduler-owned `done` closure for
+  `TASK-009-T2-FT-001-W4` with its indexed execution and fresh independent
+  functional-verification evidence for the processing-owned initial `pending`
+  boundary, migration/transaction proof and cleanup.
+- Kept `EP-001`, `FT-001`, and the affected `REQ-ING-003` RTM row `planned`:
+  the atomic admission outcome remains owned by later `TASK-012`, and remaining
+  FT-001 acceptance criteria and indexed tasks are not yet complete.
+- No task promotion, dependency change, feature/epic lifecycle transition,
+  or product/design/spec decision was made by this reconciliation.
+
+## [2026-08-11] Wave W3 — reconciled credential, Photo identity and ingest-target closures
+- Reconciled the scheduler-owned `done` closures for
+  `TASK-005-T3-FT-001-W3`, `TASK-008-T2-FT-001-W3`, and
+  `TASK-015-T3-FT-001-W3` with their indexed execution, functional-verification
+  and closure evidence. Both T3 tasks end with fresh functional `PASS` and
+  required `semantic-pass`; the T2 task ends with fresh functional `PASS`.
+- Kept `EP-001`, `FT-001`, and the affected `REQ-ING-001`, `REQ-ING-002`,
+  `REQ-ING-003`, `REQ-SEC-001`, and `REQ-ARCH-001` RTM rows `planned`:
+  remaining FT-001 acceptance criteria and indexed feature tasks are not yet
+  complete.
+- No task promotion, dependency change, feature/epic lifecycle transition,
+  or product/design/spec decision was made by this reconciliation.
+
 ## [2026-08-10] Wave W2 — reconciled staff-session and ingest-target closures
 - Reconciled the scheduler-owned `done` closures for
   `TASK-004-T3-FT-001-W2` and `TASK-007-T2-FT-001-W2` with their indexed

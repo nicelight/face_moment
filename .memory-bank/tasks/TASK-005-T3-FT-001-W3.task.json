@@ -1,7 +1,7 @@
 {
   "id": "TASK-005-T3-FT-001-W3",
   "title": "Integrate password reset and deactivation with session revocation",
-  "status": "ready",
+  "status": "done",
   "wave": "W3",
   "feature": "FT-001",
   "reqs": [
@@ -28,7 +28,77 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "NEEDS-CLARIFICATION",
+      "completed_at": "2026-08-10T23:50:46+05:00",
+      "summary": "Fresh independent T3 functional proof passed reset/deactivation revocation over three sessions per branch, generic 401 behavior, old/new login, Argon2id/timestamps, stable repeat, redaction, owner-only architecture and confirmed disposable cleanup. Mounted current-source pytest (2 passed) and mypy (26 files) also passed, but a bounded exact-image rebuild failed externally on a files.pythonhosted.org ReadTimeout fetching onnx==1.22.0, so both required exact packaged-image gates remain uncovered; this is an evidence/reproducibility blocker, not code FAIL.",
+      "protocol": ".protocols/TASK-005-T3-FT-001-W3/verification.md",
+      "report": ".tasks/TASK-005-T3-FT-001-W3/TASK-005-T3-FT-001-W3-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "verify",
+      "verdict": "NEEDS-CLARIFICATION",
+      "completed_at": "2026-08-10T23:59:41+05:00",
+      "summary": "Verification recovery attempt 2 re-grounded identical production/test/probe hashes and made the one scheduler-authorized bounded image build attempt. The build again failed externally: files.pythonhosted.org ReadTimeout while fetching the cython==3.2.9 build dependency for insightface, before a current image or either exact required packaged-image gate could run. The already fresh verifier-owned T3 probe remains current and fully green, with no source drift, contradiction, or cleanup residue; lifecycle stays in_progress and the scheduler must halt rather than loop.",
+      "protocol": ".protocols/TASK-005-T3-FT-001-W3/verification.md",
+      "report": ".tasks/TASK-005-T3-FT-001-W3/TASK-005-T3-FT-001-W3-S-VERIFY-final-report-docs-02.md"
+    },
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "completed_at": "2026-08-11T13:02:30+05:00",
+      "summary": "Verification recovery attempt 3 confirmed rebuilt face-moment:dev source identity, then passed both required exact packaged-image gates (mypy: 26 source files clean; credential lifecycle pytest: 2 passed). A fresh verifier-owned probe against packaged application source independently passed every FT-001-AC-008 harm-driving result: all reset/deactivation sessions revoked generically, old/inactive login 401, new login 204, changed Argon2id/timestamp projection, stable repeated deactivation, clean redaction, owner-only architecture and confirmed disposable cleanup. Lifecycle remains in_progress; T3 routes to per-task red-verify.",
+      "protocol": ".protocols/TASK-005-T3-FT-001-W3/verification.md",
+      "report": ".tasks/TASK-005-T3-FT-001-W3/TASK-005-T3-FT-001-W3-S-VERIFY-final-report-docs-03.md"
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-fail",
+      "completed_at": "2026-08-11T13:12:35+05:00",
+      "summary": "Adversarial supported-concurrency evidence proved a material FT-001-AC-008 break: after reset bulk-revoked existing rows but before it committed, an old-password login read the prior credential and created a session that remained usable after reset completion. The original session was revoked and subsequent old-password login rejected, yet exactly one unrevoked session remained. This is a task-local transaction/concurrency defect with no operator ambiguity; lifecycle stays in_progress for scheduler disposition.",
+      "protocol": ".protocols/TASK-005-T3-FT-001-W3/red-verification.md",
+      "report": ".tasks/TASK-005-T3-FT-001-W3/TASK-005-T3-FT-001-W3-S-RED-VERIFY-final-report-docs-01.md",
+      "artifacts": [
+        ".tasks/TASK-005-T3-FT-001-W3/red_verify_concurrent_reset_probe.py"
+      ]
+    },
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "completed_at": "2026-08-11T14:32:02+05:00",
+      "summary": "Execution Attempt 2 fresh packaged-image verification passed both exact gates (mypy: 26 source files clean; credential lifecycle pytest: 3 passed) and two independent verifier-owned observations. The full lifecycle probe reconfirmed complete reset/deactivation revocation, generic 401 behavior, new login, Argon2id/timestamps, stable repeat and redaction. The corrected-concurrency probe observed SELECT FOR UPDATE, rejected the concurrent old-password login, revoked the initial session, found zero current sessions before new login and authenticated the new-password session. Cleanup was complete; lifecycle remains in_progress and T3 routes to red-verify reassessment.",
+      "protocol": ".protocols/TASK-005-T3-FT-001-W3/verification.md",
+      "report": ".tasks/TASK-005-T3-FT-001-W3/TASK-005-T3-FT-001-W3-S-VERIFY-final-report-docs-04.md",
+      "artifacts": [
+        ".tasks/TASK-005-T3-FT-001-W3/verify_targeted_probe.py",
+        ".tasks/TASK-005-T3-FT-001-W3/verify_attempt2_concurrency_probe.py"
+      ]
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "completed_at": "2026-08-11T14:35:33+05:00",
+      "summary": "Execution Attempt 2 semantic reassessment confirms the prior stale-credential session race is resolved. Login now locks the StaffUser owner row through credential validation, session insertion and commit, serializing both lifecycle-first and login-first orderings with reset/deactivation mutation and bulk revocation. A fresh isolated packaged-image rerun observed SELECT FOR UPDATE, rejected the concurrent old-password login, revoked the initial session, found zero current sessions and authenticated the new-password session. No material finding or operator question remains; lifecycle stays in_progress for scheduler closure.",
+      "protocol": ".protocols/TASK-005-T3-FT-001-W3/red-verification.md",
+      "report": ".tasks/TASK-005-T3-FT-001-W3/TASK-005-T3-FT-001-W3-S-RED-VERIFY-final-report-docs-02.md",
+      "artifacts": [
+        ".tasks/TASK-005-T3-FT-001-W3/verify_attempt2_concurrency_probe.py"
+      ]
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "completed_at": "2026-08-11T14:37:35+05:00",
+      "summary": "The autopilot scheduler closed TASK-005 after bounded Execution Attempt 2 earned fresh packaged-image functional PASS and semantic-pass. The prior stale-credential concurrent-session finding was corrected within the retry budget by serializing login with reset/deactivation on the StaffUser owner row.",
+      "evidence": [
+        ".tasks/TASK-005-T3-FT-001-W3/TASK-005-T3-FT-001-W3-S-EXEC-final-report-code-02.md",
+        ".tasks/TASK-005-T3-FT-001-W3/TASK-005-T3-FT-001-W3-S-VERIFY-final-report-docs-04.md",
+        ".tasks/TASK-005-T3-FT-001-W3/TASK-005-T3-FT-001-W3-S-RED-VERIFY-final-report-docs-02.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-001.md",
     ".memory-bank/domains/staff-access.md",

@@ -9,7 +9,7 @@ from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import DateTime, ForeignKey, LargeBinary, Uuid, select
+from sqlalchemy import DateTime, ForeignKey, LargeBinary, Uuid, select, update
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from face_moment.infrastructure.database import Base
@@ -17,7 +17,9 @@ from face_moment.platform.auth.principals import (
     InvalidUsernameError,
     StaffPrincipal,
     StaffUser,
+    deactivate_staff_user,
     normalize_username,
+    reset_staff_password,
     verify_password,
 )
 
@@ -118,7 +120,9 @@ def create_browser_session(
         raise LoginRateLimitError
 
     staff_user = database_session.scalar(
-        select(StaffUser).where(StaffUser.username == normalized_username)
+        select(StaffUser)
+        .where(StaffUser.username == normalized_username)
+        .with_for_update()
     )
     if (
         staff_user is None
@@ -165,6 +169,46 @@ def get_current_principal(
     )
 
 
+def reset_staff_password_and_revoke_sessions(
+    database_session: Session,
+    *,
+    username: str,
+    password: str,
+    now: datetime | None = None,
+) -> StaffPrincipal:
+    current_time = _current_time(now)
+    principal = reset_staff_password(
+        database_session,
+        username=username,
+        password=password,
+        now=current_time,
+    )
+    _revoke_all_staff_sessions(
+        database_session, staff_user_id=principal.staff_user_id, now=current_time
+    )
+    database_session.commit()
+    return principal
+
+
+def deactivate_staff_user_and_revoke_sessions(
+    database_session: Session,
+    *,
+    username: str,
+    now: datetime | None = None,
+) -> StaffPrincipal:
+    current_time = _current_time(now)
+    principal = deactivate_staff_user(
+        database_session,
+        username=username,
+        now=current_time,
+    )
+    _revoke_all_staff_sessions(
+        database_session, staff_user_id=principal.staff_user_id, now=current_time
+    )
+    database_session.commit()
+    return principal
+
+
 def revoke_current_browser_session(
     database_session: Session,
     *,
@@ -188,6 +232,19 @@ def revoke_current_browser_session(
         raise CsrfValidationError
     staff_session.revoked_at = current_time
     database_session.commit()
+
+
+def _revoke_all_staff_sessions(
+    database_session: Session, *, staff_user_id: uuid.UUID, now: datetime
+) -> None:
+    database_session.execute(
+        update(StaffSession)
+        .where(
+            StaffSession.staff_user_id == staff_user_id,
+            StaffSession.revoked_at.is_(None),
+        )
+        .values(revoked_at=now)
+    )
 
 
 def _active_session(

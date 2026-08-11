@@ -2,13 +2,22 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import StrEnum
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
 from argon2.low_level import Type
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Enum, String, Text, Uuid
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Enum,
+    String,
+    Text,
+    Uuid,
+    select,
+)
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, Session, mapped_column
 from sqlalchemy.sql import func
@@ -85,6 +94,10 @@ class DuplicateUsernameError(ValueError):
     pass
 
 
+class StaffUserNotFoundError(ValueError):
+    pass
+
+
 def normalize_username(username: str) -> str:
     normalized = username.strip().casefold()
     if not normalized or len(normalized) > _MAX_USERNAME_LENGTH:
@@ -128,3 +141,49 @@ def verify_password(encoded_hash: str, password: str) -> bool:
         return _PASSWORD_HASHER.verify(encoded_hash, password)
     except VerificationError:
         return False
+
+
+def reset_staff_password(
+    session: Session,
+    *,
+    username: str,
+    password: str,
+    now: datetime,
+) -> StaffPrincipal:
+    if not password:
+        raise InvalidPasswordError("password must not be empty")
+    staff_user = _staff_user_by_username(session, username)
+    staff_user.password_hash = _PASSWORD_HASHER.hash(password)
+    staff_user.password_changed_at = now.astimezone(timezone.utc)
+    return _principal_from_staff_user(staff_user)
+
+
+def deactivate_staff_user(
+    session: Session,
+    *,
+    username: str,
+    now: datetime,
+) -> StaffPrincipal:
+    staff_user = _staff_user_by_username(session, username)
+    if staff_user.active:
+        staff_user.active = False
+        staff_user.deactivated_at = now.astimezone(timezone.utc)
+    return _principal_from_staff_user(staff_user)
+
+
+def _staff_user_by_username(session: Session, username: str) -> StaffUser:
+    normalized_username = normalize_username(username)
+    staff_user = session.scalar(
+        select(StaffUser).where(StaffUser.username == normalized_username)
+    )
+    if staff_user is None:
+        raise StaffUserNotFoundError
+    return staff_user
+
+
+def _principal_from_staff_user(staff_user: StaffUser) -> StaffPrincipal:
+    return StaffPrincipal(
+        staff_user_id=staff_user.id,
+        username=staff_user.username,
+        role=staff_user.role,
+    )

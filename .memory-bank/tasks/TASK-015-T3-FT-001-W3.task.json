@@ -1,7 +1,7 @@
 {
   "id": "TASK-015-T3-FT-001-W3",
   "title": "Implement the authenticated ingest-target context endpoint",
-  "status": "ready",
+  "status": "done",
   "wave": "W3",
   "feature": "FT-001",
   "reqs": [
@@ -30,7 +30,43 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "FAIL",
+      "completed_at": "2026-08-11T15:56:20+05:00",
+      "summary": "Fresh T3 verification passed the exact packaged mypy gate and independently proved the authorization, exact projection, filtering, redaction, owner-boundary, Caddy and cleanup behavior with a read-only Caddyfile mount, but the required exact packaged-image pytest gate failed because the test reads deploy/Caddyfile and that file is absent from the backend image.",
+      "protocol": ".protocols/TASK-015-T3-FT-001-W3/verification.md",
+      "report": ".tasks/TASK-015-T3-FT-001-W3/TASK-015-T3-FT-001-W3-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "completed_at": "2026-08-11T16:05:45+05:00",
+      "summary": "Fresh T3 reassessment on the rebuilt packaged image passed both exact required gates and independently proved the exact active/eligible projection, complete 401/403 matrix, revocation, redaction, accepted inventory-to-staff_access/serving_control path, path-preserving Caddy boundary and disposable PostgreSQL cleanup. The previous missing-Caddyfile packaged-gate defect is resolved.",
+      "protocol": ".protocols/TASK-015-T3-FT-001-W3/verification.md",
+      "report": ".tasks/TASK-015-T3-FT-001-W3/TASK-015-T3-FT-001-W3-S-VERIFY-final-report-docs-02.md"
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "completed_at": "2026-08-11T16:10:05+05:00",
+      "summary": "Independent adversarial review of the actual source, packaged proof, direct contracts and Compose topology found no material semantic break or operator question. Authentication fails closed through the staff_access owner, inventory retains role authorization, serving_control supplies the revalidated read-only projection, transport has no write or protected-data path, only HTTPS edge is published, and the Caddyfile packaging correction creates no runtime owner or second source of truth.",
+      "protocol": ".protocols/TASK-015-T3-FT-001-W3/red-verification.md",
+      "report": ".tasks/TASK-015-T3-FT-001-W3/TASK-015-T3-FT-001-W3-S-RED-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "completed_at": "2026-08-11T16:11:17+05:00",
+      "summary": "The autopilot scheduler closed TASK-015 after bounded Execution Attempt 2 corrected the packaged test input, fresh exact image-backed verification passed, and independent T3 red verification returned semantic-pass with no material finding or operator question.",
+      "evidence": [
+        ".tasks/TASK-015-T3-FT-001-W3/TASK-015-T3-FT-001-W3-S-EXECUTE-final-report-code-02.md",
+        ".tasks/TASK-015-T3-FT-001-W3/TASK-015-T3-FT-001-W3-S-VERIFY-final-report-docs-02.md",
+        ".tasks/TASK-015-T3-FT-001-W3/TASK-015-T3-FT-001-W3-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-001.md",
     ".memory-bank/contracts/photo-admission-api.md",
