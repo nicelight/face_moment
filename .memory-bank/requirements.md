@@ -89,8 +89,8 @@ product scope; feature and task anti-goals only narrow their assigned work.
 | REQ | Epic | Feature | Test / evidence target | Lifecycle |
 |---|---|---|---|---|
 | `REQ-000` | Foundation (no product epic) | [FT-000](features/FT-000-foundation.md) | [Executable Baseline Contract](testing/index.md), [final-gate verification](../.tasks/TASK-002-T2-FT-000-W0/TASK-002-T2-FT-000-W0-S-VERIFY-final-report-docs-01.md), and [REQ-000 evidence map](../.tasks/TASK-002-T2-FT-000-W0/req-foundation-evidence-map.md) | verified |
-| `REQ-ING-001` | [EP-001](epics/EP-001.md) | [FT-001](features/FT-001.md) | `FT-001-AC-001`, `FT-001-AC-004`, `FT-001-AC-006..008`, `FT-001-AC-010..012`; PRD AC-08 | planned |
-| `REQ-ING-002` | [EP-001](epics/EP-001.md) | [FT-001](features/FT-001.md) | `FT-001-AC-001`; PRD AC-08 | planned |
+| `REQ-ING-001` | [EP-001](epics/EP-001.md) | [FT-001](features/FT-001.md) | `FT-001-AC-001`, `FT-001-AC-004`, `FT-001-AC-006..008`, `FT-001-AC-010..012`; PRD AC-08 | verified |
+| `REQ-ING-002` | [EP-001](epics/EP-001.md) | [FT-001](features/FT-001.md) | `FT-001-AC-001`; PRD AC-08 | verified |
 | `REQ-ING-003` | [EP-001](epics/EP-001.md) | [FT-001](features/FT-001.md), [FT-002](features/FT-002.md) | `FT-001-AC-002..003`, `FT-001-AC-005`, `FT-001-AC-009..011`, `FT-002-AC-001`; PRD AC-17 | planned |
 | `REQ-ING-004` | [EP-001](epics/EP-001.md) | [FT-002](features/FT-002.md) | `FT-002-AC-001`, `FT-002-AC-004..005`; PRD AC-06/08 | planned |
 | `REQ-INV-001` | [EP-001](epics/EP-001.md) | [FT-012](features/FT-012.md) | `FT-012-AC-001`; PRD AC-18 | planned |

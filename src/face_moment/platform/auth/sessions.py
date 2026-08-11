@@ -169,6 +169,32 @@ def get_current_principal(
     )
 
 
+def authenticate_unsafe_staff_request(
+    database_session: Session,
+    *,
+    session_token: str | None,
+    csrf_cookie_token: str | None,
+    csrf_header_token: str | None,
+    now: datetime | None = None,
+) -> StaffPrincipal:
+    """Authenticate an unsafe browser request without acquiring domain authorization."""
+    staff_session, staff_user = _active_session(
+        database_session,
+        session_token=session_token,
+        now=_current_time(now),
+    )
+    _validate_csrf(
+        staff_session,
+        csrf_cookie_token=csrf_cookie_token,
+        csrf_header_token=csrf_header_token,
+    )
+    return StaffPrincipal(
+        staff_user_id=staff_user.id,
+        username=staff_user.username,
+        role=staff_user.role,
+    )
+
+
 def reset_staff_password_and_revoke_sessions(
     database_session: Session,
     *,
@@ -221,15 +247,11 @@ def revoke_current_browser_session(
     staff_session, _ = _active_session(
         database_session, session_token=session_token, now=current_time
     )
-    if (
-        csrf_cookie_token is None
-        or csrf_header_token is None
-        or not hmac.compare_digest(csrf_cookie_token, csrf_header_token)
-        or not hmac.compare_digest(
-            _token_hash(csrf_cookie_token), staff_session.csrf_token_hash_sha256
-        )
-    ):
-        raise CsrfValidationError
+    _validate_csrf(
+        staff_session,
+        csrf_cookie_token=csrf_cookie_token,
+        csrf_header_token=csrf_header_token,
+    )
     staff_session.revoked_at = current_time
     database_session.commit()
 
@@ -268,6 +290,23 @@ def _active_session(
     if result is None:
         raise InvalidSessionError
     return result[0], result[1]
+
+
+def _validate_csrf(
+    staff_session: StaffSession,
+    *,
+    csrf_cookie_token: str | None,
+    csrf_header_token: str | None,
+) -> None:
+    if (
+        csrf_cookie_token is None
+        or csrf_header_token is None
+        or not hmac.compare_digest(csrf_cookie_token, csrf_header_token)
+        or not hmac.compare_digest(
+            _token_hash(csrf_cookie_token), staff_session.csrf_token_hash_sha256
+        )
+    ):
+        raise CsrfValidationError
 
 
 def _new_token() -> str:

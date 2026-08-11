@@ -1,7 +1,7 @@
 {
   "id": "TASK-016-T3-FT-001-W7",
   "title": "Implement the secured Photo upload endpoint",
-  "status": "planned",
+  "status": "done",
   "wave": "W7",
   "feature": "FT-001",
   "reqs": [
@@ -33,7 +33,82 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "completed_at": "2026-08-11T22:40:51+05:00",
+      "summary": "Fresh T3 verification passed both exact packaged-image gates and independently proved canonical accepted/duplicate responses, the complete standard failure matrix, configured principal-plus-IP rate limiting, staff-session/role/CSRF enforcement, owner-boundary use, private redacted topology, host/image identity and complete disposable PostgreSQL/MinIO cleanup.",
+      "protocol": ".protocols/TASK-016-T3-FT-001-W7/verification.md",
+      "report": ".tasks/TASK-016-T3-FT-001-W7/TASK-016-T3-FT-001-W7-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "completed_at": "2026-08-11T22:44:30+05:00",
+      "summary": "Independent adversarial review found no material semantic break or operator question across exact upload/status semantics, staff auth/role/CSRF, configured principal-plus-IP limiting, standard failure mapping, owner-only writes, duplicate redaction, private topology, sibling boundaries and cleanup.",
+      "protocol": ".protocols/TASK-016-T3-FT-001-W7/red-verification.md",
+      "report": ".tasks/TASK-016-T3-FT-001-W7/TASK-016-T3-FT-001-W7-S-RED-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "completed_at": "2026-08-11T22:45:48+05:00",
+      "summary": "The autopilot scheduler closed TASK-016 after Execution Attempt 1, independent packaged T3 verification PASS and adversarial semantic-pass for the secured inventory photo-upload boundary, configured rate limiting, exact status/error contracts, owner boundaries, redaction, private topology and zero task-owned residue.",
+      "evidence": [
+        ".tasks/TASK-016-T3-FT-001-W7/TASK-016-T3-FT-001-W7-S-EXECUTE-final-report-code-01.md",
+        ".tasks/TASK-016-T3-FT-001-W7/TASK-016-T3-FT-001-W7-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-016-T3-FT-001-W7/TASK-016-T3-FT-001-W7-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    },
+    {
+      "stage": "feature-red-verify",
+      "verdict": "semantic-fail",
+      "completed_at": "2026-08-11T23:34:46+05:00",
+      "summary": "Feature-level adversarial verification reopened TASK-016 because the public upload edge accepted and fully parsed/spooled arbitrary multipart bodies before authentication, rate limiting and the configured candidate-size rejection, creating a realistic single-backend resource-exhaustion path that breaks FT-001-AC-004 and REQ-SEC-001.",
+      "evidence": [
+        ".tasks/FT-001/FT-001-S-RED-VERIFY-final-report-docs-01.md",
+        ".memory-bank/features/FT-001.md#semantic-verification"
+      ],
+      "required_action": "Add a finite early Caddy request-body cap for the inventory upload route, aligned to the accepted candidate limit plus bounded multipart overhead, then rerun TASK-016 packaged verify/red-verify and feature red-verify."
+    },
+    {
+      "stage": "verify",
+      "verdict": "FAIL",
+      "completed_at": "2026-08-12T00:04:09+05:00",
+      "summary": "Execution Attempt 2 passed both exact packaged gates and independently proved early 413 without backend bytes plus exact 10 MiB JPEG passage, but the Caddy over-cap expression throws on absent Content-Length and makes existing health, staff UI, session, ingest-target and backend GET routes return 500.",
+      "protocol": ".protocols/TASK-016-T3-FT-001-W7/verification.md",
+      "report": ".tasks/TASK-016-T3-FT-001-W7/TASK-016-T3-FT-001-W7-S-VERIFY-final-report-docs-02.md",
+      "required_action": "Make the Caddy over-cap matcher total for absent Content-Length or structurally prevent evaluation outside finite-length photo uploads, then rebuild and rerun TASK-016 verify."
+    },
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "completed_at": "2026-08-12T00:25:24+05:00",
+      "summary": "Execution Attempt 3 passed both exact packaged gates and fresh verifier-owned route/upload, limiter, topology, redaction and cleanup probes: all existing GET surfaces remained routable, both unsafe upload framings returned 413 before backend bytes, and the exact 10 MiB JPEG multipart reached the backend with 201.",
+      "protocol": ".protocols/TASK-016-T3-FT-001-W7/verification.md",
+      "report": ".tasks/TASK-016-T3-FT-001-W7/TASK-016-T3-FT-001-W7-S-VERIFY-final-report-docs-03.md"
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "completed_at": "2026-08-12T00:31:42+05:00",
+      "summary": "Attempt 3 adversarial verification found no material semantic break or operator question after hostile framing, malformed and duplicate length, exact/+1 cap, encoded path, CEL isolation and backend-receipt attacks, while current auth/rate/status/topology/redaction/owner semantics and cleanup remained intact.",
+      "protocol": ".protocols/TASK-016-T3-FT-001-W7/red-verification.md",
+      "report": ".tasks/TASK-016-T3-FT-001-W7/TASK-016-T3-FT-001-W7-S-RED-VERIFY-final-report-docs-02.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "completed_at": "2026-08-12T00:33:13+05:00",
+      "summary": "The autopilot scheduler re-closed TASK-016 after final Execution Attempt 3 earned fresh packaged verification PASS and adversarial semantic-pass for early bounded upload rejection before backend bytes, exact 10 MiB passage, preserved route/status/auth/rate/topology semantics and zero task-owned residue.",
+      "evidence": [
+        ".tasks/TASK-016-T3-FT-001-W7/TASK-016-T3-FT-001-W7-S-EXECUTE-final-report-code-03.md",
+        ".tasks/TASK-016-T3-FT-001-W7/TASK-016-T3-FT-001-W7-S-VERIFY-final-report-docs-03.md",
+        ".tasks/TASK-016-T3-FT-001-W7/TASK-016-T3-FT-001-W7-S-RED-VERIFY-final-report-docs-02.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-001.md",
     ".memory-bank/contracts/photo-admission-api.md",

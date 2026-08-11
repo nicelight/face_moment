@@ -1,34 +1,66 @@
 https://localhost:8443 {
 	tls internal
 
-	handle /api/staff/* {
-		reverse_proxy backend:8000 {
-			header_up X-Forwarded-For {remote_host}
+	@inventory_photo_upload_without_length {
+		method POST
+		path /api/inventory/photos
+		header !Content-Length
+	}
+
+	@inventory_photo_upload_over_cap {
+		method POST
+		path /api/inventory/photos
+		expression `{http.request.header.Content-Length} != "" && int({http.request.header.Content-Length}) > 11534336`
+	}
+
+	route {
+		respond @inventory_photo_upload_without_length 413
+		respond @inventory_photo_upload_over_cap 413
+
+		handle /api/staff/* {
+			reverse_proxy backend:8000 {
+				header_up X-Forwarded-For {remote_host}
+			}
 		}
-	}
 
-	handle /api/inventory/* {
-		reverse_proxy backend:8000 {
-			header_up X-Forwarded-For {remote_host}
+		handle /api/inventory/photos {
+			request_body {
+				max_size 11MiB
+			}
+			reverse_proxy backend:8000 {
+				header_up X-Forwarded-For {remote_host}
+			}
 		}
-	}
 
-	handle /staff/login {
-		reverse_proxy backend:8000 {
-			header_up X-Forwarded-For {remote_host}
+		handle /api/inventory/* {
+			reverse_proxy backend:8000 {
+				header_up X-Forwarded-For {remote_host}
+			}
 		}
-	}
 
-	handle_path /backend/* {
-		reverse_proxy backend:8000
-	}
-
-	handle_path /realtime/* {
-		request_body {
-			max_size 20MiB
+		handle /staff/login {
+			reverse_proxy backend:8000 {
+				header_up X-Forwarded-For {remote_host}
+			}
 		}
-		reverse_proxy realtime:8002
-	}
 
-	respond /healthz 200
+		handle /staff/photo-upload {
+			reverse_proxy backend:8000 {
+				header_up X-Forwarded-For {remote_host}
+			}
+		}
+
+		handle_path /backend/* {
+			reverse_proxy backend:8000
+		}
+
+		handle_path /realtime/* {
+			request_body {
+				max_size 20MiB
+			}
+			reverse_proxy realtime:8002
+		}
+
+		respond /healthz 200
+	}
 }

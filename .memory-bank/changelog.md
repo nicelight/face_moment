@@ -4,6 +4,53 @@ status: active
 ---
 # Changelog
 
+## [2026-08-12] Wave W8 — verified independent photo admission
+- Reconciled the scheduler-owned `done` closure for
+  `TASK-017-T2-FT-001-W8` with its packaged/browser `PASS` evidence for the
+  authenticated same-origin uploader, independent per-file outcomes and
+  authoritative date projection.
+- Preserved the complete `TASK-016-T3-FT-001-W7` history: the feature-level
+  `semantic-fail`, Attempt 2 functional `FAIL`, and final Attempt 3
+  `PASS` plus `semantic-pass` and scheduler re-closure. The feature retry
+  records `SEMANTIC_VERDICT: semantic-pass` after the accepted early body-cap
+  correction.
+- Reconciled `FT-001` as `verified` after all its indexed tasks reached `done`
+  and the required feature semantic gate passed. Advanced its exclusively
+  owned `REQ-ING-001` and `REQ-ING-002` RTM rows to `verified`; kept
+  `REQ-ING-003`, `REQ-SEC-001`, `REQ-ARCH-001` and `EP-001` planned because
+  they retain separately indexed downstream feature obligations.
+- No promotion, dependency, product/design/spec, or Epic lifecycle decision
+  was made by this reconciliation.
+
+## [2026-08-11] Wave W7 — reconciled secured upload-boundary closure
+- Reconciled the scheduler-owned `done` closure for
+  `TASK-016-T3-FT-001-W7` with its indexed execution evidence, fresh
+  packaged-image functional `PASS`, and required independent T3
+  `semantic-pass`. The closure proves the authenticated, rate-limited private
+  upload boundary, exact standard failure mapping, accepted/duplicate response
+  semantics, owner boundaries, redaction and disposable PostgreSQL/MinIO
+  cleanup.
+- Kept `EP-001`, `FT-001`, and the affected `REQ-ING-001`, `REQ-SEC-001` and
+  `REQ-ARCH-001` RTM rows `planned`: the independent per-file photographer
+  outcome remains owned by indexed W8 `TASK-017`, while the RTM rows also have
+  later feature obligations.
+- No task promotion, dependency change, feature/epic lifecycle transition, or
+  product/design/spec decision was made by this reconciliation.
+
+## [2026-08-11] Wave W6 — reconciled duplicate arbitration and crash-recovery closures
+- Reconciled the scheduler-owned `done` closures for
+  `TASK-013-T2-FT-001-W6` and `TASK-014-T2-FT-001-W6` with their indexed
+  execution, fresh independent T2 verification and isolated PostgreSQL/MinIO
+  evidence. The first proves one-winner duplicate arbitration and
+  loser-only candidate cleanup; the second proves private pre-commit crash
+  semantics and ordinary successful re-upload.
+- Kept `EP-001`, `FT-001`, and the affected `REQ-ING-003` and
+  `REQ-ARCH-001` RTM rows `planned`: secured upload and independent uploader
+  outcomes remain owned by indexed W7/W8 work, while `REQ-ING-003` also has
+  downstream FT-002 obligations.
+- No task promotion, dependency change, feature/epic lifecycle transition,
+  or product/design/spec decision was made by this reconciliation.
+
 ## [2026-08-11] Wave W5 — reconciled atomic Photo publication closure
 - Reconciled the scheduler-owned `done` closure for
   `TASK-012-T2-FT-001-W5` with its indexed execution, fresh independent T2

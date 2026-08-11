@@ -15,6 +15,11 @@ class Settings:
     staff_session_ttl_seconds: int
     staff_login_rate_limit: int
     staff_login_rate_window_seconds: int
+    photo_upload_rate_limit: int
+    photo_upload_rate_window_seconds: int
+    photo_upload_max_compressed_bytes: int
+    photo_upload_max_decoded_side_length: int
+    photo_upload_max_decoded_pixels: int
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -33,6 +38,19 @@ class Settings:
             staff_login_rate_limit=_positive_int("STAFF_LOGIN_RATE_LIMIT", "10"),
             staff_login_rate_window_seconds=_positive_int(
                 "STAFF_LOGIN_RATE_WINDOW_SECONDS", "60"
+            ),
+            photo_upload_rate_limit=_positive_int("PHOTO_UPLOAD_RATE_LIMIT", "10"),
+            photo_upload_rate_window_seconds=_positive_int(
+                "PHOTO_UPLOAD_RATE_WINDOW_SECONDS", "60"
+            ),
+            photo_upload_max_compressed_bytes=_positive_int(
+                "PHOTO_UPLOAD_MAX_COMPRESSED_BYTES", "10485760"
+            ),
+            photo_upload_max_decoded_side_length=_positive_int(
+                "PHOTO_UPLOAD_MAX_DECODED_SIDE_LENGTH", "4096"
+            ),
+            photo_upload_max_decoded_pixels=_positive_int(
+                "PHOTO_UPLOAD_MAX_DECODED_PIXELS", "16777216"
             ),
         )
 
