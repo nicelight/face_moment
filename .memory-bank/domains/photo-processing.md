@@ -1,7 +1,7 @@
 ---
 description: Canonical compatible Photo-processing data, worker, derivative and recovery specification.
 status: active
-last_updated: 2026-08-06
+last_updated: 2026-08-12
 source_of_truth:
   - .memory-bank/domains/photo-processing.md
 ---
@@ -24,6 +24,8 @@ rules.
 
 ## Pipeline Revision And Engine Contract
 
+### Compatibility identity
+
 The existing `face_moment.pipeline_revisions` row is extended into the
 immutable compatibility identity for one engine implementation:
 
@@ -43,16 +45,45 @@ Once referenced by a Photo pipeline state, the compatibility fields MUST NOT
 change. A changed detector, recognizer, weights, preprocessing, alignment,
 normalization or dimension creates a new revision.
 
+The FT-002 compatibility migration is a pre-production greenfield cutover. The
+legacy four-field row contains no authoritative source for the new model,
+weights or preparation identity, so the migration MUST verify that
+`face_moment.pipeline_revisions` is empty before its first schema mutation and
+MUST abort without changing schema or data when any row exists, referenced or
+not. It MUST NOT fabricate compatibility values, delete or repoint references,
+or infer a weights hash from `pipeline_code`. After a successful empty-table
+upgrade, the owner-backed configuration path publishes fresh revisions with
+the exact configured model-asset identity. Resetting disposable pre-pilot
+state, when needed, is an explicit operator action outside the migration.
+
+### Owner-local engine boundary
+
 The owner-local `FaceEngine` boundary extends the existing Foundation seam with
 its revision identity, embedding dimension and one `process_photo` operation
-returning pipeline-native face results. The same implementations remain
-reusable by later realtime query processing rather than creating a second
-engine abstraction. `opencv_sface` uses YuNet detection plus
-`FaceRecognizerSF.alignCrop`/SFace. `insightface_buffalo_m` uses its own SCRFD,
-landmarks, alignment and Buffalo M `normed_embedding` path. Bboxes, landmarks,
-crops and alignment results MUST NOT cross between these implementations.
-Configured model assets are verified against the revision before work is
-accepted; the worker does not download, silently replace or auto-select models.
+returning pipeline-native face results. The two direct implementations remain
+reusable by later realtime query processing through this existing boundary;
+the pilot adds no engine registry, plugin loader, adapter factory or second
+engine abstraction.
+
+### OpenCV SFace Photo adapter
+
+The `opencv_sface` implementation MUST use YuNet detection followed by
+`FaceRecognizerSF.alignCrop` and SFace recognition. Its bbox, landmarks, crop,
+alignment and embedding dimension remain native to this implementation and
+MUST NOT consume a Buffalo M result.
+
+### InsightFace Buffalo M Photo adapter
+
+The `insightface_buffalo_m` implementation MUST use its configured SCRFD,
+landmarks, native alignment and Buffalo M `normed_embedding` path. Its bbox,
+landmarks, crop, alignment and embedding dimension remain native to this
+implementation and MUST NOT consume an OpenCV SFace result.
+
+### Model-asset admission
+
+Each direct adapter verifies the configured model assets and embedding
+dimension against the immutable revision before accepting work. The worker
+MUST NOT download, silently replace or auto-select models.
 
 ## Persisted Processing Shape
 
@@ -119,37 +150,60 @@ projection only to serialize access to the one configured worker.
 
 ## Claiming, Processing And Publication
 
+### Startup recovery
+
 Worker startup performs one transaction that returns every unfinished
 `processing` row to `pending`, updates its state timestamp, and records the
 recovery count/time while setting `current_operation=idle` and clearing
-`operation_started_at`. It then processes one operation at a time.
+`operation_started_at`.
 
-For Photo work:
+### Atomic claim and bounded failure
 
-1. Atomically select the oldest eligible serving `pending` row, transition it
-   to `processing`, increment `attempt_count`, and set current operation to
-   `photo_processing`. With one configured worker, no lease, claim token,
-   fencing, `SKIP LOCKED` or extra jobs table is used.
-2. Outside the claim transaction, load the immutable private original and the
-   referenced validated engine, then run only that engine's native Photo path.
-3. When faces exist, create the low-quality preview and thumbnail and write
-   them to deterministic private keys derived from
-   `(photo_id, pipeline_revision_id, artifact_kind)`. Encoding bounds and
-   quality are positive deployment configuration with deterministic test
-   values; originals are not rewritten and no watermark is added.
-4. In one terminal PostgreSQL transaction, replace the complete face set and
-   publish `ready` plus derivative keys and `searchable_at`, or publish
-   `no_faces` with no faces/derivative keys. A terminal repeat is a no-op.
-5. On an execution error before the retry limit, return the row to `pending`
-   with a bounded safe `last_error`; on the third failed claim publish
-   `failed`. Clear the worker operation after the outcome transaction.
+Atomically select the oldest eligible serving `pending` row, transition it to
+`processing`, increment `attempt_count`, and set current operation to
+`photo_processing`. On an execution error before the retry limit, return the
+row to `pending` with a bounded safe `last_error`; on the third failed claim
+publish `failed`. The outcome transaction clears the worker operation. With one
+configured worker, no lease, claim token, fencing, `SKIP LOCKED`, scheduler or
+extra jobs table is used.
+
+### Single-Photo orchestration
+
+After a claim commits, load the immutable private original and referenced
+validated adapter outside the claim transaction, run only that adapter's native
+Photo path, pass any faces through deterministic derivative creation, and call
+the owner-local terminal publication boundary. This orchestration owns no
+second lifecycle, retry policy, model-selection policy or cross-store commit.
+
+### Deterministic private derivatives
+
+When faces exist, create the low-quality preview and thumbnail and write them
+to deterministic private keys derived from
+`(photo_id, pipeline_revision_id, artifact_kind)`. Encoding bounds and quality
+are positive deployment configuration with deterministic test values;
+originals are not rewritten, no watermark is added and MinIO remains private.
+
+### Idempotent terminal publication
+
+In one terminal PostgreSQL transaction, replace the complete face set and
+publish `ready` plus derivative keys and `searchable_at`, or publish `no_faces`
+with no faces/derivative keys. A terminal repeat is a no-op.
 
 The full face-set replacement and deterministic derivative keys make the path
 idempotent. A crash after derivative upload but before terminal commit may
 leave private replaceable objects; restart begins from the original and
 converges without duplicate face rows or distributed transaction machinery.
 
+### Sequential worker runtime
+
+After startup recovery, the one configured `BackgroundPhotoWorker` processes
+one operation at a time through the owner-local boundaries above. Backend/API
+code never runs the loop. The process adds no broker, priority/preemption
+scheduler, overlapping worker, durable job row or generic operation framework.
+
 ## Searchable Truth And SLO Projection
+
+### Compatible searchable truth
 
 For one Photo, `searchable=true` only when all of the following are current:
 
@@ -163,8 +217,11 @@ searchable. `processing` publishes the owned state/timestamp/face projection;
 `inventory` combines it with Photo visibility and serving selection for staff
 reads. Neither consumer writes processing-owned rows.
 
+### Controlled-interval ingest-to-searchable projection
+
 The `ingest_to_searchable` calculation uses every independently accepted Photo
-in the requested controlled interval for its admission-time serving revision:
+whose `accepted_at` is in the half-open controlled interval
+`[accepted_from, accepted_before)` for its admission-time serving revision:
 
 - success: `searchable_at - photo.accepted_at < 15 minutes` and the complete
   compatible `ready` publication exists;
@@ -175,23 +232,56 @@ in the requested controlled interval for its admission-time serving revision:
 Rejects and duplicates have no Photo and are absent. Non-serving states are
 absent. The projection reports population, success, breach and open counts plus
 `success / population`; it reports the 95% verdict only when `open = 0`.
+For an empty interval population all four counts are zero and both
+`success_ratio` and `meets_95_percent` are `null`: an empty population is
+neither a zero-percent result nor evidence that the target passed.
 Developer-triggered Calibration may delay the queue, but its population and
 effect stay in these same counts; no exclusion or scheduling exception is
 created.
 
-## Errors, Capacity And Invariants
+### Shared-worker Calibration delay
+
+A controlled Calibration operation may occupy the same sequential worker and
+must remain visible through `current_operation=calibration`. Photo work waits
+without preemption, its pending/SLO effect remains ordinary, and processing
+resumes when the operation releases the worker. FT-002 implements only this
+narrow serialization/projection boundary, not Calibration calculation, run
+storage or a generic scheduler.
+
+## Processing Health Projections
+
+### Queue and recovery health projection
+
+For the selected СПА and serving revision, `processing` publishes current
+`pending|processing|ready|no_faces|failed` counts, nullable oldest-pending
+acceptance time, current operation/start time and the singleton worker/recovery
+facts. The projection is a direct PostgreSQL read over owned state; it adds no
+history, materialized counter or monitoring store.
+
+### PostgreSQL capacity observation
+
+The PostgreSQL primary-volume probe independently reports `ok`, `low` or
+`unavailable`, nullable non-negative available bytes, its configured positive
+low threshold and observation time. The simplest deployment mechanism is one
+configured read-only filesystem view and a `statvfs`-equivalent read; no data
+file content or path is returned.
+
+### MinIO capacity observation
+
+The MinIO primary-volume probe independently reports `ok`, `low` or
+`unavailable`, nullable non-negative available bytes, its configured positive
+low threshold and observation time. It uses its own configured read-only
+filesystem view and the same minimal observation mechanism without coupling
+its result to PostgreSQL.
+
+## Errors And Invariants
 
 - A missing original, incompatible/unvalidated revision, engine failure,
   invalid face value or derivative failure follows the bounded retry path and
   can become terminal `failed`; it MUST NOT publish partial `ready` state.
-- PostgreSQL and MinIO free capacity are observed independently through
-  configured infrastructure probes. Each probe reports `ok`, `low` or
-  `unavailable`, available bytes, its configured positive low threshold and
-  observation time. Tests bind explicit thresholds; this contract invents no
-  product capacity target.
-- The simplest deployment probe uses configured read-only filesystem views of
-  the two primary volumes and `statvfs`-equivalent values. It MUST NOT expose
-  data files, credentials, object keys or add a monitoring service.
+- Tests bind explicit capacity thresholds; this contract invents no product
+  capacity target. Neither probe exposes data files, credentials, object keys
+  or adds a monitoring service.
 - Only the single background-worker entrypoint performs claims. Backend/API
   code may read projections but MUST NOT run inference or publish transitions.
 - Photo deletion never cascades across ownership; `inventory` later commands
@@ -200,8 +290,10 @@ created.
 ## Migration And Verification Targets
 
 - One revision extends the current linear head; isolated verification covers
-  direct `down_revision`, upgrade, downgrade, re-upgrade, constraints and data
-  preservation without requiring a mutable future exact head.
+  direct `down_revision`, empty-table upgrade, downgrade, re-upgrade,
+  constraints and preservation of unrelated prerequisite rows without
+  requiring a mutable future exact head. A separate non-empty fixture proves
+  the upgrade aborts before schema or data changes.
 - Engine-adapter proof shows SFace and Buffalo M take their own configured
   native preprocessing/alignment paths and reject revision/dimension mismatch.
 - Lifecycle proof drives `ready`, `no_faces`, transient retry and exhausted
@@ -210,8 +302,9 @@ created.
   repeated processing, and worker restart prove one face set, deterministic
   derivatives, preserved population and restart-from-beginning convergence.
 - Controlled-clock SLO proof reconciles every accepted Photo into exactly one
-  success, breach or open classification and includes delayed Calibration
-  backlog without special exclusion.
+  success, breach or open classification, covers both half-open interval
+  boundaries and the all-zero/null empty result, and includes delayed
+  Calibration backlog without special exclusion.
 - Capacity probes independently demonstrate normal, configured-low and
   unavailable PostgreSQL/MinIO observations in disposable state without
   disclosing storage contents.

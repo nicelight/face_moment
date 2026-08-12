@@ -1,0 +1,95 @@
+{
+  "id": "TASK-031-T2-FT-002-W6",
+  "title": "Poll truthful status in the photographer uploader",
+  "status": "planned",
+  "wave": "W6",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-ING-003",
+    "REQ-ING-004",
+    "REQ-SRCH-001"
+  ],
+  "depends_on": [
+    "TASK-026-T3-FT-002-W5",
+    "TASK-030-T3-FT-002-W5"
+  ],
+  "touched_files": [
+    "src/face_moment/inventory/",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/inventory/test_photo_processing_ui.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Photo processing UI tests",
+      "command": "docker compose run --rm backend python -m pytest tests/inventory/test_photo_processing_ui.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md",
+    ".memory-bank/contracts/photo-processing-api.md",
+    ".memory-bank/testing/index.md"
+  ],
+  "evidence_required": [
+    "FT-002-AC-001 RED: the existing photographer uploader stops at accepted and cannot show truthful processing/searchable progression; GREEN: a real-browser flow preserves independent accepted rows through pending, processing and ready-searchable/no_faces/failed, while incompatible/inactive ready stays explicitly not searchable and persisted state/projection membership match; decisive comparison: visible row history, exact API payloads and database eligibility agree for every terminal path; artifact: Playwright CLI transcript, screenshots/trace and redacted integration projection."
+  ],
+  "purpose": "Complete the photographer-visible processing outcome by extending the existing independent uploader rows with truthful per-Photo polling.",
+  "success_outcome": "Each accepted upload row independently advances through persisted pending/processing to ready-searchable, no_faces or failed, and incompatible/inactive ready never appears searchable.",
+  "anti_goals": [
+    "Do not add a frontend framework, batch progress, cross-file state, inventory administration or diagnostics UI.",
+    "Do not calculate lifecycle/searchability in browser code or poll rejected/duplicate rows."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012"
+    ],
+    "stop_conditions": [
+      "The existing uploader row cannot retain independent status without changing accepted upload behavior.",
+      "Real-browser proof would require production data, a new UI runtime or direct browser storage/database access."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-001",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-001",
+    ".memory-bank/contracts/photo-processing-api.md#per-photo-processing-status",
+    ".memory-bank/testing/index.md#ui-verification",
+    ".memory-bank/testing/photo-processing.md#terminal-and-compatibility-matrix"
+  ],
+  "constraints": [
+    "Extend the existing plain same-origin uploader page and poll only accepted photo_id values.",
+    "Use the installed Playwright CLI through `playwright cli`; browser-free DOM/HTTP probes are not substitutes for UAT.",
+    "Use deterministic disposable Photo paths for ready, no_faces, failed and incompatible/inactive ready and clean only task-owned state."
+  ],
+  "invariants": [
+    "One upload row never changes or removes another row's status.",
+    "Only the API's complete compatible truth renders as searchable.",
+    "Rejected and duplicate outcomes remain terminal uploader results and are never polled as Photos."
+  ],
+  "verification_targets": [
+    "FT-002-AC-001 via .memory-bank/features/FT-002.md#FT-002-AC-001",
+    "Playwright CLI UAT drives accepted Photos through ready, no_faces and failed, observes pending/processing, and proves incompatible/inactive ready remains not searchable; store transcript, screenshots and trace under the task artifact directory.",
+    "Persisted rows and projection membership are reconciled to every visible result without implementing FT-004 cosine search."
+  ]
+}
+

@@ -1,0 +1,96 @@
+{
+  "id": "TASK-030-T3-FT-002-W5",
+  "title": "Expose authenticated per-Photo processing status",
+  "status": "planned",
+  "wave": "W5",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-ING-004",
+    "REQ-SRCH-001",
+    "REQ-REL-002"
+  ],
+  "depends_on": [
+    "TASK-027-T2-FT-002-W4",
+    "TASK-017-T2-FT-001-W8"
+  ],
+  "touched_files": [
+    "src/face_moment/inventory/",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/inventory/test_photo_processing_api.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Photo processing API tests",
+      "command": "docker compose run --rm backend python -m pytest tests/inventory/test_photo_processing_api.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md",
+    ".memory-bank/contracts/photo-processing-api.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/contracts/photo-processing-api.md#per-photo-processing-status RED: no authenticated inventory endpoint returns the exact owner-backed processing projection; GREEN: authorized photographer/operator/developer cases return the exact safe schema and truthful searchable value while missing/revoked session, wrong owner/role, unknown Photo and invalid request map to 401/403/404/422 and owner-read failure to 5xx; decisive comparison: response fields/statuses and database projection match and forbidden internal markers remain absent; artifact: isolated API matrix and redacted marker scan."
+  ],
+  "purpose": "Expose the inventory-owned exact per-Photo processing response over the completed processing projection and existing staff session boundary.",
+  "success_outcome": "Authorized staff receive the exact safe persisted status/searchable response, while unauthenticated, wrong-owner/role, unknown and invalid requests receive the specified standard failures.",
+  "anti_goals": [
+    "Do not let handlers query/write processing repositories directly, calculate another lifecycle or expose object/model/storage internals.",
+    "Do not add Batch status, cross-file polling state, custom error envelopes or new staff roles."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012",
+      "Direct transport writes or claims in processing repositories",
+      "Exposure of credentials, authentication state, model/storage paths, object keys, embeddings, landmarks or traceback"
+    ],
+    "stop_conditions": [
+      "Exact ownership authorization cannot remain inside inventory through the existing staff principal.",
+      "The endpoint would require a new authentication mechanism, public storage route or foreign write."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/photo-processing-api.md#per-photo-processing-status",
+    ".memory-bank/contracts/photo-processing-api.md#failure-and-privacy-contract",
+    ".memory-bank/contracts/boundary-map.md#independent-photo-admission",
+    ".memory-bank/contracts/boundary-map.md#processing-status-projections",
+    ".memory-bank/architecture/system-architecture.md#AD-002"
+  ],
+  "constraints": [
+    "GET /api/inventory/photos/{photo_id}/processing uses the existing active staff session.",
+    "Photographers may read only immutable uploader-owned Photos; operator/developer follow the one-SPA access contract.",
+    "Use disposable principals/Photos, safe repeat and owner-bounded cleanup; return no protected internal values."
+  ],
+  "invariants": [
+    "Inventory owns authorization and response assembly; processing owns every state/face transition.",
+    "searchable is the derived complete active compatible truth, not status=ready alone.",
+    "Standard 401/403/404/422/5xx semantics remain exact and no custom envelope is added."
+  ],
+  "verification_targets": [
+    ".memory-bank/contracts/photo-processing-api.md#per-photo-processing-status",
+    "Exact valid/401/403/404/422/5xx response matrix covers photographer ownership, operator/developer access, all statuses, incompatible/inactive ready and redaction.",
+    "Static/integration tracing proves transport and inventory perform no processing write or claim."
+  ]
+}

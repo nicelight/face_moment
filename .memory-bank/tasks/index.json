@@ -68,6 +68,82 @@
     {
       "id": "TASK-017-T2-FT-001-W8",
       "file": "TASK-017-T2-FT-001-W8.task.json"
+    },
+    {
+      "id": "TASK-018-T2-FT-002-W1",
+      "file": "TASK-018-T2-FT-002-W1.task.json"
+    },
+    {
+      "id": "TASK-019-T2-FT-002-W2",
+      "file": "TASK-019-T2-FT-002-W2.task.json"
+    },
+    {
+      "id": "TASK-020-T2-FT-002-W2",
+      "file": "TASK-020-T2-FT-002-W2.task.json"
+    },
+    {
+      "id": "TASK-021-T3-FT-002-W2",
+      "file": "TASK-021-T3-FT-002-W2.task.json"
+    },
+    {
+      "id": "TASK-022-T2-FT-002-W2",
+      "file": "TASK-022-T2-FT-002-W2.task.json"
+    },
+    {
+      "id": "TASK-023-T3-FT-002-W3",
+      "file": "TASK-023-T3-FT-002-W3.task.json"
+    },
+    {
+      "id": "TASK-024-T2-FT-002-W4",
+      "file": "TASK-024-T2-FT-002-W4.task.json"
+    },
+    {
+      "id": "TASK-025-T2-FT-002-W3",
+      "file": "TASK-025-T2-FT-002-W3.task.json"
+    },
+    {
+      "id": "TASK-026-T3-FT-002-W5",
+      "file": "TASK-026-T3-FT-002-W5.task.json"
+    },
+    {
+      "id": "TASK-027-T2-FT-002-W4",
+      "file": "TASK-027-T2-FT-002-W4.task.json"
+    },
+    {
+      "id": "TASK-028-T2-FT-002-W5",
+      "file": "TASK-028-T2-FT-002-W5.task.json"
+    },
+    {
+      "id": "TASK-029-T2-FT-002-W6",
+      "file": "TASK-029-T2-FT-002-W6.task.json"
+    },
+    {
+      "id": "TASK-030-T3-FT-002-W5",
+      "file": "TASK-030-T3-FT-002-W5.task.json"
+    },
+    {
+      "id": "TASK-031-T2-FT-002-W6",
+      "file": "TASK-031-T2-FT-002-W6.task.json"
+    },
+    {
+      "id": "TASK-032-T2-FT-002-W4",
+      "file": "TASK-032-T2-FT-002-W4.task.json"
+    },
+    {
+      "id": "TASK-033-T3-FT-002-W1",
+      "file": "TASK-033-T3-FT-002-W1.task.json"
+    },
+    {
+      "id": "TASK-034-T3-FT-002-W2",
+      "file": "TASK-034-T3-FT-002-W2.task.json"
+    },
+    {
+      "id": "TASK-035-T3-FT-002-W6",
+      "file": "TASK-035-T3-FT-002-W6.task.json"
+    },
+    {
+      "id": "TASK-036-T3-FT-002-W7",
+      "file": "TASK-036-T3-FT-002-W7.task.json"
     }
   ]
 }

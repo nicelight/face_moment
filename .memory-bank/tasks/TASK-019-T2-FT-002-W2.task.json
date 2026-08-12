@@ -1,0 +1,88 @@
+{
+  "id": "TASK-019-T2-FT-002-W2",
+  "title": "Implement the native SFace Photo adapter",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-SRCH-001"
+  ],
+  "depends_on": [
+    "TASK-018-T2-FT-002-W1"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/",
+    "tests/processing/test_sface_adapter.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "SFace adapter tests",
+      "command": "docker compose run --rm backend python -m pytest tests/processing/test_sface_adapter.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    "FT-002-AC-007 RED: no production SFace Photo adapter exposes the accepted YuNet plus alignCrop/SFace path with revision and dimension checks; GREEN: one deterministic synthetic Photo follows that exact native path, returns a normalized dimension-valid embedding and rejects mismatched or Buffalo-derived inputs; decisive comparison: recorded native calls, revision metadata and negative fixtures match the AC; artifact: focused adapter-test output and redacted call-path record."
+  ],
+  "purpose": "Implement the accepted native OpenCV SFace Photo path behind the existing processing-owned engine boundary.",
+  "success_outcome": "An eligible SFace revision processes a synthetic Photo through YuNet, alignCrop and SFace with exact revision/dimension checks and no Buffalo M data path.",
+  "anti_goals": [
+    "Do not implement realtime queries, a generic plugin system, model download or Buffalo M behavior.",
+    "Do not normalize the two engine-native bbox, landmark, crop or alignment contracts into one invented format."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012"
+    ],
+    "stop_conditions": [
+      "The native path would require a second engine abstraction, online model download or automatic adapter selection.",
+      "Configured SFace assets cannot be validated against the immutable revision without changing the accepted contract."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-007",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-007",
+    ".memory-bank/domains/photo-processing.md#opencv-sface-photo-adapter",
+    ".memory-bank/domains/photo-processing.md#model-asset-admission",
+    ".memory-bank/architecture/system-architecture.md#AD-002"
+  ],
+  "constraints": [
+    "Use one direct SFace implementation behind the existing FaceEngine boundary.",
+    "Model assets are configured and verified; execution never downloads or silently substitutes them.",
+    "Deterministic tests may inject native-call fixtures but must exercise the production adapter path."
+  ],
+  "invariants": [
+    "SFace consumes only its YuNet/alignCrop-native result path.",
+    "Embedding dimension and asset identity match the immutable revision.",
+    "No Buffalo M intermediate is accepted."
+  ],
+  "verification_targets": [
+    "FT-002-AC-007 via .memory-bank/features/FT-002.md#FT-002-AC-007",
+    "Synthetic adapter proof records the YuNet, alignCrop and SFace call sequence plus normalized embedding and mismatch rejection."
+  ]
+}
+

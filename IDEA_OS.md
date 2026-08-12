@@ -1,6 +1,6 @@
 # Face Moment: сервер, ОС и display/kiosk
 
-Обновлено: 2026-07-24
+Обновлено: 2026-08-12
 
 ## 0. Статус документа
 
@@ -285,19 +285,53 @@ restart: unless-stopped
 **Почему принято:** Chromium может упасть или потерять соединение, но display
 должен восстанавливаться без участия локального пользователя.
 
-### 3.5 Минимальная network/access configuration
+### 3.5 Сетевая топология и access configuration
+
+Центральный сервер и remote `SpaPromoClient` выходят в интернет через независимые
+4G-подключения и могут находиться за CGNAT без публичного IPv4. Публичный вход
+предоставляет небольшой stateless VPS в РФ с белым IP:
+
+~~~text
+SpaPromoClient и телефон участника
+-> публичный HTTPS: HTTP/3, при недоступном UDP автоматический fallback на HTTP/2
+-> Caddy на VPS: TLS termination, request limits и rate/concurrency limits
+-> локально доступный frps
+-> постоянный reverse tunnel, инициированный frpc с центрального сервера через 4G
+-> локальный HTTPS entry point/backend центрального сервера
+~~~
+
+Для server-to-VPS tunnel стартовым кандидатом является frp over QUIC. Перед
+pilot он сравнивается на реальных SIM и у выбранного оператора с frp over
+TCP+TLS; используется измеримо более быстрый и стабильный вариант. frp не даёт
+автоматический fallback между этими transport-ами, поэтому второй вариант
+остаётся заранее проверенной операционной конфигурацией, а не параллельным
+tunnel.
 
 Стартовая конфигурация:
 
-- host firewall использует default deny для входящих соединений;
-- наружу открыты только TCP 443 для HTTPS и TCP 22 для SSH;
-- SSH разрешает вход только по ключу, password authentication отключён;
-- PostgreSQL, MinIO и внутренние порты контейнеров не публикуются на внешнем
-  network interface и доступны только через internal Docker network;
-- backend API, `RealtimeFaceService` и previews доступны через один внешний
-  HTTPS entry point; signed download endpoint является post-pilot;
+- host firewall везде использует default deny для входящих соединений;
+- VPS принимает TCP/UDP 443 для публичного HTTPS/HTTP3, TCP 22 для key-only SSH
+  и отдельный выбранный transport port frps; QUIC frps не делит UDP 443 с Caddy;
+- центральный сервер не принимает входящие соединения из интернета и только сам
+  устанавливает reverse tunnel через 4G;
+- frps proxy endpoint и dashboard не публикуются напрямую и доступны Caddy или
+  администратору только локально;
+- PostgreSQL, MinIO и внутренние порты контейнеров не публикуются наружу и
+  доступны только через internal Docker network;
+- backend API, `RealtimeFaceService`, previews и QR continuation доступны через
+  один публичный HTTPS entry point на VPS; signed download endpoint является
+  post-pilot;
+- VPS повторяет route-specific body limits центрального entry point, включая
+  лимит 20 MiB для realtime attempt, и отклоняет превышение до передачи через
+  server-side 4G tunnel;
+- VPS удаляет присланные клиентом forwarding headers, формирует доверенный
+  `X-Forwarded-For` из реального client IP и применяет public rate/concurrency
+  limits до tunnel; центральный entry point доверяет этим headers только от
+  tunnel peer;
+- TLS frpc -> frps обязан проверять сертификат и имя frps через доверенный CA;
+  tunnel аутентифицируется отдельным сильным secret;
 - `spa_client_token` передаётся в authorization header, хранится на сервере в
-  виде hash и не попадает в URL или application logs;
+  виде hash и не попадает в URL, proxy logs или application logs;
 - diagnostic route отделён от Promo/QR routes;
 - diagnostic objects имеют обязательный 90-day lifecycle;
 - Docker daemon/API не публикуется наружу.
@@ -306,9 +340,10 @@ restart: unless-stopped
 операции выполняются только пользователем `facemoment`. В MVP не добавляются
 другие Unix users, mTLS, VLAN, сложный RBAC или headless-топология.
 
-**Почему принято:** разделение `facemoment`/`display`, единый HTTPS entry point
-и простой per-client token сохраняют понятную network/process topology без
-дополнительной инфраструктуры.
+**Почему принято:** outbound reverse tunnel работает за мобильным CGNAT, а
+stateless VPS даёт браузерам обычный публичный HTTPS origin без VPN-клиента.
+Топология добавляет только неизбежный public relay и сохраняет существующий
+request/response contract.
 
 ---
 
@@ -578,7 +613,9 @@ qr_fully_visible_at
 11. Постоянный локальный видеопоток и автоматическая sensor-triggered
     reference-серия для участников pilot.
 12. Простой `spa_client_token -> spa_id` mapping.
-13. Только HTTPS и key-only SSH снаружи; PostgreSQL, MinIO и Docker API закрыты.
+13. Публичный HTTPS/HTTP3 на VPS, key-only SSH и отдельный защищённый frps
+    transport port; центральный сервер не принимает internet ingress, а
+    PostgreSQL, MinIO и Docker API закрыты.
 14. Best-effort group search без tracking и гарантии полного покрытия.
 15. Chromium на весь экран, реклама между результатами, четыре low-quality
     preview без watermark и QR continuation.
@@ -688,6 +725,22 @@ HDMI-мониторе, но не должно останавливать Docker-
 search. Это принято для pilot, но требует явного UX, ручной annotation и не даёт
 права обещать полное покрытие группы.
 
+### 11.7 Нестабильность 4G и tunnel transport
+
+Скорость и packet loss зависят от оператора, SIM/APN, времени суток и маршрута
+до VPS; QUIC не считается автоматически быстрее TCP+TLS. На точных pilot
+подключениях нужно измерить оба transport-а в часы нагрузки и выполнить
+существующую проверку минимум 19 успешных попыток из 20 за `<10 s` с реальными
+размерами reference-серий.
+
+### 11.8 VPS как доверенная граница и единая точка входа
+
+VPS видит расшифрованный HTTPS traffic и при отказе разрывает новые запросы и
+активные QR continuation sessions. На нём нельзя хранить application state,
+media или очередь запросов. Обязательны проверка identity frps, закрытый прямой
+доступ к proxy endpoint, log redaction, body/rate/concurrency limits до tunnel
+и заранее проверенное переключение tunnel между QUIC и TCP+TLS.
+
 ---
 
 ## 12. Финальная инфраструктурная формула
@@ -711,6 +764,10 @@ MinIO/S3-compatible storage
 +
 синхронный HTTPS request/response с простым spa_client_token
 +
+public Caddy на stateless VPS -> frp reverse tunnel -> central server через 4G
++
+HTTP/3 с browser fallback на HTTP/2; tunnel transport выбирается измерением
++
 automatic sensor capture + best-effort group search
 +
 четыре low-quality preview без watermark + QR continuation
@@ -721,7 +778,8 @@ automatic sensor capture + best-effort group search
 +
 <10 секунд от reference_series_ready_at до fully visible QR
 +
-PostgreSQL и MinIO только во внутренней сети; снаружи HTTPS и key-only SSH
+центральный сервер без internet ingress; PostgreSQL и MinIO только во внутренней
+сети
 +
 Chromium display с рекламой, preview и QR
 +

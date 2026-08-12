@@ -1,0 +1,90 @@
+{
+  "id": "TASK-029-T2-FT-002-W6",
+  "title": "Keep shared-worker Calibration delay explicit",
+  "status": "planned",
+  "wave": "W6",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-ING-004",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-026-T3-FT-002-W5",
+    "TASK-028-T2-FT-002-W5"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/",
+    "tests/processing/test_shared_worker.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Shared worker tests",
+      "command": "docker compose run --rm backend python -m pytest tests/processing/test_shared_worker.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    "FT-002-AC-005 RED: no narrow worker boundary can represent a Calibration hold while preserving visible Photo backlog and later resume; GREEN: a controlled calibration operation holds the singleton worker, pending Photos remain ordinary SLO open/breach observations, no Photo claim overlaps and release resumes normal terminal processing; decisive comparison: operation timeline, claim count and SLO rows match with no priority/preemption/second worker; artifact: shared-worker timeline and controlled database projection."
+  ],
+  "purpose": "Expose the narrow accepted Calibration hold on the same worker while keeping Photo backlog and SLO impact truthful.",
+  "success_outcome": "A controlled Calibration operation holds the singleton worker without preemption, queued Photos remain visible in ordinary SLO accounting and processing resumes after release.",
+  "anti_goals": [
+    "Do not implement Calibration calculations, recommendations, persistent run state, priorities, pause/resume, preemption or a second worker.",
+    "Do not create a generic scheduler or operation framework around the runtime-status singleton."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012"
+    ],
+    "stop_conditions": [
+      "The accepted hold cannot be expressed through the narrow current_operation boundary.",
+      "Proof would require implementing FT-011 behavior or adding scheduling infrastructure."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-005",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-005",
+    ".memory-bank/domains/photo-processing.md#shared-worker-calibration-delay",
+    ".memory-bank/architecture/system-architecture.md#AD-004",
+    ".memory-bank/contracts/boundary-map.md#calibration-and-serving-change",
+    ".memory-bank/testing/photo-processing.md#full-population-slo-matrix"
+  ],
+  "constraints": [
+    "Use only a controlled test operation named calibration; do not persist or compute a Calibration run.",
+    "Photo backlog remains ordinary pending/open or aged breach while held.",
+    "Release the test operation and clean only task-owned state."
+  ],
+  "invariants": [
+    "One worker means Calibration and Photo processing never overlap.",
+    "No preemption, priority or alternate queue is introduced.",
+    "Photo processing resumes automatically after the narrow hold releases."
+  ],
+  "verification_targets": [
+    "FT-002-AC-005 via .memory-bank/features/FT-002.md#FT-002-AC-005",
+    "Controlled hold records current operation, visible backlog/SLO effect, absence of Photo claims during hold and ordinary terminal progress after release."
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "id": "TASK-025-T2-FT-002-W3",
+  "title": "Implement worker-startup processing recovery",
+  "status": "planned",
+  "wave": "W3",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-REL-002"
+  ],
+  "depends_on": [
+    "TASK-022-T2-FT-002-W2"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/",
+    "tests/processing/test_worker_recovery.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Worker recovery tests",
+      "command": "docker compose run --rm backend python -m pytest tests/processing/test_worker_recovery.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/domains/photo-processing.md#startup-recovery RED: startup cannot atomically recover the durable processing population or publish truthful recovery facts; GREEN: a controlled mixed population resets every processing row to pending, preserves pending/terminal rows, clears stale operation and records exact worker/recovery timestamps and count; decisive comparison: complete before/after row identity and singleton projection match with no loss; artifact: isolated recovery transaction timeline."
+  ],
+  "purpose": "Provide one atomic processing-owned startup recovery transaction before the worker loop runs.",
+  "success_outcome": "Startup returns every unfinished processing row to pending, preserves queued/terminal rows and records one truthful recovery projection.",
+  "anti_goals": [
+    "Do not start the long-running loop, replay inference or add leases, recovery jobs, history or per-row recovery state.",
+    "Do not reset ready, no_faces, failed or already pending rows."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012"
+    ],
+    "stop_conditions": [
+      "Recovery cannot be one bounded owner transaction over existing state.",
+      "Correct recovery would require another queue, per-row recovery lifecycle or foreign state mutation."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/photo-processing.md#startup-recovery",
+    ".memory-bank/architecture/system-architecture.md#AD-004",
+    ".memory-bank/states/lifecycle-map.md#photo-pipeline-state"
+  ],
+  "constraints": [
+    "Run once during configured worker startup before any new claim.",
+    "Use a controlled known population, repeat-safe fixture and owner-bounded cleanup.",
+    "Record worker_started_at, last_recovery_at and last_recovered_count without history."
+  ],
+  "invariants": [
+    "Every processing row returns to pending and no queued row is lost.",
+    "Terminal and already-pending rows keep their outcome/state.",
+    "Recovery clears the stale operation and creates no work replay."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/photo-processing.md#startup-recovery",
+    "Controlled before/after population proves exact reset, timestamps/count and safe repeat in disposable PostgreSQL state."
+  ]
+}
+

@@ -1,0 +1,89 @@
+{
+  "id": "TASK-034-T3-FT-002-W2",
+  "title": "Observe MinIO primary-volume capacity",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-REL-002"
+  ],
+  "depends_on": [
+    "TASK-033-T3-FT-002-W1"
+  ],
+  "touched_files": [
+    "src/face_moment/infrastructure/",
+    "src/face_moment/infrastructure/settings.py",
+    "compose.yaml",
+    "tests/infrastructure/test_minio_capacity.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "MinIO capacity tests",
+      "command": "docker compose run --rm backend python -m pytest tests/infrastructure/test_minio_capacity.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/domains/photo-processing.md#minio-capacity-observation RED: the PostgreSQL probe outcome does not provide an independent MinIO observation; GREEN: disposable normal, low-threshold and unavailable MinIO fixtures return exact current status/bytes/threshold/time/error through one private read-only view while PostgreSQL remains normal; decisive comparison: MinIO changes alone alter only its result, the view rejects writes, forbidden path/object/credential/media markers remain absent and cleanup leaves PostgreSQL untouched; artifact: paired redacted capacity, topology and marker-scan output."
+  ],
+  "purpose": "Add the independent configured read-only MinIO primary-volume observation using the minimal capacity mechanism established for PostgreSQL.",
+  "success_outcome": "The backend observes MinIO capacity as ok, low or unavailable independently of PostgreSQL while the volume, objects and internal service stay private and read-only.",
+  "anti_goals": [
+    "Do not couple MinIO status to PostgreSQL, expose paths/object keys/media/credentials or add another probe framework.",
+    "Do not add history, alerts, product capacity targets, public MinIO routes or write access to the volume view."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012"
+    ],
+    "stop_conditions": [
+      "MinIO cannot use its own configured read-only view and the same minimal statvfs-equivalent mechanism.",
+      "Proof would require production objects, public storage access, Docker API or another monitoring service."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/photo-processing.md#minio-capacity-observation",
+    ".memory-bank/architecture/system-architecture.md#AD-011",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries",
+    ".memory-bank/contracts/photo-processing-api.md#failure-and-privacy-contract"
+  ],
+  "constraints": [
+    "Reuse the minimal capacity value/adapter from TASK-033; add only independent MinIO configuration and observation.",
+    "Use disposable Compose resources and synthetic object/path markers with safe rerun and owner-bounded cleanup.",
+    "Keep PostgreSQL normal while exercising each MinIO branch to prove independence."
+  ],
+  "invariants": [
+    "MinIO remains private and the backend capacity view is read-only.",
+    "One store's failure never erases or reuses the other store's current result.",
+    "No path, object key, commercial media or credential enters output or logs."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/photo-processing.md#minio-capacity-observation",
+    "Disposable proof covers normal, configured-low and unavailable MinIO with PostgreSQL kept normal, read-only/private topology, marker redaction and cleanup."
+  ]
+}

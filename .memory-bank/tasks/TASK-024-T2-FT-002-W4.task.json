@@ -1,0 +1,91 @@
+{
+  "id": "TASK-024-T2-FT-002-W4",
+  "title": "Implement single-Photo processing orchestration",
+  "status": "planned",
+  "wave": "W4",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-ING-004",
+    "REQ-SRCH-001",
+    "REQ-REL-002"
+  ],
+  "depends_on": [
+    "TASK-019-T2-FT-002-W2",
+    "TASK-020-T2-FT-002-W2",
+    "TASK-023-T3-FT-002-W3"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/",
+    "tests/processing/test_photo_orchestration.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Photo orchestration tests",
+      "command": "docker compose run --rm backend python -m pytest tests/processing/test_photo_orchestration.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/domains/photo-processing.md#single-photo-orchestration RED: no owner-local operation composes claimed original, exact revision adapter, derivatives and terminal/failure boundaries; GREEN: deterministic SFace, Buffalo M, zero-face and injected-failure cases each call only their accepted boundaries and reach one matching outcome without new state; decisive comparison: call trace, selected revision, terminal path and foreign-write scan match the contract; artifact: focused orchestration integration output."
+  ],
+  "purpose": "Compose the completed claim, adapter, derivative and terminal boundaries for one claimed Photo without owning their policies.",
+  "success_outcome": "One claimed Photo loads its immutable original and exact validated adapter, then reaches the matching ready, no_faces or bounded failure boundary without a second lifecycle.",
+  "anti_goals": [
+    "Do not add a worker loop, scheduler, retry policy, model selector, realtime query or direct foreign write.",
+    "Do not duplicate adapter, derivative or terminal-publication rules in orchestration."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012"
+    ],
+    "stop_conditions": [
+      "Orchestration would need business logic in the entrypoint/infrastructure or direct foreign repository writes.",
+      "A generic workflow/scheduler abstraction becomes necessary to run one Photo."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/photo-processing.md#single-photo-orchestration",
+    ".memory-bank/architecture/system-architecture.md#AD-002",
+    ".memory-bank/contracts/boundary-map.md#processing-input-projections"
+  ],
+  "constraints": [
+    "Keep orchestration under processing and call only accepted owner-local or published projection boundaries.",
+    "Select the adapter only from the claimed immutable pipeline_revision_id.",
+    "Tests use fake native results only to compose already implemented production boundaries."
+  ],
+  "invariants": [
+    "One claim runs one exact adapter and one terminal outcome path.",
+    "No model auto-selection, cross-engine intermediate reuse or foreign write occurs.",
+    "Orchestration adds no durable state of its own."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/photo-processing.md#single-photo-orchestration",
+    "Integration proof composes SFace face, Buffalo M face, zero-face and injected failure cases through owner boundaries and traces absence of handler/entrypoint business orchestration."
+  ]
+}
+

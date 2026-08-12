@@ -1,7 +1,7 @@
 ---
 description: Stable product requirements and REQ-to-epic-to-feature traceability for the one-СПА pilot.
 status: draft
-last_updated: 2026-08-08
+last_updated: 2026-08-12
 ---
 # Requirements
 
@@ -97,7 +97,7 @@ product scope; feature and task anti-goals only narrow their assigned work.
 | `REQ-INV-002` | [EP-001](epics/EP-001.md) | [FT-012](features/FT-012.md) | `FT-012-AC-001..002`; PRD AC-18 | planned |
 | `REQ-INV-003` | [EP-001](epics/EP-001.md) | [FT-012](features/FT-012.md) | `FT-012-AC-003..005`, `FT-012-AC-007`; PRD AC-18/20 and restore-all e2e | planned |
 | `REQ-INV-004` | [EP-001](epics/EP-001.md) | [FT-012](features/FT-012.md) | `FT-012-AC-006..007`; PRD AC-19 | planned |
-| `REQ-SRCH-001` | [EP-001](epics/EP-001.md), [EP-002](epics/EP-002.md) | [FT-002](features/FT-002.md), [FT-004](features/FT-004.md) | `FT-002-AC-001`, `FT-004-AC-001`; PRD AC-03/10 | planned |
+| `REQ-SRCH-001` | [EP-001](epics/EP-001.md), [EP-002](epics/EP-002.md) | [FT-002](features/FT-002.md), [FT-004](features/FT-004.md) | `FT-002-AC-001`, `FT-002-AC-007..008`, `FT-004-AC-001`; PRD AC-03/10 | planned |
 | `REQ-SRCH-002` | [EP-002](epics/EP-002.md) | [FT-004](features/FT-004.md) | `FT-004-AC-002`; PRD AC-01/03 | planned |
 | `REQ-SRCH-003` | [EP-002](epics/EP-002.md) | [FT-004](features/FT-004.md) | `FT-004-AC-001`, `FT-004-AC-006`; PRD controlled setup, AC-03/05 | planned |
 | `REQ-CAP-001` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md) | `FT-003-AC-001..003`, `FT-003-AC-007`; PRD AC-01/14/23/25 | planned |

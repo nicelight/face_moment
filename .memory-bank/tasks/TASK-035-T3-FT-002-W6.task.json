@@ -1,0 +1,98 @@
+{
+  "id": "TASK-035-T3-FT-002-W6",
+  "title": "Expose authenticated processing health",
+  "status": "planned",
+  "wave": "W6",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-ING-004",
+    "REQ-REL-002"
+  ],
+  "depends_on": [
+    "TASK-028-T2-FT-002-W5",
+    "TASK-032-T2-FT-002-W4",
+    "TASK-034-T3-FT-002-W2",
+    "TASK-005-T3-FT-001-W3"
+  ],
+  "touched_files": [
+    "src/face_moment/inventory/",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/inventory/test_processing_health_api.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Processing health API tests",
+      "command": "docker compose run --rm backend python -m pytest tests/inventory/test_processing_health_api.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md",
+    ".memory-bank/contracts/photo-processing-api.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/contracts/photo-processing-api.md#processing-health-and-slo RED: no authenticated inventory boundary assembles the exact queue, nullable controlled SLO and independent storage projection; GREEN: operator/developer cases return the exact schema across no-interval, half-open populated and empty interval inputs plus normal/low/unavailable store combinations, while photographer/auth/SPA/query/owner failures map exactly; decisive comparison: response fields/statuses reconcile to each provider, the empty interval has zero counts and null ratio/verdict, protected markers remain absent and no handler write occurs; artifact: isolated API/provider matrix and redacted marker scan."
+  ],
+  "purpose": "Assemble the exact operator/developer processing-health API from owner-backed queue, SLO and independent capacity projections.",
+  "success_outcome": "Authorized operator/developer requests receive the exact current queue, optional controlled SLO and separate PostgreSQL/MinIO results; every auth, validation, owner-read failure and redaction rule is preserved.",
+  "anti_goals": [
+    "Do not let handlers query/write processing state, calculate another SLO, expose infrastructure paths/content or add a custom error envelope.",
+    "Do not add photographer health access, WebSocket/SSE, materialized metrics, another observability store or probe history."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012",
+      "Direct transport or inventory writes to processing-owned rows",
+      "Exposure of credentials, auth state, paths, object keys, embeddings, model assets or commercial media"
+    ],
+    "stop_conditions": [
+      "Inventory cannot assemble the outcome through accepted projections and existing staff principal.",
+      "The endpoint would require broader roles, public infrastructure, another monitoring service or production data."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/photo-processing-api.md#processing-health-and-slo",
+    ".memory-bank/contracts/photo-processing-api.md#failure-and-privacy-contract",
+    ".memory-bank/contracts/boundary-map.md#independent-photo-admission",
+    ".memory-bank/contracts/boundary-map.md#processing-status-projections",
+    ".memory-bank/architecture/system-architecture.md#AD-002"
+  ],
+  "constraints": [
+    "GET /api/inventory/processing-health requires active operator/developer and exact paired interval rules.",
+    "Use disposable staff/SPA/processing/storage fixtures with known initial state, safe repeat and owner-bounded cleanup.",
+    "A single capacity-probe failure remains a successful current observation when owner state read succeeds."
+  ],
+  "invariants": [
+    "Inventory owns authorization/assembly; processing and infrastructure observations keep their own truth.",
+    "Without both interval bounds ingest_to_searchable is null; invalid/partial/equal/reversed intervals are 422.",
+    "A valid empty half-open interval returns zero counts and null success_ratio/meets_95_percent.",
+    "One store's unavailable status never replaces the other result, and no protected value leaves the application boundary."
+  ],
+  "verification_targets": [
+    ".memory-bank/contracts/photo-processing-api.md#processing-health-and-slo",
+    "Exact valid/401/403/404/422/5xx matrix covers roles, half-open/empty interval rules, queue/SLO fields and independent capacity states.",
+    "Owner-boundary and redaction tracing proves no handler business orchestration, foreign write or protected marker exposure."
+  ]
+}

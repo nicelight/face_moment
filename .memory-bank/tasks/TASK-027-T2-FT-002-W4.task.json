@@ -1,0 +1,91 @@
+{
+  "id": "TASK-027-T2-FT-002-W4",
+  "title": "Implement compatible searchable-truth projection",
+  "status": "planned",
+  "wave": "W4",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-ING-003",
+    "REQ-ING-004",
+    "REQ-SRCH-001"
+  ],
+  "depends_on": [
+    "TASK-023-T3-FT-002-W3",
+    "TASK-007-T2-FT-001-W2",
+    "TASK-008-T2-FT-001-W3"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/",
+    "tests/processing/test_searchable_projection.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Searchable projection tests",
+      "command": "docker compose run --rm backend python -m pytest tests/processing/test_searchable_projection.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/domains/photo-processing.md#compatible-searchable-truth RED: no owner projection distinguishes complete compatible searchable state from persisted ready alone; GREEN: the matrix returns true only for active current-revision ready with both derivatives and a valid face and false for every inactive, incompatible, incomplete and non-ready case; decisive comparison: exact row/projection membership matches the contract without a cosine query or foreign write; artifact: focused database projection matrix."
+  ],
+  "purpose": "Publish the processing-owned facts needed to decide whether one Photo is currently eligible for compatible exact search.",
+  "success_outcome": "Only active complete ready state for the selected serving revision projects searchable=true; every incompatible, inactive or incomplete case remains explicit and false.",
+  "anti_goals": [
+    "Do not implement cosine query execution, search ranking, result assembly or serving-setting mutation.",
+    "Do not write inventory visibility or serving-control state from processing."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012"
+    ],
+    "stop_conditions": [
+      "Truthful eligibility cannot be expressed through existing inventory and serving projections.",
+      "The result would require processing to write foreign owner state or implement FT-004 query behavior."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/photo-processing.md#compatible-searchable-truth",
+    ".memory-bank/contracts/boundary-map.md#processing-input-projections",
+    ".memory-bank/contracts/boundary-map.md#processing-status-projections"
+  ],
+  "constraints": [
+    "Read immutable Photo visibility and selected-revision projections through accepted boundaries.",
+    "Publish processing state/face facts only; inventory composes the staff-visible result.",
+    "Use deterministic rows and no realtime query execution."
+  ],
+  "invariants": [
+    "ready alone is insufficient without active Photo, both derivatives, at least one valid face and current revision.",
+    "Other revisions and pending, processing, no_faces or failed are never searchable.",
+    "Neither consumer writes another owner's state."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/photo-processing.md#compatible-searchable-truth",
+    "Matrix covers active/current complete ready plus inactive, incompatible, missing-derivative, missing-face and every non-ready state."
+  ]
+}
+

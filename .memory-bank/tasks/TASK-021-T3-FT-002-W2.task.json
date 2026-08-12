@@ -1,0 +1,90 @@
+{
+  "id": "TASK-021-T3-FT-002-W2",
+  "title": "Implement deterministic private Photo derivatives",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-ING-004",
+    "REQ-SRCH-001"
+  ],
+  "depends_on": [
+    "TASK-018-T2-FT-002-W1",
+    "TASK-011-T3-FT-001-W1"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/",
+    "src/face_moment/infrastructure/object_store.py",
+    "tests/processing/test_derivatives.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Private derivative tests",
+      "command": "docker compose run --rm backend python -m pytest tests/processing/test_derivatives.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/domains/photo-processing.md#deterministic-private-derivatives RED: processing has no owner-local deterministic preview/thumbnail boundary; GREEN: repeated creation over one synthetic Photo/revision produces exactly one bounded low-quality preview and thumbnail at stable private keys without rewriting the original; decisive comparison: artifact kinds, checksums, dimensions, repeat object count, private-boundary reads and forbidden-marker scans match while task-owned cleanup leaves zero residue; artifact: isolated derivative/object-store output and redacted marker scan."
+  ],
+  "purpose": "Provide deterministic low-quality preview and thumbnail publication for one Photo/revision without exposing private commercial media.",
+  "success_outcome": "Repeated derivative creation converges on one preview and thumbnail at deterministic private keys with configured bounds and no watermark or original rewrite.",
+  "anti_goals": [
+    "Do not publish terminal processing state, presigned/browser storage URLs, watermarks or a cross-store transaction layer.",
+    "Do not introduce image variants, an artifact registry or cleanup lifecycle beyond the two required derivatives."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012"
+    ],
+    "stop_conditions": [
+      "The derivatives cannot remain private behind the existing object-store boundary.",
+      "Correctness would require a distributed transaction, public MinIO access or another artifact lifecycle."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/photo-processing.md#deterministic-private-derivatives",
+    ".memory-bank/architecture/system-architecture.md#AD-011",
+    ".memory-bank/contracts/boundary-map.md#postgresql-and-minio-convergence",
+    ".memory-bank/contracts/boundary-map.md#authentication-and-data-specific-delivery"
+  ],
+  "constraints": [
+    "Use deterministic keys derived only from photo_id, pipeline_revision_id and artifact_kind.",
+    "Use task-owned synthetic commercial-photo bytes, object prefix, known initial state, safe repeat and owner-bounded cleanup.",
+    "MinIO and its keys stay private; logs and artifacts contain no credentials or commercial media."
+  ],
+  "invariants": [
+    "Exactly one preview and one thumbnail kind exist per Photo/revision after repeat.",
+    "Originals are never rewritten and derivatives have no watermark.",
+    "No browser-facing path, response or log discloses object keys or credentials."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/photo-processing.md#deterministic-private-derivatives",
+    "Isolated MinIO proof compares repeat checksums/keys, encoding bounds, privacy markers and zero task-owned residue."
+  ]
+}

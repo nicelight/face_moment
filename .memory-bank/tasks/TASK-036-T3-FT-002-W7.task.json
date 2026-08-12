@@ -1,0 +1,97 @@
+{
+  "id": "TASK-036-T3-FT-002-W7",
+  "title": "Implement processing-health staff UI and UAT",
+  "status": "planned",
+  "wave": "W7",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-ING-004",
+    "REQ-REL-002",
+    "REQ-SEC-001"
+  ],
+  "depends_on": [
+    "TASK-029-T2-FT-002-W6",
+    "TASK-035-T3-FT-002-W6"
+  ],
+  "touched_files": [
+    "src/face_moment/inventory/",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/inventory/test_processing_health_ui.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Processing health UI tests",
+      "command": "docker compose run --rm backend python -m pytest tests/inventory/test_processing_health_ui.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md",
+    ".memory-bank/contracts/photo-processing-api.md",
+    ".memory-bank/testing/index.md"
+  ],
+  "evidence_required": [
+    "FT-002-AC-006 RED: no authorized staff page exposes truthful processing/recovery and separate primary-store capacity; GREEN: Playwright CLI operator/developer flows render current queue/failure/recovery plus independent normal/low/unavailable PostgreSQL and MinIO states, preserve the empty SLO interval as no numeric ratio/verdict, refresh after five seconds, deny photographer access and reveal no protected markers; decisive comparison: rendered values match API/provider state and credential/auth/path/key/embedding/model/media scans remain empty across DOM, URL, trace and logs; artifact: Playwright CLI transcript, screenshots/trace, redacted topology/log scan and disposable cleanup record."
+  ],
+  "purpose": "Complete the authorized operational health outcome through the existing plain staff web surface and real-browser proof.",
+  "success_outcome": "An operator/developer can see truthful processing failures/recovery and distinct current PostgreSQL/MinIO capacity, including low/unavailable states, while protected infrastructure/media details remain absent.",
+  "anti_goals": [
+    "Do not add a frontend framework, dashboard platform, metrics history, alerts, WebSocket/SSE, photographer access or diagnostics detail.",
+    "Do not expose paths, keys, credentials, authentication state, embeddings, model assets or commercial media."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012",
+      "Production credentials, data, mounted volume contents or browser access to private services",
+      "UI-owned lifecycle, SLO or capacity calculations"
+    ],
+    "stop_conditions": [
+      "The existing same-origin staff page cannot render the exact API without a new UI/runtime framework.",
+      "Real-browser proof cannot use isolated disposable state or would require exposing protected production infrastructure."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-006",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-006",
+    ".memory-bank/contracts/photo-processing-api.md#processing-health-and-slo",
+    ".memory-bank/contracts/photo-processing-api.md#failure-and-privacy-contract",
+    ".memory-bank/testing/index.md#ui-verification",
+    ".memory-bank/testing/photo-processing.md#processing-and-storage-health-matrix"
+  ],
+  "constraints": [
+    "Extend the existing plain staff surface and poll the exact API every five seconds.",
+    "Use the installed Playwright CLI through `playwright cli`; browser-free HTTP/DOM probes are not substitutes for UAT.",
+    "Use disposable operator/developer/photographer and normal/low/unavailable/recovery fixtures with safe rerun and complete cleanup."
+  ],
+  "invariants": [
+    "Photographers cannot open the health view; operator/developer see only bounded operational facts.",
+    "PostgreSQL and MinIO remain separate even when one is unavailable.",
+    "No protected marker appears in rendered text, DOM attributes, URLs, screenshots, trace or application logs."
+  ],
+  "verification_targets": [
+    "FT-002-AC-006 via .memory-bank/features/FT-002.md#FT-002-AC-006",
+    "Playwright CLI UAT covers operator/developer success, photographer denial, processing failure/recovery, the empty SLO interval without a numeric ratio/verdict, each store normal/low/unavailable independently and five-second refresh; store transcript, screenshots and trace under the task artifact directory.",
+    "Redaction/private-topology scan covers rendered DOM, URLs, browser trace, responses and application logs with task-owned synthetic markers."
+  ]
+}

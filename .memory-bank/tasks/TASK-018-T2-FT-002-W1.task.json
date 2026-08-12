@@ -1,0 +1,102 @@
+{
+  "id": "TASK-018-T2-FT-002-W1",
+  "title": "Extend processing compatibility persistence",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-ING-003",
+    "REQ-ING-004",
+    "REQ-SRCH-001",
+    "REQ-REL-002",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-009-T2-FT-001-W4"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/",
+    "migrations/versions/",
+    "tests/processing/test_processing_persistence.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Processing persistence tests",
+      "command": "docker compose run --rm backend python -m pytest tests/processing/test_processing_persistence.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/domains/photo-processing.md#compatibility-identity plus #face_momentphoto_pipeline_states, #face_momentphoto_faces and #face_momentprocessing_runtime_status RED: the current 0007 head lacks the required compatibility fields, terminal/publication columns, face rows and runtime singleton; GREEN: one direct linear revision aborts unchanged for any legacy revision row and, from an empty revision table, adds the exact constraints through upgrade/downgrade/re-upgrade while preserving unrelated prerequisite rows; decisive comparison: precondition failure leaves schema/data unchanged and empty-path introspection, ancestry and retained-row assertions match all four locators; artifact: isolated migration transcript and database projections."
+  ],
+  "purpose": "Provide the complete processing-owned relational shape required by later FT-002 behavior through one compatible linear migration.",
+  "success_outcome": "The migration fails unchanged when a legacy revision exists and otherwise exposes immutable compatibility metadata, complete processing state, Photo faces and the narrow runtime-status singleton through the linear schema stream.",
+  "anti_goals": [
+    "Do not implement claiming, inference, derivatives, API behavior or another migration stream.",
+    "Do not fabricate legacy compatibility metadata, delete/repoint references, or add jobs, history, leases, per-slice schemas or cross-owner delete cascades."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012"
+    ],
+    "stop_conditions": [
+      "The required shape cannot be added through one direct linear revision without changing the accepted database topology.",
+      "Any foreign-owner cascade or mutable compatibility identity would be required.",
+      "A non-empty legacy revision table must be migrated rather than reset; stop instead of inventing backfill values or mutating its references."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/photo-processing.md#compatibility-identity",
+    ".memory-bank/domains/photo-processing.md#face_momentphoto_pipeline_states",
+    ".memory-bank/domains/photo-processing.md#face_momentphoto_faces",
+    ".memory-bank/domains/photo-processing.md#face_momentprocessing_runtime_status",
+    ".memory-bank/architecture/system-architecture.md#AD-010",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract"
+  ],
+  "constraints": [
+    "Extend the linear Alembic head current at execution; do not assert a mutable future exact head.",
+    "Keep every processing model under the processing owner and the shared Base/MetaData.",
+    "Use one migration for the accepted compatibility/state/face/runtime persistence shape.",
+    "Before its first schema mutation, assert pipeline_revisions is empty and abort unchanged when any row exists."
+  ],
+  "invariants": [
+    "Pipeline compatibility identity is immutable once referenced.",
+    "No legacy compatibility value is synthesized and no revision reference is deleted or repointed.",
+    "Photo faces are revision-specific and embedding dimension matches the revision.",
+    "Database cascades never cross ownership boundaries."
+  ],
+  "verification_targets": [
+    "A non-empty legacy revision fixture, including a referenced row, aborts before mutation with identical schema and data.",
+    "An empty-revision upgrade/downgrade/re-upgrade preserves unrelated prerequisite rows while adding every exact constraint and index.",
+    "Direct down_revision, upgrade, downgrade and re-upgrade remain linear and leave one Alembic head.",
+    ".memory-bank/domains/photo-processing.md#compatibility-identity",
+    ".memory-bank/domains/photo-processing.md#face_momentphoto_pipeline_states",
+    ".memory-bank/domains/photo-processing.md#face_momentphoto_faces",
+    ".memory-bank/domains/photo-processing.md#face_momentprocessing_runtime_status"
+  ]
+}

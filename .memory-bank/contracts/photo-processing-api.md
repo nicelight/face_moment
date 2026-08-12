@@ -1,7 +1,7 @@
 ---
 description: Exact authenticated staff API and UI contract for Photo processing status, SLO and primary-storage health.
 status: active
-last_updated: 2026-08-06
+last_updated: 2026-08-12
 source_of_truth:
   - .memory-bank/contracts/photo-processing-api.md
 ---
@@ -67,8 +67,9 @@ or traceback is returned.
 - Page: `GET /staff/processing-health`.
 - API: `GET /api/inventory/processing-health` with required UUID `spa_id` and
   optional paired ISO timestamps `accepted_from` and `accepted_before` for a
-  controlled SLO interval. Supplying only one bound or an invalid/reversed
-  interval returns `422`.
+  half-open controlled SLO interval `[accepted_from, accepted_before)`.
+  Supplying only one bound, equal bounds or another invalid/reversed interval
+  returns `422`.
 - Authentication/authorization: active `operator` or `developer`; a
   photographer receives `403`.
 - The page polls every five seconds. WebSocket, SSE, materialized metrics and a
@@ -97,8 +98,10 @@ used to hide processing failures from this operational view.
 
 When both interval bounds are present, `ingest_to_searchable` contains exactly
 `accepted_from`, `accepted_before`, `population`, `success_under_15_minutes`,
-`breach`, `open`, `success_ratio` and nullable `meets_95_percent`. The
-classification and nullable verdict follow
+`breach`, `open`, nullable `success_ratio` and nullable `meets_95_percent`. The
+lower bound is inclusive and the upper bound is exclusive. When no Photo is in
+that interval, all four counts are zero and both nullable values are `null`.
+The classification and nullable verdict otherwise follow
 [Photo Processing](../domains/photo-processing.md#searchable-truth-and-slo-projection).
 Without the interval, this field is `null` rather than an implicit or misleading
 population.
@@ -133,7 +136,8 @@ No custom project-wide error envelope is introduced.
   observes persisted `pending -> processing -> ready|no_faces|failed` plus the
   truthful derived searchable label without changing another upload row.
 - An operator/developer controlled-interval flow reconciles every SLO count and
-  the nullable 95% verdict to persisted Photo/state timestamps.
+  the nullable ratio/95% verdict to persisted Photo/state timestamps, including
+  both half-open boundaries and the exact empty-population result.
 - Normal, configured-low and unavailable probes produce distinct current
   PostgreSQL and MinIO results while the other store remains truthful.
 - Static/integration tracing locates outcome assembly and authorization in

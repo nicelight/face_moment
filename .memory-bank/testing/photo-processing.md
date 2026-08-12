@@ -1,7 +1,7 @@
 ---
 description: Reproducible verification contract for FT-002 processing, recovery, SLO and storage-health behavior.
 status: active
-last_updated: 2026-08-06
+last_updated: 2026-08-12
 source_of_truth:
   - .memory-bank/testing/photo-processing.md
 ---
@@ -11,7 +11,7 @@ source_of_truth:
 
 This specification defines deterministic proof for `REQ-ING-003..004`,
 `REQ-SRCH-001`, `REQ-REL-002`, `REQ-SEC-001`, `REQ-ARCH-001` and
-`FT-002-AC-001..006`. Product outcomes remain owned by the
+`FT-002-AC-001..008`. Product outcomes remain owned by the
 [PRD](../prd.md) and [FT-002](../features/FT-002.md); the persisted/worker rules
 come from [Photo Processing](../domains/photo-processing.md), and the staff
 surface comes from the [Photo Processing API](../contracts/photo-processing-api.md).
@@ -24,6 +24,13 @@ engine implementations preserve their separate native paths and revision
 checks.
 
 ## Terminal And Compatibility Matrix
+
+Migration proof uses two isolated starting states. With an empty
+`pipeline_revisions` table, upgrade/downgrade/re-upgrade adds the exact FT-002
+shape while preserving unrelated prerequisite rows. With any legacy revision
+row, including a referenced fixture, upgrade fails before the first schema or
+data mutation. The proof confirms that no compatibility value is synthesized
+and no reference is deleted or repointed.
 
 Start with independently admitted Photos whose serving `pending` row and
 pipeline revision are fixed. Drive:
@@ -70,6 +77,8 @@ whole fixture is safe and cleans only its own rows/objects.
 Use one controlled accepted interval and at least these independently admitted
 Photos:
 
+- one Photo exactly at inclusive `accepted_from` and one exactly at exclusive
+  `accepted_before`;
 - compatible searchable before 15 minutes;
 - compatible ready exactly at or after 15 minutes;
 - `no_faces`, `failed`, `pending` and `processing` at age at least 15 minutes;
@@ -83,6 +92,11 @@ population and exclusion reason, all three counts, ratio and the rule that
 `meets_95_percent` is null until `open=0`. A completed population passes only
 when `success / population >= 0.95`; no-face, failure and late unfinished work
 remain breaches.
+
+Repeat with a valid half-open interval containing no Photos. Assert
+`population=success_under_15_minutes=breach=open=0` and
+`success_ratio=meets_95_percent=null`; the API and UI MUST NOT present that
+result as zero percent or as a pass/fail verdict.
 
 Repeat the calculation while a controlled Calibration operation occupies the
 shared worker. New accepted Photos remain visible as ordinary pending/open or
@@ -115,9 +129,11 @@ read-only and PostgreSQL, MinIO and internal service ports remain private.
 | `FT-002-AC-001` | Terminal/compatibility matrix plus exact staff-visible state proves only complete current-revision `ready` is searchable. |
 | `FT-002-AC-002` | Repeat and post-derivative interruption converge on one derivative/face set and terminal state. |
 | `FT-002-AC-003` | Worker restart preserves pending/processing population, resets unfinished work and reaches idempotent terminals. |
-| `FT-002-AC-004` | Controlled full-population matrix reconciles successes, breaches, opens and explicit exclusions to the 95%/15-minute rule. |
+| `FT-002-AC-004` | Controlled half-open full-population matrix reconciles successes, breaches, opens and explicit exclusions to the 95%/15-minute rule and proves the all-zero/null empty result. |
 | `FT-002-AC-005` | Calibration-held singleton worker leaves backlog/SLO effect visible, then ordinary processing resumes without scheduler expansion. |
 | `FT-002-AC-006` | Authenticated health matrix exposes failures/recovery plus independent normal/low/unavailable PostgreSQL and MinIO capacity, while `REQ-SEC-001` private-topology and redaction proof remains satisfied. |
+| `FT-002-AC-007` | The configured SFace adapter records the YuNet plus `alignCrop`/SFace path, revision/dimension match and rejection of Buffalo-derived or mismatched input. |
+| `FT-002-AC-008` | The configured Buffalo M adapter records the SCRFD/native alignment/`normed_embedding` path, revision/dimension match and rejection of SFace-derived or mismatched input. |
 
 Project-native build/typecheck/tests and tier-routed verification remain owned
 by the [testing index](index.md). This subject specification adds no lifecycle,

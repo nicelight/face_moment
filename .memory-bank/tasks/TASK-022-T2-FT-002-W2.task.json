@@ -1,0 +1,90 @@
+{
+  "id": "TASK-022-T2-FT-002-W2",
+  "title": "Implement atomic worker claim and bounded failure",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-ING-004",
+    "REQ-REL-002",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-018-T2-FT-002-W1"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/",
+    "tests/processing/test_worker_claims.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Worker claim tests",
+      "command": "docker compose run --rm backend python -m pytest tests/processing/test_worker_claims.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/domains/photo-processing.md#atomic-claim-and-bounded-failure RED: no processing-owned claim/failure boundary can atomically advance the durable queue; GREEN: controlled rows prove oldest eligible claim, exact attempt increments, two safe pending returns, terminal failed on claim three and current-operation cleanup with no lease/jobs machinery; decisive comparison: state, count, timestamps, bounded error and runtime singleton match after every transaction; artifact: isolated database transition timeline."
+  ],
+  "purpose": "Provide the complete owner-valid claim/requeue/exhaustion state machine for the one sequential Photo worker.",
+  "success_outcome": "The oldest eligible pending row claims atomically, increments once, and every failure either safely requeues or reaches failed on claim three while clearing current operation.",
+  "anti_goals": [
+    "Do not implement inference, derivatives, terminal ready/no_faces publication, leases, fencing, SKIP LOCKED or another queue.",
+    "Do not add priority, preemption, claim tokens, job history or worker coordination."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012"
+    ],
+    "stop_conditions": [
+      "A claim cannot close through its bounded outcome without an extra queue or coordination mechanism.",
+      "More than one configured worker or overlapping claims become required."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/photo-processing.md#atomic-claim-and-bounded-failure",
+    ".memory-bank/architecture/system-architecture.md#AD-004",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/states/lifecycle-map.md#photo-pipeline-state"
+  ],
+  "constraints": [
+    "Use one atomic PostgreSQL claim and one configured worker.",
+    "Bound safe last_error; never persist traceback, credential, model path or object key.",
+    "Tests use task-unique rows, controlled timestamps, safe rerun and owner-bounded cleanup."
+  ],
+  "invariants": [
+    "Only pending claims to processing and attempt_count increments exactly once per claim.",
+    "Failures one and two return to pending; failure three is terminal failed.",
+    "Every outcome clears the narrow current operation without adding operation history."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/photo-processing.md#atomic-claim-and-bounded-failure",
+    "Controlled transaction proof covers oldest eligible claim, competing ineligible rows, two requeues, third failure, safe error text and repeated fixture cleanup."
+  ]
+}
+

@@ -1,0 +1,87 @@
+{
+  "id": "TASK-032-T2-FT-002-W4",
+  "title": "Publish queue and recovery health",
+  "status": "planned",
+  "wave": "W4",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-ING-004",
+    "REQ-REL-002"
+  ],
+  "depends_on": [
+    "TASK-025-T2-FT-002-W3"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/",
+    "tests/processing/test_processing_health_projection.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Processing health projection tests",
+      "command": "docker compose run --rm backend python -m pytest tests/processing/test_processing_health_projection.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/domains/photo-processing.md#queue-and-recovery-health-projection RED: no owner projection exposes exact current queue and recovery facts; GREEN: a controlled mixed-state population returns exact pending/processing/ready/no_faces/failed counts, oldest pending acceptance time, current operation/start and worker/recovery values without history or writes; decisive comparison: direct row reconciliation matches every field and repeated reads are stable; artifact: isolated query projection and cleanup output."
+  ],
+  "purpose": "Publish the processing-owned direct queue, current-operation and recovery projection used by inventory health views.",
+  "success_outcome": "For one SPA/serving revision the projection returns exact state counts, oldest pending time and current worker/recovery facts from persisted state without a second metrics model.",
+  "anti_goals": [
+    "Do not implement HTTP/UI, SLO classification, capacity observation, materialized counters, history or another monitoring store.",
+    "Do not hide processing failures based on inventory visibility."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012"
+    ],
+    "stop_conditions": [
+      "The required current projection cannot be derived directly from owned persisted state.",
+      "Truthful health would require history, materialization or another observability service."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/photo-processing.md#queue-and-recovery-health-projection",
+    ".memory-bank/contracts/boundary-map.md#processing-status-projections"
+  ],
+  "constraints": [
+    "Use direct PostgreSQL reads for one SPA and selected serving revision.",
+    "Use task-unique rows, controlled timestamps, safe rerun and owner-bounded cleanup.",
+    "Expose only bounded safe failure/current-operation values."
+  ],
+  "invariants": [
+    "All five state counts are current processing truth.",
+    "oldest_pending_accepted_at derives from owner-supplied admission facts and is nullable.",
+    "The projection does not write state or create history/materialized counters."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/photo-processing.md#queue-and-recovery-health-projection",
+    "Controlled mixed-state/recovery fixture reconciles counts, oldest pending, operation/start and worker/recovery singleton values exactly."
+  ]
+}
+

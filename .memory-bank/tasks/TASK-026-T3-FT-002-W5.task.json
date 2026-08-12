@@ -1,0 +1,92 @@
+{
+  "id": "TASK-026-T3-FT-002-W5",
+  "title": "Run the sequential BackgroundPhotoWorker",
+  "status": "planned",
+  "wave": "W5",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-ING-004",
+    "REQ-REL-002",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-024-T2-FT-002-W4",
+    "TASK-025-T2-FT-002-W3"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/",
+    "src/face_moment/entrypoints/background_worker.py",
+    "tests/processing/test_background_worker_runtime.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Background worker runtime tests",
+      "command": "docker compose run --rm backend python -m pytest tests/processing/test_background_worker_runtime.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    "FT-002-AC-003 RED: the current BackgroundPhotoWorker entrypoint does not recover or execute the durable Photo population; GREEN: a real task-owned worker process restart during active plus queued work preserves every Photo, resets unfinished work, restarts from the original and reaches one idempotent terminal result per row; decisive comparison: pre/post population IDs, recovery facts, attempt counts, face/derivative cardinality and terminal states all match; artifact: redacted worker-process transcript and disposable PostgreSQL/MinIO projection."
+  ],
+  "purpose": "Connect startup recovery and one-at-a-time Photo orchestration to the real BackgroundPhotoWorker process without introducing scheduler infrastructure.",
+  "success_outcome": "Queued and active Photo work survives worker process restart, unfinished work restarts from the original and the full population reaches idempotent terminal outcomes.",
+  "anti_goals": [
+    "Do not add multiple workers, a broker, jobs table, leases, fencing, priority/preemption, watchdog or durable replay beyond Photo state.",
+    "Do not move worker business logic into the entrypoint or backend process."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012"
+    ],
+    "stop_conditions": [
+      "The configured process cannot run one sequential loop through the processing application boundary.",
+      "Restart correctness requires another durable queue, coordination service or production-state probe."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-003",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-003",
+    ".memory-bank/domains/photo-processing.md#sequential-worker-runtime",
+    ".memory-bank/domains/photo-processing.md#startup-recovery",
+    ".memory-bank/architecture/system-architecture.md#AD-004"
+  ],
+  "constraints": [
+    "The entrypoint owns only lifecycle and calls the processing-owned worker boundary.",
+    "Runtime proof uses unique disposable PostgreSQL rows and MinIO prefix, known initial state, safe rerun and confirmed cleanup.",
+    "Restart the task-owned worker process only; do not access production deployment or data."
+  ],
+  "invariants": [
+    "Exactly one configured worker operation runs at a time.",
+    "Unfinished processing returns to pending and begins again from the immutable original.",
+    "Realtime work, Calibration computation and hard purge are not implemented or replayed here."
+  ],
+  "verification_targets": [
+    "FT-002-AC-003 via .memory-bank/features/FT-002.md#FT-002-AC-003",
+    "Real process restart with active plus queued disposable work records population identity, recovery projection, eventual terminals, one face set and zero task-owned residue."
+  ]
+}
+

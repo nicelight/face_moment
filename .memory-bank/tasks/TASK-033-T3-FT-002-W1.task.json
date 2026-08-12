@@ -1,0 +1,89 @@
+{
+  "id": "TASK-033-T3-FT-002-W1",
+  "title": "Observe PostgreSQL primary-volume capacity",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-REL-002"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0"
+  ],
+  "touched_files": [
+    "src/face_moment/infrastructure/",
+    "src/face_moment/infrastructure/settings.py",
+    "compose.yaml",
+    "tests/infrastructure/test_postgresql_capacity.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "PostgreSQL capacity tests",
+      "command": "docker compose run --rm backend python -m pytest tests/infrastructure/test_postgresql_capacity.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/domains/photo-processing.md#postgresql-capacity-observation RED: no configured backend observation can report PostgreSQL primary-volume capacity independently; GREEN: disposable normal, low-threshold and unavailable fixtures return the exact status/bytes/threshold/time/error projection through one private read-only view; decisive comparison: each injected condition maps independently, the mount rejects writes, forbidden path/data/credential markers remain absent and cleanup removes task resources; artifact: redacted capacity, topology and marker-scan output."
+  ],
+  "purpose": "Provide one configured read-only PostgreSQL primary-volume capacity observation without exposing storage contents or adding monitoring infrastructure.",
+  "success_outcome": "The backend can observe PostgreSQL capacity as ok, low or unavailable with current bytes/threshold/time while the volume and internal service stay private and read-only.",
+  "anti_goals": [
+    "Do not expose a filesystem path, data file, credential, database port, Docker socket or monitoring endpoint.",
+    "Do not add a metrics agent/store, history, alerting, product capacity target or write access to the PostgreSQL volume."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012"
+    ],
+    "stop_conditions": [
+      "The primary volume cannot be observed through one configured read-only view in the accepted Compose topology.",
+      "Proof would require production mounts/data, Docker API access or a monitoring service."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/photo-processing.md#postgresql-capacity-observation",
+    ".memory-bank/architecture/system-architecture.md#AD-011",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries",
+    ".memory-bank/contracts/photo-processing-api.md#failure-and-privacy-contract"
+  ],
+  "constraints": [
+    "Use one configured read-only filesystem view and a statvfs-equivalent observation.",
+    "Use disposable Compose resources and synthetic path markers; do not inspect or record data-file content.",
+    "Normal, configured-low and unavailable fixtures are safely rerunnable and clean only task-owned resources."
+  ],
+  "invariants": [
+    "PostgreSQL remains private and the backend capacity view is read-only.",
+    "The result contains only status, nullable bytes, positive threshold, observed_at and bounded error.",
+    "No path, credential or mounted data content enters output or logs."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/photo-processing.md#postgresql-capacity-observation",
+    "Disposable Compose proof covers normal, configured-low and unavailable observations, effective read-only mount, private ports, marker redaction and cleanup."
+  ]
+}

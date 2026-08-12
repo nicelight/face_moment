@@ -1,0 +1,90 @@
+{
+  "id": "TASK-023-T3-FT-002-W3",
+  "title": "Implement idempotent terminal processing publication",
+  "status": "planned",
+  "wave": "W3",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-SRCH-001",
+    "REQ-REL-002"
+  ],
+  "depends_on": [
+    "TASK-021-T3-FT-002-W2",
+    "TASK-022-T2-FT-002-W2"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/",
+    "src/face_moment/infrastructure/object_store.py",
+    "tests/processing/test_terminal_publication.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Terminal publication tests",
+      "command": "docker compose run --rm backend python -m pytest tests/processing/test_terminal_publication.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    "FT-002-AC-002 RED: repeating or interrupting terminal delivery cannot yet converge on one final face/derivative set; GREEN: normal, repeat and post-derivative/pre-commit interruption all end with one terminal state, one stable face_index set and one deterministic preview/thumbnail pair; decisive comparison: rows, keys/checksums, timestamps and terminal no-op match the single-run baseline while dependency-owned private storage remains unexposed; artifact: fault timeline plus isolated PostgreSQL/MinIO projection."
+  ],
+  "purpose": "Publish one complete terminal face/derivative result idempotently across the accepted private object and processing-owned database boundaries.",
+  "success_outcome": "Normal, repeated and post-derivative/pre-commit interrupted delivery converge on one terminal state, one complete face set and one deterministic derivative pair.",
+  "anti_goals": [
+    "Do not run an engine, claim work, add distributed transactions, partial ready state or another retry lifecycle.",
+    "Do not expose derivative keys/media or overwrite a terminal result with a later delivery."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012"
+    ],
+    "stop_conditions": [
+      "Convergence would require a cross-store transaction emulator, object-version lifecycle or concurrent-worker fencing.",
+      "A complete face set and terminal state cannot publish within one owner transaction."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-002",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-002",
+    ".memory-bank/domains/photo-processing.md#idempotent-terminal-publication",
+    ".memory-bank/architecture/system-architecture.md#AD-011",
+    ".memory-bank/contracts/boundary-map.md#postgresql-and-minio-convergence"
+  ],
+  "constraints": [
+    "Use deterministic task-owned derivatives from TASK-021 and claimed rows from TASK-022.",
+    "Fault injection occurs after derivative publication and before terminal database commit in isolated disposable state.",
+    "Repeat and cleanup are safe and touch only the task-owned rows/object prefix."
+  ],
+  "invariants": [
+    "ready publishes only with both derivatives and at least one complete dimension-valid face set.",
+    "no_faces publishes with neither faces nor derivative keys.",
+    "Terminal repeat is a no-op and never duplicates face_index rows."
+  ],
+  "verification_targets": [
+    "FT-002-AC-002 via .memory-bank/features/FT-002.md#FT-002-AC-002",
+    "Normal, repeat and injected post-derivative/pre-commit interruption compare database rows, object checksums and cleanup in disposable PostgreSQL/MinIO state."
+  ]
+}
