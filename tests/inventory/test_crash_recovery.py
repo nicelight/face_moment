@@ -18,6 +18,7 @@ from face_moment.inventory.validation import CapturedAtSource, ValidatedJpegCand
 from face_moment.processing import PipelineCode, PipelineRevisionRepository
 from face_moment.processing.initial_pending import PhotoPipelineState
 from face_moment.serving_control import IngestTarget, IngestTargetRepository
+from tests.pipeline_compatibility import PIPELINE_COMPATIBILITY
 
 
 class _InjectedPreCommitCrash(AtomicPhotoAdmission):
@@ -29,6 +30,7 @@ def _target(session: Session, marker: str) -> IngestTarget:
     revision = PipelineRevisionRepository(session).publish_eligible(
         pipeline_code=PipelineCode.OPENCV_SFACE,
         validated_at=datetime(2026, 8, 11, 20, 0, tzinfo=timezone.utc),
+        **PIPELINE_COMPATIBILITY,
     )
     return IngestTargetRepository(session).configure_spa(
         name=f"task014-spa-{marker}",

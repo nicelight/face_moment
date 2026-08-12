@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from face_moment.infrastructure.database import APP_SCHEMA
 from face_moment.infrastructure.settings import Settings
+from tests.pipeline_compatibility import PIPELINE_COMPATIBILITY
 
 
 def _migration_round_trip(engine: object) -> None:
@@ -108,6 +109,7 @@ def test_inventory_exposes_only_photo_identity_persistence() -> None:
             pipeline_revision = PipelineRevisionRepository(session).publish_eligible(
                 pipeline_code=PipelineCode.OPENCV_SFACE,
                 validated_at=datetime(2026, 8, 11, 9, 0, tzinfo=timezone.utc),
+                **PIPELINE_COMPATIBILITY,
             )
             pipeline_revision_id = pipeline_revision.id
             ingest_target = IngestTargetRepository(session).configure_spa(

@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Protocol
 
+import numpy as np
+from numpy.typing import NDArray
+
 
 class FaceEngine(Protocol):
     @property
@@ -10,6 +13,9 @@ class FaceEngine(Protocol):
 
     def warmup(self) -> None:
         """Prepare the engine before readiness may be reported."""
+
+    def process_photo(self, photo: NDArray[np.uint8]) -> tuple[object, ...]:
+        """Process one decoded Photo into this engine's native face results."""
 
 
 class FakeFaceEngine:
@@ -25,3 +31,5 @@ class FakeFaceEngine:
     def warmup(self) -> None:
         self._ready = True
 
+    def process_photo(self, photo: NDArray[np.uint8]) -> tuple[object, ...]:
+        raise RuntimeError("FakeFaceEngine cannot process a Photo")

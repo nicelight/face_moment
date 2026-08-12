@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from face_moment.infrastructure.database import APP_SCHEMA
 from face_moment.infrastructure.settings import Settings
+from tests.pipeline_compatibility import PIPELINE_COMPATIBILITY
 
 
 def _migration_round_trip(engine: object) -> None:
@@ -56,6 +57,7 @@ def test_processing_publishes_only_immutable_eligible_revisions() -> None:
                 revision = repository.publish_eligible(
                     pipeline_code=pipeline_code,
                     validated_at=validated_at,
+                    **PIPELINE_COMPATIBILITY,
                 )
                 eligible_ids.append(revision.id)
                 assert revision.pipeline_code is pipeline_code
@@ -73,6 +75,7 @@ def test_processing_publishes_only_immutable_eligible_revisions() -> None:
                 repository.publish_eligible(
                     pipeline_code=cast(PipelineCode, "unsupported"),
                     validated_at=validated_at,
+                    **PIPELINE_COMPATIBILITY,
                 )
 
         with engine.begin() as connection:
@@ -80,11 +83,18 @@ def test_processing_publishes_only_immutable_eligible_revisions() -> None:
                 text(
                     """
                     INSERT INTO face_moment.pipeline_revisions
-                        (id, pipeline_code, validated_at)
-                    VALUES (:id, 'opencv_sface', NULL)
+                        (id, pipeline_code, validated_at, detector_id,
+                         detector_version, recognizer_id, recognizer_version,
+                         weights_sha256, preprocessing_version, alignment_version,
+                         normalization_version, embedding_dimension)
+                    VALUES (:id, 'opencv_sface', NULL, 'test-detector',
+                            'test-detector-v1', 'test-recognizer',
+                            'test-recognizer-v1', :weights_sha256,
+                            'test-preprocessing-v1', 'test-alignment-v1',
+                            'test-normalization-v1', 128)
                     """
                 ),
-                {"id": ineligible_id},
+                {"id": ineligible_id, "weights_sha256": "0" * 64},
             )
 
         with Session(engine) as session:

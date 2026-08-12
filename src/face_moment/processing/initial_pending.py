@@ -46,6 +46,12 @@ class PhotoPipelineState(Base):
     status_changed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+    searchable_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_error: Mapped[str | None] = mapped_column(String(length=512), nullable=True)
+    preview_object_key: Mapped[str | None] = mapped_column(String, nullable=True)
+    thumbnail_object_key: Mapped[str | None] = mapped_column(String, nullable=True)
 
 
 class InitialPendingRepository:

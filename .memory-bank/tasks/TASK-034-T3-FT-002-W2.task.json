@@ -1,7 +1,7 @@
 {
   "id": "TASK-034-T3-FT-002-W2",
   "title": "Observe MinIO primary-volume capacity",
-  "status": "planned",
+  "status": "ready",
   "wave": "W2",
   "feature": "FT-002",
   "reqs": [

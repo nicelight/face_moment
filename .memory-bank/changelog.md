@@ -4,6 +4,21 @@ status: active
 ---
 # Changelog
 
+## [2026-08-12] Wave W1 — reconciled processing persistence and PostgreSQL capacity closures
+- Reconciled the scheduler-owned `done` closure for
+  `TASK-018-T2-FT-002-W1` with its fresh independent T2 `PASS` evidence for
+  the compatible processing-persistence migration: unchanged refusal for a
+  legacy revision and the empty direct linear persistence shape.
+- Reconciled the scheduler-owned `done` closure for
+  `TASK-033-T3-FT-002-W1` with its fresh functional `PASS` and required
+  `semantic-pass` evidence for private read-only PostgreSQL capacity
+  observation, bounded redaction and disposable-proof cleanup. The canonical
+  Photo Processing specification records the accepted adapter and
+  backend-only Compose view.
+- Kept `FT-002`, its RTM rows and `EP-001` `planned`: indexed FT-002 W2–W7
+  obligations remain. No promotion, dependency, product/design/spec, or
+  lifecycle decision was made by this reconciliation.
+
 ## [2026-08-12] Wave W8 — verified independent photo admission
 - Reconciled the scheduler-owned `done` closure for
   `TASK-017-T2-FT-001-W8` with its packaged/browser `PASS` evidence for the

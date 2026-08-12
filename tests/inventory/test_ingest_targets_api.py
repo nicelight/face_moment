@@ -23,6 +23,7 @@ from face_moment.platform.auth.principals import StaffRole, provision_staff_user
 from face_moment.processing import PipelineCode, PipelineRevisionRepository
 from face_moment.processing.revisions import PipelineRevision
 from face_moment.serving_control import IngestTargetRepository
+from tests.pipeline_compatibility import PIPELINE_COMPATIBILITY
 from face_moment.serving_control.ingest_target import Spa
 
 
@@ -51,13 +52,14 @@ def disposable_ingest_target_state(
 
     try:
         alembic_config = Config("alembic.ini")
-        alembic_command.upgrade(alembic_config, "0005_serving_ingest_targets")
+        alembic_command.upgrade(alembic_config, "head")
         with Session(engine) as database_session:
             eligible_revision = PipelineRevisionRepository(
                 database_session
             ).publish_eligible(
                 pipeline_code=PipelineCode.OPENCV_SFACE,
                 validated_at=_utc_now(),
+                **PIPELINE_COMPATIBILITY,
             )
             target_record = IngestTargetRepository(database_session).configure_spa(
                 name=f"task015-eligible-{marker}",
@@ -83,6 +85,7 @@ def disposable_ingest_target_state(
             ineligible_revision = PipelineRevision(
                 pipeline_code=PipelineCode.OPENCV_SFACE,
                 validated_at=None,
+                **PIPELINE_COMPATIBILITY,
             )
             database_session.add(ineligible_revision)
             database_session.flush()

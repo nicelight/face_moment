@@ -72,12 +72,20 @@ The `opencv_sface` implementation MUST use YuNet detection followed by
 alignment and embedding dimension remain native to this implementation and
 MUST NOT consume a Buffalo M result.
 
+The direct processing-owned implementation is
+`src/face_moment/processing/sface_adapter.py`; it is exposed through the
+existing `FaceEngine` seam without a shared adapter registry or result format.
+
 ### InsightFace Buffalo M Photo adapter
 
 The `insightface_buffalo_m` implementation MUST use its configured SCRFD,
 landmarks, native alignment and Buffalo M `normed_embedding` path. Its bbox,
 landmarks, crop, alignment and embedding dimension remain native to this
 implementation and MUST NOT consume an OpenCV SFace result.
+
+The direct processing-owned implementation is
+`src/face_moment/processing/buffalo_adapter.py`; it is exposed through the
+existing `FaceEngine` seam without a shared adapter registry or result format.
 
 ### Model-asset admission
 
@@ -264,7 +272,9 @@ The PostgreSQL primary-volume probe independently reports `ok`, `low` or
 `unavailable`, nullable non-negative available bytes, its configured positive
 low threshold and observation time. The simplest deployment mechanism is one
 configured read-only filesystem view and a `statvfs`-equivalent read; no data
-file content or path is returned.
+file content or path is returned. Its infrastructure adapter is
+`src/face_moment/infrastructure/capacity.py`; Compose mounts the configured
+view only for `backend`.
 
 ### MinIO capacity observation
 

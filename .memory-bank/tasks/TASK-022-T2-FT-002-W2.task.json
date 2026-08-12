@@ -1,7 +1,7 @@
 {
   "id": "TASK-022-T2-FT-002-W2",
   "title": "Implement atomic worker claim and bounded failure",
-  "status": "planned",
+  "status": "in_progress",
   "wave": "W2",
   "feature": "FT-002",
   "reqs": [
@@ -87,4 +87,3 @@
     "Controlled transaction proof covers oldest eligible claim, competing ineligible rows, two requeues, third failure, safe error text and repeated fixture cleanup."
   ]
 }
-

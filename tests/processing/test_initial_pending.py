@@ -20,6 +20,7 @@ from face_moment.processing import (
 )
 from face_moment.processing.initial_pending import PhotoPipelineState
 from face_moment.serving_control import IngestTargetRepository
+from tests.pipeline_compatibility import PIPELINE_COMPATIBILITY
 
 
 def _migration_round_trip(engine: object) -> None:
@@ -43,6 +44,7 @@ def _add_photo(
     revision = PipelineRevisionRepository(session).publish_eligible(
         pipeline_code=PipelineCode.OPENCV_SFACE,
         validated_at=datetime(2026, 8, 11, 9, 0, tzinfo=timezone.utc),
+        **PIPELINE_COMPATIBILITY,
     )
     target = IngestTargetRepository(session).configure_spa(
         name=f"task009-spa-{marker}",
@@ -81,6 +83,10 @@ def test_processing_creates_initial_pending_inside_the_caller_transaction() -> N
             "status",
             "attempt_count",
             "status_changed_at",
+            "searchable_at",
+            "last_error",
+            "preview_object_key",
+            "thumbnail_object_key",
         }
 
         with Session(engine) as session:

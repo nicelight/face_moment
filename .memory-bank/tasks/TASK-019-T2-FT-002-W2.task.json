@@ -1,7 +1,7 @@
 {
   "id": "TASK-019-T2-FT-002-W2",
   "title": "Implement the native SFace Photo adapter",
-  "status": "planned",
+  "status": "done",
   "wave": "W2",
   "feature": "FT-002",
   "reqs": [
@@ -32,7 +32,26 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "completed_at": "2026-08-12T20:51:05+05:00",
+      "summary": "Fresh independent T2 verification passed the exact image-backed mypy, focused SFace adapter and Memory Bank lint gates. A verifier-owned probe proved the configured OpenCV factory seam and YuNet-to-alignCrop-to-SFace call path, immutable revision and asset-set identity, native-result preservation, exact embedding dimension and L2 normalization, FaceEngine compliance, and early rejection of Buffalo or mismatched inputs without plugin, download or auto-selection behavior.",
+      "protocol": ".protocols/TASK-019-T2-FT-002-W2/verification.md",
+      "report": ".tasks/TASK-019-T2-FT-002-W2/TASK-019-T2-FT-002-W2-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "completed_at": "2026-08-12T20:53:07+05:00",
+      "summary": "The autopilot scheduler closed TASK-019 after Execution Attempt 1 and fresh independent T2 verification PASS for the native YuNet-to-alignCrop-to-SFace Photo path, immutable revision/assets, exact dimension and normalization, FaceEngine compliance and accepted anti-goals. Two bounded execution fixes and one tooling-only overlay base-resolution recovery occurred before verdict; no task failure budget was consumed.",
+      "evidence": [
+        ".tasks/TASK-019-T2-FT-002-W2/TASK-019-T2-FT-002-W2-S-EXECUTE-final-report-code-02.md",
+        ".tasks/TASK-019-T2-FT-002-W2/TASK-019-T2-FT-002-W2-S-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-002.md",
     ".memory-bank/domains/photo-processing.md",
@@ -85,4 +104,3 @@
     "Synthetic adapter proof records the YuNet, alignCrop and SFace call sequence plus normalized embedding and mismatch rejection."
   ]
 }
-

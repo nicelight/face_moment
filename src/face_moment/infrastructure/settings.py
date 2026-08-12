@@ -11,6 +11,8 @@ class Settings:
     s3_access_key: str
     s3_secret_key: str
     s3_bucket: str
+    postgresql_capacity_view_path: str
+    postgresql_capacity_low_threshold_bytes: int
     dependency_wait_seconds: float
     staff_session_ttl_seconds: int
     staff_login_rate_limit: int
@@ -29,6 +31,10 @@ class Settings:
             s3_access_key=_required("S3_ACCESS_KEY"),
             s3_secret_key=_required("S3_SECRET_KEY"),
             s3_bucket=_required("S3_BUCKET"),
+            postgresql_capacity_view_path=_required("POSTGRESQL_CAPACITY_VIEW_PATH"),
+            postgresql_capacity_low_threshold_bytes=_positive_int(
+                "POSTGRESQL_CAPACITY_LOW_THRESHOLD_BYTES", "1073741824"
+            ),
             dependency_wait_seconds=float(
                 os.environ.get("DEPENDENCY_WAIT_SECONDS", "60")
             ),

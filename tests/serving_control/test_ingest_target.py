@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from face_moment.infrastructure.database import APP_SCHEMA
 from face_moment.infrastructure.settings import Settings
+from tests.pipeline_compatibility import PIPELINE_COMPATIBILITY
 
 
 def _migration_round_trip(engine: object) -> None:
@@ -65,6 +66,7 @@ def test_serving_control_publishes_only_valid_immutable_ingest_targets() -> None
             revision = PipelineRevisionRepository(session).publish_eligible(
                 pipeline_code=PipelineCode.OPENCV_SFACE,
                 validated_at=validated_at,
+                **PIPELINE_COMPATIBILITY,
             )
             eligible_revision_id = revision.id
             repository = IngestTargetRepository(session)
@@ -95,11 +97,18 @@ def test_serving_control_publishes_only_valid_immutable_ingest_targets() -> None
                 text(
                     """
                     INSERT INTO face_moment.pipeline_revisions
-                        (id, pipeline_code, validated_at)
-                    VALUES (:id, 'opencv_sface', NULL)
+                        (id, pipeline_code, validated_at, detector_id,
+                         detector_version, recognizer_id, recognizer_version,
+                         weights_sha256, preprocessing_version, alignment_version,
+                         normalization_version, embedding_dimension)
+                    VALUES (:id, 'opencv_sface', NULL, 'test-detector',
+                            'test-detector-v1', 'test-recognizer',
+                            'test-recognizer-v1', :weights_sha256,
+                            'test-preprocessing-v1', 'test-alignment-v1',
+                            'test-normalization-v1', 128)
                     """
                 ),
-                {"id": ineligible_revision_id},
+                {"id": ineligible_revision_id, "weights_sha256": "0" * 64},
             )
 
         with Session(engine) as session:

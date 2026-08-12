@@ -23,6 +23,7 @@ from face_moment.entrypoints.backend import create_app
 from face_moment.infrastructure.object_store import PrivateObjectStore, ensure_bucket
 from face_moment.infrastructure.settings import Settings
 from face_moment.inventory.photo_persistence import Photo
+from tests.pipeline_compatibility import PIPELINE_COMPATIBILITY
 from face_moment.platform.auth.principals import StaffRole, provision_staff_user
 from face_moment.processing import PipelineCode, PipelineRevisionRepository
 from face_moment.serving_control import IngestTargetRepository
@@ -70,6 +71,7 @@ def disposable_photo_upload_state(
             revision = PipelineRevisionRepository(database_session).publish_eligible(
                 pipeline_code=PipelineCode.OPENCV_SFACE,
                 validated_at=datetime.now(timezone.utc),
+                **PIPELINE_COMPATIBILITY,
             )
             target_record = IngestTargetRepository(database_session).configure_spa(
                 name=f"task016-spa-{marker}",
