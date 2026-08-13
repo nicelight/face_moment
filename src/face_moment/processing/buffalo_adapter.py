@@ -12,6 +12,7 @@ from insightface.model_zoo import get_model
 from numpy.typing import NDArray
 
 from face_moment.processing.revisions import EligiblePipelineRevision, PipelineCode
+from face_moment.processing.terminal_publication import TerminalFace
 
 
 class SCRFDDetector(Protocol):
@@ -144,6 +145,10 @@ class BuffaloPhotoAdapter:
     def ready(self) -> bool:
         return True
 
+    @property
+    def pipeline_revision_id(self) -> uuid.UUID:
+        return self._revision.id
+
     def warmup(self) -> None:
         self._assets.verify_revision(self._revision)
 
@@ -185,6 +190,27 @@ class BuffaloPhotoAdapter:
                 )
             )
         return tuple(faces)
+
+    def process_for_terminal(
+        self, photo: NDArray[np.uint8]
+    ) -> tuple[TerminalFace, ...]:
+        """Adapt this revision's native results for terminal publication."""
+
+        return tuple(
+            TerminalFace(
+                face_index=index,
+                bbox_x=float(face.native_face.bbox[0]),
+                bbox_y=float(face.native_face.bbox[1]),
+                bbox_w=float(face.native_face.bbox[2] - face.native_face.bbox[0]),
+                bbox_h=float(face.native_face.bbox[3] - face.native_face.bbox[1]),
+                landmarks_json=[
+                    [float(x), float(y)] for x, y in face.native_face.kps
+                ],
+                detection_confidence=float(face.native_face.det_score),
+                embedding=tuple(float(value) for value in face.embedding),
+            )
+            for index, face in enumerate(self.process_photo(photo))
+        )
 
     @staticmethod
     def _validate_photo(photo: NDArray[np.uint8]) -> None:

@@ -1,7 +1,7 @@
 ---
 description: Canonical verification contract for client proposal submission, one-clock Promo latency and related diagnostics.
 status: active
-last_updated: 2026-08-06
+last_updated: 2026-08-13
 source_of_truth:
   - .memory-bank/testing/client-realtime.md
 ---
@@ -93,6 +93,12 @@ source_of_truth:
 
 ## Reference Search And Joint Correctness Proof
 
+- Realtime startup with deterministic read-only model fixtures proves that only
+  the committed selected validated revision is loaded and warmed. Missing,
+  identity/hash-mismatched or other-pipeline assets keep readiness closed before
+  Attempt admission, inference or processing-state mutation; no download or
+  fallback occurs, and a serving-revision change takes effect only after the
+  operator restart.
 - Mixed revision, СПА, date, active/soft-deleted Photo, processing state and
   confirmed/unconfirmed time-window fixtures prove the exact scope before
   cosine comparison. Ordered/tied/repeated-person/low-quality crops prove

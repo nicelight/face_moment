@@ -1,7 +1,7 @@
 ---
 description: Accepted global SDD backbone, coverage matrix and Foundation routing for the Face Moment pilot.
 status: active
-last_updated: 2026-08-05
+last_updated: 2026-08-13
 ---
 # SDD Spec Backbone
 
@@ -98,13 +98,13 @@ define product behavior or override the Planning Revision `4` target.
 | non_goals | authoritative | [.memory-bank/prd.md](prd.md), [system architecture](architecture/system-architecture.md) | Paid delivery, standalone selfie, local-detector miss proof/frame upload, speculative scale and extra lifecycle machinery are excluded. |
 | domain_model | authoritative | [.memory-bank/prd.md](prd.md), [lifecycle map](states/lifecycle-map.md), [.memory-bank/glossary.md](glossary.md) | Product entities, face proposal occurrences, Photo visibility, purge, Attempt and session semantics are explicit. |
 | data_flow | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | Client proposals, existing server-owned search, Promo, diagnostics, inventory, revision recovery and retention have named owners and failure paths. |
-| storage | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md), [lifecycle map](states/lifecycle-map.md) | Private PostgreSQL/MinIO authority, ownership-safe persistence, optional capture media, retention and restart semantics are explicit. |
+| storage | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md), [lifecycle map](states/lifecycle-map.md), [Photo Processing](domains/photo-processing.md) | Private PostgreSQL/MinIO authority, ownership-safe persistence, optional capture media, retention and restart semantics are explicit; operator-managed model assets remain read-only deployment inputs outside the image and database. |
 | api_contracts | authoritative | [boundary map](contracts/boundary-map.md), [sensor passage API](contracts/sensor-passage-api.md), [realtime attempt API](contracts/realtime-attempt-api.md) | Global transport plus exact FT-003 sensor/realtime paths, multipart serialization/validation, structural bounds, zero-proposal behavior, standard HTTP failures and compact admitted outcomes are fixed. |
 | event_message_contracts | not_applicable | [system architecture](architecture/system-architecture.md) | No event broker/message protocol is part of the accepted pilot. |
 | agent_io_contracts | not_applicable | [.memory-bank/prd.md](prd.md) | No agent/tool I/O is a product or runtime boundary. |
 | security_safety | authoritative | [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md), [.memory-bank/prd.md](prd.md) | Capture-derived media is not protected solely as media; credentials, infrastructure, commercial/personalized data, names/annotations and admin actions retain protection. |
-| deployment | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/foundation.md](foundation.md) | The verified Compose walking skeleton provides the explicit build, typecheck, start, test and smoke substrate; production deployment remains outside Foundation. |
-| risks | authoritative | [.memory-bank/prd.md](prd.md), [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | Client proposal-order and site-camera trade-offs plus accepted pilot/deferred-complexity risks are explicit. |
+| deployment | authoritative | [system architecture](architecture/system-architecture.md), [Photo Processing](domains/photo-processing.md), [.memory-bank/foundation.md](foundation.md) | The verified Compose walking skeleton provides the substrate; model-consuming roles bind only the committed validated revision from operator-managed read-only assets and fail closed before work on mismatch. Production deployment remains outside Foundation. |
+| risks | authoritative | [.memory-bank/prd.md](prd.md), [system architecture](architecture/system-architecture.md), [boundary map](contracts/boundary-map.md) | Client proposal-order and site-camera trade-offs plus accepted pilot/deferred-complexity risks are explicit; missing or mismatched model assets keep the affected role unavailable instead of falling back. |
 | open_questions | authoritative | [system architecture](architecture/system-architecture.md), [.memory-bank/prd.md](prd.md) | No global architecture or product-design question remains unresolved. Feature-level completion stays with the owning feature. |
 
 ## Foundation Decision

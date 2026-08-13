@@ -8,7 +8,7 @@ from sqlalchemy import Boolean, ForeignKey, String, Uuid, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from face_moment.infrastructure.database import Base
-from face_moment.processing import (
+from face_moment.processing.revisions import (
     EligiblePipelineRevision,
     IneligiblePipelineRevisionError,
     PipelineRevisionRepository,

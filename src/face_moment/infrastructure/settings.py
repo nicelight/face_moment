@@ -13,6 +13,8 @@ class Settings:
     s3_bucket: str
     postgresql_capacity_view_path: str
     postgresql_capacity_low_threshold_bytes: int
+    minio_capacity_view_path: str
+    minio_capacity_low_threshold_bytes: int
     dependency_wait_seconds: float
     staff_session_ttl_seconds: int
     staff_login_rate_limit: int
@@ -34,6 +36,10 @@ class Settings:
             postgresql_capacity_view_path=_required("POSTGRESQL_CAPACITY_VIEW_PATH"),
             postgresql_capacity_low_threshold_bytes=_positive_int(
                 "POSTGRESQL_CAPACITY_LOW_THRESHOLD_BYTES", "1073741824"
+            ),
+            minio_capacity_view_path=_required("MINIO_CAPACITY_VIEW_PATH"),
+            minio_capacity_low_threshold_bytes=_positive_int(
+                "MINIO_CAPACITY_LOW_THRESHOLD_BYTES", "1073741824"
             ),
             dependency_wait_seconds=float(
                 os.environ.get("DEPENDENCY_WAIT_SECONDS", "60")

@@ -1,7 +1,7 @@
 ---
 description: Canonical accepted module/change-unit dependency graph and boundary contracts for the Face Moment pilot.
 status: active
-last_updated: 2026-08-06
+last_updated: 2026-08-13
 source_of_truth:
   - .memory-bank/contracts/boundary-map.md
 ---
@@ -208,10 +208,16 @@ The reproducible oracle is owned by
   committed revisions.
 - `serving_control` asks `processing` to validate the target; only a validated
   revision may serve.
+- The composition root owns only the deployment binding: it reads the committed
+  revision, resolves that pipeline's configured detector/recognizer paths from
+  the operator-managed read-only mount and asks `processing` to verify the full
+  immutable model identity. It owns no revision-selection or fallback policy.
 - Any failure leaves participant service unavailable and never changes the
   committed revision automatically. Recovery is an explicit retry or manual
-  selection of the prior revision; restart uses the committed revision and
-  stays unavailable if that revision cannot serve.
+  selection of the prior revision; worker and realtime restart, load only the
+  committed revision and stay unavailable before work if its assets cannot be
+  admitted. The exact admission contract is owned by
+  [Photo Processing](../domains/photo-processing.md#model-asset-admission).
 
 ### Retention cleanup
 

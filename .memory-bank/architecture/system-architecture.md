@@ -1,7 +1,7 @@
 ---
 description: Canonical greenfield system shape, capability ownership and Architecture Spine for the Face Moment pilot.
 status: active
-last_updated: 2026-08-06
+last_updated: 2026-08-13
 source_of_truth:
   - .memory-bank/architecture/system-architecture.md
 ---
@@ -211,18 +211,22 @@ speculative distributed infrastructure.
 
 #### AD-012 — Manual serving-revision switch with accepted downtime
 - Binds: changes to the active face pipeline or model revision.
-- Prevents: hot switching and automatic rollback.
+- Prevents: hot switching, automatic rollback, model download/fallback and
+  simultaneous dual-pipeline preload.
 - Rule: `serving_control` owns an operator-initiated change with accepted
   downtime. Only a validated revision may serve. Any failed change leaves
   participant service unavailable until the operator retries or explicitly
   selects the prior revision; recovery never changes the revision
-  automatically. Restart uses the committed revision and stays unavailable if
-  it cannot serve.
+  automatically. The operator-managed model directory is mounted read-only;
+  worker and realtime restart, load only the committed revision and verify its
+  full configured identity plus computed asset hash before accepting work.
+  Restart stays unavailable if the revision cannot serve.
 - Verification: Serving-control/processing integration proof: an invalid
-  revision never serves and every failed change requires explicit operator
-  recovery.
+  revision or missing/mismatched mounted asset never serves or mutates work,
+  and every failed change requires explicit operator recovery.
 - Source: accepted operator KISS decision, [.memory-bank/prd.md](../prd.md)
-  `NFR-REL-01` and the [boundary map](../contracts/boundary-map.md).
+  `NFR-REL-01`, the [boundary map](../contracts/boundary-map.md) and
+  [Photo Processing](../domains/photo-processing.md#model-asset-admission).
 
 #### AD-013 — Owner-ordered retention cleanup
 - Binds: core Attempts, technical logs, ordinary diagnostic evidence and
@@ -316,6 +320,13 @@ media, Attempt, session, deletion and retention behavior.
   volumes. One migrate/init command applies the single Alembic stream and
   ensures private buckets before backend, worker and realtime start or fail
   fast; realtime is ready only after exact active-model warmup.
+- Model files remain outside the shared application image in one
+  operator-managed host directory mounted read-only into
+  `BackgroundPhotoWorker` and `RealtimeFaceService`. Each process resolves the
+  committed selected validated revision, loads only that direct pipeline and
+  verifies the mounted assets against its immutable identity before becoming
+  available or accepting work. Missing or mismatched assets fail closed; no
+  download, fallback, registry or simultaneous dual-pipeline preload is added.
 - Restart policies cover the Compose services and a systemd user service covers
   SpaPromoClient/Chromium; the HTTPS edge returns `502/503` while an upstream is
   unavailable. The user service restarts Chromium, but successful client reload
@@ -324,6 +335,9 @@ media, Attempt, session, deletion and retention behavior.
   failure has no offline-start guarantee. Photo work restarts from the
   beginning, while realtime work is not replayed; serving-revision recovery
   follows AD-012.
+- An operator serving-revision change updates the mounted assets/settings when
+  necessary and restarts both model-consuming processes during the AD-012
+  maintenance window; restart binds them to the committed revision.
 - Native-operation timing/health remains observable. A rare native hang may
   require manual `docker compose restart`; no watchdog/subprocess isolation is
   required without reproduced hangs.

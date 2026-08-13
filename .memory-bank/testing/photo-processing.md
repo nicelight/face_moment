@@ -1,7 +1,7 @@
 ---
 description: Reproducible verification contract for FT-002 processing, recovery, SLO and storage-health behavior.
 status: active
-last_updated: 2026-08-12
+last_updated: 2026-08-13
 source_of_truth:
   - .memory-bank/testing/photo-processing.md
 ---
@@ -52,6 +52,15 @@ The adapter matrix binds one synthetic image independently to the configured
 SFace and Buffalo M adapters. It records revision identity, detector/recognizer
 call path, embedding dimension and proof that neither path consumes the other
 adapter's bbox, landmarks, crop or alignment result.
+
+The runtime-admission matrix mounts deterministic model fixtures read-only and
+starts against the one selected validated revision. The matching case proves
+that only its direct adapter is loaded and warmed. Missing assets, a hash or
+identity mismatch, an absent/ineligible selection or selected paths resolving
+to the other pipeline's assets all keep the worker unavailable before startup
+recovery, claim or Photo-state mutation. A serving-revision change remains
+unavailable until a restart binds the process to matching assets; no fallback
+or download is allowed.
 
 ## Idempotency And Restart Matrix
 

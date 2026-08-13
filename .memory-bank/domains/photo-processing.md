@@ -1,7 +1,7 @@
 ---
 description: Canonical compatible Photo-processing data, worker, derivative and recovery specification.
 status: active
-last_updated: 2026-08-12
+last_updated: 2026-08-13
 source_of_truth:
   - .memory-bank/domains/photo-processing.md
 ---
@@ -92,6 +92,27 @@ existing `FaceEngine` seam without a shared adapter registry or result format.
 Each direct adapter verifies the configured model assets and embedding
 dimension against the immutable revision before accepting work. The worker
 MUST NOT download, silently replace or auto-select models.
+
+The pilot supplies model files from one operator-managed host directory mounted
+read-only into each model-consuming process. Model files are not embedded in
+the application image or stored in PostgreSQL. Deployment settings provide the
+absolute in-container detector and recognizer paths; exact setting names and
+path layout remain composition-root details.
+
+At process startup, the composition root resolves the one active СПА's selected
+validated revision from PostgreSQL, instantiates only that revision's direct
+adapter and verifies the configured detector/recognizer identity, preparation
+versions, embedding dimension and computed `weights_sha256` against the
+persisted compatibility identity. Missing files, an absent or ineligible
+selection, or any identity/hash mismatch keeps the process unavailable before
+it claims or mutates processing work. It does not fall back to the other
+pipeline.
+
+A serving-revision change uses the accepted maintenance downtime: the operator
+updates the read-only assets/settings as needed and restarts the model-consuming
+processes. Startup then binds them to the committed revision. The pilot adds no
+model registry, adapter factory, download/cache path, hot switch or simultaneous
+preload of both pipelines.
 
 ## Persisted Processing Shape
 
@@ -204,10 +225,13 @@ converges without duplicate face rows or distributed transaction machinery.
 
 ### Sequential worker runtime
 
-After startup recovery, the one configured `BackgroundPhotoWorker` processes
-one operation at a time through the owner-local boundaries above. Backend/API
-code never runs the loop. The process adds no broker, priority/preemption
-scheduler, overlapping worker, durable job row or generic operation framework.
+After successful selected-revision model admission and adapter warmup, startup
+recovery runs and the one configured `BackgroundPhotoWorker` processes one
+operation at a time through the owner-local boundaries above. A selected
+revision change stops further claims until the process is restarted and bound
+to the new committed revision. Backend/API code never runs the loop. The
+process adds no broker, priority/preemption scheduler, overlapping worker,
+durable job row, model-selection policy or generic operation framework.
 
 ## Searchable Truth And SLO Projection
 

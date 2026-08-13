@@ -13,6 +13,8 @@ x-application: &application
     S3_BUCKET: "${S3_BUCKET:-face-moment-private}"
     POSTGRESQL_CAPACITY_VIEW_PATH: "/run/face-moment/postgresql"
     POSTGRESQL_CAPACITY_LOW_THRESHOLD_BYTES: "${POSTGRESQL_CAPACITY_LOW_THRESHOLD_BYTES:-1073741824}"
+    MINIO_CAPACITY_VIEW_PATH: "/run/face-moment/minio"
+    MINIO_CAPACITY_LOW_THRESHOLD_BYTES: "${MINIO_CAPACITY_LOW_THRESHOLD_BYTES:-1073741824}"
     DEPENDENCY_WAIT_SECONDS: "${DEPENDENCY_WAIT_SECONDS:-60}"
     NO_ALBUMENTATIONS_UPDATE: "1"
   networks:
@@ -67,6 +69,7 @@ services:
       - "8000"
     volumes:
       - postgres-data:/run/face-moment/postgresql:ro
+      - minio-data:/run/face-moment/minio:ro
     healthcheck:
       test:
         - CMD

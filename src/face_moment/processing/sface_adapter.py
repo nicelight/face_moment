@@ -11,6 +11,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from face_moment.processing.revisions import EligiblePipelineRevision, PipelineCode
+from face_moment.processing.terminal_publication import TerminalFace
 
 
 class YuNetDetector(Protocol):
@@ -144,6 +145,10 @@ class SFacePhotoAdapter:
     def ready(self) -> bool:
         return True
 
+    @property
+    def pipeline_revision_id(self) -> uuid.UUID:
+        return self._revision.id
+
     def warmup(self) -> None:
         self._assets.verify_revision(self._revision)
 
@@ -179,6 +184,31 @@ class SFacePhotoAdapter:
                 )
             )
         return tuple(faces)
+
+    def process_for_terminal(
+        self, photo: NDArray[np.uint8]
+    ) -> tuple[TerminalFace, ...]:
+        """Adapt this revision's native results for terminal publication."""
+
+        return tuple(
+            TerminalFace(
+                face_index=index,
+                bbox_x=float(face.native_detection[0]),
+                bbox_y=float(face.native_detection[1]),
+                bbox_w=float(face.native_detection[2]),
+                bbox_h=float(face.native_detection[3]),
+                landmarks_json=[
+                    [
+                        float(face.native_detection[4 + landmark * 2]),
+                        float(face.native_detection[5 + landmark * 2]),
+                    ]
+                    for landmark in range(5)
+                ],
+                detection_confidence=float(face.native_detection[14]),
+                embedding=tuple(float(value) for value in face.embedding),
+            )
+            for index, face in enumerate(self.process_photo(photo))
+        )
 
     @staticmethod
     def _validate_photo(photo: NDArray[np.uint8]) -> None:

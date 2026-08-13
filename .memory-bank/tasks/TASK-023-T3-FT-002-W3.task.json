@@ -1,7 +1,7 @@
 {
   "id": "TASK-023-T3-FT-002-W3",
   "title": "Implement idempotent terminal processing publication",
-  "status": "planned",
+  "status": "done",
   "wave": "W3",
   "feature": "FT-002",
   "reqs": [
@@ -35,7 +35,40 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "completed_at": "2026-08-12T23:30:49+05:00",
+      "summary": "Fresh independent T3 verification passed the exact packaged-image mypy, focused PostgreSQL/MinIO and Memory Bank lint gates. A verifier-owned UUID probe proved complete normal ready, atomic ready/no_faces rollback, post-derivative/pre-commit rollback and deterministic rerun, stable face indexes, exact terminal no-op/no later overwrite, private original/sentinel preservation, forbidden-mechanism absence, runtime restoration and zero DB/object/container residue. Executor evidence remained supporting-only.",
+      "protocol": ".protocols/TASK-023-T3-FT-002-W3/verification.md",
+      "report": ".tasks/TASK-023-T3-FT-002-W3/TASK-023-T3-FT-002-W3-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-fail",
+      "completed_at": "2026-08-12T23:35:49+05:00",
+      "summary": "Fresh packaged hostile proof showed that the terminal owner commits ready with JSON-null landmarks and a bbox outside immutable Photo dimensions. This violates the accepted complete-face persisted shape and invalid-face failure contract, making T3 closure ineligible. Exact cleanup restored the runtime singleton and left zero DB/object/container residue.",
+      "protocol": ".protocols/TASK-023-T3-FT-002-W3/red-verification.md",
+      "report": ".tasks/TASK-023-T3-FT-002-W3/TASK-023-T3-FT-002-W3-S-RED-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "completed_at": "2026-08-13T00:11:22+05:00",
+      "summary": "Execution Attempt 2 independent verification passed exact packaged-image mypy, focused PostgreSQL/MinIO and Memory Bank lint gates. A verifier-owned UUID probe proved normal/repeat/interruption/no_faces convergence and rejected the prior missing/non-finite-landmark and out-of-Photo bbox cases before mutation with exact snapshot/checksum preservation. Cleanup left zero DB/object/container residue, no active processing rows and an idle runtime singleton. Executor evidence remained supporting-only.",
+      "protocol": ".protocols/TASK-023-T3-FT-002-W3/verification.md",
+      "report": ".tasks/TASK-023-T3-FT-002-W3/TASK-023-T3-FT-002-W3-S-VERIFY-final-report-docs-02.md"
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "completed_at": "2026-08-13T00:13:25+05:00",
+      "summary": "Execution Attempt 2 fresh hostile proof admitted no material finding. Missing, non-finite, malformed and boolean landmarks plus bbox overflow rejected before mutation; a mixed valid/invalid face set stayed atomic, an exact Photo-edge bbox remained valid, and malformed post-terminal delivery was a no-op. Cleanup restored the runtime baseline and left zero DB/object/container residue.",
+      "protocol": ".protocols/TASK-023-T3-FT-002-W3/red-verification.md",
+      "report": ".tasks/TASK-023-T3-FT-002-W3/TASK-023-T3-FT-002-W3-S-RED-VERIFY-final-report-docs-02.md"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-002.md",
     ".memory-bank/domains/photo-processing.md",

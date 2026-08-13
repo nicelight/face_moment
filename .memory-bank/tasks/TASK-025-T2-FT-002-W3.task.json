@@ -1,7 +1,7 @@
 {
   "id": "TASK-025-T2-FT-002-W3",
   "title": "Implement worker-startup processing recovery",
-  "status": "planned",
+  "status": "done",
   "wave": "W3",
   "feature": "FT-002",
   "reqs": [
@@ -32,7 +32,18 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "PASS",
+      "completed_at": "2026-08-13T00:40:28+05:00",
+      "image": "face-moment:dev@sha256:b5aa7bcd9bf1efc26c4916d9cf769d7f2fbde54fd3b41b02a66243847461cd17",
+      "summary": "Fresh independent T2 verification repeated all three exact task gates and passed a verifier-owned UUID PostgreSQL probe. It proved caller-transaction rollback with no durable partial effect, exact processing-to-pending recovery for two rows, preservation of pending and terminal rows, unchanged attempt counts, one shared recovery timestamp with exact count/runtime facts, idempotent repeat with recovered count zero, absence of forbidden worker mechanisms, and exact zero-row/container cleanup with the runtime singleton restored to 1|t|t|0|idle|t. Executor RED/GREEN and packaged receipts remained supporting-only and were not reused.",
+      "protocol": ".protocols/TASK-025-T2-FT-002-W3/verification.md",
+      "report": ".tasks/TASK-025-T2-FT-002-W3/TASK-025-T2-FT-002-W3-S-VERIFY-final-report-docs-01.md"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-002.md",
     ".memory-bank/domains/photo-processing.md",
@@ -84,4 +95,3 @@
     "Controlled before/after population proves exact reset, timestamps/count and safe repeat in disposable PostgreSQL state."
   ]
 }
-

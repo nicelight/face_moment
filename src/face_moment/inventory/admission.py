@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 from face_moment.inventory.candidate_staging import StagedCandidate
 from face_moment.inventory.photo_persistence import Photo
 from face_moment.inventory.validation import ValidatedJpegCandidate
-from face_moment.processing import InitialPendingRepository
-from face_moment.serving_control import IngestTarget
+from face_moment.processing.initial_pending import InitialPendingRepository
+from face_moment.serving_control.ingest_target import IngestTarget
 
 
 @dataclass(frozen=True, slots=True)

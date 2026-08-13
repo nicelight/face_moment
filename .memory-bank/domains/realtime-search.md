@@ -1,7 +1,7 @@
 ---
 description: Server-authoritative reference-query selection and compatible exact realtime search contract.
 status: active
-last_updated: 2026-08-06
+last_updated: 2026-08-13
 source_of_truth:
   - .memory-bank/domains/realtime-search.md
 ---
@@ -75,9 +75,15 @@ reference-query operations needed here:
 - prepare a selected crop through that revision's native detector,
   preprocessing, alignment, normalization and embedding path.
 
-The active model is loaded and warmed before realtime readiness opens. Search
-MUST NOT load a model on first request, mix pipeline-native preparation, reuse
-another revision's embedding or silently switch revisions.
+Before realtime readiness opens, the composition root follows the shared
+[model-asset admission](photo-processing.md#model-asset-admission) contract:
+resolve the committed selected validated revision, load and warm only its
+direct adapter from the operator-managed read-only mount, and verify the full
+configured identity plus computed `weights_sha256`. Missing or mismatched
+assets keep readiness closed before Attempt admission or processing-state
+mutation. Search MUST NOT load a model on first request, fall back to the other
+pipeline, mix pipeline-native preparation, reuse another revision's embedding
+or silently switch revisions.
 
 For one request, `processing`:
 
@@ -155,6 +161,9 @@ It does not contain a session, global candidate union, selected teaser set,
   native query preparation and no forbidden grouping/margin behavior.
 - Separate SFace and Buffalo M traces prove pre-warmed immutable revision
   identity and native processing/alignment paths without cross-revision reuse.
+- Startup fixtures prove the selected matching read-only assets open readiness,
+  while missing/mismatched or other-pipeline assets keep readiness closed with
+  no Attempt, inference or processing-state mutation until an operator restart.
 - Candidate fixtures prove threshold inclusion, per-Photo best-match grouping,
   deterministic ordering and on-demand pHash output without pHash admission.
 - Ownership proof locates the implementation under `processing`, follows only

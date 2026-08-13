@@ -1,7 +1,7 @@
 {
   "id": "TASK-027-T2-FT-002-W4",
   "title": "Implement compatible searchable-truth projection",
-  "status": "planned",
+  "status": "done",
   "wave": "W4",
   "feature": "FT-002",
   "reqs": [
@@ -36,7 +36,18 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "PASS",
+      "completed_at": "2026-08-13T01:51:56+05:00",
+      "image": "face-moment:dev@sha256:7c465072f0d22ed950c715280720b14d240a2382030c14bb175227120a090d9a",
+      "summary": "Fresh independent T2 verification repeated all three exact indexed gates and passed a verifier-owned UUID PostgreSQL eligibility matrix. Searchable was true only for active current-revision ready state with both derivative references and at least one face; inactive, other-revision, missing-preview, missing-thumbnail, missing-face and every non-ready state were false. Production resolution succeeded inside a read-only transaction with ten SELECT-only statements, unchanged owner rows, no cosine/rank/result assembly/serving mutation or foreign write, zero task rows/active rows/one-offs and the runtime singleton restored to NULL|NULL|0|idle|NULL. Executor RED/GREEN remained supporting-only.",
+      "protocol": ".protocols/TASK-027-T2-FT-002-W4/verification.md",
+      "report": ".tasks/TASK-027-T2-FT-002-W4/TASK-027-T2-FT-002-W4-S-VERIFY-final-report-docs-01.md"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-002.md",
     ".memory-bank/domains/photo-processing.md",
@@ -88,4 +99,3 @@
     "Matrix covers active/current complete ready plus inactive, incompatible, missing-derivative, missing-face and every non-ready state."
   ]
 }
-

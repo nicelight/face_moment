@@ -1,11 +1,12 @@
 {
   "id": "TASK-026-T3-FT-002-W5",
-  "title": "Run the sequential BackgroundPhotoWorker",
-  "status": "planned",
+  "title": "Bind model-consuming startup and run the sequential BackgroundPhotoWorker",
+  "status": "ready",
   "wave": "W5",
   "feature": "FT-002",
   "reqs": [
     "REQ-ING-004",
+    "REQ-SRCH-001",
     "REQ-REL-002",
     "REQ-ARCH-001"
   ],
@@ -15,8 +16,13 @@
   ],
   "touched_files": [
     "src/face_moment/processing/",
+    "src/face_moment/serving_control/",
+    "src/face_moment/infrastructure/settings.py",
     "src/face_moment/entrypoints/background_worker.py",
-    "tests/processing/test_background_worker_runtime.py"
+    "src/face_moment/entrypoints/realtime.py",
+    "compose.yaml",
+    "tests/processing/test_background_worker_runtime.py",
+    "tests/processing/test_model_asset_admission.py"
   ],
   "tier": "T3",
   "gates": [
@@ -26,8 +32,8 @@
       "required": true
     },
     {
-      "name": "Background worker runtime tests",
-      "command": "docker compose run --rm backend python -m pytest tests/processing/test_background_worker_runtime.py",
+      "name": "Model-admitted runtime tests",
+      "command": "docker compose run --rm backend python -m pytest tests/processing/test_background_worker_runtime.py tests/processing/test_model_asset_admission.py",
       "required": true
     },
     {
@@ -39,54 +45,75 @@
   "verify": [],
   "docs": [
     ".memory-bank/features/FT-002.md",
+    ".memory-bank/architecture/system-architecture.md",
+    ".memory-bank/contracts/boundary-map.md",
     ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/domains/realtime-search.md",
     ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/testing/client-realtime.md",
     ".memory-bank/tasks/plans/IMPL-FT-002.md"
   ],
   "evidence_required": [
-    "FT-002-AC-003 RED: the current BackgroundPhotoWorker entrypoint does not recover or execute the durable Photo population; GREEN: a real task-owned worker process restart during active plus queued work preserves every Photo, resets unfinished work, restarts from the original and reaches one idempotent terminal result per row; decisive comparison: pre/post population IDs, recovery facts, attempt counts, face/derivative cardinality and terminal states all match; artifact: redacted worker-process transcript and disposable PostgreSQL/MinIO projection."
+    "FT-002-AC-003 RED: the current BackgroundPhotoWorker entrypoint does not recover or execute the durable Photo population; GREEN: a real task-owned worker process restart during active plus queued work preserves every Photo, resets unfinished work, restarts from the original and reaches one idempotent terminal result per row; decisive comparison: pre/post population IDs, recovery facts, attempt counts, face/derivative cardinality and terminal states all match; artifact: redacted worker-process transcript and disposable PostgreSQL/MinIO projection.",
+    "REQ-SRCH-001 via .memory-bank/domains/photo-processing.md#model-asset-admission RED: the current worker/realtime composition roots expose fake or unadmitted startup without selected-revision model mounts; GREEN: matching read-only fixtures make both roles resolve the committed validated revision, instantiate only its direct adapter and verify the full immutable identity plus computed weights_sha256 before recovery/readiness, while missing, absent/ineligible, identity/hash-mismatched and other-pipeline fixtures keep the role unavailable with zero work/state mutation; decisive comparison: per-case exit/readiness, loaded pipeline identity, recovery/claim/inference observations and processing-state snapshots; artifact: redacted Compose/process transcript and disposable PostgreSQL/model-fixture projection."
   ],
-  "purpose": "Connect startup recovery and one-at-a-time Photo orchestration to the real BackgroundPhotoWorker process without introducing scheduler infrastructure.",
-  "success_outcome": "Queued and active Photo work survives worker process restart, unfinished work restarts from the original and the full population reaches idempotent terminal outcomes.",
+  "purpose": "Bind both model-consuming composition roots to the committed validated revision before readiness/work, then connect startup recovery and one-at-a-time Photo orchestration to the real BackgroundPhotoWorker process without introducing selection or scheduler infrastructure.",
+  "success_outcome": "Worker and realtime start only with matching read-only assets for the committed validated revision; the worker then preserves queued and active Photo work across process restart and converges on idempotent terminal outcomes.",
   "anti_goals": [
     "Do not add multiple workers, a broker, jobs table, leases, fencing, priority/preemption, watchdog or durable replay beyond Photo state.",
-    "Do not move worker business logic into the entrypoint or backend process."
+    "Do not move model-selection, inference or worker business logic into an entrypoint, infrastructure adapter or backend process.",
+    "Do not add model download, fallback, registry, adapter factory, cache, hot switch, automatic rollback or simultaneous dual-pipeline preload."
   ],
   "runtime_context": {
     "forbidden_scope": [
-      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Realtime reference-query execution and participant result assembly owned by FT-004; only startup model admission/readiness binding is in scope here",
       "Calibration calculation, recommendation and run persistence owned by FT-011",
       "Photo delete, restore and hard-purge behavior owned by FT-012"
     ],
     "stop_conditions": [
       "The configured process cannot run one sequential loop through the processing application boundary.",
-      "Restart correctness requires another durable queue, coordination service or production-state probe."
+      "Restart correctness requires another durable queue, coordination service or production-state probe.",
+      "Worker and realtime cannot share the accepted model-admission contract without adding another selection policy, runtime mechanism or FT-004 query behavior."
     ]
   },
   "source_artifacts": [
     ".memory-bank/features/FT-002.md#FT-002-AC-003",
+    ".protocols/FT-002/decision-log.md#2026-08-13--task-026-runtime-model-asset-contract",
     ".protocols/FT-002/plan.md",
     ".memory-bank/tasks/plans/IMPL-FT-002.md"
   ],
   "normative_inputs": [
     ".memory-bank/features/FT-002.md#FT-002-AC-003",
+    ".memory-bank/architecture/system-architecture.md#ad-012--manual-serving-revision-switch-with-accepted-downtime",
+    ".memory-bank/architecture/system-architecture.md#deployment-and-recovery",
+    ".memory-bank/contracts/boundary-map.md#manual-serving-revision-switch",
+    ".memory-bank/domains/photo-processing.md#model-asset-admission",
     ".memory-bank/domains/photo-processing.md#sequential-worker-runtime",
     ".memory-bank/domains/photo-processing.md#startup-recovery",
+    ".memory-bank/domains/realtime-search.md#reference-query-boundary",
+    ".memory-bank/testing/photo-processing.md#terminal-and-compatibility-matrix",
+    ".memory-bank/testing/client-realtime.md#reference-search-and-joint-correctness-proof",
     ".memory-bank/architecture/system-architecture.md#AD-004"
   ],
   "constraints": [
-    "The entrypoint owns only lifecycle and calls the processing-owned worker boundary.",
+    "The composition roots own only lifecycle and deployment binding: serving_control owns committed revision selection and processing owns model identity verification, adapters, inference and worker state.",
+    "One operator-managed host model directory is mounted read-only into background-worker and realtime; assets are not embedded in the image, persisted in PostgreSQL or downloaded at runtime.",
+    "Each role resolves the committed selected validated revision, instantiates only that direct adapter and verifies revision/pipeline code, detector and recognizer IDs/versions, preprocessing/alignment/normalization versions, embedding dimension and computed weights_sha256 before readiness, recovery, claim, inference or processing-state mutation.",
+    "A serving-revision change takes effect only after the operator updates assets/settings as needed and restarts both model-consuming roles.",
     "Runtime proof uses unique disposable PostgreSQL rows and MinIO prefix, known initial state, safe rerun and confirmed cleanup.",
-    "Restart the task-owned worker process only; do not access production deployment or data."
+    "Restart only task-owned worker/realtime processes against deterministic fixtures; do not access production deployment, model assets or data."
   ],
   "invariants": [
     "Exactly one configured worker operation runs at a time.",
+    "Both model-consuming roles bind only the committed validated revision and remain unavailable on any missing, ineligible or mismatched asset/configuration.",
+    "No fallback pipeline, download, registry/factory, hot switch or dual preload exists.",
     "Unfinished processing returns to pending and begins again from the immutable original.",
     "Realtime work, Calibration computation and hard purge are not implemented or replayed here."
   ],
   "verification_targets": [
     "FT-002-AC-003 via .memory-bank/features/FT-002.md#FT-002-AC-003",
+    "REQ-SRCH-001 model admission via .memory-bank/domains/photo-processing.md#model-asset-admission",
+    "Deterministic read-only fixture matrix proves both roles load only the committed matching revision; missing, absent/ineligible, full-identity/hash-mismatched and other-pipeline assets fail closed before recovery/readiness/work with unchanged revision and state until explicit restart.",
     "Real process restart with active plus queued disposable work records population identity, recovery projection, eventual terminals, one face set and zero task-owned residue."
   ]
 }
-

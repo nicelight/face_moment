@@ -4,6 +4,47 @@ status: active
 ---
 # Changelog
 
+## [2026-08-13] Wave W4 — reconciled processing orchestration and projections
+- Reconciled the already-recorded scheduler `done` states for
+  `TASK-024-T2-FT-002-W4`, `TASK-027-T2-FT-002-W4`, and
+  `TASK-032-T2-FT-002-W4` with their indexed independent `PASS` evidence.
+  The closure evidence covers one-Photo owner-bound orchestration, compatible
+  searchable-truth projection, and read-only queue/recovery health projection.
+- `TASK-032` also records its bounded prerequisite removal of the W3 eager
+  processing-package import cycle and independent packaged verification of the
+  repaired cold-import path. The retained W3 HIGH observation is not resolved
+  by this reconciliation; `/tech-debt wave W4` owns that advisory decision.
+- Kept `FT-002`, the affected RTM rows, and `EP-001` `planned`: W5–W7
+  obligations remain indexed. No promotion, dependency, product/design/spec,
+  lifecycle, or task-plan-review decision was made by this reconciliation.
+
+## [2026-08-13] Wave W3 — reconciled terminal publication and startup recovery closures
+- Reconciled the already-recorded scheduler `done` state for
+  `TASK-023-T3-FT-002-W3` and `TASK-025-T2-FT-002-W3` with their indexed
+  independent `PASS` evidence; `TASK-023` also retains the required final
+  `semantic-pass` evidence after its prior retained semantic-fail attempt.
+- The closure evidence covers idempotent terminal face/derivative publication
+  and atomic worker-startup recovery, while `FT-002`, its RTM rows and
+  `EP-001` remain `planned` because W4–W7 obligations are still indexed.
+- Preserved the TASK-023 Reviewer observation that a fresh import of
+  `face_moment.serving_control.ingest_target` can reach the dependency-owned
+  `processing.__init__` / `WorkerClaimRepository` export cycle as an advisory
+  input for `/tech-debt wave W3`; this reconciliation makes no materiality,
+  lifecycle, promotion, product, design or contract decision.
+
+## [2026-08-12] Wave W2 — reconciled compatible-processing closures
+- Reconciled the already-recorded scheduler `done` state for
+  `TASK-019-T2-FT-002-W2`, `TASK-020-T2-FT-002-W2`,
+  `TASK-021-T3-FT-002-W2`, `TASK-022-T2-FT-002-W2`, and
+  `TASK-034-T3-FT-002-W2` with their indexed functional evidence; both T3
+  tasks also retain required `semantic-pass` evidence.
+- The closure evidence covers the native SFace and Buffalo M Photo paths,
+  deterministic private derivatives, atomic bounded worker claim/failure, and
+  independent private MinIO capacity observation.
+- Kept `FT-002`, its RTM rows and `EP-001` `planned`: W3–W7 indexed obligations
+  remain. No promotion, dependency, product/design/spec, or lifecycle decision
+  was made by this reconciliation.
+
 ## [2026-08-12] Wave W1 — reconciled processing persistence and PostgreSQL capacity closures
 - Reconciled the scheduler-owned `done` closure for
   `TASK-018-T2-FT-002-W1` with its fresh independent T2 `PASS` evidence for

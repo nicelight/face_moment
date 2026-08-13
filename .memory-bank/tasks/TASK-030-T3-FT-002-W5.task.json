@@ -1,7 +1,7 @@
 {
   "id": "TASK-030-T3-FT-002-W5",
   "title": "Expose authenticated per-Photo processing status",
-  "status": "planned",
+  "status": "ready",
   "wave": "W5",
   "feature": "FT-002",
   "reqs": [
