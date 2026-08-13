@@ -1,7 +1,7 @@
 {
   "id": "TASK-029-T2-FT-002-W6",
   "title": "Keep shared-worker Calibration delay explicit",
-  "status": "planned",
+  "status": "blocked",
   "wave": "W6",
   "feature": "FT-002",
   "reqs": [

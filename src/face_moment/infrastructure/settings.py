@@ -24,6 +24,31 @@ class Settings:
     photo_upload_max_compressed_bytes: int
     photo_upload_max_decoded_side_length: int
     photo_upload_max_decoded_pixels: int
+    background_worker_idle_seconds: float
+    photo_preview_maximum_edge: int
+    photo_preview_jpeg_quality: int
+    photo_thumbnail_maximum_edge: int
+    photo_thumbnail_jpeg_quality: int
+    sface_detector_path: str | None
+    sface_detector_id: str | None
+    sface_detector_version: str | None
+    sface_recognizer_path: str | None
+    sface_recognizer_id: str | None
+    sface_recognizer_version: str | None
+    sface_preprocessing_version: str | None
+    sface_alignment_version: str | None
+    sface_normalization_version: str | None
+    sface_embedding_dimension: int | None
+    buffalo_detector_path: str | None
+    buffalo_detector_id: str | None
+    buffalo_detector_version: str | None
+    buffalo_recognizer_path: str | None
+    buffalo_recognizer_id: str | None
+    buffalo_recognizer_version: str | None
+    buffalo_preprocessing_version: str | None
+    buffalo_alignment_version: str | None
+    buffalo_normalization_version: str | None
+    buffalo_embedding_dimension: int | None
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -64,6 +89,45 @@ class Settings:
             photo_upload_max_decoded_pixels=_positive_int(
                 "PHOTO_UPLOAD_MAX_DECODED_PIXELS", "16777216"
             ),
+            background_worker_idle_seconds=_positive_float(
+                "BACKGROUND_WORKER_IDLE_SECONDS", "0.2"
+            ),
+            photo_preview_maximum_edge=_positive_int(
+                "PHOTO_PREVIEW_MAXIMUM_EDGE", "1024"
+            ),
+            photo_preview_jpeg_quality=_jpeg_quality(
+                "PHOTO_PREVIEW_JPEG_QUALITY", "82"
+            ),
+            photo_thumbnail_maximum_edge=_positive_int(
+                "PHOTO_THUMBNAIL_MAXIMUM_EDGE", "320"
+            ),
+            photo_thumbnail_jpeg_quality=_jpeg_quality(
+                "PHOTO_THUMBNAIL_JPEG_QUALITY", "75"
+            ),
+            sface_detector_path=_optional("SFACE_DETECTOR_PATH"),
+            sface_detector_id=_optional("SFACE_DETECTOR_ID"),
+            sface_detector_version=_optional("SFACE_DETECTOR_VERSION"),
+            sface_recognizer_path=_optional("SFACE_RECOGNIZER_PATH"),
+            sface_recognizer_id=_optional("SFACE_RECOGNIZER_ID"),
+            sface_recognizer_version=_optional("SFACE_RECOGNIZER_VERSION"),
+            sface_preprocessing_version=_optional("SFACE_PREPROCESSING_VERSION"),
+            sface_alignment_version=_optional("SFACE_ALIGNMENT_VERSION"),
+            sface_normalization_version=_optional("SFACE_NORMALIZATION_VERSION"),
+            sface_embedding_dimension=_optional_positive_int(
+                "SFACE_EMBEDDING_DIMENSION"
+            ),
+            buffalo_detector_path=_optional("BUFFALO_DETECTOR_PATH"),
+            buffalo_detector_id=_optional("BUFFALO_DETECTOR_ID"),
+            buffalo_detector_version=_optional("BUFFALO_DETECTOR_VERSION"),
+            buffalo_recognizer_path=_optional("BUFFALO_RECOGNIZER_PATH"),
+            buffalo_recognizer_id=_optional("BUFFALO_RECOGNIZER_ID"),
+            buffalo_recognizer_version=_optional("BUFFALO_RECOGNIZER_VERSION"),
+            buffalo_preprocessing_version=_optional("BUFFALO_PREPROCESSING_VERSION"),
+            buffalo_alignment_version=_optional("BUFFALO_ALIGNMENT_VERSION"),
+            buffalo_normalization_version=_optional("BUFFALO_NORMALIZATION_VERSION"),
+            buffalo_embedding_dimension=_optional_positive_int(
+                "BUFFALO_EMBEDDING_DIMENSION"
+            ),
         )
 
 
@@ -76,6 +140,45 @@ def _required(name: str) -> str:
 
 def _positive_int(name: str, default: str) -> int:
     value = os.environ.get(name, default)
+    try:
+        parsed = int(value)
+    except ValueError as error:
+        raise RuntimeError(f"{name} must be a positive integer") from error
+    if parsed <= 0:
+        raise RuntimeError(f"{name} must be a positive integer")
+    return parsed
+
+
+def _positive_float(name: str, default: str) -> float:
+    value = os.environ.get(name, default)
+    try:
+        parsed = float(value)
+    except ValueError as error:
+        raise RuntimeError(f"{name} must be a positive number") from error
+    if parsed <= 0:
+        raise RuntimeError(f"{name} must be a positive number")
+    return parsed
+
+
+def _jpeg_quality(name: str, default: str) -> int:
+    value = _positive_int(name, default)
+    if value > 100:
+        raise RuntimeError(f"{name} must be in 1..100")
+    return value
+
+
+def _optional(name: str) -> str | None:
+    value = os.environ.get(name)
+    if value is None:
+        return None
+    normalized = value.strip()
+    return normalized or None
+
+
+def _optional_positive_int(name: str) -> int | None:
+    value = _optional(name)
+    if value is None:
+        return None
     try:
         parsed = int(value)
     except ValueError as error:

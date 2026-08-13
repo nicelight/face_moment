@@ -134,7 +134,9 @@ def _fixture(engine: Engine, object_store: PrivateObjectStore) -> _Fixture:
 
     object_store.put(key=original_key, body=_synthetic_jpeg())
     with Session(engine) as session:
-        claim = WorkerClaimRepository(session).claim_oldest_pending()
+        claim = WorkerClaimRepository(
+            session, bound_pipeline_revision_id=pipeline_revision_id
+        ).claim_oldest_pending()
         assert claim is not None
         assert claim.photo_id == photo_id
         session.commit()
@@ -287,7 +289,10 @@ def _return_invalid_fixture_claim_to_pending(engine: Engine, fixture: _Fixture) 
     """Use the existing claim boundary to restore this fixture's idle baseline."""
 
     with Session(engine) as session:
-        returned = WorkerClaimRepository(session).record_failure(
+        returned = WorkerClaimRepository(
+            session,
+            bound_pipeline_revision_id=fixture.pipeline_revision_id,
+        ).record_failure(
             photo_id=fixture.photo_id,
             pipeline_revision_id=fixture.pipeline_revision_id,
         )

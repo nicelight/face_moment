@@ -136,7 +136,9 @@ def test_worker_claims_oldest_eligible_row_and_bounds_failures() -> None:
         assert later_id is not None
 
         with Session(engine) as session:
-            claim = WorkerClaimRepository(session).claim_oldest_pending()
+            claim = WorkerClaimRepository(
+                session, bound_pipeline_revision_id=serving_revision.id
+            ).claim_oldest_pending()
             assert claim is not None
             assert claim.photo_id == oldest_id
             assert claim.pipeline_revision_id == serving_revision.id
@@ -162,7 +164,9 @@ def test_worker_claims_oldest_eligible_row_and_bounds_failures() -> None:
 
         for attempt in range(1, 4):
             with Session(engine) as session:
-                claims = WorkerClaimRepository(session)
+                claims = WorkerClaimRepository(
+                    session, bound_pipeline_revision_id=serving_revision.id
+                )
                 claim = claims.claim_oldest_pending()
                 assert claim is not None
                 assert claim.photo_id == oldest_id
@@ -170,7 +174,9 @@ def test_worker_claims_oldest_eligible_row_and_bounds_failures() -> None:
                 session.commit()
 
             with Session(engine) as session:
-                state = WorkerClaimRepository(session).record_failure(
+                state = WorkerClaimRepository(
+                    session, bound_pipeline_revision_id=serving_revision.id
+                ).record_failure(
                     photo_id=oldest_id,
                     pipeline_revision_id=serving_revision.id,
                 )

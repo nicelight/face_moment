@@ -1,7 +1,7 @@
 {
   "id": "TASK-035-T3-FT-002-W6",
   "title": "Expose authenticated processing health",
-  "status": "planned",
+  "status": "blocked",
   "wave": "W6",
   "feature": "FT-002",
   "reqs": [

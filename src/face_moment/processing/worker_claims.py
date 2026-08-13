@@ -23,11 +23,14 @@ _SAFE_FAILURE_MESSAGE = "processing failed"
 class WorkerClaimRepository:
     """Processing-owned atomic claim and bounded failure boundary."""
 
-    def __init__(self, session: Session) -> None:
+    def __init__(
+        self, session: Session, *, bound_pipeline_revision_id: uuid.UUID
+    ) -> None:
         self._session = session
+        self._bound_pipeline_revision_id = bound_pipeline_revision_id
 
     def claim_oldest_pending(self) -> PhotoPipelineState | None:
-        """Claim the oldest active Photo state for its current serving revision."""
+        """Claim only work for this process's still-committed revision."""
 
         state = self._session.scalar(
             select(PhotoPipelineState)
@@ -36,7 +39,8 @@ class WorkerClaimRepository:
             .where(
                 PhotoPipelineState.status == _PENDING,
                 PhotoPipelineState.pipeline_revision_id
-                == Spa.serving_pipeline_revision_id,
+                == self._bound_pipeline_revision_id,
+                Spa.serving_pipeline_revision_id == self._bound_pipeline_revision_id,
                 Photo.is_active.is_(True),
                 Spa.active.is_(True),
             )

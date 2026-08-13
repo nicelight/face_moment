@@ -1,7 +1,7 @@
 {
   "id": "TASK-028-T2-FT-002-W5",
   "title": "Implement full-population ingest SLO projection",
-  "status": "ready",
+  "status": "blocked",
   "wave": "W5",
   "feature": "FT-002",
   "reqs": [
@@ -32,7 +32,28 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "FAIL",
+      "completed_at": "2026-08-14T02:10:31+05:00",
+      "image": "face-moment:dev@sha256:66f68fcf28b249fc07bafc0f66c0268a470dc5193f958ee6ad79f9534115bd05",
+      "summary": "Fresh independent T2 verification passed both half-open boundaries, exact baseline inclusion/exclusion classes, 9/2/5/2 open and 9/2/7/0 closed reconciliation, exact ratios and nullable/completed verdicts, reject/duplicate/non-serving exclusions, empty zero/null output, SELECT-only ownership and cleanup. A verifier-owned serving-switch branch failed: one Photo admitted and searchable under revision A disappeared after current serving changed to B (expected population/success 1/1 and true; observed 0/0 and null) because the projection filters by current rather than admission-time serving revision. Executor evidence remained supporting-only.",
+      "protocol": ".protocols/TASK-028-T2-FT-002-W5/verification.md",
+      "report": ".tasks/TASK-028-T2-FT-002-W5/TASK-028-T2-FT-002-W5-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "verify",
+      "attempt": 2,
+      "verdict": "FAIL",
+      "completed_at": "2026-08-14T02:34:13+05:00",
+      "image": "face-moment:dev@sha256:85b74426d903e4ad62c74607a1ba01e5752937d252a21a4eef0ad0cea15efc0e",
+      "summary": "Fresh independent T2 verification passed both interval boundaries, canonical 9/2/5/2 open and 9/2/7/0 closed results, exact ratios and nullable/completed verdicts, empty zero/null output, reject/duplicate exclusion, SELECT-only ownership, cleanup and the prior A-to-B serving-switch regression at 1/1/0/0. The required explicit non-serving revision-state branch failed: adding revision B state to one Photo admitted under A changed the expected 9/2/5/2 and ratio 2/9 to 10/3/5/2 and 0.3 because production counts state rows rather than each accepted Photo once. Executor evidence remained supporting-only.",
+      "protocol": ".protocols/TASK-028-T2-FT-002-W5/verification.md",
+      "report": ".tasks/TASK-028-T2-FT-002-W5/TASK-028-T2-FT-002-W5-S-VERIFY-final-report-docs-02.md"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-002.md",
     ".memory-bank/domains/photo-processing.md",

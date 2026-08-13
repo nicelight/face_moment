@@ -169,7 +169,10 @@ class PhotoProcessingOrchestrator:
         pipeline_revision_id: uuid.UUID,
     ) -> str:
         with self._session_factory() as session:
-            state = WorkerClaimRepository(session).record_failure(
+            state = WorkerClaimRepository(
+                session,
+                bound_pipeline_revision_id=pipeline_revision_id,
+            ).record_failure(
                 photo_id=photo_id,
                 pipeline_revision_id=pipeline_revision_id,
             )

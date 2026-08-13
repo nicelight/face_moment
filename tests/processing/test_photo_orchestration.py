@@ -206,7 +206,9 @@ def _claimed_fixture(
 
     object_store.put(key=fixture.original_key, body=_synthetic_jpeg())
     with Session(engine) as session:
-        claim = WorkerClaimRepository(session).claim_oldest_pending()
+        claim = WorkerClaimRepository(
+            session, bound_pipeline_revision_id=fixture.pipeline_revision_id
+        ).claim_oldest_pending()
         assert claim is not None
         assert (claim.photo_id, claim.pipeline_revision_id) == (
             fixture.photo_id,

@@ -1,7 +1,7 @@
 {
   "id": "TASK-026-T3-FT-002-W5",
   "title": "Bind model-consuming startup and run the sequential BackgroundPhotoWorker",
-  "status": "ready",
+  "status": "done",
   "wave": "W5",
   "feature": "FT-002",
   "reqs": [
@@ -42,7 +42,44 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "PASS",
+      "completed_at": "2026-08-14T00:56:50+05:00",
+      "image": "face-moment:dev@sha256:446b20fdeb1f895d12ec6cc637eb81f60e8c3a3cb68c73676fc135bf6702af1b",
+      "summary": "Fresh independent T3 verification on the exact current immutable image passed packaged mypy, the 11-case model-admission/restart suite, a verifier-owned direct Buffalo M admission/no-fallback probe and Memory Bank lint. Active plus queued Photos survived process replacement, recovered exactly one unfinished row and converged to two idempotent ready results; both roles admitted only matching committed assets and failed closed before readiness/work for missing, ineligible or mismatched cases. Cleanup left zero task databases, MinIO objects and one-off containers. Executor evidence remained supporting-only.",
+      "protocol": ".protocols/TASK-026-T3-FT-002-W5/verification.md",
+      "report": ".tasks/TASK-026-T3-FT-002-W5/TASK-026-T3-FT-002-W5-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "verify",
+      "attempt": 2,
+      "verdict": "PASS",
+      "completed_at": "2026-08-14T01:24:17+05:00",
+      "image": "face-moment:dev@sha256:afa703291da65f82b348400980aac6772209fbf028aeb3e4e046df8536cb130f",
+      "summary": "Fresh independent T3 verification on the exact Attempt 2 image passed packaged mypy, 13 focused admission/restart/runtime tests, verifier-owned committed-switch and loop-supervision probes, fresh direct Buffalo admission and Memory Bank lint. An A-bound process stopped claiming after B commit with both rows unchanged; the B-bound replacement alone published one ready result. Worker-loop failure cleared readiness and terminated the lifecycle. Ordinary restart and all matching/fail-closed model-admission claims remained green. Cleanup left zero task databases, MinIO objects and one-off containers; Attempt 1 evidence remained historical/supporting.",
+      "protocol": ".protocols/TASK-026-T3-FT-002-W5/verification.md",
+      "report": ".tasks/TASK-026-T3-FT-002-W5/TASK-026-T3-FT-002-W5-S-VERIFY-final-report-docs-02.md"
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-fail",
+      "completed_at": "2026-08-14T01:05:13+05:00",
+      "summary": "Execution Attempt 1 adversarial verification reproduced two material supported-path breaks: after the committed selection changed from A to B, the stale A-bound worker claimed and terminally failed B work; separately, a runtime claim exception killed the sole worker loop while health remained ready until lifespan exit. No operator ambiguity remained, and cleanup left zero task databases and containers.",
+      "protocol": ".protocols/TASK-026-T3-FT-002-W5/red-verification.md",
+      "report": ".tasks/TASK-026-T3-FT-002-W5/TASK-026-T3-FT-002-W5-S-RED-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "completed_at": "2026-08-14T01:29:11+05:00",
+      "summary": "Execution Attempt 2 adversarial reassessment confirmed both prior findings resolved: after B commit, the A-bound worker made five no-op claims with both rows unchanged and zero inference or writes, while only the B-bound replacement reached ready. Loop exception and unexpected return both cleared readiness, marked worker-loop failure and terminated lifespan. No material finding or question remained, and cleanup left zero task databases and containers.",
+      "protocol": ".protocols/TASK-026-T3-FT-002-W5/red-verification.md",
+      "report": ".tasks/TASK-026-T3-FT-002-W5/TASK-026-T3-FT-002-W5-S-RED-VERIFY-final-report-docs-02.md"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-002.md",
     ".memory-bank/architecture/system-architecture.md",

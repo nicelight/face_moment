@@ -32,7 +32,7 @@
   Доведи существующую JSON task queue через `$autopilot` в scheduler mode до terminal state.
 
   ## Принцип работы
-
+  
   Работай только как control plane: readiness, sequencing, делегирование, анализ evidence, lifecycle-решения и terminal state.
 
   Береги контекст: загружай только минимальный governing context, authoritative queue state и критические evidence для  принятия решений. Требуй от workers компактные structured reports.

@@ -63,6 +63,10 @@ class IneligibleIngestTargetError(LookupError):
     pass
 
 
+class CommittedServingTargetUnavailableError(LookupError):
+    pass
+
+
 class IngestTargetRepository:
     """Serving-control owner boundary for pilot SPA target configuration."""
 
@@ -113,6 +117,20 @@ class IngestTargetRepository:
             except (InvalidIngestTargetTimezoneError, IneligibleIngestTargetError):
                 continue
         return targets
+
+    def resolve_committed_serving_target(self) -> IngestTarget:
+        """Return the one active target whose revision is committed to serve."""
+
+        spa_ids = list(
+            self._session.scalars(
+                select(Spa.id).where(Spa.active.is_(True)).order_by(Spa.id).limit(2)
+            )
+        )
+        if len(spa_ids) != 1:
+            raise CommittedServingTargetUnavailableError(
+                "exactly one active SPA target is required"
+            )
+        return self.resolve_ingest_target(spa_ids[0])
 
     @staticmethod
     def _normalize_name(name: str) -> str:
