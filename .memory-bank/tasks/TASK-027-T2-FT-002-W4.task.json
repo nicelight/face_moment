@@ -81,6 +81,7 @@
   ],
   "normative_inputs": [
     ".memory-bank/domains/photo-processing.md#compatible-searchable-truth",
+    ".memory-bank/domains/photo-processing.md",
     ".memory-bank/contracts/boundary-map.md#processing-input-projections",
     ".memory-bank/contracts/boundary-map.md#processing-status-projections"
   ],

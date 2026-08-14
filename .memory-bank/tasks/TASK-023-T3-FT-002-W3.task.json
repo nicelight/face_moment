@@ -103,6 +103,7 @@
   "normative_inputs": [
     ".memory-bank/features/FT-002.md#FT-002-AC-002",
     ".memory-bank/domains/photo-processing.md#idempotent-terminal-publication",
+    ".memory-bank/domains/photo-processing.md",
     ".memory-bank/architecture/system-architecture.md#AD-011",
     ".memory-bank/contracts/boundary-map.md#postgresql-and-minio-convergence"
   ],

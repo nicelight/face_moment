@@ -86,6 +86,7 @@
   ],
   "normative_inputs": [
     ".memory-bank/domains/photo-processing.md#deterministic-private-derivatives",
+    ".memory-bank/domains/photo-processing.md",
     ".memory-bank/architecture/system-architecture.md#AD-011",
     ".memory-bank/contracts/boundary-map.md#postgresql-and-minio-convergence",
     ".memory-bank/contracts/boundary-map.md#authentication-and-data-specific-delivery"

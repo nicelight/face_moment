@@ -48,10 +48,10 @@
     ".memory-bank/tasks/plans/IMPL-FT-002.md"
   ],
   "evidence_required": [
-    "FT-002-AC-001 RED: serving_control has no ordinary manual A-to-B command that consumes the completed processing guard inside the shared serving context before committing B; GREEN: the owner command validates B, consumes the guard result, returns the audited requested/committed revision result, preserves A and produces no Photo, processing, deployment or model-process side effect on rejection, and commits B only on a clear result; decisive comparison: blocked and clear guard integrations compare the committed revision and no-deployment snapshot, while an interleaved admission/switch yields only committed A plus rejected B or committed B plus a B admission; artifact: disposable serving-control integration matrix and transaction trace."
+    "FT-002-AC-001 RED: serving_control has no ordinary manual A-to-B command that first invokes processing-owned target-B validation and, only for validated B, separately consumes the completed read-only exact-A guard inside the shared serving context before committing B; GREEN: the owner command returns the audited requested/committed revision result, rejects invalid, unknown or ineligible B before commit with A and every Photo/processing/deployment/model-process snapshot unchanged, rejects a validated B when the separate guard blocks with the same unchanged snapshot, and commits B only after validated B plus a clear guard; decisive comparison: disposable target-validation, blocked-guard and clear-guard cases compare the two processing-boundary calls, committed revision and before/after side-effect snapshot, while an interleaved admission/switch yields only committed A plus rejected B or committed B plus a B admission; artifact: focused serving-control integration output and transaction trace."
   ],
-  "purpose": "Implement the serving_control-owned manual command that applies the completed processing guard and serializes a possible A-to-B serving decision with admission.",
-  "success_outcome": "A manual A-to-B request returns its audited owner result, rejects without deployment side effect when the completed guard blocks, and commits validated B only through the serial serving context that admission also uses.",
+  "purpose": "Implement the serving_control-owned manual command that invokes processing target-B validation, separately applies the completed processing guard, and serializes a possible A-to-B serving decision with admission.",
+  "success_outcome": "A manual A-to-B request returns its audited owner result, rejects invalid, unknown or ineligible B before commit and a validated B when the completed guard blocks with A and all side-effect projections unchanged, and commits B only through the serial serving context that admission also uses after both accepted processing results permit it.",
   "anti_goals": [
     "Do not reimplement the processing guard or read/write processing rows directly from serving_control.",
     "Do not add a revision registry, switch/job lifecycle, persisted mode, automatic drain, rollback, deployment action or generic coordination framework.",
@@ -86,19 +86,20 @@
     ".memory-bank/testing/photo-processing.md#terminal-and-compatibility-matrix"
   ],
   "constraints": [
-    "serving_control resolves exact current A and validates requested B inside the owner-held serving context, asks the completed processing guard only for its read-only result, and returns the contract result naming requested and committed revisions.",
+    "Inside the owner-held serving context, serving_control resolves exact current A, first calls processing-owned target-B validation, and only for a validated B separately calls the completed processing-owned read-only exact-A guard; neither accepted processing boundary is replaced by the other, and the owner returns the contract result naming requested and committed revisions.",
     "Admission obtains the same serving-context serialization before it commits its immutable revision snapshot and matching pending state, so it either completes under A before the guard or starts under B after B commits.",
-    "Use validated disposable A/B revisions, one SPA and task-owned Photos with known state, safe rerun and complete cleanup; retain the existing caller authorization boundary without adding a transport or role."
+    "Use one disposable SPA with known current validated A, a validated B plus invalid, unknown and ineligible B candidates, and task-owned Photos only for command integration; the fixture has known initial state, safe rerun and complete cleanup, retains the existing caller authorization boundary and adds no transport or role."
   ],
   "invariants": [
-    "A guard rejection preserves A, every Photo and processing state, and the current deployment/model-process binding.",
-    "Only a clear completed guard result permits the validated B commit; serving_control never accesses processing rows directly and processing never writes serving selection.",
+    "A target-validation rejection or guard rejection preserves A, every Photo and processing state, and the current deployment/model-process binding.",
+    "Only a processing-validated B plus a clear separately invoked completed guard permits B commit; serving_control never accesses processing rows directly and processing never writes serving selection.",
     "The command introduces no persisted switch state, background drain, automatic rollback or deployment side effect, and model comparison remains test-only with no bypass."
   ],
   "verification_targets": [
     ".memory-bank/contracts/boundary-map.md#manual-serving-revision-switch",
-    "Disposable blocked and clear guard integrations prove the audited requested/current result, unchanged A/no deployment effect on rejection, and validated B commit only on a clear result without adopting the dependency's exact-A state-matrix claim.",
+    "FT-002-AC-001: A disposable target-B validation integration proves serving_control calls processing to validate the requested B: invalid, unknown and ineligible B each reject before commit with the audited requested/current result, unchanged A, and no Photo, processing, deployment or model-process side effect; this is command-owned validation proof, not deployment/runtime-admission proof.",
+    "With a separately validated B, disposable blocked and clear guard integrations prove serving_control separately invokes the completed read-only exact-A guard, preserves A and the same no-side-effect snapshot on a blocker, and commits B only on a clear result without adopting TASK-039's five-state exact-A matrix claim.",
     "An interleaved admission/switch transaction probe proves one serial outcome only: completed A admission blocks B, or B commits before the new Photo receives its immutable B snapshot and matching B pending row.",
-    "Static and transaction tracing proves serving_control reaches processing only through the read-only guard, makes no direct processing-row access or foreign write bypass, and model-comparison fixtures cannot invoke or bypass the command."
+    "Static and transaction tracing proves the two accepted serving_control -> processing calls are target-B validation and the separate read-only exact-A guard, with no direct processing-row access or foreign write bypass; model-comparison fixtures cannot invoke or bypass the command."
   ]
 }

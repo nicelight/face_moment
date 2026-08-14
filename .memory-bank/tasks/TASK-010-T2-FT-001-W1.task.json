@@ -81,6 +81,7 @@
     ".memory-bank/tasks/plans/IMPL-FT-001.md"
   ],
   "normative_inputs": [
+    ".memory-bank/domains/photo-admission.md",
     ".memory-bank/invariants.md",
     ".memory-bank/domains/photo-admission.md#jpeg-and-time-contract",
     ".memory-bank/states/lifecycle-map.md#independent-photo-admission"

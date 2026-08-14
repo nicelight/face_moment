@@ -100,6 +100,7 @@
   "normative_inputs": [
     ".memory-bank/features/FT-002.md#FT-002-AC-004",
     ".memory-bank/domains/photo-admission.md#admission-time-serving-revision-lineage",
+    ".memory-bank/domains/photo-admission.md",
     ".memory-bank/domains/photo-processing.md#controlled-interval-ingest-to-searchable-projection",
     ".memory-bank/testing/photo-processing.md#full-population-slo-matrix"
   ],

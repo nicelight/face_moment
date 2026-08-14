@@ -84,6 +84,7 @@
     ".memory-bank/tasks/plans/IMPL-FT-001.md"
   ],
   "normative_inputs": [
+    ".memory-bank/domains/photo-admission.md",
     ".memory-bank/architecture/system-architecture.md#AD-002",
     ".memory-bank/architecture/system-architecture.md#AD-010",
     ".memory-bank/contracts/boundary-map.md#independent-photo-admission",

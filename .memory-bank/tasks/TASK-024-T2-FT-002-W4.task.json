@@ -79,6 +79,7 @@
   ],
   "normative_inputs": [
     ".memory-bank/domains/photo-processing.md#single-photo-orchestration",
+    ".memory-bank/domains/photo-processing.md",
     ".memory-bank/architecture/system-architecture.md#AD-002",
     ".memory-bank/contracts/boundary-map.md#processing-input-projections"
   ],

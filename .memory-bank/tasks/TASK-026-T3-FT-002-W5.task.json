@@ -122,6 +122,7 @@
   "normative_inputs": [
     ".memory-bank/features/FT-002.md#FT-002-AC-003",
     ".memory-bank/architecture/system-architecture.md#ad-012--manual-serving-revision-switch-with-accepted-downtime",
+    ".memory-bank/architecture/system-architecture.md",
     ".memory-bank/architecture/system-architecture.md#deployment-and-recovery",
     ".memory-bank/contracts/boundary-map.md#manual-serving-revision-switch",
     ".memory-bank/domains/photo-processing.md#model-asset-admission",

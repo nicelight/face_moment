@@ -83,6 +83,7 @@
     ".memory-bank/tasks/plans/IMPL-FT-001.md"
   ],
   "normative_inputs": [
+    ".memory-bank/states/lifecycle-map.md",
     ".memory-bank/architecture/system-architecture.md#AD-011",
     ".memory-bank/contracts/boundary-map.md#postgresql-and-minio-convergence",
     ".memory-bank/domains/photo-admission.md#pre-commit-crash-recovery",

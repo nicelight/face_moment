@@ -86,6 +86,7 @@
   "normative_inputs": [
     ".memory-bank/features/FT-002.md#FT-002-AC-007",
     ".memory-bank/domains/photo-processing.md#opencv-sface-photo-adapter",
+    ".memory-bank/domains/photo-processing.md",
     ".memory-bank/domains/photo-processing.md#model-asset-admission",
     ".memory-bank/architecture/system-architecture.md#AD-002"
   ],

@@ -32,7 +32,7 @@
   Доведи существующую JSON task queue через `$autopilot` в scheduler mode до terminal state.
 
   ## Принцип работы
-  
+
   Работай только как control plane: readiness, sequencing, делегирование, анализ evidence, lifecycle-решения и terminal state.
 
   Береги контекст: загружай только минимальный governing context, authoritative queue state и критические evidence для  принятия решений. Требуй от workers компактные structured reports.
@@ -44,7 +44,7 @@
   Для каждой задачи используй независимые fresh-session workers:
 
   - `Implementer` — только `/execute`, запускай сабагента Codex Luna xhigh;
-  - другой `Reviewer` — `/verify` и применимый `/red-verify`, запускай сабагента Codex Sol Xhigh.
+  - другой `Reviewer` — `/verify` и применимый `/red-verify`.
 
   Не совмещай implementation и verification у одного worker. По умолчанию выполняй задачи последовательно.
   Если ревьювер нашел проблемы, после их устранения воркером, возвращай ответ воркера тому же самому ревьюверу, чтобы экономить токены. 

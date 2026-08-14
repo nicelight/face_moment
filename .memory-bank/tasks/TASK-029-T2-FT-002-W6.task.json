@@ -81,6 +81,7 @@
   "normative_inputs": [
     ".memory-bank/features/FT-002.md#FT-002-AC-005",
     ".memory-bank/domains/photo-processing.md#shared-worker-calibration-delay",
+    ".memory-bank/domains/photo-processing.md",
     ".memory-bank/architecture/system-architecture.md#AD-004",
     ".memory-bank/contracts/boundary-map.md#calibration-and-serving-change",
     ".memory-bank/testing/photo-processing.md#full-population-slo-matrix"
