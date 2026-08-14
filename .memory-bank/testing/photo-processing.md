@@ -1,7 +1,7 @@
 ---
 description: Reproducible verification contract for FT-002 processing, recovery, SLO and storage-health behavior.
 status: active
-last_updated: 2026-08-13
+last_updated: 2026-08-14
 source_of_truth:
   - .memory-bank/testing/photo-processing.md
 ---
@@ -48,6 +48,25 @@ fixtures use an incompatible revision, invalid embedding dimension, incomplete
 derivative publication and inactive Photo. Only complete active `ready` for the
 current serving revision may produce `searchable=true`.
 
+The per-Photo API compatibility fixture admits one Photo under revision A and
+adds a second B state. With A current, the API returns exact A state fields and
+the ordinary A completeness/activity `searchable` truth. After current serving
+changes to B, it still returns `200` with A's revision, pipeline, status,
+attempts and timestamps but `searchable=false`. Repeat with a complete `ready`
+B row and confirm it neither replaces the A response nor triggers
+`MultipleResultsFound`. The read is mutation-free and a missing required A
+state remains the existing owner-read `5xx` branch.
+
+The ordinary serving-switch matrix starts with current validated A and target
+validated B for one СПА. One A-admitted Photo in each of `pending` and
+`processing` yields the audited rejection result, keeps A current, and changes
+no Photo state, assets or model-consuming process. Each of `ready`, `no_faces`
+and `failed` permits B to commit; the later restart/admission matrix then proves
+the committed B binding separately. An interleaved admission and switch proves
+one serial outcome only: the completed A admission blocks B, or the successful
+B switch makes the admission snapshot B. Calibration/model-comparison fixtures
+remain offline and cannot invoke or bypass the guard.
+
 The adapter matrix binds one synthetic image independently to the configured
 SFace and Buffalo M adapters. It records revision identity, detector/recognizer
 call path, embedding dimension and proof that neither path consumes the other
@@ -92,8 +111,16 @@ Photos:
 - compatible ready exactly at or after 15 minutes;
 - `no_faces`, `failed`, `pending` and `processing` at age at least 15 minutes;
 - one still-open Photo younger than 15 minutes;
-- one rejected candidate, one checksum duplicate and one non-serving revision
-  state as explicit exclusions.
+- one rejected candidate and one checksum duplicate as explicit exclusions.
+
+For one accepted A-revision Photo, switch current serving to B and add an
+explicit B state. The SLO row still joins only the Photo's persisted admission
+revision A state and therefore remains one member of its original class. No
+state/revision timestamp, status, attempt count or current serving selection
+may choose the row. The lineage-migration matrix starts with an empty `photos`
+table for upgrade/downgrade/re-upgrade and separately proves that any non-empty
+Photo table aborts before schema/data mutation; it never backfills a guessed
+revision.
 
 Reconcile every Photo to exactly one `success`, `breach` or `open` class. The
 retained evidence records acceptance/state/searchable times, interval bounds,
@@ -135,7 +162,7 @@ read-only and PostgreSQL, MinIO and internal service ports remain private.
 
 | Feature criterion | Required proof |
 |---|---|
-| `FT-002-AC-001` | Terminal/compatibility matrix plus exact staff-visible state proves only complete current-revision `ready` is searchable. |
+| `FT-002-AC-001` | Terminal/compatibility and ordinary-switch matrices prove only complete current-revision `ready` is searchable, `pending|processing` A rejects B before commit, and every terminal A state permits B. |
 | `FT-002-AC-002` | Repeat and post-derivative interruption converge on one derivative/face set and terminal state. |
 | `FT-002-AC-003` | Worker restart preserves pending/processing population, resets unfinished work and reaches idempotent terminals. |
 | `FT-002-AC-004` | Controlled half-open full-population matrix reconciles successes, breaches, opens and explicit exclusions to the 95%/15-minute rule and proves the all-zero/null empty result. |

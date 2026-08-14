@@ -1,7 +1,7 @@
 ---
 description: Operator recovery procedure for Chromium/display failure and ordinary central-runtime restart with intact primary volumes.
 status: active
-last_updated: 2026-08-06
+last_updated: 2026-08-14
 source_of_truth:
   - .memory-bank/runbooks/display-and-central-restart.md
 ---
@@ -21,6 +21,22 @@ unreachable, restore after irreversible loss of the sole primary disk/server,
 or backup/replication recovery. Never use `docker compose down -v`, delete a
 volume, reset a display token or change a serving revision as part of this
 procedure.
+
+## Serving-Revision Boundary
+
+An ordinary serving-revision change is a separate authenticated maintenance
+action, not a recovery step. Before any A-to-B asset/settings update or
+model-consuming-process restart, the operator uses the `serving_control`
+command. Its processing-owned pre-commit guard rejects B while an A-admitted
+Photo has A state `pending` or `processing`; rejection keeps A and the current
+deployment untouched. `ready`, `no_faces` and `failed` A states permit the
+command to commit B, after which the AD-012 maintenance/restart path applies.
+Calibration/model comparison is test-only and cannot bypass this command.
+Direct database edits, restart or this recovery procedure are not alternative
+revision-switch paths.
+
+Source: [Architecture Spine AD-012](../architecture/system-architecture.md#architecture-spine)
+and the [manual serving-revision contract](../contracts/boundary-map.md#manual-serving-revision-switch).
 
 ## Preconditions
 

@@ -41,13 +41,14 @@ def _add_photo(
     status: str,
     searchable_at: datetime | None = None,
     complete: bool = False,
-) -> None:
+) -> uuid.UUID:
     photo = Photo(
         spa_id=spa_id,
         visit_date=date(2026, 8, 14),
         captured_at=accepted_at,
         captured_at_source=CapturedAtSource.UPLOAD_STARTED_AT,
         accepted_at=accepted_at,
+        admission_pipeline_revision_id=pipeline_revision_id,
         uploader_id=uuid.uuid4(),
         checksum_sha256=hashlib.sha256(marker.encode()).digest(),
         original_object_key=f"private/task-028/{marker}/original.jpg",
@@ -82,6 +83,7 @@ def _add_photo(
                 embedding=[1.0] + [0.0] * 127,
             )
         )
+    return photo.id
 
 
 def _fixture(engine: Engine) -> _Fixture:
@@ -306,7 +308,7 @@ def test_ingest_slo_keeps_admission_revision_after_serving_switch(
                 timezone="Asia/Dushanbe",
                 serving_pipeline_revision_id=admission_revision.id,
             )
-            _add_photo(
+            photo_id = _add_photo(
                 session,
                 marker=f"admission-a-{marker}",
                 spa_id=target.spa_id,
@@ -322,6 +324,33 @@ def test_ingest_slo_keeps_admission_revision_after_serving_switch(
             spa = session.get(Spa, target.spa_id)
             assert spa is not None
             spa.serving_pipeline_revision_id = later_serving_revision.id
+            later_state = InitialPendingRepository(session).create_initial_pending(
+                photo_id=photo_id,
+                pipeline_revision_id=later_serving_revision.id,
+            )
+            later_state.status = "ready"
+            later_state.status_changed_at = _ACCEPTED_FROM + timedelta(minutes=5)
+            later_state.searchable_at = _ACCEPTED_FROM + timedelta(minutes=5)
+            later_state.preview_object_key = (
+                f"private/task-028/admission-b-{marker}/preview.jpg"
+            )
+            later_state.thumbnail_object_key = (
+                f"private/task-028/admission-b-{marker}/thumbnail.jpg"
+            )
+            session.add(
+                PhotoFace(
+                    photo_id=photo_id,
+                    pipeline_revision_id=later_serving_revision.id,
+                    face_index=0,
+                    bbox_x=1.0,
+                    bbox_y=1.0,
+                    bbox_w=4.0,
+                    bbox_h=4.0,
+                    landmarks_json=[[1.0, 1.0]] * 5,
+                    detection_confidence=0.9,
+                    embedding=[1.0] + [0.0] * 127,
+                )
+            )
             session.commit()
 
         statements: list[str] = []

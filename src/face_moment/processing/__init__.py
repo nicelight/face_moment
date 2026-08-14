@@ -9,6 +9,7 @@ from face_moment.processing.revisions import (
     PipelineRevisionRepository,
     UnsupportedPipelineCodeError,
 )
+from face_moment.processing.searchable_projection import read_photo_processing_projection
 
 __all__ = [
     "EligiblePipelineRevision",
@@ -18,5 +19,6 @@ __all__ = [
     "IneligiblePipelineRevisionError",
     "PipelineCode",
     "PipelineRevisionRepository",
+    "read_photo_processing_projection",
     "UnsupportedPipelineCodeError",
 ]

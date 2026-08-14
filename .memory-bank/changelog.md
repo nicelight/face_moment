@@ -4,6 +4,59 @@ status: active
 ---
 # Changelog
 
+## [2026-08-14] Wave W6 — reconciled processing observation closures
+- Reconciled the already-recorded scheduler `done` states for
+  `TASK-029-T2-FT-002-W6`, `TASK-031-T2-FT-002-W6`,
+  `TASK-035-T3-FT-002-W6`, and `TASK-038-T2-FT-002-W6` with their indexed
+  independent evidence. TASK-035 retains its Attempt 1 `semantic-fail` and
+  final Attempt 2 `PASS` plus `semantic-pass`; the earlier successful
+  functional verification remains part of that first unsuccessful T3 attempt.
+- The closure evidence covers the bounded shared-worker Calibration hold and
+  resume, immutable admission-lineage status selection, truthful independent
+  uploader polling, and the authenticated processing-health API. TASK-031's
+  historical selector-gap stop report and its subsequent planning repair
+  remain linked through TASK-038 rather than being replaced by the final PASS.
+- Kept `FT-002`, its affected RTM rows, and `EP-001` `planned` because the W7
+  processing-health UI/UAT obligation remains. The authoritative record for
+  `TASK-036-T3-FT-002-W7` is already `ready`; this sync made no promotion,
+  dependent-state, task, evidence, product/design/spec, code, or Global
+  Backbone Planning Revision `4` decision.
+
+## [2026-08-14] FT-002 — admission-lineage status selector repair
+- The existing immutable `Photo.admission_pipeline_revision_id` selects the
+  one per-Photo status row as well as the SLO row: every state-bearing response
+  field comes from the admission revision, while current-serving compatibility
+  only derives `searchable` for that selected row.
+- The Photo Processing API and verification matrix now cover the complete A+B
+  compatibility matrix. An additional B state never replaces A or makes the
+  read non-scalar; after serving switches to B the stable A response is
+  `searchable=false`.
+- Rebuilt only the affected plan surface: indexed planned
+  `TASK-038-T2-FT-002-W6` owns the narrow selector repair, and blocked
+  `TASK-031-T2-FT-002-W6` depends on it. `TASK-035` remains `ready`,
+  `TASK-036` remains `blocked`, completed evidence remains intact, and Global
+  Backbone Planning Revision stays `4`.
+
+## [2026-08-14] Wave W5 — reconciled processing status, admission lineage and SLO closures
+- Reconciled the already-recorded scheduler `done` states for
+  `TASK-030-T3-FT-002-W5`, `TASK-037-T2-FT-002-W5`, and
+  `TASK-028-T2-FT-002-W5` with their indexed independent `PASS` evidence;
+  TASK-030 also retains its required `semantic-pass` evidence.
+- The closure evidence covers authenticated per-Photo processing status,
+  immutable Photo admission-revision lineage, and the full-population SLO
+  projection that counts each accepted Photo exactly once through that
+  lineage. TASK-028 retains its two historical verification failures and its
+  final proof that later serving selection or state rows neither replace nor
+  multiply the admitted Photo.
+- Reconciled the bounded stale FT-002 edge-wording repair with the accepted
+  lineage contracts. Fresh `/review-tasks-plan FT-002` returned `APPROVE` for
+  Global Backbone Planning Revision `4`, with no blocker or queue/contract
+  expansion.
+- Kept `FT-002`, its affected RTM rows and `EP-001` `planned`: W6-W7
+  obligations remain indexed. Existing downstream statuses remain unchanged,
+  and this reconciliation made no task, dependency, evidence, lifecycle,
+  product/design/spec, code, or Planning Revision change.
+
 ## [2026-08-13] Wave W4 — reconciled processing orchestration and projections
 - Reconciled the already-recorded scheduler `done` states for
   `TASK-024-T2-FT-002-W4`, `TASK-027-T2-FT-002-W4`, and

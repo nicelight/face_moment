@@ -1,7 +1,7 @@
 {
   "id": "TASK-031-T2-FT-002-W6",
   "title": "Poll truthful status in the photographer uploader",
-  "status": "planned",
+  "status": "done",
   "wave": "W6",
   "feature": "FT-002",
   "reqs": [
@@ -11,7 +11,8 @@
   ],
   "depends_on": [
     "TASK-026-T3-FT-002-W5",
-    "TASK-030-T3-FT-002-W5"
+    "TASK-030-T3-FT-002-W5",
+    "TASK-038-T2-FT-002-W6"
   ],
   "touched_files": [
     "src/face_moment/inventory/",
@@ -36,7 +37,19 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "PASS",
+      "completed_at": "2026-08-14T07:19:49+05:00",
+      "image": "face-moment:task-031@sha256:e9e51cbe9c66833d4fac0ce0d89778581f181638544cfc6f53874b4c2e28a9df",
+      "summary": "Fresh independent T2 exact-image verification passed packaged mypy, focused UI pytest, full API contract pytest, mb-lint and an isolated Playwright CLI browser/API/DB matrix. Five accepted rows independently rendered pending, processing and the complete terminal/compatibility truth; A+B under B serving stayed scalar admission A and not searchable; duplicate/reject caused zero polls; auth/safe errors and protected-fact redaction passed; cleanup left zero task runtime, storage or browser residue.",
+      "protocol": ".protocols/TASK-031-T2-FT-002-W6/verification.md",
+      "report": ".tasks/TASK-031-T2-FT-002-W6/TASK-031-T2-FT-002-W6-S-VERIFY-final-report-docs-01.md",
+      "browser_evidence": ".tasks/TASK-031-T2-FT-002-W6/verification/playwright-cli-transcript.md"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-002.md",
     ".memory-bank/domains/photo-processing.md",
@@ -72,12 +85,14 @@
   ],
   "normative_inputs": [
     ".memory-bank/features/FT-002.md#FT-002-AC-001",
+    ".memory-bank/contracts/photo-processing-api.md#admission-lineage-selector",
     ".memory-bank/contracts/photo-processing-api.md#per-photo-processing-status",
     ".memory-bank/testing/index.md#ui-verification",
     ".memory-bank/testing/photo-processing.md#terminal-and-compatibility-matrix"
   ],
   "constraints": [
     "Extend the existing plain same-origin uploader page and poll only accepted photo_id values.",
+    "Consume the admission-lineage-qualified API from TASK-038; the browser does not select or combine revision rows.",
     "Use the installed Playwright CLI through `playwright cli`; browser-free DOM/HTTP probes are not substitutes for UAT.",
     "Use deterministic disposable Photo paths for ready, no_faces, failed and incompatible/inactive ready and clean only task-owned state."
   ],
@@ -92,4 +107,3 @@
     "Persisted rows and projection membership are reconciled to every visible result without implementing FT-004 cosine search."
   ]
 }
-

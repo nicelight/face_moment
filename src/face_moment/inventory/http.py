@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 
-from datetime import date
+from datetime import date, datetime
 from ipaddress import ip_address
 from uuid import UUID
 
@@ -29,6 +29,18 @@ from face_moment.inventory.photo_upload import (
     PhotographerAccessDeniedError as UploadPhotographerAccessDeniedError,
     upload_photo,
 )
+from face_moment.inventory.photo_processing_status import (
+    PhotoProcessingStatusAccessDeniedError,
+    PhotoProcessingStatusNotFoundError,
+    read_photo_processing_status,
+)
+from face_moment.inventory.processing_health import (
+    InvalidProcessingHealthIntervalError,
+    ProcessingHealthAccessDeniedError,
+    ProcessingHealthNotFoundError,
+    authorize_processing_health_access,
+    read_processing_health,
+)
 from face_moment.inventory.validation import InvalidJpegCandidateError
 from face_moment.platform.auth.sessions import CsrfValidationError, InvalidSessionError
 
@@ -50,6 +62,22 @@ def register_ingest_target_routes(app: FastAPI) -> None:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN) from error
         return HTMLResponse(_photo_upload_page_html())
 
+    @app.get("/staff/processing-health", response_class=HTMLResponse)
+    def processing_health_page(
+        fm_staff_session: str | None = Cookie(default=None),
+    ) -> HTMLResponse:
+        with _database_session(Settings.from_env()) as database_session:
+            try:
+                authorize_processing_health_access(
+                    database_session,
+                    session_token=fm_staff_session,
+                )
+            except ProcessingHealthAccessDeniedError as error:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN) from error
+            except InvalidSessionError as error:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from error
+        return HTMLResponse(_processing_health_page_html())
+
     @app.get("/api/inventory/ingest-targets", response_model=None)
     def ingest_targets(
         fm_staff_session: str | None = Cookie(default=None),
@@ -64,6 +92,56 @@ def register_ingest_target_routes(app: FastAPI) -> None:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from error
             except PhotographerAccessDeniedError as error:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN) from error
+
+    @app.get("/api/inventory/photos/{photo_id}/processing", response_model=None)
+    def photo_processing_status(
+        photo_id: UUID,
+        fm_staff_session: str | None = Cookie(default=None),
+    ) -> dict[str, object]:
+        with _database_session(Settings.from_env()) as database_session:
+            try:
+                return read_photo_processing_status(
+                    database_session,
+                    session_token=fm_staff_session,
+                    photo_id=photo_id,
+                ).as_response()
+            except PhotoProcessingStatusAccessDeniedError as error:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN) from error
+            except PhotoProcessingStatusNotFoundError as error:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from error
+            except InvalidSessionError as error:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from error
+            except Exception as error:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR) from error
+
+    @app.get("/api/inventory/processing-health", response_model=None)
+    def processing_health(
+        spa_id: UUID,
+        accepted_from: datetime | None = None,
+        accepted_before: datetime | None = None,
+        fm_staff_session: str | None = Cookie(default=None),
+    ) -> dict[str, object]:
+        settings = Settings.from_env()
+        with _database_session(settings) as database_session:
+            try:
+                return read_processing_health(
+                    database_session,
+                    settings=settings,
+                    session_token=fm_staff_session,
+                    spa_id=spa_id,
+                    accepted_from=accepted_from,
+                    accepted_before=accepted_before,
+                ).as_response()
+            except ProcessingHealthAccessDeniedError as error:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN) from error
+            except ProcessingHealthNotFoundError as error:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from error
+            except InvalidProcessingHealthIntervalError as error:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY) from error
+            except InvalidSessionError as error:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from error
+            except Exception as error:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR) from error
 
     @app.post("/api/inventory/photos", response_model=None)
     async def photo_upload(
@@ -235,6 +313,7 @@ def _photo_upload_page_html() -> str:
     const filesInput = document.querySelector("#photos");
     const results = document.querySelector("#upload-results");
     const formMessage = document.querySelector("#form-message");
+    const terminalProcessingStatuses = new Set(["ready", "no_faces", "failed"]);
 
     function csrfToken() {
       const prefix = "fm_staff_csrf=";
@@ -262,6 +341,45 @@ def _photo_upload_page_html() -> str:
       row.detail.textContent = detail ? ` — ${detail}` : "";
     }
 
+    function renderProcessingStatus(payload, row) {
+      if (payload.processing_status === "ready") {
+        setResult(
+          row,
+          payload.searchable ? "searchable" : "ready",
+          payload.searchable ? "" : "not searchable",
+        );
+      } else if (payload.processing_status === "failed") {
+        setResult(row, "failed", payload.failure_reason || "");
+      } else if (payload.processing_status === "no_faces") {
+        setResult(row, "no_faces");
+      } else {
+        setResult(row, payload.processing_status);
+      }
+    }
+
+    async function pollProcessingStatus(photoId, row) {
+      while (true) {
+        try {
+          const response = await fetch(`/api/inventory/photos/${photoId}/processing`, {
+            credentials: "same-origin",
+          });
+          if (!response.ok) {
+            setResult(row, "status unavailable");
+            return;
+          }
+          const payload = await response.json();
+          renderProcessingStatus(payload, row);
+          if (terminalProcessingStatuses.has(payload.processing_status)) {
+            return;
+          }
+        } catch (_) {
+          setResult(row, "status unavailable");
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+
     async function uploadFile(file, spaId, visitDate, row) {
       const body = new FormData();
       body.append("spa_id", spaId);
@@ -279,7 +397,8 @@ def _photo_upload_page_html() -> str:
           const warning = payload.warnings.includes("exif_visit_date_mismatch")
             ? "EXIF date differs; selected date retained"
             : "";
-          setResult(row, "accepted", warning);
+          setResult(row, "pending", warning);
+          void pollProcessingStatus(payload.photo.photo_id, row);
         } else if (response.status === 200) {
           setResult(row, "duplicate");
         } else if (response.status === 413 || response.status === 422) {
@@ -328,6 +447,200 @@ def _photo_upload_page_html() -> str:
     });
 
     loadTargets();
+  </script>
+</body>
+</html>"""
+
+
+def _processing_health_page_html() -> str:
+    return """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Processing health</title>
+</head>
+<body>
+  <main>
+    <h1>Processing health</h1>
+    <form id="processing-health-query">
+      <label for="health-spa-id">SPA ID</label>
+      <input id="health-spa-id" name="spa_id" required>
+      <label for="accepted-from">Accepted from (optional ISO timestamp)</label>
+      <input id="accepted-from" name="accepted_from">
+      <label for="accepted-before">Accepted before (optional ISO timestamp)</label>
+      <input id="accepted-before" name="accepted_before">
+      <button type="submit">Refresh health</button>
+    </form>
+    <p id="health-message" role="alert"></p>
+
+    <section aria-label="Processing queue">
+      <h2>Processing queue</h2>
+      <dl>
+        <dt>Pending</dt><dd id="queue-pending"></dd>
+        <dt>Processing</dt><dd id="queue-processing"></dd>
+        <dt>Ready</dt><dd id="queue-ready"></dd>
+        <dt>No faces</dt><dd id="queue-no-faces"></dd>
+        <dt>Failed</dt><dd id="queue-failed"></dd>
+        <dt>Oldest pending accepted at</dt><dd id="queue-oldest-pending-accepted-at"></dd>
+        <dt>Current operation</dt><dd id="queue-current-operation"></dd>
+        <dt>Operation started at</dt><dd id="queue-operation-started-at"></dd>
+        <dt>Worker started at</dt><dd id="queue-worker-started-at"></dd>
+        <dt>Last recovery at</dt><dd id="queue-last-recovery-at"></dd>
+        <dt>Last recovered count</dt><dd id="queue-last-recovered-count"></dd>
+      </dl>
+    </section>
+
+    <section aria-label="Ingest to searchable SLO">
+      <h2>Ingest to searchable SLO</h2>
+      <p id="slo-message"></p>
+      <dl>
+        <dt>Accepted from</dt><dd id="slo-accepted-from"></dd>
+        <dt>Accepted before</dt><dd id="slo-accepted-before"></dd>
+        <dt>Population</dt><dd id="slo-population"></dd>
+        <dt>Success under 15 minutes</dt><dd id="slo-success-under-15-minutes"></dd>
+        <dt>Breach</dt><dd id="slo-breach"></dd>
+        <dt>Open</dt><dd id="slo-open"></dd>
+        <dt>Success ratio</dt><dd id="slo-success-ratio"></dd>
+        <dt>95 percent verdict</dt><dd id="slo-verdict"></dd>
+      </dl>
+    </section>
+
+    <section aria-label="PostgreSQL capacity">
+      <h2>PostgreSQL capacity</h2>
+      <dl>
+        <dt>Status</dt><dd id="postgresql-status"></dd>
+        <dt>Available bytes</dt><dd id="postgresql-available-bytes"></dd>
+        <dt>Low threshold bytes</dt><dd id="postgresql-low-threshold-bytes"></dd>
+        <dt>Observed at</dt><dd id="postgresql-observed-at"></dd>
+        <dt>Error</dt><dd id="postgresql-error"></dd>
+      </dl>
+    </section>
+
+    <section aria-label="MinIO capacity">
+      <h2>MinIO capacity</h2>
+      <dl>
+        <dt>Status</dt><dd id="minio-status"></dd>
+        <dt>Available bytes</dt><dd id="minio-available-bytes"></dd>
+        <dt>Low threshold bytes</dt><dd id="minio-low-threshold-bytes"></dd>
+        <dt>Observed at</dt><dd id="minio-observed-at"></dd>
+        <dt>Error</dt><dd id="minio-error"></dd>
+      </dl>
+    </section>
+  </main>
+  <script>
+    const healthForm = document.querySelector("#processing-health-query");
+    const healthMessage = document.querySelector("#health-message");
+    const sloMessage = document.querySelector("#slo-message");
+    const healthFieldNames = ["spa_id", "accepted_from", "accepted_before"];
+
+    function renderValue(id, value, missing = "not available") {
+      document.querySelector(`#${id}`).textContent = value === null ? missing : String(value);
+    }
+
+    function queryFromForm() {
+      const query = new URLSearchParams();
+      const values = new FormData(healthForm);
+      for (const name of healthFieldNames) {
+        const value = values.get(name);
+        if (typeof value === "string" && value) {
+          query.set(name, value);
+        }
+      }
+      return query.toString();
+    }
+
+    function renderQueue(queue) {
+      renderValue("queue-pending", queue.pending);
+      renderValue("queue-processing", queue.processing);
+      renderValue("queue-ready", queue.ready);
+      renderValue("queue-no-faces", queue.no_faces);
+      renderValue("queue-failed", queue.failed);
+      renderValue("queue-oldest-pending-accepted-at", queue.oldest_pending_accepted_at);
+      renderValue("queue-current-operation", queue.current_operation);
+      renderValue("queue-operation-started-at", queue.operation_started_at);
+      renderValue("queue-worker-started-at", queue.worker_started_at);
+      renderValue("queue-last-recovery-at", queue.last_recovery_at);
+      renderValue("queue-last-recovered-count", queue.last_recovered_count);
+    }
+
+    function renderSlo(slo) {
+      if (slo === null) {
+        sloMessage.textContent = "No controlled SLO interval selected.";
+        for (const id of [
+          "slo-accepted-from", "slo-accepted-before", "slo-population",
+          "slo-success-under-15-minutes", "slo-breach", "slo-open",
+          "slo-success-ratio", "slo-verdict",
+        ]) {
+          renderValue(id, null, "not selected");
+        }
+        return;
+      }
+      sloMessage.textContent = "Controlled SLO interval.";
+      renderValue("slo-accepted-from", slo.accepted_from);
+      renderValue("slo-accepted-before", slo.accepted_before);
+      renderValue("slo-population", slo.population);
+      renderValue("slo-success-under-15-minutes", slo.success_under_15_minutes);
+      renderValue("slo-breach", slo.breach);
+      renderValue("slo-open", slo.open);
+      renderValue("slo-success-ratio", slo.success_ratio, "no ratio");
+      renderValue("slo-verdict", slo.meets_95_percent, "no verdict");
+    }
+
+    function renderStorage(name, storage) {
+      renderValue(`${name}-status`, storage.status);
+      renderValue(`${name}-available-bytes`, storage.available_bytes);
+      renderValue(`${name}-low-threshold-bytes`, storage.low_threshold_bytes);
+      renderValue(`${name}-observed-at`, storage.observed_at);
+      renderValue(`${name}-error`, storage.error);
+    }
+
+    function renderHealth(payload) {
+      renderQueue(payload.queue);
+      renderSlo(payload.ingest_to_searchable);
+      renderStorage("postgresql", payload.storage.postgresql);
+      renderStorage("minio", payload.storage.minio);
+      healthMessage.textContent = "";
+    }
+
+    async function loadHealth() {
+      const query = queryFromForm();
+      if (!query.includes("spa_id=")) {
+        healthMessage.textContent = "Enter a SPA ID.";
+        return;
+      }
+      try {
+        const response = await fetch(`/api/inventory/processing-health?${query}`, {
+          credentials: "same-origin",
+        });
+        if (!response.ok) {
+          healthMessage.textContent = "Health data unavailable.";
+          return;
+        }
+        renderHealth(await response.json());
+      } catch (_) {
+        healthMessage.textContent = "Health data unavailable.";
+      }
+    }
+
+    function loadInitialQuery() {
+      const initialQuery = new URLSearchParams(window.location.search);
+      for (const name of healthFieldNames) {
+        const value = initialQuery.get(name);
+        if (value !== null) {
+          healthForm.elements.namedItem(name).value = value;
+        }
+      }
+      void loadHealth();
+    }
+
+    healthForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      void loadHealth();
+    });
+
+    loadInitialQuery();
+    setInterval(loadHealth, 5000);
   </script>
 </body>
 </html>"""

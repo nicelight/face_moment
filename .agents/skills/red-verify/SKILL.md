@@ -48,6 +48,8 @@ for semantic-pass.
 </input_contract>
 
 <hard_invariants>
+- Before the semantic verdict, load and apply this installed skill's
+  `references/finding-adjudication.md` semantic pack.
 - Use an independent verifier context; do not trust task prose, writer claims,
   or `VERDICT: PASS` as proof of semantic correctness.
 - Route only by task tier and the loaded tier-policy sections; never use legacy
@@ -79,7 +81,7 @@ verification policy, the verifier does not pick a favorable reading.
   immaterial candidate.
 - Interactive flow asks the operator; recommendation/default/silence is not an
   accepted decision. The answer must be durably applied by
-  `/feature-doctor`, `/feature-to-tasks`, or `/spec-design`, then functional and
+  `/feature-doctor`, `/feature-to-tasks`, or `/spec-redesign`, then functional and
   semantic gates rerun as applicable.
 - Unattended flow returns the blocker to the scheduler for
   `HALT_CLARIFICATION_REQUIRED` or `HALT_BLOCKING_QUESTIONS` and names the exact
@@ -150,6 +152,12 @@ accepted contract. A verifier-generated probe, review, test, or validator does
 not authorize a new requirement or permanent regression. `/red-verify` does not
 repeat ordinary `/verify` coverage, but any material supported-path break it
 proves remains reportable.
+
+When a running UI, relevant route, browser capability, and safe test state are
+already accessible, the verifier may load this installed skill's
+`references/web-design-reviewer.md` as an optional lens for the supported path
+and affected surface. Otherwise the standard semantic review continues. This
+command's existing evidence and verdict contracts govern either path.
 </agent_discretion>
 
 <required_outputs>

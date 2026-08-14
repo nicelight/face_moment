@@ -50,6 +50,26 @@ class BackgroundPhotoWorker:
         )
         return True
 
+    def run_calibration(self, hold: Callable[[], None]) -> None:
+        """Run one controlled Calibration hold on this same singleton worker."""
+
+        with self._session_factory() as session:
+            WorkerClaimRepository(
+                session,
+                bound_pipeline_revision_id=self._bound_pipeline_revision_id,
+            ).begin_calibration()
+            session.commit()
+
+        try:
+            hold()
+        finally:
+            with self._session_factory() as session:
+                WorkerClaimRepository(
+                    session,
+                    bound_pipeline_revision_id=self._bound_pipeline_revision_id,
+                ).finish_calibration()
+                session.commit()
+
     async def run_until_stopped(
         self,
         *,

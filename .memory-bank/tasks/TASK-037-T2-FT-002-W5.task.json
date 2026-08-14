@@ -1,0 +1,110 @@
+{
+  "id": "TASK-037-T2-FT-002-W5",
+  "title": "Persist immutable Photo admission-revision lineage",
+  "status": "done",
+  "wave": "W5",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-ING-003",
+    "REQ-ING-004"
+  ],
+  "depends_on": [
+    "TASK-018-T2-FT-002-W1",
+    "TASK-012-T2-FT-001-W5"
+  ],
+  "touched_files": [
+    "src/face_moment/inventory/",
+    "src/face_moment/processing/initial_pending.py",
+    "migrations/versions/",
+    "tests/inventory/test_admission_lineage.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Admission lineage tests",
+      "command": "docker compose run --rm backend python -m pytest tests/inventory/test_admission_lineage.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "completed_at": "2026-08-14T04:30:00+05:00",
+      "summary": "Fresh independent T2 verification on the exact packaged image passed the required gates and a twice-repeated disposable PostgreSQL probe. It proved direct 0008-to-0009 ancestry, unchanged pre-DDL non-empty abort, exact UUID NOT NULL RESTRICT lineage shape, same-IngestTarget Photo/pending commit, complete rollback, retained admission revision after later serving/state revision and complete cleanup.",
+      "protocol": ".protocols/TASK-037-T2-FT-002-W5/verification.md",
+      "report": ".tasks/TASK-037-T2-FT-002-W5/TASK-037-T2-FT-002-W5-S-VERIFY-final-report-docs-01.md"
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/domains/photo-admission.md#admission-time-serving-revision-lineage RED: an admitted Photo has no immutable persisted revision selecting its original pending state, so a later revision state cannot be distinguished without inference; GREEN: one empty-table linear migration adds non-null Photo admission_pipeline_revision_id with RESTRICT revision reference, atomic admission writes it from the same IngestTarget as the matching pending state, and a non-empty Photo table aborts before schema/data mutation; decisive comparison: empty-path upgrade/downgrade/re-upgrade and one admission pair retain exact identity while the non-empty path is unchanged; artifact: isolated migration/admission transcript and database projections."
+  ],
+  "purpose": "Create the one immutable persisted admission-revision fact required to select each accepted Photo's sole SLO state after additional revision states exist.",
+  "success_outcome": "An accepted Photo atomically persists its IngestTarget revision and matching pending state; the additive pre-production migration refuses non-empty Photo data rather than guessing or mutating lineage.",
+  "anti_goals": [
+    "Do not add a revision history, registry, jobs table, monitoring store, serving-switch behavior or second processing lifecycle.",
+    "Do not backfill, delete, repoint or infer an existing Photo/state relation from current serving selection, timestamps, status, attempt count or revision order."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012",
+      "SLO aggregation or staff API behavior owned by TASK-028 and later consumers"
+    ],
+    "stop_conditions": [
+      "A non-empty Photo table must be preserved rather than explicitly reset before the pre-production migration.",
+      "The durable fact would require a second state/history table, current-serving inference or an ownership-changing data contract."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-admission.md#admission-time-serving-revision-lineage",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/photo-admission.md#admission-time-serving-revision-lineage",
+    ".memory-bank/domains/photo-admission.md#atomic-photo-and-pending-transaction",
+    ".memory-bank/domains/photo-processing.md#controlled-interval-ingest-to-searchable-projection",
+    ".memory-bank/contracts/boundary-map.md#independent-photo-admission",
+    ".memory-bank/architecture/system-architecture.md#AD-003",
+    ".memory-bank/architecture/system-architecture.md#AD-010",
+    ".memory-bank/testing/photo-processing.md#full-population-slo-matrix"
+  ],
+  "constraints": [
+    "Extend the current linear Alembic head at execution; do not assert a mutable future exact head.",
+    "Use one non-null immutable Photo admission_pipeline_revision_id copied from the existing IngestTarget and matching PhotoPipelineState key in the same admission transaction.",
+    "Inventory owns the admission transaction and invokes processing only through the existing typed initial-pending boundary; neither transport nor processing writes Photo identity directly.",
+    "Before its first schema mutation, require face_moment.photos to be empty; do not synthesize or mutate lineage for any existing Photo.",
+    "Use unique disposable PostgreSQL state, a known initial condition, safe rerun and task-owned cleanup."
+  ],
+  "invariants": [
+    "One accepted Photo retains exactly one immutable admission revision and one matching initial pending state.",
+    "Later serving switches or additional revision states never rewrite, replace or multiply the persisted admission lineage.",
+    "The one application schema, Base/MetaData and linear migration stream remain unchanged; no database cascade crosses ownership boundaries."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/photo-admission.md#admission-time-serving-revision-lineage",
+    "Empty-table migration proof covers direct down_revision, upgrade, downgrade and re-upgrade with the exact non-null RESTRICT shape; non-empty Photo fixture proves unchanged abort before mutation.",
+    "Atomic admission integration proof compares the Photo admission revision with the initial pending composite key, then proves rollback publishes neither relation."
+  ]
+}

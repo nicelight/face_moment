@@ -61,7 +61,14 @@ class IngestToSearchableProjectionRepository:
                 PhotoPipelineState.thumbnail_object_key,
                 has_valid_face,
             )
-            .join(Photo, Photo.id == PhotoPipelineState.photo_id)
+            .join(
+                Photo,
+                (Photo.id == PhotoPipelineState.photo_id)
+                & (
+                    Photo.admission_pipeline_revision_id
+                    == PhotoPipelineState.pipeline_revision_id
+                ),
+            )
             .where(
                 Photo.spa_id == spa_id,
                 Photo.accepted_at >= accepted_from,

@@ -1,7 +1,7 @@
 ---
 description: Canonical greenfield system shape, capability ownership and Architecture Spine for the Face Moment pilot.
 status: active
-last_updated: 2026-08-13
+last_updated: 2026-08-14
 source_of_truth:
   - .memory-bank/architecture/system-architecture.md
 ---
@@ -210,22 +210,35 @@ speculative distributed infrastructure.
   [lifecycle map](../states/lifecycle-map.md).
 
 #### AD-012 — Manual serving-revision switch with accepted downtime
-- Binds: changes to the active face pipeline or model revision.
-- Prevents: hot switching, automatic rollback, model download/fallback and
-  simultaneous dual-pipeline preload.
+- Binds: changes to the active face pipeline or model revision, including the
+  pre-commit processing guard for the current serving revision.
+- Prevents: hot switching, automatic rollback, model download/fallback,
+  simultaneous dual-pipeline preload and an ordinary switch that strands
+  current-revision Photo work.
 - Rule: `serving_control` owns an operator-initiated change with accepted
-  downtime. Only a validated revision may serve. Any failed change leaves
-  participant service unavailable until the operator retries or explicitly
-  selects the prior revision; recovery never changes the revision
-  automatically. The operator-managed model directory is mounted read-only;
-  worker and realtime restart, load only the committed revision and verify its
-  full configured identity plus computed asset hash before accepting work.
-  Restart stays unavailable if the revision cannot serve.
-- Verification: Serving-control/processing integration proof: an invalid
-  revision or missing/mismatched mounted asset never serves or mutates work,
-  and every failed change requires explicit operator recovery.
-- Source: accepted operator KISS decision, [.memory-bank/prd.md](../prd.md)
-  `NFR-REL-01`, the [boundary map](../contracts/boundary-map.md) and
+  downtime. Only a validated revision may serve. Before it commits B in place
+  of current A for one СПА, it calls the read-only processing-owned guard for
+  A. Serving selection and Photo admission serialize: an admission either
+  commits against A before the guard and blocks the switch, or observes B only
+  after a successful switch. Any A-admitted Photo whose A state is `pending` or
+  `processing` rejects the switch, keeps A committed and leaves Photo state,
+  mounted assets and model-consuming processes unchanged. `ready`, `no_faces`
+  and `failed` A states do not block. Calibration/model comparison is test-only
+  and is never an exemption or automatic caller of this command. After B
+  commits, a deployment/admission failure leaves participant service unavailable
+  until the operator retries or explicitly selects the prior revision; recovery
+  never changes the revision automatically. The operator-managed model
+  directory is mounted read-only; worker and realtime restart, load only the
+  committed revision and verify its full configured identity plus computed asset
+  hash before accepting work. Restart stays unavailable if the committed
+  revision cannot serve.
+- Verification: Serving-control/processing integration proof serializes a
+  concurrent admission with the A-to-B decision, rejects both `pending` and
+  `processing` A states without changing A, permits each terminal A state, and
+  proves invalid or missing/mismatched B assets never serve or mutate work.
+- Source: accepted operator KISS decisions, [.memory-bank/prd.md](../prd.md)
+  `NFR-REL-01`, [FT-002](../features/FT-002.md#clarifications), the
+  [boundary map](../contracts/boundary-map.md) and
   [Photo Processing](../domains/photo-processing.md#model-asset-admission).
 
 #### AD-013 — Owner-ordered retention cleanup
@@ -302,8 +315,9 @@ Each Attempt copies one immutable serving snapshot:
 - `release_id`.
 
 The copied values are the reproducibility contract; the pilot does not add a
-versioned configuration platform. Serving-revision changes follow AD-012 and
-accept maintenance downtime.
+versioned configuration platform. Serving-revision changes follow AD-012: the
+pre-commit guard keeps A when its admitted work is non-terminal, and a permitted
+change accepts maintenance downtime.
 
 ## Data And Storage Flow
 
@@ -335,9 +349,11 @@ media, Attempt, session, deletion and retention behavior.
   failure has no offline-start guarantee. Photo work restarts from the
   beginning, while realtime work is not replayed; serving-revision recovery
   follows AD-012.
-- An operator serving-revision change updates the mounted assets/settings when
-  necessary and restarts both model-consuming processes during the AD-012
-  maintenance window; restart binds them to the committed revision.
+- An operator serving-revision change first passes the AD-012 pre-commit guard.
+  Only then may it update mounted assets/settings when necessary and restart
+  both model-consuming processes during the maintenance window; restart binds
+  them to the committed revision. A guard rejection leaves the A deployment
+  untouched.
 - Native-operation timing/health remains observable. A rare native hang may
   require manual `docker compose restart`; no watchdog/subprocess isolation is
   required without reproduced hangs.

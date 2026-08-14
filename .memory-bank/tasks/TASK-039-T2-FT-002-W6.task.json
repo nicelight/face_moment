@@ -1,0 +1,98 @@
+{
+  "id": "TASK-039-T2-FT-002-W6",
+  "title": "Project the exact-A ordinary serving-revision backlog guard",
+  "status": "planned",
+  "wave": "W6",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-ING-003",
+    "REQ-ING-004",
+    "REQ-SRCH-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-037-T2-FT-002-W5"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/",
+    "tests/processing/test_serving_revision_guard.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Exact-A serving guard tests",
+      "command": "docker compose run --rm backend python -m pytest tests/processing/test_serving_revision_guard.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/domains/photo-processing.md#ordinary-serving-revision-guard RED: processing has no read-only exact-A projection that distinguishes the current SPA's A-admitted pending or processing backlog from terminal A work; GREEN: given a stable serving context and exact A, the projection reports a blocker for pending and processing and no blocker for ready, no_faces and failed while examining only each A-admitted Photo's exact (photo_id, A) state; decisive comparison: the five-case disposable state matrix returns the specified result and SELECT-only snapshots show no serving selection, Photo, state, B-state, asset or process mutation; artifact: focused processing test output and read-only query trace."
+  ],
+  "purpose": "Provide the processing-owned read-only backlog guard required before a later serving-control command may decide whether to replace current revision A.",
+  "success_outcome": "For one stable SPA serving context and exact current A, processing returns the authoritative non-terminal-A blocker result without claiming work, creating B state or mutating Photo, processing or serving data.",
+  "anti_goals": [
+    "Do not implement a serving-control command, serving selection update, admission serialization, deployment action or audited switch result.",
+    "Do not create a B state, mutate an A state, select a revision, claim work, add a switch lifecycle, registry, job, persisted mode or automatic drain.",
+    "Do not add model comparison, Calibration execution, transport, staff roles, authentication behavior or realtime query work."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "The serving_control manual command, serving-selection commit and admission/switch serialization owned by TASK-040-T2-FT-002-W7",
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation, comparison execution and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012",
+      "Model asset deployment, worker/realtime restart, automatic rollback or direct database edits as an ordinary revision-switch path"
+    ],
+    "stop_conditions": [
+      "A correct guard requires processing to select serving revision, mutate an A or B state, inspect a non-A admission lineage, or add a switch lifecycle/state.",
+      "The exact-A result cannot be supplied through the accepted read-only processing boundary without a new ownership edge or durable coordination mechanism.",
+      "Correctness would require a public transport/auth contract, model-comparison integration or deployment behavior."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/domains/photo-processing.md#ordinary-serving-revision-guard",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/boundary-map.md#manual-serving-revision-switch",
+    ".memory-bank/domains/photo-admission.md#admission-time-serving-revision-lineage",
+    ".memory-bank/domains/photo-processing.md#ordinary-serving-revision-guard",
+    ".memory-bank/states/lifecycle-map.md#ordinary-serving-revision-change-guard",
+    ".memory-bank/testing/photo-processing.md#terminal-and-compatibility-matrix"
+  ],
+  "constraints": [
+    "Processing receives the stable serving context and exact current A, considers only the SPA's Photos with immutable admission_pipeline_revision_id=A and their exact composite-key state, and returns only the read-only guard result.",
+    "pending and processing are blockers; ready, no_faces and failed are terminal non-blockers.",
+    "Use validated disposable A/B revisions, one SPA and task-owned Photos with known state, safe rerun and complete cleanup; retain the existing caller authorization boundary without adding a transport or role."
+  ],
+  "invariants": [
+    "The guard never claims work, creates a B state, mutates an A state, selects B or changes model assets, deployment or process state.",
+    "The guard reads no later/non-admission revision as a substitute for exact A state.",
+    "serving_control remains the sole owner that can turn the guard result into a revision decision."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/photo-processing.md#ordinary-serving-revision-guard",
+    "A disposable exact-A matrix independently sets one A-admitted Photo to pending, processing, ready, no_faces and failed and proves only the first two return blockers.",
+    "Read-only trace and before/after projections prove the guard limits selection to SPA/A admission lineage and exact A state, makes no write and creates no B state; the fixture has known initial state, safe rerun and task-owned cleanup."
+  ]
+}

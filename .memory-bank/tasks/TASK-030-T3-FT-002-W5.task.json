@@ -1,7 +1,7 @@
 {
   "id": "TASK-030-T3-FT-002-W5",
   "title": "Expose authenticated per-Photo processing status",
-  "status": "ready",
+  "status": "done",
   "wave": "W5",
   "feature": "FT-002",
   "reqs": [
@@ -36,7 +36,29 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "PASS",
+      "completed_at": "2026-08-14T03:54:23+05:00",
+      "image": "face-moment:task-030@sha256:3cf306cde305abe06a585f55460fdba98be907b590b6e1a8c90361af1df06c77",
+      "summary": "Fresh independent T3 verification passed all exact packaged gates and a verifier-owned disposable API/SQL matrix. The exact ten-field response covered all statuses, compatible/incompatible/inactive ready truth, photographer ownership, operator/developer access, 401/403/404/422/500, revoked sessions and protected-fact redaction. Runtime and static tracing proved transport/inventory performed no processing write or claim; owner rows remained unchanged after three SELECT-only statements. Cleanup left zero task databases and run containers.",
+      "protocol": ".protocols/TASK-030-T3-FT-002-W5/verification.md",
+      "report": ".tasks/TASK-030-T3-FT-002-W5/TASK-030-T3-FT-002-W5-S-VERIFY-final-report-docs-01.md",
+      "probe": ".tasks/TASK-030-T3-FT-002-W5/TASK-030-T3-FT-002-W5-S-VERIFY-probe-code-01.py"
+    },
+    {
+      "stage": "red-verify",
+      "attempt": 1,
+      "verdict": "semantic-pass",
+      "completed_at": "2026-08-14T04:00:42+05:00",
+      "image": "face-moment:task-030@sha256:3cf306cde305abe06a585f55460fdba98be907b590b6e1a8c90361af1df06c77",
+      "summary": "Fresh adversarial exact-image verification found no admitted material break or operator question. Hostile disposable coverage challenged cross-owner and unknown identifiers, operator/developer edges, missing/random/deactivated/expired sessions, malformed UUID, incompatible/inactive ready, secret-bearing owner failure, protected-value leakage and processing write/claim bypass. All behavior matched the accepted contract, processing rows stayed unchanged, and cleanup left zero task databases and run containers.",
+      "protocol": ".protocols/TASK-030-T3-FT-002-W5/red-verification.md",
+      "report": ".tasks/TASK-030-T3-FT-002-W5/TASK-030-T3-FT-002-W5-S-RED-VERIFY-final-report-docs-01.md"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-002.md",
     ".memory-bank/domains/photo-processing.md",

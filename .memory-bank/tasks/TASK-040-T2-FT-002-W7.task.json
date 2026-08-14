@@ -1,0 +1,104 @@
+{
+  "id": "TASK-040-T2-FT-002-W7",
+  "title": "Apply the guarded ordinary manual serving-revision switch",
+  "status": "planned",
+  "wave": "W7",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-ING-003",
+    "REQ-ING-004",
+    "REQ-SRCH-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-039-T2-FT-002-W6"
+  ],
+  "touched_files": [
+    "src/face_moment/serving_control/",
+    "src/face_moment/inventory/admission.py",
+    "tests/serving_control/test_serving_revision_switch.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Serving-revision switch tests",
+      "command": "docker compose run --rm backend python -m pytest tests/serving_control/test_serving_revision_switch.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/architecture/system-architecture.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    "FT-002-AC-001 RED: serving_control has no ordinary manual A-to-B command that consumes the completed processing guard inside the shared serving context before committing B; GREEN: the owner command validates B, consumes the guard result, returns the audited requested/committed revision result, preserves A and produces no Photo, processing, deployment or model-process side effect on rejection, and commits B only on a clear result; decisive comparison: blocked and clear guard integrations compare the committed revision and no-deployment snapshot, while an interleaved admission/switch yields only committed A plus rejected B or committed B plus a B admission; artifact: disposable serving-control integration matrix and transaction trace."
+  ],
+  "purpose": "Implement the serving_control-owned manual command that applies the completed processing guard and serializes a possible A-to-B serving decision with admission.",
+  "success_outcome": "A manual A-to-B request returns its audited owner result, rejects without deployment side effect when the completed guard blocks, and commits validated B only through the serial serving context that admission also uses.",
+  "anti_goals": [
+    "Do not reimplement the processing guard or read/write processing rows directly from serving_control.",
+    "Do not add a revision registry, switch/job lifecycle, persisted mode, automatic drain, rollback, deployment action or generic coordination framework.",
+    "Do not add a transport route, staff role, authentication mechanism, realtime query behavior, Calibration integration or FT-011 model-comparison execution."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "The processing-owned exact-A guard and its state-matrix proof owned by TASK-039-T2-FT-002-W6",
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation, comparison execution and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012",
+      "Model asset deployment, worker/realtime restart, automatic rollback or direct database edits as an ordinary revision-switch path"
+    ],
+    "stop_conditions": [
+      "Admission and the serving decision cannot serialize through the accepted serving context without a new ownership edge or durable coordination mechanism.",
+      "A correct command requires serving_control to inspect processing rows directly, processing to mutate serving selection, or a new switch lifecycle/state.",
+      "A correct command would require a new public transport/auth contract, model comparison integration or deployment behavior."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-001",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-001",
+    ".memory-bank/architecture/system-architecture.md#ad-012--manual-serving-revision-switch-with-accepted-downtime",
+    ".memory-bank/contracts/boundary-map.md#manual-serving-revision-switch",
+    ".memory-bank/domains/photo-admission.md#admission-time-serving-revision-lineage",
+    ".memory-bank/domains/photo-processing.md#ordinary-serving-revision-guard",
+    ".memory-bank/states/lifecycle-map.md#ordinary-serving-revision-change-guard",
+    ".memory-bank/testing/photo-processing.md#terminal-and-compatibility-matrix"
+  ],
+  "constraints": [
+    "serving_control resolves exact current A and validates requested B inside the owner-held serving context, asks the completed processing guard only for its read-only result, and returns the contract result naming requested and committed revisions.",
+    "Admission obtains the same serving-context serialization before it commits its immutable revision snapshot and matching pending state, so it either completes under A before the guard or starts under B after B commits.",
+    "Use validated disposable A/B revisions, one SPA and task-owned Photos with known state, safe rerun and complete cleanup; retain the existing caller authorization boundary without adding a transport or role."
+  ],
+  "invariants": [
+    "A guard rejection preserves A, every Photo and processing state, and the current deployment/model-process binding.",
+    "Only a clear completed guard result permits the validated B commit; serving_control never accesses processing rows directly and processing never writes serving selection.",
+    "The command introduces no persisted switch state, background drain, automatic rollback or deployment side effect, and model comparison remains test-only with no bypass."
+  ],
+  "verification_targets": [
+    ".memory-bank/contracts/boundary-map.md#manual-serving-revision-switch",
+    "Disposable blocked and clear guard integrations prove the audited requested/current result, unchanged A/no deployment effect on rejection, and validated B commit only on a clear result without adopting the dependency's exact-A state-matrix claim.",
+    "An interleaved admission/switch transaction probe proves one serial outcome only: completed A admission blocks B, or B commits before the new Photo receives its immutable B snapshot and matching B pending row.",
+    "Static and transaction tracing proves serving_control reaches processing only through the read-only guard, makes no direct processing-row access or foreign write bypass, and model-comparison fixtures cannot invoke or bypass the command."
+  ]
+}

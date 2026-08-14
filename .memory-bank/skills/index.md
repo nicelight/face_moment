@@ -39,6 +39,7 @@ status: active
 | <code>spec-auto</code> | yes | yes |
 | <code>spec-design</code> | yes | yes |
 | <code>spec-init</code> | yes | yes |
+| <code>spec-redesign</code> | yes | yes |
 | <code>start</code> | yes | yes |
 | <code>tech-debt</code> | yes | yes |
 | <code>technical-premortem</code> | yes | yes |

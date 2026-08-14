@@ -1,7 +1,7 @@
 ---
 description: Canonical Photo admission data, storage, transaction and recovery specification.
 status: active
-last_updated: 2026-08-08
+last_updated: 2026-08-14
 source_of_truth:
   - .memory-bank/domains/photo-admission.md
 ---
@@ -79,6 +79,7 @@ The `inventory` repository owns:
 | `captured_at` | Required timezone-aware effective capture time. |
 | `captured_at_source` | `exif` or `upload_started_at`; `visit_date_fallback` is allowed only when neither earlier source is available. |
 | `accepted_at` | Required server timestamp assigned inside the successful admission transaction. |
+| `admission_pipeline_revision_id` | Required immutable UUID copied from the same `IngestTarget.pipeline_revision_id` that creates the initial pending row. It is the admission-time pipeline-state identity; a later serving switch or additional state row MUST NOT rewrite it. |
 | `uploader_id` | Required active staff-user UUID supplied by the authenticated principal. |
 | `checksum_sha256` | Required 32-byte SHA-256 digest of the exact uploaded JPEG bytes. |
 | `original_object_key` | Required unique opaque key in the configured private MinIO bucket. |
@@ -100,9 +101,11 @@ required, and staff reset/deactivation MUST NOT delete or rewrite Photos.
 The `processing` repository owns the row keyed by
 `(photo_id, pipeline_revision_id)`. Admission creates exactly one row for the
 serving revision with `status = pending`, `attempt_count = 0` and a server-side
-state timestamp. FT-001 MUST NOT implement claiming, inference, terminal-state
-publication or retry behavior beyond making the durable initial row available
-to FT-002.
+state timestamp. Its key MUST equal the accepted Photo's immutable
+`admission_pipeline_revision_id`; this is the only state eligible for that
+Photo's admission-time SLO classification. FT-001 MUST NOT implement claiming,
+inference, terminal-state publication or retry behavior beyond making the
+durable initial row available to FT-002.
 
 The Photo relation may cascade only into inventory-owned data. A Photo delete
 MUST NOT use database cascade across the `inventory -> processing` ownership
@@ -141,8 +144,23 @@ request-owned candidate; repeated cleanup is safe.
 After configured byte/decode, JPEG and EXIF validation produces the digest and
 effective capture time, one short PostgreSQL transaction attempts the unique
 Photo insert and calls the typed `processing` application boundary to add its
-initial `pending` row using the same transaction. Commit publishes both rows;
-rollback publishes neither.
+initial `pending` row using the same transaction and the same immutable
+`IngestTarget.pipeline_revision_id`. Commit publishes the Photo's
+`accepted_at`/`admission_pipeline_revision_id` pair and its matching pending
+row; rollback publishes neither. A later serving-revision change may create a
+different state for other work, but it cannot alter the recorded admission
+identity or select a substitute state for this Photo.
+
+### Admission-time Serving-Revision Lineage
+
+`Photo.admission_pipeline_revision_id` is the one non-null immutable admission
+snapshot and `photo_pipeline_states(photo_id, pipeline_revision_id)` with that
+same revision is its one required initial state. The application writes both
+from one `IngestTarget` in the atomic admission transaction; no later command
+may change the Photo field. The SLO projection consumes this persisted pair,
+not current serving selection or an inferred state order. An additive lineage
+migration may begin only with an empty `photos` table because existing rows
+lack an authoritative backfill source; it aborts unchanged otherwise.
 
 ### Duplicate Arbitration And Candidate Cleanup
 
@@ -164,13 +182,16 @@ key.
 - A rejected or duplicate candidate MUST NOT create a Photo, processing state,
   searchable result, teaser candidate or contribution to `N`.
 - Success is atomic at the PostgreSQL boundary: observers see both Photo and
-  serving `pending`, or neither.
+  serving `pending` with the same admission revision, or neither.
 - Concurrent same-scope uploads are arbitrated only by the database uniqueness
   constraint; exactly one may be accepted.
 - Retrying candidate deletion and handled rollback cleanup is safe and affects
   only the request-owned opaque key.
 - Admission MUST NOT write `serving_control` configuration or later
   `processing` transitions directly.
+- The admission-time pipeline revision is a persisted Photo fact, not an
+  inference from current serving selection, state order, transition time,
+  terminal status, attempt count or revision creation time.
 - Before the public auth task exists, isolated core tests may supply a synthetic
   non-secret uploader UUID directly to the inventory application boundary; no
   unauthenticated HTTP path is created by that test seam.
@@ -188,3 +209,11 @@ key.
   rows, and permits successful re-upload.
 - PostgreSQL and MinIO probes run in isolated disposable state, are safe to
   rerun and record owned cleanup.
+- The lineage migration is a pre-production greenfield cutover. Because an
+  existing Photo and one or more state rows do not truthfully reveal which
+  state was admitted, it MUST abort before any schema or data mutation unless
+  `face_moment.photos` is empty. It MUST NOT backfill, delete or repoint an
+  existing Photo/state relation; an explicit pre-pilot reset is outside the
+  migration. Empty-table upgrade/downgrade/re-upgrade proves the non-null
+  `admission_pipeline_revision_id` shape, its `RESTRICT` reference and one
+  atomic admission pair.

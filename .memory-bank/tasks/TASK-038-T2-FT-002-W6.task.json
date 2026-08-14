@@ -1,0 +1,107 @@
+{
+  "id": "TASK-038-T2-FT-002-W6",
+  "title": "Qualify per-Photo status by immutable admission lineage",
+  "status": "done",
+  "wave": "W6",
+  "feature": "FT-002",
+  "reqs": [
+    "REQ-ING-004",
+    "REQ-SRCH-001"
+  ],
+  "depends_on": [
+    "TASK-030-T3-FT-002-W5",
+    "TASK-037-T2-FT-002-W5"
+  ],
+  "touched_files": [
+    "src/face_moment/inventory/photo_processing_status.py",
+    "src/face_moment/processing/searchable_projection.py",
+    "tests/inventory/test_photo_processing_api.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Photo processing API compatibility tests",
+      "command": "docker compose run --rm backend python -m pytest tests/inventory/test_photo_processing_api.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "completed_at": "2026-08-14T06:40:37+05:00",
+      "summary": "Fresh independent T2 verification on the exact packaged image passed the immutable admission-lineage probe, the complete five-test API contract suite, mypy and mb-lint. It proved exact composite-key A selection across the A-only/A+B by A-serving/B-serving matrix, ignored pending/ready/multiple later revisions, preserved exact A fields, derived only searchable=false under B serving, retained missing-A 5xx, and executed SELECT-only with complete cleanup.",
+      "protocol": ".protocols/TASK-038-T2-FT-002-W6/verification.md",
+      "report": ".tasks/TASK-038-T2-FT-002-W6/TASK-038-T2-FT-002-W6-S-VERIFY-final-report-docs-01.md"
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/contracts/photo-processing-api.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/contracts/photo-processing-api.md#admission-lineage-selector RED: a valid A-admitted Photo with an additional B state reaches the unqualified multi-row query and HTTP 500; GREEN: the inventory boundary passes immutable admission revision A, preserves A's ordinary completeness/activity searchable truth while A serves, and returns exact A fields with searchable=false after serving changes to B even when B is complete ready; decisive comparison: response identity/status/timestamps match A, B remains ignored, owner rows are unchanged and missing A retains the existing 5xx branch; artifact: isolated A+B API/database matrix and SELECT-only projection output."
+  ],
+  "purpose": "Repair the existing per-Photo processing read so every accepted Photo selects its immutable admission state explicitly when later revision rows exist.",
+  "success_outcome": "An A-admitted Photo with any later B state returns one exact A status response instead of a multiple-row 500, while current-serving compatibility keeps the selected A state non-searchable after the switch.",
+  "anti_goals": [
+    "Do not change the response schema, authentication, authorization, uploader UI or accepted processing lifecycle.",
+    "Do not select by current serving revision, row order, timestamps, status or attempt count, and do not add fallback/history/registry state."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime reference-query execution and participant result assembly owned by FT-004",
+      "Calibration calculation, recommendation and run persistence owned by FT-011",
+      "Photo delete, restore and hard-purge behavior owned by FT-012",
+      "Changes to staff roles, endpoint schema or processing-owned state"
+    ],
+    "stop_conditions": [
+      "The immutable admission revision cannot qualify the existing processing read without changing the public schema or ownership edge.",
+      "Correctness would require current-serving fallback, inferred row ordering or another lifecycle mechanism."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md",
+    ".protocols/FT-002/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md",
+    "PAPERCUTS/TECHDEBTS/wave-W5-tech-debt-2026-08-14.md",
+    ".tasks/TASK-031-T2-FT-002-W6/TASK-031-T2-FT-002-W6-S-EXECUTE-stop-report-code-01.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/photo-processing-api.md#admission-lineage-selector",
+    ".memory-bank/domains/photo-admission.md#admission-time-serving-revision-lineage",
+    ".memory-bank/domains/photo-processing.md#compatible-searchable-truth",
+    ".memory-bank/contracts/boundary-map.md#processing-status-projections",
+    ".memory-bank/testing/photo-processing.md#terminal-and-compatibility-matrix"
+  ],
+  "constraints": [
+    "Inventory passes Photo.admission_pipeline_revision_id through the existing public processing read; processing filters the exact composite-key state.",
+    "Use disposable A and B revisions plus one A-admitted Photo, safe repeat and owner-bounded cleanup.",
+    "Keep the existing 401/403/404/422/5xx mapping and protected-value redaction unchanged."
+  ],
+  "invariants": [
+    "All state-bearing response fields come from the immutable admission revision.",
+    "A later B row never replaces or multiplies the response, and the selected A state is not searchable while B serves.",
+    "The read performs no processing or inventory state mutation."
+  ],
+  "verification_targets": [
+    ".memory-bank/contracts/photo-processing-api.md#admission-lineage-selector",
+    "A+B integration proof covers A-current completeness/activity truth and the serving switch with absent, pending and complete-ready B states; every B-current case returns exact A fields with searchable=false and no MultipleResultsFound.",
+    "Static and database tracing proves explicit admission-revision qualification, SELECT-only behavior, unchanged auth/error/redaction semantics and complete disposable cleanup."
+  ]
+}

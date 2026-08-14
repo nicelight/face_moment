@@ -57,6 +57,8 @@ the rule above.
 </input_contract>
 
 <hard_invariants>
+- Before the verdict, load and apply this installed skill's
+  `references/finding-adjudication.md` semantic pack.
 - Route only by `task.tier`; lifecycle/status ownership is canonical in
   `.memory-bank/workflows/tier-policy.md#closure-authority`.
 - Verify this task's outcome and mapped AC/REQ subset, not the whole feature or
@@ -102,7 +104,7 @@ do not choose one.
   acceptance. The owning skill durably updates the canonical artifact and the
   task is revalidated/re-executed before verification resumes.
 - Route task scope/tier/feature-level spec repair to
-  `/feature-to-tasks FT-<NNN>`, shared/global design to `/spec-design`, product
+  `/feature-to-tasks FT-<NNN>`, shared/global design to `/spec-redesign`, product
   ambiguity to `/feature-doctor FT-<NNN>`, and missing `/exe` evidence
   to `/exe <TASK_ID>`.
 - Unattended flow returns the blocker and exact route to the scheduler for
@@ -239,7 +241,11 @@ Tier-specific independence remains:
 For UI/browser scope, use the smallest reproducible project-native automation,
 record runtime/base URL and relevant viewport/device plus redacted artifacts,
 and return `NEEDS-CLARIFICATION` when required behavior cannot be credibly
-proved.
+proved. When a running UI, relevant route, browser capability, and safe test
+state are already accessible, the verifier may load this installed skill's
+`references/web-design-reviewer.md` as an optional rendered-evidence lens.
+Otherwise ordinary verification continues unchanged. Verdict scope remains
+defined by the existing task/spec obligations.
 
 Write:
 - T0/T1 -> `.protocols/<TASK_ID>/run.md`;

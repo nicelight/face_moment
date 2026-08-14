@@ -62,6 +62,7 @@ class AtomicPhotoAdmission:
                 visit_date=validated.visit_date,
                 captured_at=validated.captured_at,
                 captured_at_source=validated.captured_at_source,
+                admission_pipeline_revision_id=ingest_target.pipeline_revision_id,
                 uploader_id=uploader_id,
                 checksum_sha256=validated.checksum_sha256,
                 original_object_key=candidate.staged_candidate.key,

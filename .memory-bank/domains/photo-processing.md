@@ -1,7 +1,7 @@
 ---
 description: Canonical compatible Photo-processing data, worker, derivative and recovery specification.
 status: active
-last_updated: 2026-08-13
+last_updated: 2026-08-14
 source_of_truth:
   - .memory-bank/domains/photo-processing.md
 ---
@@ -122,7 +122,11 @@ remain under `processing`.
 
 ### `face_moment.photo_pipeline_states`
 
-The existing composite key remains `(photo_id, pipeline_revision_id)`.
+The existing composite key remains `(photo_id, pipeline_revision_id)`. The
+state whose revision equals the immutable
+`Photo.admission_pipeline_revision_id` is the one and only admission-time
+state for that Photo. Later state rows for other revisions remain independent
+processing records; they never replace or multiply that lineage fact.
 
 | Field | Contract |
 |---|---|
@@ -233,6 +237,24 @@ to the new committed revision. Backend/API code never runs the loop. The
 process adds no broker, priority/preemption scheduler, overlapping worker,
 durable job row, model-selection policy or generic operation framework.
 
+### Ordinary serving-revision guard
+
+For a manual switch of one СПА from its exact current revision A to target B,
+`processing` owns one read-only guard projection. Given the stable serving
+context and A, it examines only Photos in that СПА whose immutable
+`admission_pipeline_revision_id` is A and their exact `(photo_id, A)` state.
+It blocks while any such state is `pending` or `processing`; `ready`,
+`no_faces` and `failed` are terminal and do not block. The projection does not
+claim work, create a B state, mutate an A state, select B or change any model
+asset.
+
+`serving_control` is the only caller that may turn this result into a revision
+decision. The serving-selection update and admission's serving-context read
+must serialize, so an admission commits fully under A before the guard or
+obtains B only after B commits. A rejected guard preserves A and all Photo
+state. Calibration/model comparison remains offline test-only and neither calls
+nor bypasses this projection.
+
 ## Searchable Truth And SLO Projection
 
 ### Compatible searchable truth
@@ -249,11 +271,22 @@ searchable. `processing` publishes the owned state/timestamp/face projection;
 `inventory` combines it with Photo visibility and serving selection for staff
 reads. Neither consumer writes processing-owned rows.
 
+For the per-Photo staff status endpoint, `inventory` supplies the Photo's
+immutable `admission_pipeline_revision_id` and `processing` returns only that
+exact composite-key state. The response evaluates current-serving
+compatibility for that selected admission state; it does not select a later
+state from current serving, ordering, timestamps, status or attempt count.
+Consequently an A-admitted Photo remains an A status response after serving
+changes to B, and any additional B state cannot replace it or make the read
+non-scalar.
+
 ### Controlled-interval ingest-to-searchable projection
 
 The `ingest_to_searchable` calculation uses every independently accepted Photo
 whose `accepted_at` is in the half-open controlled interval
-`[accepted_from, accepted_before)` for its admission-time serving revision:
+`[accepted_from, accepted_before)`. It joins each Photo only to the state whose
+`pipeline_revision_id` exactly equals its immutable
+`admission_pipeline_revision_id`:
 
 - success: `searchable_at - photo.accepted_at < 15 minutes` and the complete
   compatible `ready` publication exists;
@@ -261,9 +294,14 @@ whose `accepted_at` is in the half-open controlled interval
   `ready` at 15 minutes or later;
 - open: not yet searchable and younger than 15 minutes at evaluation time.
 
-Rejects and duplicates have no Photo and are absent. Non-serving states are
-absent. The projection reports population, success, breach and open counts plus
-`success / population`; it reports the 95% verdict only when `open = 0`.
+Rejects and duplicates have no Photo and are absent. A later state for a
+different revision, whether current serving or not, is absent from this
+projection, not a second population row. The projection MUST NOT use current
+serving selection,
+state/revision ordering, transition timestamps, terminal status or attempt
+count to choose an admission state. It reports population, success, breach and
+open counts plus `success / population`; it reports the 95% verdict only when
+`open = 0`.
 For an empty interval population all four counts are zero and both
 `success_ratio` and `meets_95_percent` are `null`: an empty population is
 neither a zero-percent result nor evidence that the target passed.
@@ -332,13 +370,22 @@ its result to PostgreSQL.
   native preprocessing/alignment paths and reject revision/dimension mismatch.
 - Lifecycle proof drives `ready`, `no_faces`, transient retry and exhausted
   `failed`, and proves only complete compatible `ready` is searchable.
+- Serving-switch proof asks the owner-backed A guard before B commits, covers
+  the two blocking and three terminal A states, preserves A on rejection and
+  serializes an overlapping admission without direct `serving_control` access
+  to processing rows.
+- Per-Photo API proof selects the immutable admission state explicitly and
+  covers an A-admitted Photo after serving changes to B with an additional B
+  state; the response remains scalar A with current compatibility false.
 - An injected crash after derivative publication and before terminal commit,
   repeated processing, and worker restart prove one face set, deterministic
   derivatives, preserved population and restart-from-beginning convergence.
 - Controlled-clock SLO proof reconciles every accepted Photo into exactly one
   success, breach or open classification, covers both half-open interval
   boundaries and the all-zero/null empty result, and includes delayed
-  Calibration backlog without special exclusion.
+  Calibration backlog without special exclusion. It proves an A-admitted Photo
+  remains represented by its persisted A state after serving switches to B,
+  and that adding a B state leaves the A Photo classified exactly once.
 - Capacity probes independently demonstrate normal, configured-low and
   unavailable PostgreSQL/MinIO observations in disposable state without
   disclosing storage contents.

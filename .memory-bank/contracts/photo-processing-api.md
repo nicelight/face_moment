@@ -1,7 +1,7 @@
 ---
 description: Exact authenticated staff API and UI contract for Photo processing status, SLO and primary-storage health.
 status: active
-last_updated: 2026-08-12
+last_updated: 2026-08-14
 source_of_truth:
   - .memory-bank/contracts/photo-processing-api.md
 ---
@@ -36,6 +36,33 @@ accepted staff roles or add a separate security mechanism.
   unknown Photo returns `404`.
 - The existing photographer upload page polls this endpoint only for accepted
   `photo_id` values. No Batch, manifest or cross-file state is introduced.
+
+### Admission-lineage selector
+
+The response represents the one state whose `pipeline_revision_id` equals the
+Photo's immutable `admission_pipeline_revision_id`. `inventory` MUST pass that
+revision explicitly to the `processing` read boundary; current serving
+selection, another revision row, status/timestamp ordering and attempt count
+MUST NOT select or replace the response state.
+
+`pipeline_revision_id`, `pipeline_code`, `processing_status`, `attempt_count`,
+`status_changed_at`, `searchable_at` and `failure_reason` all describe that
+admission state. `searchable` applies the existing complete active/current-
+serving compatibility rule to that same selected state. Therefore an
+A-admitted Photo remains an A response after serving changes to B, and its A
+state is not searchable while B serves. A later B state, including complete
+`ready`, neither replaces the A fields nor causes a multiple-row failure.
+
+| Persisted state | Current serving | Exact response |
+|---|---|---|
+| Admission A only | A | A fields; `searchable` follows A completeness and Photo activity. |
+| Admission A only | B | A fields; `searchable=false`. |
+| Admission A plus any B state | A | A fields; `searchable` follows A completeness and Photo activity; B is ignored by this endpoint. |
+| Admission A plus any B state | B | A fields; `searchable=false`; B is ignored by this endpoint. |
+
+The required admission state missing is an owner-backed read failure and maps
+to `5xx`. Multiple later revision rows are valid data and MUST still return the
+single admission response with `200`; the schema is unchanged.
 
 Success returns `200` with exactly:
 
@@ -132,6 +159,11 @@ No custom project-wide error envelope is introduced.
 - Contract tests cover exact paths, query rules, response fields and
   `401/403/404/422/5xx`, including photographer ownership and operator/developer
   health access.
+- The per-Photo A+B matrix proves that an A-admitted Photo retains its exact A
+  fields with either serving selection; A completeness governs `searchable`
+  only while A serves, and any B state is ignored. With B serving the response
+  is `searchable=false`, never a multiple-row failure, and causes no processing
+  mutation.
 - A same-origin photographer flow polls each independently accepted Photo and
   observes persisted `pending -> processing -> ready|no_faces|failed` plus the
   truthful derived searchable label without changing another upload row.

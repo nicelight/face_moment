@@ -1,7 +1,7 @@
 ---
 description: Canonical pilot lifecycles for Photo admission, processing, inventory visibility, purge, Promo and diagnostics.
 status: active
-last_updated: 2026-07-31
+last_updated: 2026-08-14
 source_of_truth:
   - .memory-bank/states/lifecycle-map.md
 ---
@@ -22,7 +22,8 @@ target design rather than observed product behavior.
   `(spa_id, visit_date, checksum_sha256)` is reported, its new object is deleted,
   and no new Photo or pipeline state is created.
 - For a valid unique object, one per-photo PostgreSQL commit creates Photo,
-  server-side `accepted_at` and serving-pipeline `pending` state together.
+  server-side `accepted_at`, immutable admission-time serving revision and the
+  matching serving-pipeline `pending` state together.
 - Effective `captured_at` uses reliable EXIF interpreted in the СПА timezone,
   otherwise that file's server-side upload-start time, otherwise 01:00 on the
   authoritative `visit_date`.
@@ -39,6 +40,9 @@ pending -> processing -> ready | no_faces | failed
 ```
 
 - The lifecycle is scoped by `(photo_id, pipeline_revision_id)`.
+- The Photo's immutable admission-time revision selects exactly one state for
+  its ingest-to-searchable SLO; another revision state neither replaces nor
+  duplicates that population member.
 - Only `ready` is searchable for the compatible serving revision.
 - `no_faces` is a distinct terminal processing outcome but remains an
   `ingest_to_searchable` SLO breach for the accepted-JPEG population.
@@ -53,6 +57,23 @@ pending -> processing -> ready | no_faces | failed
 
 Sources: [IDEA_APP.md](../../IDEA_APP.md),
 [.memory-bank/prd.md](../prd.md) `FR-ING-07..08`.
+
+## Ordinary Serving-Revision Change Guard
+
+An authenticated manual command may change one СПА from current revision A to
+validated B, but it introduces no new revision-switch lifecycle or job state.
+Before B commits, `serving_control` serializes the serving-context update with
+admission and consults the processing-owned A-state guard. Any Photo admitted
+against A with exact A state `pending` or `processing` rejects the command and
+leaves A committed; `ready`, `no_faces` and `failed` are terminal and permit
+the change. The rejection changes no Photo state and does not start the B
+maintenance/restart path. Calibration/model comparison is test-only and never
+creates an exception to this guard.
+
+Source: accepted operator decision in
+[FT-002](../features/FT-002.md#clarifications); application ownership and
+transaction boundary are canonical in the
+[Boundary Map](../contracts/boundary-map.md#manual-serving-revision-switch).
 
 ## Photo Inventory Visibility
 
@@ -274,7 +295,8 @@ Source: [.memory-bank/prd.md](../prd.md) `FR-DEV-11` and `NFR-PERF-03`.
 - No per-photo hard-purge state or purge jobs table.
 - No realtime waiter/replay queue.
 - No per-device QR access-grant lifecycle.
-- No serving-revision switch lifecycle.
+- No serving-revision switch lifecycle, queue or history beyond the atomic
+  manual-change guard above.
 - No local-detector-miss proof or diagnostic reference-frame-upload lifecycle.
 - No separate capture-media retention lifecycle.
 - No separate sensor transport/configuration lifecycle.

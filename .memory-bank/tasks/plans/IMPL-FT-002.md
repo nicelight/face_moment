@@ -1,18 +1,19 @@
 ---
 description: Implementation plan for compatible Photo processing and searchable readiness in FT-002.
 status: active
-last_updated: 2026-08-13
+last_updated: 2026-08-14
 ---
 # IMPL-FT-002 — Processing And Searchable Readiness
 
 ## Goal
 
 Deliver compatible native Photo processing through one model-admitted,
-idempotent sequential worker, bind both model-consuming processes to the same
-committed validated revision before readiness/work, expose truthful per-Photo/
-searchable and operational health views, and prove the complete accepted-JPEG
-SLO without adding another queue, scheduler, monitoring service or cross-store
-transaction mechanism.
+idempotent sequential worker, keep the processing-owned exact-A guard separate
+from its dependent ordinary manual serving-revision command, bind both
+model-consuming processes to the same committed validated revision before
+readiness/work, expose truthful per-Photo/searchable and operational health
+views, and prove the complete accepted-JPEG SLO without adding another queue,
+scheduler, monitoring service or cross-store transaction mechanism.
 
 ## Normative Basis
 
@@ -47,7 +48,9 @@ composition-root admission of only the committed validated revision before
 readiness/recovery/work, deterministic derivatives, bounded worker transitions
 and recovery, compatible searchable/SLO projections, independently observable
 PostgreSQL/MinIO capacity, the exact staff APIs and their existing-page UI
-integration.
+integration, the processing-owned read-only ordinary A-state guard, and the
+dependent authenticated serving-control command that serializes admission with
+that completed guard before it may commit B.
 
 Out of scope are realtime query execution, participant result assembly,
 Calibration calculation/storage, Photo inventory delete/purge, model download,
@@ -77,9 +80,12 @@ resolved through these canonical contract blocks:
   limits FT-002 to the shared-worker delay/resume seam; Calibration calculation,
   recommendation and persistence remain outside this plan.
 - [Manual serving-revision switch](../../contracts/boundary-map.md#manual-serving-revision-switch)
-  and [Model-asset admission](../../domains/photo-processing.md#model-asset-admission)
-  bind the worker/realtime startup integration. Realtime request and query
-  behavior remain outside FT-002 and with FT-004.
+  makes `serving_control` the owner of the manual A-to-B command and
+  `processing` the owner of its read-only A-state guard; the same serving
+  context serializes admission with the decision. It adds no deployment action
+  or revision lifecycle. [Model-asset admission](../../domains/photo-processing.md#model-asset-admission)
+  remains the later restart binding. Realtime request and query behavior remain
+  outside FT-002 and with FT-004.
 
 These links justify task prerequisites and affected-consumer traversal without
 republishing the canonical subgraph. Expected code paths remain advisory in
@@ -103,6 +109,20 @@ republishing the canonical subgraph. Expected code paths remain advisory in
 - Use the existing `photo_pipeline_states` rows plus one narrow runtime-status
   singleton for the one sequential worker; add no jobs table, lease, fencing,
   `SKIP LOCKED`, broker or scheduler.
+- Persist the admission `IngestTarget` revision once on the existing Photo in
+  the same transaction as its matching initial state. This scalar snapshot is
+  the sole SLO lineage selector; do not infer it from current serving, order or
+  mutable state facts, and do not add a history/registry table.
+- Let `serving_control` resolve current A and validated target B inside the
+  same serving context used by admission, then call the processing-owned
+  read-only guard for exact A-admitted states before committing B. Rejection
+  preserves A and all Photo/deployment state; terminal A states permit the
+  existing maintenance/restart route. Add no switch job, persisted mode,
+  automatic drain or comparison bypass.
+- Use that same immutable admission revision as the explicit selector for the
+  existing per-Photo status response. Later revision rows never replace its
+  state fields; current-serving compatibility applies to the selected state
+  without another selector, fallback or response schema.
 - Use deterministic private derivative keys and idempotent owner transactions;
   add no PostgreSQL/MinIO transaction emulator.
 - Compute queue/SLO state with direct PostgreSQL reads and capacity with two
@@ -129,10 +149,14 @@ sequential even where tasks share a wave.
 | [TASK-025-T2-FT-002-W3](../TASK-025-T2-FT-002-W3.task.json) | T2 | W3 | TASK-022 | `photo-processing.md#startup-recovery` | Startup recovery transaction. |
 | [TASK-026-T3-FT-002-W5](../TASK-026-T3-FT-002-W5.task.json) | T3 | W5 | TASK-024, TASK-025 | `FT-002-AC-003` plus `photo-processing.md#model-asset-admission` | Model-admitted worker/realtime startup plus sequential worker runtime and restart integration. |
 | [TASK-027-T2-FT-002-W4](../TASK-027-T2-FT-002-W4.task.json) | T2 | W4 | TASK-023, TASK-007, TASK-008 | `photo-processing.md#compatible-searchable-truth` | Compatible searchable-truth projection. |
-| [TASK-028-T2-FT-002-W5](../TASK-028-T2-FT-002-W5.task.json) | T2 | W5 | TASK-027 | `FT-002-AC-004` | Full-population ingest-to-searchable SLO projection. |
+| [TASK-037-T2-FT-002-W5](../TASK-037-T2-FT-002-W5.task.json) | T2 | W5 | TASK-018, TASK-012 | `photo-admission.md#admission-time-serving-revision-lineage` | Persist immutable Photo admission-revision lineage. |
+| [TASK-039-T2-FT-002-W6](../TASK-039-T2-FT-002-W6.task.json) | T2 | W6 | TASK-037 | `photo-processing.md#ordinary-serving-revision-guard` | Processing-owned read-only exact-A backlog guard. |
+| [TASK-040-T2-FT-002-W7](../TASK-040-T2-FT-002-W7.task.json) | T2 | W7 | TASK-039 | `FT-002-AC-001` | Serving-control manual A-to-B command, admission serialization and commit/reject integration. |
+| [TASK-028-T2-FT-002-W5](../TASK-028-T2-FT-002-W5.task.json) | T2 | W5 | TASK-027, TASK-037 | `FT-002-AC-004` | Full-population ingest-to-searchable SLO projection. |
 | [TASK-029-T2-FT-002-W6](../TASK-029-T2-FT-002-W6.task.json) | T2 | W6 | TASK-026, TASK-028 | `FT-002-AC-005` | Shared-worker Calibration delay/resume boundary. |
 | [TASK-030-T3-FT-002-W5](../TASK-030-T3-FT-002-W5.task.json) | T3 | W5 | TASK-027, TASK-017 | `photo-processing-api.md#per-photo-processing-status` | Authenticated per-Photo processing-status API. |
-| [TASK-031-T2-FT-002-W6](../TASK-031-T2-FT-002-W6.task.json) | T2 | W6 | TASK-026, TASK-030 | `FT-002-AC-001` | Photographer uploader status-polling UI. |
+| [TASK-038-T2-FT-002-W6](../TASK-038-T2-FT-002-W6.task.json) | T2 | W6 | TASK-030, TASK-037 | `photo-processing-api.md#admission-lineage-selector` | Qualify the existing per-Photo API by immutable admission revision and prove A+B compatibility. |
+| [TASK-031-T2-FT-002-W6](../TASK-031-T2-FT-002-W6.task.json) | T2 | W6 | TASK-026, TASK-030, TASK-038 | `FT-002-AC-001` | Photographer uploader status-polling UI. |
 | [TASK-032-T2-FT-002-W4](../TASK-032-T2-FT-002-W4.task.json) | T2 | W4 | TASK-025 | `photo-processing.md#queue-and-recovery-health-projection` | Queue and recovery health projection. |
 | [TASK-033-T3-FT-002-W1](../TASK-033-T3-FT-002-W1.task.json) | T3 | W1 | TASK-002 | `photo-processing.md#postgresql-capacity-observation` | PostgreSQL capacity probe. |
 | [TASK-034-T3-FT-002-W2](../TASK-034-T3-FT-002-W2.task.json) | T3 | W2 | TASK-033 | `photo-processing.md#minio-capacity-observation` | MinIO capacity probe. |
@@ -151,7 +175,7 @@ sequential even where tasks share a wave.
 - `src/face_moment/entrypoints/backend.py`
 - `migrations/versions/`
 - `compose.yaml`
-- `tests/processing/` and `tests/inventory/`
+- `tests/processing/`, `tests/inventory/` and `tests/serving_control/`
 
 These paths are advisory and non-exhaustive. The migration uses the linear head
 current at execution as its direct `down_revision`; no mutable future exact
@@ -175,9 +199,24 @@ head or hard task write boundary is inferred.
 - Retry/restart proof injects post-derivative/pre-commit interruption and a real
   worker process restart without touching production data.
 - SLO proof uses a controlled clock, the half-open
-  `[accepted_from, accepted_before)` interval and reconciles every accepted or
-  excluded fixture exactly once; an empty population yields zero counts and
-  null ratio/verdict.
+  `[accepted_from, accepted_before)` interval and reconciles every accepted
+  Photo exactly once through its immutable admission-revision state; later
+  state rows are not exclusions that can multiply the Photo. An empty
+  population yields zero counts and null ratio/verdict.
+- Per-Photo API compatibility proof adds absent/pending/complete-ready B
+  variants to an A-admitted Photo. With A current it preserves A's ordinary
+  completeness/activity truth; after the serving switch to B it requires the
+  exact scalar A response with `searchable=false`, no multi-row failure and no
+  state mutation.
+- The processing guard proof uses one disposable СПА with current validated A
+  and task-owned A-admitted Photos. Its five-case exact-A matrix distinguishes
+  `pending|processing` blockers from `ready|no_faces|failed` terminal
+  non-blockers through a read-only projection.
+- The dependent ordinary-switch command proof uses validated A/B revisions and
+  the completed guard. It proves audited commit/reject with no deployment side
+  effect on rejection and an interleaved admission's one serial A-or-B outcome.
+  Model comparison remains a test-only fixture that cannot call or bypass the
+  command.
 - `REQ-SEC-001` material proof remains owned exactly by `FT-002-AC-006` in
   TASK-036. Earlier private-media, authenticated-API and read-only capacity
   tasks retain their canonical privacy/auth/topology constraints and hostile
@@ -200,6 +239,9 @@ head or hard task write boundary is inferred.
   read-only operator assets; every model identity or `weights_sha256` mismatch
   fails closed before work and never triggers fallback.
 - Retry and restart converge without duplicate faces or a second queue.
+- The manual A-to-B command is the only ordinary serving switch: it calls the
+  processing-owned guard, serializes with admission and never creates a switch
+  lifecycle, job, persisted mode, automatic drain or comparison exemption.
 - The full accepted-JPEG SLO population remains truthful, including late and
   Calibration-delayed work.
 - Capacity results stay independent and reveal no credential, path, key,
@@ -207,8 +249,9 @@ head or hard task write boundary is inferred.
 
 ## Definition Of Done
 
-All nineteen indexed tasks independently satisfy their task-owned exact claims
-and tier obligations, every `FT-002-AC-001..008` has one owner, both
-model-consuming roles pass the selected-revision admission/fail-closed matrix,
+All twenty-three indexed tasks independently satisfy their task-owned exact claims
+and tier obligations, every `FT-002-AC-001..008` has complete task-owned
+coverage, and both model-consuming roles pass the selected-revision
+admission/fail-closed matrix,
 the two staff UAT flows pass, and fresh review can approve the queue without
 adding a runtime mechanism or changing Global Backbone Planning Revision `4`.

@@ -1,7 +1,7 @@
 ---
 description: Canonical accepted module/change-unit dependency graph and boundary contracts for the Face Moment pilot.
 status: active
-last_updated: 2026-08-13
+last_updated: 2026-08-14
 source_of_truth:
   - .memory-bank/contracts/boundary-map.md
 ---
@@ -92,8 +92,9 @@ owner and accepted dependency edge.
 1. use the authenticated principal from `staff_access` and authorize the
    photographer action inside `inventory`;
 2. read an immutable `IngestTarget` from `serving_control`;
-3. persist the unique Photo and ask `processing` to create the serving
-   `pending` state in one short PostgreSQL transaction;
+3. persist the unique Photo with its immutable `IngestTarget` revision snapshot
+   and ask `processing` to create the same-revision `pending` state in one
+   short PostgreSQL transaction;
 4. return the independent accepted/rejected/duplicate outcome.
 
 No HTTP handler, shared helper or composition root owns this flow or writes the
@@ -123,7 +124,12 @@ projections to assemble the authenticated per-Photo and operational views
 defined by the [Photo Processing API](photo-processing-api.md). It may also ask
 `processing` for the controlled-interval `ingest_to_searchable` classification
 defined by [Photo Processing](../domains/photo-processing.md), while supplying
-the owner-held Photo/visibility/acceptance projection.
+the owner-held Photo/visibility/acceptance projection, including the immutable
+admission-time revision snapshot that selects each Photo's single SLO state.
+For the per-Photo status read, `inventory` supplies that same immutable
+admission revision as the exact state selector; later revision rows do not
+replace it, while `processing` still evaluates current compatibility for the
+selected state.
 
 This edge grants no processing claim, transition, inference, face/derivative
 write or model-selection authority. `inventory` owns staff authorization and
@@ -203,20 +209,34 @@ The reproducible oracle is owned by
 ### Manual serving-revision switch
 
 - Owner: `serving_control`.
-- Input: an authenticated operator's explicit target revision.
+- Input: an authenticated operator's explicit target revision B for one СПА;
+  its current committed revision A is resolved inside the owner boundary.
 - Output: an audited success/failure result naming the requested and currently
   committed revisions.
 - `serving_control` asks `processing` to validate the target; only a validated
-  revision may serve.
+  revision may serve. Before B commits, it also asks `processing` for the
+  read-only guard scoped to that СПА and exact current A. The guard reports
+  whether any Photo admitted against A has its `(photo_id, A)` state in
+  `pending` or `processing`; `serving_control` neither reads nor writes those
+  processing-owned rows directly.
+- Serving selection and admission serialize on the same serving context: an
+  admission either commits its A snapshot and matching A state before the guard
+  (therefore blocks B), or observes B only after B commits. A guard rejection
+  records the failure result, keeps A committed, and changes no Photo state,
+  assets or process. `ready`, `no_faces` and `failed` A states are terminal and
+  do not block.
+- Calibration/model comparison is test-only. It neither invokes this command
+  nor supplies an exception to its guard; only a separate authenticated manual
+  serving-control action can request a revision change.
 - The composition root owns only the deployment binding: it reads the committed
   revision, resolves that pipeline's configured detector/recognizer paths from
   the operator-managed read-only mount and asks `processing` to verify the full
   immutable model identity. It owns no revision-selection or fallback policy.
-- Any failure leaves participant service unavailable and never changes the
-  committed revision automatically. Recovery is an explicit retry or manual
-  selection of the prior revision; worker and realtime restart, load only the
-  committed revision and stay unavailable before work if its assets cannot be
-  admitted. The exact admission contract is owned by
+- A failure after B commits leaves participant service unavailable and never
+  changes the committed revision automatically. Recovery is an explicit retry
+  or manual selection of the prior revision; worker and realtime restart, load
+  only the committed revision and stay unavailable before work if its assets
+  cannot be admitted. The exact admission contract is owned by
   [Photo Processing](../domains/photo-processing.md#model-asset-admission).
 
 ### Retention cleanup

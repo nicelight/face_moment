@@ -16,6 +16,7 @@ _PROCESSING = "processing"
 _FAILED = "failed"
 _IDLE = "idle"
 _PHOTO_PROCESSING = "photo_processing"
+_CALIBRATION = "calibration"
 _MAX_ATTEMPTS = 3
 _SAFE_FAILURE_MESSAGE = "processing failed"
 
@@ -31,6 +32,10 @@ class WorkerClaimRepository:
 
     def claim_oldest_pending(self) -> PhotoPipelineState | None:
         """Claim only work for this process's still-committed revision."""
+
+        runtime = self._locked_runtime_status()
+        if runtime.current_operation != _IDLE:
+            return None
 
         state = self._session.scalar(
             select(PhotoPipelineState)
@@ -51,7 +56,6 @@ class WorkerClaimRepository:
         if state is None:
             return None
 
-        runtime = self._runtime_status()
         now = datetime.now(timezone.utc)
         state.status = _PROCESSING
         state.attempt_count += 1
@@ -61,6 +65,26 @@ class WorkerClaimRepository:
         self._session.flush()
         self._session.refresh(state)
         return state
+
+    def begin_calibration(self) -> None:
+        """Occupy the singleton worker for one controlled Calibration hold."""
+
+        runtime = self._locked_runtime_status()
+        if runtime.current_operation != _IDLE:
+            raise RuntimeError("processing worker is busy")
+        runtime.current_operation = _CALIBRATION
+        runtime.operation_started_at = datetime.now(timezone.utc)
+        self._session.flush()
+
+    def finish_calibration(self) -> None:
+        """Release the controlled Calibration hold for ordinary Photo work."""
+
+        runtime = self._locked_runtime_status()
+        if runtime.current_operation != _CALIBRATION:
+            raise LookupError("calibration runtime operation is not active")
+        runtime.current_operation = _IDLE
+        runtime.operation_started_at = None
+        self._session.flush()
 
     def record_failure(
         self,
@@ -82,7 +106,7 @@ class WorkerClaimRepository:
         if state is None:
             raise LookupError("processing claim is not active")
 
-        runtime = self._runtime_status()
+        runtime = self._locked_runtime_status()
         state.status = _FAILED if state.attempt_count >= _MAX_ATTEMPTS else _PENDING
         state.status_changed_at = datetime.now(timezone.utc)
         state.last_error = _SAFE_FAILURE_MESSAGE
@@ -92,8 +116,12 @@ class WorkerClaimRepository:
         self._session.refresh(state)
         return state
 
-    def _runtime_status(self) -> ProcessingRuntimeStatus:
-        runtime = self._session.get(ProcessingRuntimeStatus, 1)
+    def _locked_runtime_status(self) -> ProcessingRuntimeStatus:
+        runtime = self._session.scalar(
+            select(ProcessingRuntimeStatus)
+            .where(ProcessingRuntimeStatus.singleton_id == 1)
+            .with_for_update()
+        )
         if runtime is None:
             raise RuntimeError("processing runtime status is missing")
         return runtime

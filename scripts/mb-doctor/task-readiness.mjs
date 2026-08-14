@@ -666,7 +666,7 @@ export function createTaskReadinessChecks(context) {
   
     for (const candidate of candidates) {
       if (!isAllowedSddSpecPath(candidate)) continue;
-      if (isFile(absolute(sddSpecFilesystemPath(candidate)))) {
+      if (isFile(absolute(candidate))) {
         existing.push(candidate);
       } else {
         missing.push(candidate);
@@ -919,8 +919,4 @@ export function createTaskReadinessChecks(context) {
     checkFeatureClarificationReadiness,
     checkTaskReadiness,
   };
-}
-
-export function sddSpecFilesystemPath(candidate) {
-  return normalizeRel(candidate).split('#', 1)[0];
 }

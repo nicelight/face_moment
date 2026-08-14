@@ -78,6 +78,11 @@ class Photo(Base):
     accepted_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+    admission_pipeline_revision_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("face_moment.pipeline_revisions.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
     uploader_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
     checksum_sha256: Mapped[bytes] = mapped_column(LargeBinary(length=32), nullable=False)
     original_object_key: Mapped[str] = mapped_column(Text, nullable=False)

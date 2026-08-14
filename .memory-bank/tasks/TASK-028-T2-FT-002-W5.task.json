@@ -1,14 +1,15 @@
 {
   "id": "TASK-028-T2-FT-002-W5",
   "title": "Implement full-population ingest SLO projection",
-  "status": "blocked",
+  "status": "done",
   "wave": "W5",
   "feature": "FT-002",
   "reqs": [
     "REQ-ING-004"
   ],
   "depends_on": [
-    "TASK-027-T2-FT-002-W4"
+    "TASK-027-T2-FT-002-W4",
+    "TASK-037-T2-FT-002-W5"
   ],
   "touched_files": [
     "src/face_moment/processing/",
@@ -52,21 +53,32 @@
       "summary": "Fresh independent T2 verification passed both interval boundaries, canonical 9/2/5/2 open and 9/2/7/0 closed results, exact ratios and nullable/completed verdicts, empty zero/null output, reject/duplicate exclusion, SELECT-only ownership, cleanup and the prior A-to-B serving-switch regression at 1/1/0/0. The required explicit non-serving revision-state branch failed: adding revision B state to one Photo admitted under A changed the expected 9/2/5/2 and ratio 2/9 to 10/3/5/2 and 0.3 because production counts state rows rather than each accepted Photo once. Executor evidence remained supporting-only.",
       "protocol": ".protocols/TASK-028-T2-FT-002-W5/verification.md",
       "report": ".tasks/TASK-028-T2-FT-002-W5/TASK-028-T2-FT-002-W5-S-VERIFY-final-report-docs-02.md"
+    },
+    {
+      "stage": "verify",
+      "attempt": 4,
+      "verdict": "PASS",
+      "completed_at": "2026-08-14T04:50:39+05:00",
+      "image": "face-moment:task-028-a4@sha256:106b5cda0e72cc2535253dfa873aaad4d9954f23cb40dc14a011458385f22f61",
+      "summary": "Fresh independent T2 verification on the exact packaged image passed the canonical 9/2/5/2 open and 9/2/7/0 closed matrix, exact ratios and nullable/completed verdicts, both half-open boundaries, empty zero/null output, every required state class and reject/duplicate exclusions. Both historical defects are resolved: A remains 1/1 after current serving A-to-B, and after a complete B state is added the two persisted rows still project exactly one A admission result. Six production calls were one SELECT each in read-only transactions with unchanged owner snapshots; isolated cleanup left zero database/container/network/volume residue. Attempts 1/2 remain historical FAILs, Attempt 3 remains a non-counting pre-edit stop, and executor evidence remained supporting-only.",
+      "protocol": ".protocols/TASK-028-T2-FT-002-W5/verification.md",
+      "report": ".tasks/TASK-028-T2-FT-002-W5/TASK-028-T2-FT-002-W5-S-VERIFY-final-report-docs-03.md"
     }
   ],
   "docs": [
     ".memory-bank/features/FT-002.md",
+    ".memory-bank/domains/photo-admission.md",
     ".memory-bank/domains/photo-processing.md",
     ".memory-bank/testing/photo-processing.md",
     ".memory-bank/tasks/plans/IMPL-FT-002.md"
   ],
   "evidence_required": [
-    "FT-002-AC-004 RED: no controlled projection reconciles the full accepted-JPEG population and nullable 95% verdict; GREEN: the required fixture applies the half-open interval, classifies early ready, late ready, no_faces, failed, aged pending/processing and young open rows exactly once, excludes only reject, duplicate, upper-bound and non-serving cases, and returns all-zero counts with null ratio/verdict for an empty population; decisive comparison: population equals success+breach+open, boundary membership is exact, non-empty ratio is exact and verdict stays null until open=0 then follows >=0.95; artifact: controlled-clock SLO table and query output."
+    "FT-002-AC-004 RED: no controlled projection reconciles the full accepted-JPEG population and nullable 95% verdict through the persisted admission-revision state; GREEN: the required fixture applies the half-open interval, classifies early ready, late ready, no_faces, failed, aged pending/processing and young open rows exactly once, preserves an A-admitted Photo after current serving switches to B, ignores its additional B state, and returns all-zero counts with null ratio/verdict for an empty population; decisive comparison: population equals success+breach+open, every Photo has one admission-state row, boundary membership is exact, non-empty ratio is exact and verdict stays null until open=0 then follows >=0.95; artifact: controlled-clock SLO table and SELECT-only query output."
   ],
-  "purpose": "Compute the accepted controlled-interval ingest-to-searchable result without hiding late or terminal non-searchable Photos.",
-  "success_outcome": "Every independently accepted Photo in the interval reconciles once to success, breach or open, explicit exclusions stay outside, and the 95% verdict appears only for a closed population.",
+  "purpose": "Compute the accepted controlled-interval ingest-to-searchable result from each Photo's durable admission-revision state without hiding late or terminal non-searchable Photos.",
+  "success_outcome": "Every independently accepted Photo in the interval joins exactly one immutable admission-revision state and reconciles once to success, breach or open; later revision rows never replace or duplicate it, explicit exclusions stay outside, and the 95% verdict appears only for a closed population.",
   "anti_goals": [
-    "Do not add a metrics store, materialized counters, batch readiness, rolling scheduler or new product capacity target.",
+    "Do not add a metrics store, materialized counters, batch readiness, rolling scheduler, lineage registry/history or new product capacity target.",
     "Do not exclude no_faces, failed, delayed Calibration work or late pending/processing Photos."
   ],
   "runtime_context": {
@@ -76,7 +88,7 @@
       "Photo delete, restore and hard-purge behavior owned by FT-012"
     ],
     "stop_conditions": [
-      "The accepted population cannot be computed from existing persisted acceptance and processing timestamps.",
+      "The required immutable admission-revision pair is not available from its completed prerequisite.",
       "A truthful verdict would require a new product definition or monitoring subsystem."
     ]
   },
@@ -87,16 +99,18 @@
   ],
   "normative_inputs": [
     ".memory-bank/features/FT-002.md#FT-002-AC-004",
+    ".memory-bank/domains/photo-admission.md#admission-time-serving-revision-lineage",
     ".memory-bank/domains/photo-processing.md#controlled-interval-ingest-to-searchable-projection",
     ".memory-bank/testing/photo-processing.md#full-population-slo-matrix"
   ],
   "constraints": [
     "Use a controlled clock and the half-open [accepted_from, accepted_before) interval.",
-    "Use the admission-time serving revision and persisted accepted_at/searchable_at facts.",
-    "Keep rejects, duplicates and non-serving states as explicit test exclusions, not hidden rows."
+    "Join each Photo only to its immutable admission_pipeline_revision_id state and use persisted accepted_at/searchable_at facts.",
+    "Keep rejects and duplicates as explicit test exclusions; a later non-serving revision state is ignored without excluding or duplicating its admitted Photo."
   ],
   "invariants": [
     "Success requires searchable strictly before 15 minutes.",
+    "One accepted Photo contributes exactly one SLO classification through its immutable admission revision, regardless of later serving switches or revision rows.",
     "Late ready, no_faces, failed and aged pending/processing are breaches.",
     "meets_95_percent is null while open is nonzero.",
     "An empty population has zero counts and null success_ratio/meets_95_percent."
