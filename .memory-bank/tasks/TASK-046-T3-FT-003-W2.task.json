@@ -1,0 +1,56 @@
+{
+  "id": "TASK-046-T3-FT-003-W2",
+  "title": "Integrate central-origin Chromium with the ESP32 long-poll",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-003",
+  "reqs": ["REQ-CAP-001", "REQ-SEC-001", "REQ-SEC-002"],
+  "depends_on": ["TASK-044-T2-FT-003-W1", "TASK-063-T3-FT-003-W1"],
+  "touched_files": ["client/", "tests/client/"],
+  "tier": "T3",
+  "gates": [
+    {"name": "ESP32 fixture contract tests", "command": "docker compose run --rm backend python -m pytest tests/client/test_sensor_passage_fixture.py", "required": true},
+    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+  ],
+  "verify": [],
+  "docs": [".memory-bank/contracts/sensor-passage-api.md", ".memory-bank/features/FT-003.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "evidence_required": [
+    "FT-003-AC-003 RED: the central-origin client holds no sensor request; GREEN: managed Chromium consuming TASK-063's installed exact-origin LNA policy holds exactly one authenticated 10-second GET /api/v1/passage-events/next to the fixed mDNS ESP32, immediately continues after 200 or 204, strictly decodes events, suppresses duplicate transport deliveries in memory, keeps the manually configured sensor secret only in the Authorization header, and has no bridge/local server/WebSocket/discovery route; decisive comparison: the protocol-equivalent fixture counts polls and tests exact-origin CORS/OPTIONS/401/403 while URL/log/topology scans prove absence of leakage and alternate transports; artifact: Playwright transcript and fixture logs under .tasks/TASK-046-T3-FT-003-W2/."
+  ],
+  "purpose": "Implement and prove the client sensor route after the independently owned managed LNA policy exists.",
+  "success_outcome": "The real managed central-origin browser continuously operates one exact authenticated long-poll and recovers to advertising on malformed/failed polls.",
+  "anti_goals": [
+    "Do not create or modify managed LNA policy; TASK-063 owns that claim.",
+    "Do not implement trigger acceptance, capture, detector, submission or ESP32 firmware.",
+    "Do not add bridge, local server, WebSocket, discovery, pairing, rotation or durable sensor queue."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Managed Chromium policy artifacts owned by TASK-063-T3-FT-003-W1",
+      "Trigger/series behavior owned by TASK-050-T2-FT-003-W3",
+      "ESP32 firmware and realtime multipart submission"
+    ],
+    "stop_conditions": [
+      "The completed exact-origin LNA policy is not effective in managed Chromium.",
+      "Exact CORS/Authorization behavior cannot be proved without a forbidden transport.",
+      "The fixed sensor host would require dynamic discovery."
+    ]
+  },
+  "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-003", ".memory-bank/contracts/sensor-passage-api.md", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "normative_inputs": [".memory-bank/features/FT-003.md#ft-003-ac-003--central-origin-authenticated-sensor-route", ".memory-bank/contracts/sensor-passage-api.md", ".memory-bank/testing/client-realtime.md#required-proof"],
+  "constraints": [
+    "Use installed playwright cli in managed Chromium loaded from the real central HTTPS origin with TASK-063 policy applied.",
+    "Use the protocol-equivalent fixture for exact hold/event/CORS/Bearer behavior; firmware is excluded.",
+    "Use disposable browser/fixture state and retain redacted artifacts under the task directory."
+  ],
+  "invariants": [
+    "Exactly one poll is outstanding and continuation after 200/204 is immediate.",
+    "The sensor secret appears only in the Authorization header and never in URL/log output.",
+    "LNA policy ownership remains with TASK-063; this task owns only the integration delta."
+  ],
+  "verification_targets": [
+    ".memory-bank/contracts/sensor-passage-api.md#verification-targets",
+    "FT-003-AC-003 managed-browser integration proves poll, CORS, auth, decode and duplicate-suppression behavior.",
+    "Dependency check records TASK-063 effective policy without treating policy inspection as this task's acceptance."
+  ]
+}

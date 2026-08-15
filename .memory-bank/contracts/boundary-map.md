@@ -1,7 +1,7 @@
 ---
 description: Canonical accepted module/change-unit dependency graph and boundary contracts for the Face Moment pilot.
 status: active
-last_updated: 2026-08-14
+last_updated: 2026-08-16
 source_of_truth:
   - .memory-bank/contracts/boundary-map.md
 ---
@@ -48,6 +48,7 @@ contract.
 | `processing` | `inventory` | [Processing input projections](#processing-input-projections) |
 | `processing` | `serving_control` | [Processing input projections](#processing-input-projections) |
 | `serving_control` | `staff_access` | [Active search date](#active-search-date) |
+| `serving_control` | `staff_access` | [Display client administration](#display-client-administration) |
 | `promo` | `serving_control` | [Participant Promo](#participant-promo) |
 | `promo` | `inventory` | [Participant Promo](#participant-promo) |
 | `promo` | `processing` | [Participant Promo](#participant-promo) |
@@ -70,7 +71,7 @@ contracts remain in their registered subject specifications.
 
 | Module | Public application boundary | Owned mutable state and transitions | Forbidden ownership |
 |---|---|---|---|
-| `serving_control` | Read immutable `ServingContext`/`IngestTarget`; apply audited manual setting and serving-revision changes. | СПА/timezone, active `visit_date`, pipeline/settings revision, display-token lifecycle and change audit. | Photos, processing results, Attempts, sessions, evidence or Calibration recommendations. |
+| `serving_control` | Read immutable `ServingContext`/`IngestTarget`; apply audited manual setting and serving-revision changes; administer and reveal current display-client credentials to authorized Admins. | СПА/timezone, active `visit_date`, pipeline/settings revision, display-token value/lifecycle and change audit. | Photos, processing results, Attempts, sessions, evidence or Calibration recommendations. |
 | `inventory` | Admit one JPEG; query authorized Photos; soft-delete/restore; restore-all; start/read one global hard purge; read recent per-СПА counters and primary-storage capacity. | Photo identity, uploader, authoritative date, effective capture time, accepted time, original reference, visibility, authorization and purge progress. | Pipeline transition rules, embeddings, Promo integrity, core Attempts or evidence retention. |
 | `processing` | Create initial `pending`; report readiness; validate a pipeline revision; process Photo; exact compatible search; offline evaluate; clean Photo-derived state on purge. | Pipeline catalog, processing state, derivatives/faces/embeddings, quality gates, exact search, validation and evaluation. | Photo admission/visibility, live setting mutation, Promo Attempt/session assembly or evidence retention. |
 | `promo` | Execute a fresh attempt; accept display outcome; exchange/read QR continuation; skip unavailable hard-purged media; run/read retention cleanup. | Core Attempt, result/session, candidate union, teasers, `N`, QR/browser access and latest retention result. | Photo, processing or settings writes and detailed diagnostic evidence. |
@@ -169,6 +170,25 @@ closed serving readiness with `503` before `promo` admission, starts no search
 or core Attempt, and records only bounded token-free operational diagnostic
 evidence. The immutable context and threshold/quality inputs are defined by
 [Realtime Reference Search](../domains/realtime-search.md).
+
+### Display client administration
+
+`serving_control` owns the current retrievable token and matching authentication
+digest for every configured kiosk. It uses the existing `staff_access`
+principal and authorizes the Admin settings read inside `serving_control`:
+active `operator|developer` principals may read the current full token;
+photographers may not. `staff_access` authenticates the staff session but never
+stores, projects or authorizes the display-client credential itself.
+
+The same-origin `GET /staff/display-clients` Admin settings page shows the
+current token on every authorized read under the exact persistence, `no-store`
+and redaction rules in
+[Display Client Access](../domains/display-client-access.md#admin-settings-token-read).
+The Admin manually copies that value into the intended kiosk's client
+configuration UI. The kiosk profile owns only its local configuration copy;
+it does not mutate server credential state. No HTTP handler, `promo`, browser,
+deployment policy, pairing path or generic settings helper may bypass
+`serving_control` ownership or push the credential to the kiosk.
 
 ### Participant Promo
 
@@ -321,12 +341,24 @@ These are external/runtime interfaces, not project-module graph edges:
   [shared database](#shared-postgresql-contract) and
   [cross-store convergence](#postgresql-and-minio-convergence) contracts.
 
+### Central-origin client delivery
+
+The backend serves the plain static `SpaPromoClient` bundle through the existing
+central Face Moment HTTPS origin and edge. The loadable shell provides local
+advertising plus configuration/debug navigation without a second public origin,
+local web server, local bridge, WebSocket or new runtime role. Camera, sensor,
+detector, capture and submission behavior remain separate consumers of this
+delivery surface. Verification loads the real bundle through the public HTTPS
+origin and inspects runtime topology for every forbidden alternate route.
+
 ### Authentication and data-specific delivery
 
-- `serving_control` owns central display-client token lifecycle under
-  [Display Client Access](../domains/display-client-access.md). The server
-  stores only its hash and derives authoritative `spa_id`; client input cannot
-  override it.
+- `serving_control` owns central display-client token value, Admin reveal and
+  lifecycle under [Display Client Access](../domains/display-client-access.md).
+  The server retains the current retrievable value plus its matching hash,
+  authenticates by hash and derives authoritative `spa_id`; client input cannot
+  override it. The token appears in the authorized `no-store` Admin settings
+  response and client Authorization header only, never in URLs or logs.
 - The sensor Bearer secret is distinct, manually provisioned and sent only in
   ESP32 Authorization headers. It never enters URLs or logs.
 - Commercial Photo media and personalized session data are backend-proxied,

@@ -1,0 +1,33 @@
+{
+  "id": "TASK-060-T2-FT-003-W2",
+  "title": "Resolve immutable realtime context and readiness",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-003",
+  "reqs": ["REQ-CAP-002", "REQ-REL-001"],
+  "depends_on": ["TASK-042-T2-FT-003-W1"],
+  "touched_files": ["src/face_moment/serving_control/", "tests/serving_control/"],
+  "tier": "T2",
+  "gates": [
+    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
+    {"name": "Realtime context resolver tests", "command": "docker compose run --rm backend python -m pytest tests/serving_control/test_realtime_context.py", "required": true},
+    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+  ],
+  "verify": [],
+  "docs": [".memory-bank/domains/realtime-search.md", ".memory-bank/contracts/boundary-map.md", ".memory-bank/features/FT-003.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "evidence_required": [
+    "realtime-search.md#immutable-active-search-context RED: no owner resolver/readiness boundary exists; GREEN: one call consumes the authenticated spa_id plus owner stores and committed serving revision to return the exact immutable snapshot, copies it before admission, never accepts client overrides, and reports closed 503 readiness before promo admission with no Attempt/search/session whenever any required value/model admission is absent; decisive comparison: complete/missing/override and settings-change-after-resolution fixtures inspect snapshot immutability and zero downstream writes; artifact: focused pytest under .tasks/TASK-060-T2-FT-003-W2/."
+  ],
+  "purpose": "Implement immutable context resolution and closed readiness over the separately persisted owner settings.",
+  "success_outcome": "Every admitted request can consume one immutable authoritative context; incomplete context closes before domain admission.",
+  "anti_goals": ["Do not persist settings or implement their provision path.", "Do not implement the staff active-date API, promo admission or search.", "Do not add durable readiness state, scheduler or time inference."],
+  "runtime_context": {
+    "forbidden_scope": ["Settings persistence owned by TASK-042-T2-FT-003-W1", "Staff active-date surface owned by FT-004", "Promo Attempt/admission/search state"],
+    "stop_conditions": ["Resolution requires mutating settings or changing FT-002 revision selection.", "Closed readiness cannot precede promo admission.", "A durable readiness lifecycle would be required."]
+  },
+  "source_artifacts": [".memory-bank/domains/realtime-search.md#immutable-active-search-context", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "normative_inputs": [".memory-bank/domains/realtime-search.md#immutable-active-search-context", ".memory-bank/contracts/boundary-map.md#active-search-date", ".memory-bank/contracts/boundary-map.md#http-failure-contract"],
+  "constraints": ["Consume TASK-042 owner stores and the accepted selected revision through public boundaries.", "Copy one complete snapshot before inference/admission use.", "Use disposable settings fixtures and create no Attempt/search/session in closed cases."],
+  "invariants": ["Client supplies or overrides no context value.", "Resolved context is immutable for one admitted Attempt.", "Missing required input closes readiness before promo admission and durable Attempt creation."],
+  "verification_targets": [".memory-bank/domains/realtime-search.md#immutable-active-search-context", "Complete snapshot and post-resolution mutation isolation.", "Missing/override fixtures prove 503 and zero downstream work."]
+}

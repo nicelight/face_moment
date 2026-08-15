@@ -1,0 +1,89 @@
+{
+  "id": "TASK-047-T2-FT-003-W2",
+  "title": "Traverse chronological BlazeFace proposals with first-20 stop",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-003",
+  "reqs": [
+    "REQ-CAP-002",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-044-T2-FT-003-W1"
+  ],
+  "touched_files": [
+    "client/",
+    "tests/client/"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-003.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
+  "evidence_required": [
+    "FT-003-AC-004 RED: no BlazeFace proposal path exists in the client, so traversal and stop probes fail; GREEN: MediaPipe BlazeFace Full-range runs in its browser runtime with a separate release-versioned model asset, a more-than-20-occurrence reference-series fixture emits proposals earliest-to-latest with preserved detector order within each frame and stops immediately at occurrence 20, a repeated-person fixture keeps every occurrence, and a model load/validation failure surfaces a recoverable operator-visible error without silently activating YuNet; decisive comparison: emitted proposal sequences are compared frame-by-frame and in-frame against the fixture ground truth, and a dependency/runtime composition scan proves no TensorFlow.js, second ML runtime, parallel YuNet or generic detector abstraction; artifact: playwright transcript, ordered proposal dumps and the composition scan under .tasks/TASK-047-T2-FT-003-W2/."
+  ],
+  "purpose": "Implement the client proposal detector path: the pinned BlazeFace Full-range model asset, chronological series traversal with in-frame order preservation and the immediate first-20 stop, with recoverable load-failure behavior.",
+  "success_outcome": "The client traverses one ready reference series from earliest pre-trigger to latest post-trigger, emits detector-ordered occurrences and stops immediately after occurrence 20, performing no ranking, top-5 selection, authoritative quality gating, tracking, clustering, deduplication, embeddings or search, and failing recoverably when the versioned model cannot load.",
+  "anti_goals": [
+    "Do not add TensorFlow.js or another project-selected ML runtime, a parallel YuNet implementation or a generic detector abstraction; YuNet replaces BlazeFace only after concrete incompatibility.",
+    "Do not embed the model in JavaScript; it ships as a separate versioned asset of the client release.",
+    "Do not implement crop/JPEG encoding, multipart submission or trigger/ring-buffer behavior."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Crop geometry and JPEG encoding owned by TASK-048-T2-FT-003-W2",
+      "Ring buffer and trigger acceptance owned by TASK-050-T2-FT-003-W3",
+      "Multipart formation and submission owned by TASK-052-T2-FT-003-W4",
+      "Server-side selection and search owned by FT-004"
+    ],
+    "stop_conditions": [
+      "BlazeFace Full-range is shown technically unusable in the managed Chromium runtime, requiring the accepted sequential YuNet replacement route instead of a parallel implementation.",
+      "Chronological first-20 semantics cannot be proved without uploading full reference frames, which the contract excludes.",
+      "The versioned model asset cannot ship as a separate pinned release asset."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-003.md#FT-003-AC-004",
+    ".protocols/FT-003/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-003.md#ft-003-ac-004--chronological-blazeface-proposals",
+    ".memory-bank/testing/client-realtime.md#required-proof",
+    ".memory-bank/states/lifecycle-map.md#automatic-attempt-and-display",
+    ".memory-bank/testing/index.md",
+    ".memory-bank/architecture/system-architecture.md"
+  ],
+  "constraints": [
+    "Use the installed Playwright CLI through `playwright cli` with harness pages driving the real browser detector runtime over deterministic frame fixtures; browser-free probes are not substitutes.",
+    "The detector is MediaPipe BlazeFace Full-range through its browser runtime only; the model is a separate pinned release-versioned asset served with the client bundle.",
+    "Fixture frames carry known face counts and positions so occurrence order and the immediate stop at 20 are decidable without uploading reference frames.",
+    "Use disposable browser profiles and fixtures with safe rerun and complete cleanup; store transcripts and proposal dumps under .tasks/TASK-047-T2-FT-003-W2/."
+  ],
+  "invariants": [
+    "Traversal runs earliest-to-latest and preserves detector output order within each frame; detection stops immediately after the twentieth occurrence.",
+    "The client performs no ranking, top-5 selection, authoritative quality gating, tracking, clustering, deduplication, embeddings or commercial-photo search.",
+    "A model load or validation failure never silently activates another detector and leaves the client in recoverable advertising."
+  ],
+  "verification_targets": [
+    ".memory-bank/testing/client-realtime.md#required-proof",
+    "FT-003-AC-004: a more-than-20-occurrence fixture proves earliest-to-latest traversal, preserved in-frame order, the immediate stop at occurrence 20 and emission of exactly those first 20; a repeated-person fixture proves occurrences are retained.",
+    "Dependency/runtime composition scan proves the MediaPipe browser runtime, the separate versioned model asset and the absence of TensorFlow.js, a second ML runtime, parallel YuNet and detector abstractions.",
+    "Model load/validation failure injection proves recoverable operator-visible feedback with advertising preserved and no silent fallback."
+  ]
+}

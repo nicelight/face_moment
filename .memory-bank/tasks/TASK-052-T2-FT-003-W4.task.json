@@ -1,0 +1,36 @@
+{
+  "id": "TASK-052-T2-FT-003-W4",
+  "title": "Form and submit the bounded client multipart request",
+  "status": "planned",
+  "wave": "W4",
+  "feature": "FT-003",
+  "reqs": ["REQ-CAP-002", "REQ-DIAG-001"],
+  "depends_on": ["TASK-050-T2-FT-003-W3", "TASK-047-T2-FT-003-W2", "TASK-048-T2-FT-003-W2", "TASK-062-T2-FT-003-W2", "TASK-045-T3-FT-003-W3", "TASK-059-T3-FT-003-W3"],
+  "touched_files": ["client/", "tests/client/"],
+  "tier": "T2",
+  "gates": [
+    {"name": "Realtime client/server integration", "command": "docker compose run --rm backend python -m pytest tests/promo/test_realtime_attempt_api.py", "required": true},
+    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+  ],
+  "verify": [],
+  "docs": [".memory-bank/features/FT-003.md", ".memory-bank/contracts/realtime-attempt-api.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "evidence_required": [
+    "FT-003-AC-015 RED: the ready pipeline emits no request; GREEN: one ready series produces exactly one synchronous multipart/form-data POST whose manifest v1 contains only allowed identity/timing/camera/occurrence fields, one crop_NNN image/jpeg part per first-at-most-20 occurrence in ascending order, manifest only for zero occurrences, current configured JPEG quality, and the manually retained display token only in Authorization; deterministic fixture marker values are serialized through a clock-input seam without implementing marker collection; decisive comparison: captured browser requests are diffed against field/omission/part/credential rules and pass the completed real server boundary as integration delta; artifact: Playwright transcript and request captures under .tasks/TASK-052-T2-FT-003-W4/."
+  ],
+  "purpose": "Own browser multipart serialization and one-request submission while consuming server admission and clock-marker seams as dependencies.",
+  "success_outcome": "The real client forms one exact bounded request for ordinary and zero-occurrence series and the completed server admits it.",
+  "anti_goals": ["Do not implement server validation/admission or client clock-marker collection.", "Do not implement outcome branching, notices or retry.", "Do not add ranking, client truncation or forbidden manifest fields."],
+  "runtime_context": {
+    "forbidden_scope": ["Server admission owned by TASK-045-T3-FT-003-W3", "One-clock marker collection owned by TASK-066-T2-FT-003-W5", "Outcomes/notices owned by TASK-053 and TASK-067"],
+    "stop_conditions": ["A compliant client request cannot pass the accepted real endpoint.", "Required correlation cannot stay within the manifest allow-list.", "Submission requires a second/fallback transport."]
+  },
+  "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-015", ".memory-bank/contracts/realtime-attempt-api.md", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "normative_inputs": [".memory-bank/features/FT-003.md#ft-003-ac-015--client-multipart-request-formation", ".memory-bank/contracts/realtime-attempt-api.md#multipart-serialization", ".memory-bank/contracts/realtime-attempt-api.md#manifest-version-1", ".memory-bank/testing/client-realtime.md#required-proof"],
+  "constraints": [
+    "Use installed playwright cli against the real client and central endpoint with disposable profile/state.",
+    "Serialize deterministic caller-supplied timing values here; TASK-066 owns collection and monotonic reconciliation.",
+    "Store token only in managed profile and Authorization header; retain redacted request captures."
+  ],
+  "invariants": ["Exactly one synchronous request is sent per ready series.", "Manifest/parts obey exact allow-list, names and order.", "Server admission and clock-marker claims remain with TASK-045 and TASK-066."],
+  "verification_targets": ["FT-003-AC-015 browser request captures for >20, ordinary and zero occurrences.", "Integration delta proves the completed server accepts the client-formed request without re-owning AC-006.", "Redaction scan proves Authorization-only display token placement."]
+}

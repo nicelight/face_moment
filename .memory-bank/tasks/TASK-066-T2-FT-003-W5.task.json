@@ -1,0 +1,29 @@
+{
+  "id": "TASK-066-T2-FT-003-W5",
+  "title": "Record one-clock client latency markers",
+  "status": "planned",
+  "wave": "W5",
+  "feature": "FT-003",
+  "reqs": ["REQ-PERF-001", "REQ-CAP-002"],
+  "depends_on": ["TASK-052-T2-FT-003-W4"],
+  "touched_files": ["client/", "tests/client/"],
+  "tier": "T2",
+  "gates": [{"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}],
+  "verify": [],
+  "docs": [".memory-bank/features/FT-003.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/contracts/realtime-attempt-api.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "evidence_required": [
+    "FT-003-AC-010 RED: the client lifecycle has no one-clock markers; GREEN: one client monotonic origin records ready-series, local-detection-complete, request-start and response-receipt markers, serializes the accepted correlation timestamp/offsets through TASK-052's existing seam, and produces non-negative ordered durations with local_detection_completed_ms <= request_started_ms; decisive comparison: controlled fixture clock and real-browser runs reconcile marker order/durations without subtracting client/server wall clocks; artifact: marker logs and Playwright transcript under .tasks/TASK-066-T2-FT-003-W5/."
+  ],
+  "purpose": "Own client monotonic marker collection/reconciliation independently of request serialization.",
+  "success_outcome": "The client contributes trustworthy one-clock ready-to-response timing to the later joint 19/20 acceptance.",
+  "anti_goals": ["Do not form/validate multipart requests or own server latency.", "Do not implement diagnostic UI owned by FT-007.", "Do not subtract client and server wall clocks or claim final QR latency."],
+  "runtime_context": {
+    "forbidden_scope": ["Multipart formation owned by TASK-052-T2-FT-003-W4", "Server processing and Promo/QR rendering owned by later features", "FT-007 diagnostic presentation"],
+    "stop_conditions": ["Markers cannot share one client monotonic origin.", "Accepted serialized fields cannot be supplied through the existing request seam.", "Proof requires cross-machine wall-clock subtraction."]
+  },
+  "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-010", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "normative_inputs": [".memory-bank/features/FT-003.md#ft-003-ac-010--one-clock-latency-contribution", ".memory-bank/testing/client-realtime.md#required-proof", ".memory-bank/contracts/realtime-attempt-api.md#manifest-version-1"],
+  "constraints": ["Use installed playwright cli with controlled and real client clocks.", "Keep RFC3339 correlation timestamp distinct from monotonic offsets.", "Retain marker logs under the task directory."],
+  "invariants": ["All duration markers share one client monotonic clock.", "Offsets/durations are non-negative and ordered.", "This task does not own request shape/admission or final QR timing."],
+  "verification_targets": ["FT-003-AC-010 marker presence/order/duration reconciliation.", "Serialization integration through TASK-052 seam without re-owning AC-015.", "Evidence is joinable to later controlled attempt IDs."]
+}

@@ -5,7 +5,8 @@ status: active
 # Domain Specifications
 
 - [Display Client Access](display-client-access.md): SpaPromoClient identity,
-  token hash and authentication lifecycle.
+  Admin-visible current token, manual kiosk handoff, authentication hash and
+  lifecycle.
 - [Promo Attempt](promo-attempt.md): core Attempt persistence, immutable
   serving snapshot, result assembly/session, display and shared QR browser
   access transitions.

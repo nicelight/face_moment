@@ -1,0 +1,29 @@
+{
+  "id": "TASK-067-T2-FT-003-W6",
+  "title": "Show the non-blocking server-communication notice",
+  "status": "planned",
+  "wave": "W6",
+  "feature": "FT-003",
+  "reqs": ["REQ-UX-004"],
+  "depends_on": ["TASK-053-T2-FT-003-W5"],
+  "touched_files": ["client/", "tests/client/"],
+  "tier": "T2",
+  "gates": [{"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}],
+  "verify": [],
+  "docs": [".memory-bank/features/FT-003.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/states/lifecycle-map.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "evidence_required": [
+    "FT-003-AC-016 RED: communication failures show no accepted notice; GREEN: each server-communication failure renders «Попытка связи с сервером была не успешна в hh:mm:ss» using client-local failure time for 5-10 seconds in the easiest non-obstructive location, stays non-blocking over usable advertising/fresh retry, and is immediately replaced by a newer notice; decisive comparison: controlled clock and successive failure fixtures measure content, interval, replacement and unchanged interaction/state; artifact: Playwright transcript/screenshots under .tasks/TASK-067-T2-FT-003-W6/."
+  ],
+  "purpose": "Own the timed communication notice presentation independently of transport outcome semantics and the degraded-state matrix.",
+  "success_outcome": "Operators see a short truthful latest-failure notice while participant advertising/retry remains unobstructed.",
+  "anti_goals": ["Do not implement outcome/stale/retry behavior.", "Do not implement the complete degraded dependency matrix.", "Do not persist notices, add a notification framework or offline delivery."],
+  "runtime_context": {
+    "forbidden_scope": ["Outcome/retry internals owned by TASK-053-T2-FT-003-W5", "Named degraded-state composition owned by TASK-055-T2-FT-003-W7", "Persistent notification/history infrastructure"],
+    "stop_conditions": ["The notice blocks advertising or fresh retry.", "Timing/replacement cannot be proved on a controlled client clock.", "Implementation needs server-side notification state."]
+  },
+  "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-016", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "normative_inputs": [".memory-bank/features/FT-003.md#ft-003-ac-016--non-blocking-server-communication-notice", ".memory-bank/testing/client-realtime.md#client-state-and-recovery-proof", ".memory-bank/states/lifecycle-map.md#automatic-attempt-and-display"],
+  "constraints": ["Use installed playwright cli and controlled client time.", "Use exact accepted Russian text and client-local hh:mm:ss.", "Prefer bottom-left only as the easiest non-obstructive location; no design system is added."],
+  "invariants": ["Notice remains visible 5-10 seconds unless replaced by a newer notice.", "Notice never blocks advertising or retry.", "No notice persistence/history/offline delivery exists."],
+  "verification_targets": ["FT-003-AC-016 exact text/time/duration/replacement.", "Advertising and fresh-retry behavior remains unchanged.", "No persistence/framework/server-state scan."]
+}

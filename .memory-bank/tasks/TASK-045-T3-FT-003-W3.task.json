@@ -1,0 +1,57 @@
+{
+  "id": "TASK-045-T3-FT-003-W3",
+  "title": "Admit structurally bounded realtime requests",
+  "status": "planned",
+  "wave": "W3",
+  "feature": "FT-003",
+  "reqs": ["REQ-CAP-002", "REQ-DIAG-001", "REQ-SEC-001"],
+  "depends_on": ["TASK-057-T3-FT-003-W2", "TASK-060-T2-FT-003-W2", "TASK-043-T2-FT-003-W1", "TASK-026-T3-FT-002-W5"],
+  "touched_files": ["src/face_moment/promo/", "src/face_moment/entrypoints/realtime.py", "deploy/Caddyfile", "tests/promo/"],
+  "tier": "T3",
+  "gates": [
+    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
+    {"name": "Realtime attempt API tests", "command": "docker compose run --rm backend python -m pytest tests/promo/test_realtime_attempt_api.py", "required": true},
+    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+  ],
+  "verify": [],
+  "docs": [".memory-bank/contracts/realtime-attempt-api.md", ".memory-bank/domains/promo-attempt.md", ".memory-bank/features/FT-003.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "evidence_required": [
+    "FT-003-AC-006 RED: POST /api/realtime/attempts is absent; GREEN: the real edge/application boundary strictly validates manifest v1 and ordered crop_000..crop_019 JPEG parts, admits one request key once with its immutable snapshot, maps zero proposals to one explicit non-success Attempt, returns stored/in_progress idempotency results, accepts 20,971,520 total bytes and rejects 20,971,521 with 413 before any Attempt, and maps prerequisite auth/readiness failures without duplicating their owned proofs; decisive comparison: direct boundary requests inspect status/outcome and Attempt rows for valid, invalid, duplicate, zero and exact-byte fixtures; artifact: focused pytest and edge evidence under .tasks/TASK-045-T3-FT-003-W3/."
+  ],
+  "purpose": "Implement the server-side realtime transport validation and idempotent core Attempt admission boundary independently of browser request construction.",
+  "success_outcome": "The public endpoint admits exactly one valid bounded request, persists its immutable core Attempt, handles zero proposals and exact transport failures, and invokes no FT-004 search behavior.",
+  "anti_goals": [
+    "Do not form browser multipart requests or collect client monotonic markers.",
+    "Do not implement authentication internals, context persistence/resolution, slot/search/result/session behavior or a custom error framework.",
+    "Do not add extra payload caps, client truncation, waiter queues or replay."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Authentication and immutable context internals owned by TASK-057-T3-FT-003-W2 and TASK-060-T2-FT-003-W2",
+      "Client request formation owned by TASK-052-T2-FT-003-W4",
+      "FT-004 singleton slot, deadline, search and result/session behavior"
+    ],
+    "stop_conditions": [
+      "Admission cannot avoid moving FT-004 search behavior into this task.",
+      "The public edge cannot enforce the exact total-body boundary before domain admission.",
+      "Idempotency requires a waiter queue, durable replay or distributed lock."
+    ]
+  },
+  "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-006", ".memory-bank/contracts/realtime-attempt-api.md", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "normative_inputs": [".memory-bank/features/FT-003.md#ft-003-ac-006--server-side-structurally-bounded-admission", ".memory-bank/contracts/realtime-attempt-api.md", ".memory-bank/domains/promo-attempt.md#admission-and-transitions", ".memory-bank/contracts/boundary-map.md#http-failure-contract"],
+  "constraints": [
+    "Enforce 20,971,520 bytes at both Caddy and realtime application boundaries on the exact public path.",
+    "Persist the immutable snapshot before inference; in the FT-003 window nonzero proposals may end at the accepted technical internal_failure seam.",
+    "Use task-owned disposable clients/settings/Attempts and clean them up without changing operator/default state."
+  ],
+  "invariants": [
+    "Transport/validation rejection creates no core Attempt or domain outcome.",
+    "The body never overrides token-derived spa_id and contains no credential.",
+    "The endpoint consumes authentication and readiness boundaries without re-owning their claims."
+  ],
+  "verification_targets": [
+    ".memory-bank/contracts/realtime-attempt-api.md#verification-targets",
+    "FT-003-AC-006 direct requests prove exact validation, idempotency, zero-proposal admission and byte boundary.",
+    "Integration delta proves prerequisite 401/429/503 mappings and the public HTTPS route without duplicating auth/readiness ownership."
+  ]
+}

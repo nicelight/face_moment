@@ -1,0 +1,57 @@
+{
+  "id": "TASK-042-T2-FT-003-W1",
+  "title": "Persist active-search context settings",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-003",
+  "reqs": ["REQ-CAP-002", "REQ-REL-001"],
+  "depends_on": ["TASK-002-T2-FT-000-W0", "TASK-040-T2-FT-002-W7"],
+  "touched_files": ["src/face_moment/serving_control/", "migrations/versions/", "tests/serving_control/"],
+  "tier": "T2",
+  "gates": [
+    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
+    {"name": "Serving-context persistence tests", "command": "docker compose run --rm backend python -m pytest tests/serving_control/test_realtime_context.py", "required": true},
+    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+  ],
+  "verify": [],
+  "docs": [".memory-bank/domains/realtime-search.md", ".memory-bank/contracts/boundary-map.md", ".memory-bank/features/FT-003.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "evidence_required": [
+    "realtime-search.md#active-search-context-persistence RED: the owner settings stores and provision/update path are absent; GREEN: the linear migration adds active date/revision fields and one reference_search_settings row per accepted key, serving_control alone validates and persists threshold/quality/calibration values, updates settings_revision atomically, and an isolated provision/update command produces deterministic task fixtures across restart; decisive comparison: migration round-trip, valid/invalid setting and revision-increment fixtures inspect only owner rows; artifact: focused pytest and migration output under .tasks/TASK-042-T2-FT-003-W1/."
+  ],
+  "purpose": "Persist the owner-controlled values from which a later task resolves one immutable realtime context.",
+  "success_outcome": "Serving-control stores and an isolated provision/update path durably hold the accepted active-search inputs without implementing resolution or readiness.",
+  "anti_goals": [
+    "Do not implement context resolution/readiness, promo admission or the staff active-date API.",
+    "Do not add history, automatic rollover, a generic settings framework or client override.",
+    "Do not mutate FT-002 serving-revision selection behavior."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Immutable context resolver/readiness owned by TASK-060-T2-FT-003-W2",
+      "Staff active-date HTTP surface owned by FT-004",
+      "Display credentials and core Attempt persistence owned by other tasks"
+    ],
+    "stop_conditions": [
+      "Owner persistence requires changing the accepted serving-revision switch contract.",
+      "The stores cannot join the single linear Alembic stream.",
+      "A generic configuration platform or automatic lifecycle would be required."
+    ]
+  },
+  "source_artifacts": [".memory-bank/domains/realtime-search.md#active-search-context-persistence", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "normative_inputs": [".memory-bank/domains/realtime-search.md#active-search-context-persistence", ".memory-bank/contracts/boundary-map.md#active-search-date", ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract"],
+  "constraints": [
+    "Use the shared schema/Base/Alembic stream and current head.",
+    "The provision/update path is isolated and supplies deterministic test settings; it is not the FT-004 staff API.",
+    "Use task-owned disposable settings and restore/delete only those fixtures."
+  ],
+  "invariants": [
+    "Only serving_control writes active-search settings.",
+    "Every update increments the positive owner settings_revision atomically.",
+    "The browser cannot supply or override any persisted serving setting."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/realtime-search.md#active-search-context-persistence",
+    "Migration and repository tests prove valid shape, restart persistence and isolated provision/update.",
+    "Ownership scan proves no client, promo or processing write path."
+  ]
+}

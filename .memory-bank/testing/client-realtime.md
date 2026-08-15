@@ -1,7 +1,7 @@
 ---
 description: Canonical verification contract for client proposal submission, one-clock Promo latency and related diagnostics.
 status: active
-last_updated: 2026-08-13
+last_updated: 2026-08-15
 source_of_truth:
   - .memory-bank/testing/client-realtime.md
 ---
@@ -13,8 +13,9 @@ source_of_truth:
   versioned event, CORS/authentication and timeout behavior.
 - [Realtime Attempt API](../contracts/realtime-attempt-api.md): exact endpoint,
   multipart serialization, validation, idempotency and typed outcomes.
-- [Display Client Access](../domains/display-client-access.md): central token
-  persistence, СПА derivation, reset/deactivation and redaction.
+- [Display Client Access](../domains/display-client-access.md): retrievable
+  Admin-visible central token, manual kiosk handoff, СПА derivation,
+  reset/deactivation and redaction.
 - [Promo Attempt](../domains/promo-attempt.md): core Attempt persistence and
   state/outcome mapping.
 - [QR Continuation API](../contracts/qr-continuation-api.md): exact ticket
@@ -40,6 +41,14 @@ source_of_truth:
 - Configuration UI proof covers exactly `0.7`, `0.75`, `0.8`, `0.85`, `0.9`,
   `0.95`, default `0.85`, kiosk-profile `localStorage`, next-Attempt
   application and manifest recording.
+- Display-client setup proof opens authenticated server Admin settings more than
+  once and after a database restart, observes the same full current token for
+  the named kiosk, manually copies it into that kiosk's central-token field and
+  authenticates a real browser request after page reload and Chromium restart.
+  A photographer receives no token; responses are `no-store`; URLs, logs,
+  analytics and command artifacts contain no credential. A reset invalidates
+  the old value and requires another manual copy, with no push, pairing or
+  deployment-policy injection path.
 - Multipart fixtures prove one synchronous request, one versioned manifest and
   one JPEG part per occurrence, with the exact FR-CAP-17 allowed identity,
   timing, camera and occurrence fields and all explicit omissions. Zero
@@ -84,8 +93,9 @@ source_of_truth:
   timed for 5–10 seconds and a newer notice may replace it immediately.
 - Central roles are started and exercised without KDE, Chromium or the
   `display` login. Browser termination in advertising and active/result states
-  proves user-service restart, reachable-origin reload, advertising and discard
-  of prior personalized client state.
+  proves user-service restart, reachable-origin reload, advertising, retention
+  of the configured central display-client credential and discard of prior
+  personalized result/frame/QR-session state.
 - An authorized operator follows only the linked recovery runbook from browser
   failure and intact-volume central restart and retains the named checks as
   evidence. The proof must not claim offline reload or recovery after sole-
@@ -127,7 +137,9 @@ source_of_truth:
 - Active-date/security fixtures prove the operator-only setting boundary,
   missing-date `503` with no admission/search, display-token-derived СПА,
   client override rejection, rate limiting, private topology and complete token
-  redaction.
+  redaction. Separate display-client Admin fixtures prove only an active
+  operator/developer can read the current token and that the read does not
+  regenerate or rotate it.
 
 ## Promo Presentation And Display Outcome Proof
 

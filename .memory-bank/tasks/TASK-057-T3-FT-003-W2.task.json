@@ -1,0 +1,33 @@
+{
+  "id": "TASK-057-T3-FT-003-W2",
+  "title": "Authenticate display-client Bearer credentials",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-003",
+  "reqs": ["REQ-SEC-001"],
+  "depends_on": ["TASK-041-T3-FT-003-W1"],
+  "touched_files": ["src/face_moment/serving_control/", "src/face_moment/entrypoints/realtime.py", "tests/serving_control/"],
+  "tier": "T3",
+  "gates": [
+    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
+    {"name": "Display Bearer authentication tests", "command": "docker compose run --rm backend python -m pytest tests/serving_control/test_display_client_auth.py", "required": true},
+    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+  ],
+  "verify": [],
+  "docs": [".memory-bank/domains/display-client-access.md", ".memory-bank/contracts/boundary-map.md", ".memory-bank/features/FT-003.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "evidence_required": [
+    "display-client-access.md#authentication-contract RED: no display Bearer adapter exists; GREEN: exactly one Authorization Bearer candidate is hashed and matched to one active display_client, produces only id plus authoritative spa_id, rejects missing/malformed/unknown/reset/inactive credentials uniformly with 401, rejects body spa_id override, enforces deterministic positive per-token/IP limits with 429, and redacts token/header/digest from URLs and logs; decisive comparison: credential-state/override/rate-limit fixtures compare principal/status and scan captured logs; artifact: focused pytest and redacted scans under .tasks/TASK-057-T3-FT-003-W2/."
+  ],
+  "purpose": "Implement the reusable realtime display-client authentication guard after credential persistence exists.",
+  "success_outcome": "A current active display token authenticates to the correct immutable principal while every invalid state is uniform, rate-limited and non-leaking.",
+  "anti_goals": ["Do not mutate credential lifecycle or expose token_value.", "Do not implement Admin settings, multipart validation or domain admission.", "Do not introduce PKI, pairing, distributed limiter storage or a new auth framework."],
+  "runtime_context": {
+    "forbidden_scope": ["Credential writes owned by TASK-041-T3-FT-003-W1", "Admin read/handoff owned by TASK-058 and TASK-059", "Realtime admission owned by TASK-045-T3-FT-003-W3"],
+    "stop_conditions": ["Uniform 401 cannot be preserved.", "Correct auth requires a foreign writer or new framework.", "Redaction cannot prevent credential/header/digest leakage."]
+  },
+  "source_artifacts": [".memory-bank/domains/display-client-access.md#authentication-contract", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "normative_inputs": [".memory-bank/domains/display-client-access.md#authentication-contract", ".memory-bank/contracts/boundary-map.md#authentication-and-data-specific-delivery", ".memory-bank/contracts/boundary-map.md#http-failure-contract"],
+  "constraints": ["Consume TASK-041 repository read boundary; never write credential state.", "Use deterministic positive limits in tests and no limiter queue/distributed store.", "Use disposable credentials and clean them without touching operator/default rows."],
+  "invariants": ["Principal spa_id comes only from the authenticated active row.", "All invalid credential states are non-disclosing 401.", "Token/header/digest never enter URL or logs."],
+  "verification_targets": [".memory-bank/domains/display-client-access.md#verification-targets", "Credential-state/override/rate-limit boundary matrix.", "Redacted URL/log scan and read-only owner review."]
+}

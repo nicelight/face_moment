@@ -1,0 +1,29 @@
+{
+  "id": "TASK-063-T3-FT-003-W1",
+  "title": "Install the exact-origin Local Network Access policy",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-003",
+  "reqs": ["REQ-SEC-001", "REQ-SEC-002"],
+  "depends_on": ["TASK-002-T2-FT-000-W0"],
+  "touched_files": ["deploy/chromium/policies/managed/", "scripts/check-kiosk-lna.sh"],
+  "tier": "T3",
+  "gates": [{"name": "Managed LNA policy inspection", "command": "bash scripts/check-kiosk-lna.sh", "required": true}, {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}],
+  "verify": [],
+  "docs": [".memory-bank/features/FT-003.md", ".memory-bank/contracts/sensor-passage-api.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "evidence_required": [
+    "FT-003-AC-017 RED: no source-managed Chromium Local Network Access policy exists; GREEN: the effective managed kiosk policy contains LocalNetworkAccessAllowedForUrls with exactly the central Face Moment origin and no wildcard/unrelated origin, survives browser restart and makes that origin eligible for the later ESP32 integration while an unlisted origin receives no pre-authorization; decisive comparison: scripts/check-kiosk-lna.sh compares source and chrome://policy/effective policy plus listed/unlisted-origin probes without reading secrets; artifact: redacted inspection under .tasks/TASK-063-T3-FT-003-W1/."
+  ],
+  "purpose": "Own the deployable/reversible managed Chromium LNA prerequisite independently of sensor application code.",
+  "success_outcome": "Only the central Face Moment origin is pre-authorized for local-network access in the managed kiosk profile.",
+  "anti_goals": ["Do not implement ESP32 polling/CORS/Bearer behavior.", "Do not use wildcard or store any sensor/display secret in policy.", "Do not change kiosk sandbox, SSH or port topology."],
+  "runtime_context": {
+    "forbidden_scope": ["Sensor integration owned by TASK-046-T3-FT-003-W2", "Kiosk/SSH/port controls owned by TASK-049, TASK-064 and TASK-065", "Any deployment-policy secret injection"],
+    "stop_conditions": ["Effective Chromium policy cannot represent the exact origin.", "Validation requires a wildcard/unrelated origin.", "Inspection would expose browser-profile secrets."]
+  },
+  "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-017", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "normative_inputs": [".memory-bank/features/FT-003.md#ft-003-ac-017--managed-local-network-access-policy", ".memory-bank/testing/client-realtime.md#required-proof", ".memory-bank/contracts/sensor-passage-api.md#cors-and-failure-semantics"],
+  "constraints": ["Use a source-managed managed-policy artifact and focused read-only check.", "Authorize exactly the configured central Face Moment origin.", "Retain redacted source/effective-policy evidence."],
+  "invariants": ["No wildcard/unrelated origin is pre-authorized.", "No credential is stored in policy.", "TASK-046 depends on this task for real-browser sensor integration."],
+  "verification_targets": ["FT-003-AC-017 source/effective policy comparison.", "Listed versus unlisted origin eligibility probe.", "Restart persistence and secret-absence scan."]
+}

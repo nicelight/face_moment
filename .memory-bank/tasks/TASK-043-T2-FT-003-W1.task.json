@@ -1,0 +1,94 @@
+{
+  "id": "TASK-043-T2-FT-003-W1",
+  "title": "Persist the promo-owned core Attempt",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-003",
+  "reqs": [
+    "REQ-DIAG-001"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0"
+  ],
+  "touched_files": [
+    "src/face_moment/promo/",
+    "migrations/versions/",
+    "tests/promo/"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Core Attempt persistence tests",
+      "command": "docker compose run --rm backend python -m pytest tests/promo/test_promo_attempt_persistence.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/domains/promo-attempt.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/features/FT-003.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
+  "evidence_required": [
+    "promo-attempt.md#postgresql-shape RED: the promo capability package and the face_moment.promo_attempts table do not exist, so the repository round-trip probe fails; GREEN: one linear migration introduces the table with the immutable client/serving snapshot fields, proposal_count 0..20, the accepted processing_status and display_status sets, stage timestamps and unique (spa_id, client_attempt_id), the promo repository is the only writer, rows persist across a database restart, and no foreign key or ON DELETE rule lets a Photo or diagnostic row delete a core Attempt; decisive comparison: migration upgrade/downgrade/re-upgrade plus duplicate-key, allowed-state and ownership fixtures compare persisted rows and writer call sites; artifact: focused pytest and migration output under .tasks/TASK-043-T2-FT-003-W1/."
+  ],
+  "purpose": "Create the promo capability package with the core Attempt table and its only-writer repository so every server-admitted capture/search request can persist one correlation identity before inference.",
+  "success_outcome": "face_moment.promo_attempts joins the linear migration stream with the full immutable snapshot shape and allowed state sets, the promo repository performs create/read without any foreign write, uniqueness on (spa_id, client_attempt_id) holds under concurrent duplicates, and restart persistence plus no-cross-owner-cascade are proved.",
+  "anti_goals": [
+    "Do not implement the realtime endpoint, singleton slot, deadline orchestration, result assembly, sessions or QR state.",
+    "Do not add crop/media persistence, detailed diagnostic evidence, a reliable client-offline outbox or a waiter/replay queue.",
+    "Do not create any foreign key or cascade that deletes a core Attempt with a Photo or a diagnostic record."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Display-client credentials owned by TASK-041-T3-FT-003-W1 and serving context owned by TASK-042-T2-FT-003-W1",
+      "The realtime transport/admission endpoint owned by TASK-045-T3-FT-003-W3",
+      "Result assembly, result sessions and display outcome owned by FT-004/FT-005",
+      "Diagnostic evidence stores owned by FT-007"
+    ],
+    "stop_conditions": [
+      "The Attempt shape cannot be persisted without a cross-owner cascade or a second migration stream.",
+      "A correct repository requires reading or writing serving_control or processing state directly.",
+      "The unique admission key cannot be enforced without a waiter queue or distributed lock."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/domains/promo-attempt.md#postgresql-shape",
+    ".protocols/FT-003/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/promo-attempt.md#postgresql-shape",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/states/lifecycle-map.md#core-attempt-and-diagnostic-evidence",
+    ".memory-bank/architecture/system-architecture.md"
+  ],
+  "constraints": [
+    "Use the project-wide face_moment schema, the shared SQLAlchemy Base/MetaData and the current linear Alembic head as down_revision.",
+    "Models and repositories stay inside src/face_moment/promo/; the table carries the immutable client and serving snapshot columns defined by the canonical shape, including the nullable display and QR-visible fields used by later features.",
+    "Use disposable attempt fixtures with known initial state, safe rerun and complete cleanup."
+  ],
+  "invariants": [
+    "promo is the only writer of the core Attempt; shared PostgreSQL access grants no foreign write authority.",
+    "Repeating an admitted key never creates a second row or overwrites the immutable snapshot.",
+    "Database cascade never deletes a core Attempt with a Photo or diagnostic record."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/promo-attempt.md#postgresql-shape",
+    "Migration proof covers direct ancestry, upgrade, downgrade, re-upgrade and preservation of unrelated prerequisite rows.",
+    "Repository integration proves create/read round-trip, unique-key arbitration under concurrency, allowed state sets and persistence across a database restart.",
+    "Static and fixture audit proves promo-only writes and the absence of ownership-crossing delete cascades."
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "id": "TASK-044-T2-FT-003-W1",
+  "title": "Serve the central-origin SpaPromoClient shell",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-003",
+  "reqs": ["REQ-ARCH-001", "REQ-REL-001"],
+  "depends_on": ["TASK-002-T2-FT-000-W0"],
+  "touched_files": ["client/", "src/face_moment/entrypoints/backend.py", "deploy/Caddyfile", "tests/client/"],
+  "tier": "T2",
+  "gates": [
+    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
+    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+  ],
+  "verify": [],
+  "docs": [".memory-bank/contracts/boundary-map.md", ".memory-bank/features/FT-003.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "evidence_required": [
+    "boundary-map.md#central-origin-client-delivery RED: no loadable SpaPromoClient bundle or central-origin route exists; GREEN: the backend and existing HTTPS edge serve plain static ES-module assets whose shell reaches usable local advertising and configuration/debug navigation from the real central origin, while a topology scan finds no second origin, local server, bridge, WebSocket or new runtime role; decisive comparison: Playwright load/reload transcript plus route/topology inventory; artifact: transcript and scan under .tasks/TASK-044-T2-FT-003-W1/."
+  ],
+  "purpose": "Establish only the loadable central-origin client shell and local-advertising baseline consumed by later client tasks.",
+  "success_outcome": "The real HTTPS origin serves a reloadable plain-static client shell with advertising and configuration navigation and no alternate client transport.",
+  "anti_goals": [
+    "Do not implement camera selection, token configuration, sensor polling, detector, capture or submission.",
+    "Do not add a bundler/framework, local web server, bridge, WebSocket or second origin.",
+    "Do not define Promo presentation content owned by FT-005."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Camera selection owned by TASK-061-T2-FT-003-W2",
+      "Manual display-token configuration owned by TASK-059-T3-FT-003-W3",
+      "All sensor/capture/detector/submission behavior owned by later tasks"
+    ],
+    "stop_conditions": [
+      "The bundle cannot be served through the existing central HTTPS origin without a new runtime role.",
+      "Usable advertising requires implementing FT-005 personalized Promo behavior.",
+      "Real-browser proof cannot load the deployed central-origin route."
+    ]
+  },
+  "source_artifacts": [".memory-bank/contracts/boundary-map.md#central-origin-client-delivery", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "normative_inputs": [".memory-bank/contracts/boundary-map.md#central-origin-client-delivery", ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries", ".memory-bank/architecture/system-architecture.md", ".memory-bank/testing/index.md"],
+  "constraints": [
+    "Use plain static ES modules served by the existing backend/edge and load the proof through the real HTTPS origin.",
+    "The shell exposes only local advertising and configuration/debug navigation; behavior slices attach later.",
+    "Use disposable browser profiles and retain Playwright artifacts under the task directory."
+  ],
+  "invariants": [
+    "The client loads only from the central Face Moment HTTPS origin.",
+    "No local bridge, local server, WebSocket or second runtime role exists.",
+    "The shell itself mutates no server state and owns no camera/sensor/submission behavior."
+  ],
+  "verification_targets": [
+    ".memory-bank/contracts/boundary-map.md#central-origin-client-delivery",
+    "Real-browser load/reload proof reaches advertising and configuration navigation.",
+    "Runtime topology scan proves all forbidden alternate delivery paths are absent."
+  ]
+}

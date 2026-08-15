@@ -1,0 +1,29 @@
+{
+  "id": "TASK-053-T2-FT-003-W5",
+  "title": "Branch outcomes with stale discard and fresh retry",
+  "status": "planned",
+  "wave": "W5",
+  "feature": "FT-003",
+  "reqs": ["REQ-CAP-001", "REQ-UX-004", "REQ-REL-001"],
+  "depends_on": ["TASK-052-T2-FT-003-W4"],
+  "touched_files": ["client/", "tests/client/"],
+  "tier": "T2",
+  "gates": [{"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}],
+  "verify": [],
+  "docs": [".memory-bank/features/FT-003.md", ".memory-bank/states/lifecycle-map.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "evidence_required": [
+    "FT-003-AC-007 RED: submitted attempts have no typed outcome lifecycle; GREEN: timeout, disconnect, late response and every admitted non-success never replace a newer state, return directly to advertising, start no success cooldown and permit only a new capture/series for retry, while a typed result enters the minimal non-personal holding state; decisive comparison: injected sequences compare state order, stale discard, capture identity and cooldown eligibility without asserting communication-notice presentation; artifact: Playwright transcript and state logs under .tasks/TASK-053-T2-FT-003-W5/."
+  ],
+  "purpose": "Own typed outcome branching, stale-response protection and fresh-retry/cooldown semantics independently of communication UI.",
+  "success_outcome": "Non-success and transport failure safely restore advertising with fresh-capture eligibility, and late work cannot replace current state.",
+  "anti_goals": ["Do not implement or time the communication notice.", "Do not render Promo/QR or success cooldown.", "Do not replay requests, reuse captures or add a durable retry/offline queue."],
+  "runtime_context": {
+    "forbidden_scope": ["Notice presentation owned by TASK-067-T2-FT-003-W6", "Named dependency composition owned by TASK-055-T2-FT-003-W7", "Promo/QR presentation owned by FT-005"],
+    "stop_conditions": ["Branching requires response-prose parsing.", "Stale protection cannot hold for the accepted one-request path.", "Retry cannot require a fresh capture without adding a queue."]
+  },
+  "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-007", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "normative_inputs": [".memory-bank/features/FT-003.md#ft-003-ac-007--fresh-retry-and-failure-cooldown-semantics", ".memory-bank/states/lifecycle-map.md#automatic-attempt-and-display", ".memory-bank/contracts/realtime-attempt-api.md#response-version-1", ".memory-bank/testing/client-realtime.md#client-state-and-recovery-proof"],
+  "constraints": ["Use installed playwright cli with real and intercepted typed responses.", "Branch on HTTP status and typed outcome, never prose.", "Use disposable profiles/Attempts and retain state logs."],
+  "invariants": ["Stale responses never replace newer state.", "Every retry uses a fresh reference series.", "Non-success starts no success cooldown and owns no notice behavior."],
+  "verification_targets": ["FT-003-AC-007 timeout/disconnect/late/non-success state sequences.", "Fresh capture identity and immediate eligibility comparison.", "Minimal result-holding seam without Promo rendering."]
+}

@@ -1,0 +1,29 @@
+{
+  "id": "TASK-055-T2-FT-003-W7",
+  "title": "Compose named failures into safe degraded advertising",
+  "status": "planned",
+  "wave": "W7",
+  "feature": "FT-003",
+  "reqs": ["REQ-UX-004", "REQ-REL-001", "REQ-DIAG-001"],
+  "depends_on": ["TASK-061-T2-FT-003-W2", "TASK-046-T3-FT-003-W2", "TASK-047-T2-FT-003-W2", "TASK-053-T2-FT-003-W5", "TASK-067-T2-FT-003-W6"],
+  "touched_files": ["client/", "tests/client/"],
+  "tier": "T2",
+  "gates": [{"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}],
+  "verify": [],
+  "docs": [".memory-bank/features/FT-003.md", ".memory-bank/states/lifecycle-map.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "evidence_required": [
+    "FT-003-AC-008 RED: named dependency failures are not composed into recoverable client states; GREEN: missing camera, unavailable sensor/service, BlazeFace load failure and missing optional audio/animation each keep or return the already loaded client to usable advertising with recoverable operator feedback, while optional assets never block capture or a valid result; decisive comparison: one injected fixture per named failure records advertising reachability/recovery affordance and observes prerequisite outcome/notice behavior only as integration, with no offline-metadata retention, expiry, replay or delivery path required; artifact: Playwright transcript and failure matrix under .tasks/TASK-055-T2-FT-003-W7/."
+  ],
+  "purpose": "Compose already implemented dependencies into the feature's named degraded advertising matrix.",
+  "success_outcome": "Every named failure leaves the loaded participant flow in usable advertising with truthful recoverable feedback and no optional-asset blockage.",
+  "anti_goals": ["Do not implement an offline-metadata outbox or any delivery path.", "Do not re-own outcome/retry or communication-notice timing.", "Do not add fallback transport, local bridge, durable sensor queue or server-side offline Attempt."],
+  "runtime_context": {
+    "forbidden_scope": ["Happy-path camera/sensor/detector internals owned by prerequisite tasks", "Outcome/retry and notice internals owned by TASK-053 and TASK-067", "Any offline metadata persistence, replay or delivery mechanism"],
+    "stop_conditions": ["A named failure cannot retain advertising without a forbidden fallback.", "Operator feedback requires a new server channel.", "Implementation starts depending on offline metadata delivery."]
+  },
+  "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-008", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "normative_inputs": [".memory-bank/features/FT-003.md#ft-003-ac-008--safe-degraded-advertising-and-recovery", ".memory-bank/states/lifecycle-map.md#automatic-attempt-and-display", ".memory-bank/testing/client-realtime.md#client-state-and-recovery-proof"],
+  "constraints": ["Use installed playwright cli with per-dependency failure injection against the already loaded client.", "Central-origin unavailability after reload carries no advertising guarantee.", "No offline-metadata artifact is necessary for acceptance."],
+  "invariants": ["Every named failure leaves or returns the loaded client to advertising.", "Missing optional assets never block capture or a valid result.", "Participant flow never depends on offline metadata retention or delivery."],
+  "verification_targets": ["FT-003-AC-008 named failure matrix for advertising and recovery feedback.", "Optional-asset capture/result proof.", "Code/evidence review confirms absence of a mandatory offline metadata path and non-duplication of AC-007/AC-016."]
+}

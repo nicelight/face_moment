@@ -1,0 +1,29 @@
+{
+  "id": "TASK-062-T2-FT-003-W2",
+  "title": "Persist and apply kiosk JPEG quality",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-003",
+  "reqs": ["REQ-CAP-002"],
+  "depends_on": ["TASK-044-T2-FT-003-W1"],
+  "touched_files": ["client/", "tests/client/"],
+  "tier": "T2",
+  "gates": [{"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}],
+  "verify": [],
+  "docs": [".memory-bank/features/FT-003.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "evidence_required": [
+    "FT-003-AC-014 RED: no JPEG quality setting exists; GREEN: configuration/debug UI exposes exactly 0.7/0.75/0.8/0.85/0.9/0.95 with default 0.85, persists one selection in the managed kiosk profile across reload/Chromium restart, snapshots it at Attempt start, and records/applies a change only from the next Attempt; decisive comparison: every value/default/reload/restart/change-during-active fixtures compare profile and emitted next-Attempt seam; artifact: Playwright transcript under .tasks/TASK-062-T2-FT-003-W2/."
+  ],
+  "purpose": "Own only the six-value kiosk JPEG quality configuration and next-Attempt snapshot behavior.",
+  "success_outcome": "The selected allowed quality survives kiosk reload/restart and affects only newly started Attempts.",
+  "anti_goals": ["Do not implement crop geometry/JPEG transformation or multipart serialization.", "Do not mutate an active Attempt or server settings.", "Do not add free-form numeric quality or more presets."],
+  "runtime_context": {
+    "forbidden_scope": ["Crop/encoding owned by TASK-048-T2-FT-003-W2", "Multipart request owned by TASK-052-T2-FT-003-W4", "Server state"],
+    "stop_conditions": ["Allowed-value enforcement cannot survive reload.", "A setting change cannot be isolated to the next Attempt.", "Persistence would require server mutation."]
+  },
+  "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-014", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "normative_inputs": [".memory-bank/features/FT-003.md#ft-003-ac-014--kiosk-profile-jpeg-quality", ".memory-bank/testing/client-realtime.md#required-proof", ".memory-bank/testing/index.md"],
+  "constraints": ["Use managed kiosk profile localStorage and installed playwright cli.", "Expose exactly the accepted values and default.", "Use disposable browser profiles and retain transcript."],
+  "invariants": ["Only accepted quality values are selectable/persisted.", "Active Attempt quality snapshot never changes.", "Configuration owns no crop or request behavior."],
+  "verification_targets": ["FT-003-AC-014 full value/default/persistence matrix.", "Next-Attempt application comparison.", "Restart retention without server mutation."]
+}

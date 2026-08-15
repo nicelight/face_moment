@@ -1,0 +1,33 @@
+{
+  "id": "TASK-058-T3-FT-003-W2",
+  "title": "Expose current kiosk tokens in authenticated Admin settings",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-003",
+  "reqs": ["REQ-SEC-001"],
+  "depends_on": ["TASK-041-T3-FT-003-W1", "TASK-004-T3-FT-001-W2"],
+  "touched_files": ["src/face_moment/serving_control/", "src/face_moment/entrypoints/backend.py", "tests/serving_control/"],
+  "tier": "T3",
+  "gates": [
+    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
+    {"name": "Admin display-client settings tests", "command": "docker compose run --rm backend python -m pytest tests/serving_control/test_display_client_admin.py", "required": true},
+    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+  ],
+  "verify": [],
+  "docs": [".memory-bank/domains/display-client-access.md", ".memory-bank/contracts/boundary-map.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "evidence_required": [
+    "display-client-access.md#admin-settings-token-read RED: GET /staff/display-clients is absent; GREEN: the same-origin page lists each kiosk id/name/spa_id/active/current full token on every active operator/developer read, returns the same value after reload and database restart, returns 403 to photographer and no token with 401 for invalid staff auth, adds Cache-Control no-store and leaks no credential into URL, application/proxy log, analytics or command output; decisive comparison: role/session/reload/restart fixtures and redaction scans inspect response/body/headers/logs; artifact: focused pytest and captures under .tasks/TASK-058-T3-FT-003-W2/."
+  ],
+  "purpose": "Implement the owner-authorized Admin read surface independently of kiosk-side manual configuration.",
+  "success_outcome": "Authorized operator/developer can always retrieve the current token for each named kiosk without rotation or leakage; all other principals cannot.",
+  "anti_goals": ["Do not copy/push/store the token in any kiosk.", "Do not reset/regenerate a token merely to display it.", "Do not modify staff roles/sessions or introduce a generic settings framework."],
+  "runtime_context": {
+    "forbidden_scope": ["Kiosk profile handoff owned by TASK-059-T3-FT-003-W3", "Staff authentication internals/completed evidence", "Credential mutation lifecycle owned by TASK-041-T3-FT-003-W1"],
+    "stop_conditions": ["Existing staff principal cannot support the exact role matrix.", "The page cannot stay no-store and redacted.", "A token read would require rotation or one-time display semantics."]
+  },
+  "source_artifacts": [".memory-bank/domains/display-client-access.md#admin-settings-token-read", ".memory-bank/contracts/boundary-map.md#display-client-administration", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "normative_inputs": [".memory-bank/domains/display-client-access.md#admin-settings-token-read", ".memory-bank/contracts/boundary-map.md#display-client-administration", ".memory-bank/domains/staff-access.md"],
+  "constraints": ["Use the existing same-origin staff session and active operator/developer roles.", "Read token_value only through serving_control owner authorization.", "Use disposable kiosk/staff fixtures and retain redacted output."],
+  "invariants": ["Current token is visible on every authorized read and survives reload/restart.", "Photographer and invalid staff auth receive no token.", "Response is no-store and token never enters URLs/logs/analytics/command artifacts."],
+  "verification_targets": [".memory-bank/domains/display-client-access.md#verification-targets", "Repeated authorized read plus database-restart persistence.", "Role/status/header and full redaction matrix."]
+}

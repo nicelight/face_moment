@@ -1,7 +1,7 @@
 ---
 description: Pure SDD spec registry and planned-spec index.
 status: active
-last_updated: 2026-08-06
+last_updated: 2026-08-15
 source_of_truth:
   - .memory-bank/spec-index.md
 ---
@@ -30,7 +30,7 @@ source_of_truth:
 | data | [.memory-bank/domains/photo-admission.md](domains/photo-admission.md) | active | Photo/original/serving-pending persistence, duplicate arbitration, transaction and crash recovery. | /feature-to-tasks |
 | data | [.memory-bank/domains/photo-processing.md](domains/photo-processing.md) | active | Compatible pipeline revision, background processing, derivatives/faces, searchable truth, recovery and SLO projection. | /feature-to-tasks |
 | data | [.memory-bank/domains/staff-access.md](domains/staff-access.md) | active | Staff principals, roles, password hashes, server sessions, CSRF and credential lifecycle. | /feature-to-tasks |
-| data | [.memory-bank/domains/display-client-access.md](domains/display-client-access.md) | active | Serving-control display-client identity, token hash storage and authentication lifecycle. | /feature-to-tasks |
+| data | [.memory-bank/domains/display-client-access.md](domains/display-client-access.md) | active | Serving-control display-client identity, retrievable Admin-visible token plus authentication hash, manual kiosk handoff and lifecycle. | /feature-to-tasks |
 | data | [.memory-bank/domains/promo-attempt.md](domains/promo-attempt.md) | active | Promo-owned core Attempt, result/session, display and shared QR browser-access state. | /feature-to-tasks |
 | data | [.memory-bank/domains/realtime-search.md](domains/realtime-search.md) | active | Server-authoritative reference-query selection, immutable search context and compatible exact search. | /feature-to-tasks |
 | state | [.memory-bank/states/lifecycle-map.md](states/lifecycle-map.md) | active | Canonical pilot lifecycle and recovery rules. | /spec-design or /feature-to-tasks |

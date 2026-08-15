@@ -1,7 +1,7 @@
 ---
 description: Канонический словарь терминов со специальным значением в Face Moment.
 status: active
-last_updated: 2026-07-31
+last_updated: 2026-08-15
 source_of_truth:
   - .memory-bank/glossary.md
 ---
@@ -19,6 +19,7 @@ source_of_truth:
 | `Photographer` | Product role, которая загружает Photo и может soft-delete/restore только собственные uploads в выбранной СПА/date/time-range. | Operator/developer с правом управлять любыми Photo в доступной СПА или глобальными admin actions. |
 | `Face Moment / СПА operator` | Роль, которая управляет рабочей датой и операционным состоянием, управляет Photo в доступной СПА, запускает разрешённые global inventory actions и видит sanitized attempt summary: outcome, timeline, latency и issue tags. | `Application developer`, которому доступны role-restricted names, annotations, detailed logs и Calibration. |
 | `Application developer` | Product role с доступом к role-restricted diagnostic data/actions, включая participant names в annotations, detailed logs, Log Explorer и Calibration, а также staff-доступом к Photo Inventory Operations; serving-setting changes применяет вручную. | Единственным владельцем доступа к capture-derived media или OS user `facemoment`. |
+| `Admin settings` / `Admin` | Защищённая same-origin staff surface и действующий `operator|developer`, которому разрешено ею пользоваться. Для display-client credentials она всегда показывает текущий token каждого киоска для ручного переноса в kiosk settings. | Новой четвёртой staff role, OS user `facemoment` или автоматическим provisioning/pairing channel. |
 | `facemoment` / `display` | Два OS users центрального сервера: `facemoment` администрирует SSH, `sudo` и Docker; `display` автоматически запускает sandboxed Chromium без административных прав. | Product roles оператора и участника pilot. |
 
 ## Ingest And Search Inventory

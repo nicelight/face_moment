@@ -1,7 +1,7 @@
 ---
 description: Server-authoritative reference-query selection and compatible exact realtime search contract.
 status: active
-last_updated: 2026-08-13
+last_updated: 2026-08-16
 source_of_truth:
   - .memory-bank/domains/realtime-search.md
 ---
@@ -21,23 +21,9 @@ boundary and writes none of those foreign states. HTTP handlers, generic
 helpers, infrastructure and the composition root MUST NOT implement selection,
 query preparation or search rules.
 
-## Immutable Active-Search Context
+## Active-Search Context Persistence
 
-Before domain admission, `serving_control` resolves one immutable context:
-
-| Value | Contract |
-|---|---|
-| `settings_revision` | Positive owner revision copied into the core Attempt. |
-| `spa_id` | Authoritative UUID from the authenticated display-client principal. |
-| `visit_date` | Nullable owner setting before readiness; required for an admitted search and never supplied by the client. |
-| `pipeline_revision_id`, `pipeline_code` | One validated selected serving revision. |
-| `query_source` | Exactly `reference`. |
-| `reference_threshold` | Finite configured cosine-similarity threshold for `(spa_id, pipeline_code, reference)`. |
-| `min_query_face_quality`, `quality_settings` | Finite configured query gate and its bounded versioned parameters. |
-| `calibration_id` | Nullable accepted Calibration provenance. |
-| `release_id` | Current server release identity. |
-
-The owner-backed persistence extends `face_moment.spas` with nullable
+The `serving_control`-owned persistence extends `face_moment.spas` with nullable
 `active_visit_date`, positive `settings_revision` and `settings_updated_at`.
 One `face_moment.reference_search_settings` row per
 `(spa_id, pipeline_code, query_source)` stores the threshold,
@@ -51,6 +37,23 @@ active-date staff API is defined by the
 [Boundary Map](../contracts/boundary-map.md#active-search-date). No automatic
 date rollover, automatic threshold change, settings history or generic
 configuration platform is introduced.
+
+## Immutable Active-Search Context
+
+Before domain admission, `serving_control` resolves one immutable context from
+the owner stores above and the accepted serving revision:
+
+| Value | Contract |
+|---|---|
+| `settings_revision` | Positive owner revision copied into the core Attempt. |
+| `spa_id` | Authoritative UUID from the authenticated display-client principal. |
+| `visit_date` | Nullable owner setting before readiness; required for an admitted search and never supplied by the client. |
+| `pipeline_revision_id`, `pipeline_code` | One validated selected serving revision. |
+| `query_source` | Exactly `reference`. |
+| `reference_threshold` | Finite configured cosine-similarity threshold for `(spa_id, pipeline_code, reference)`. |
+| `min_query_face_quality`, `quality_settings` | Finite configured query gate and its bounded versioned parameters. |
+| `calibration_id` | Nullable accepted Calibration provenance. |
+| `release_id` | Current server release identity. |
 
 If the active date or another required context value is absent, serving
 readiness is closed: the realtime boundary returns `503` before `promo`

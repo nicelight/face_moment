@@ -1,0 +1,35 @@
+{
+  "id": "TASK-048-T2-FT-003-W2",
+  "title": "Crop and encode chronological occurrences",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-003",
+  "reqs": ["REQ-CAP-002"],
+  "depends_on": ["TASK-044-T2-FT-003-W1"],
+  "touched_files": ["client/", "tests/client/"],
+  "tier": "T2",
+  "gates": [
+    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+  ],
+  "verify": [],
+  "docs": [".memory-bank/features/FT-003.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "evidence_required": [
+    "FT-003-AC-005 RED: occurrence transformation is absent; GREEN: every fixture bbox produces a clipped centered square of side 1.2 x max(width,height), is never aligned/upscaled, is proportionally reduced only when its long side exceeds 512, and encodes as sRGB JPEG without EXIF/source metadata; decisive comparison: edge, fractional, below/above-512 and metadata fixtures compare decoded dimensions/pixels and metadata; artifact: Playwright transcript and decoded output under .tasks/TASK-048-T2-FT-003-W2/."
+  ],
+  "purpose": "Implement only the deterministic occurrence crop/downscale/JPEG transformation consumed by multipart formation.",
+  "success_outcome": "Each ordered occurrence becomes one compliant bounded JPEG without owning user-selectable quality configuration.",
+  "anti_goals": [
+    "Do not implement JPEG quality UI/persistence, detector traversal or multipart formation.",
+    "Do not align, normalize, upscale, rank, quality-gate or upload full frames.",
+    "Do not introduce a graphics/ML runtime beyond browser primitives."
+  ],
+  "runtime_context": {
+    "forbidden_scope": ["Quality configuration owned by TASK-062-T2-FT-003-W2", "Detector traversal owned by TASK-047-T2-FT-003-W2", "Multipart request owned by TASK-052-T2-FT-003-W4"],
+    "stop_conditions": ["Exact geometry/metadata behavior cannot be proved from browser output.", "Encoding requires a new ML/graphics runtime."]
+  },
+  "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-005", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "normative_inputs": [".memory-bank/features/FT-003.md#ft-003-ac-005--crop-and-jpeg-contract", ".memory-bank/testing/client-realtime.md#required-proof", ".memory-bank/testing/index.md"],
+  "constraints": ["Use browser-native image operations in real Chromium over deterministic fixtures.", "Accept the selected quality as an input supplied by TASK-062 without implementing or persisting it.", "Use disposable artifacts and retain proof under the task directory."],
+  "invariants": ["Geometry is clipped centered-square 1.2x with no alignment or upscale.", "Long side is at most 512 and JPEG is sRGB without source metadata.", "Quality selection/persistence is not this task's claim."],
+  "verification_targets": [".memory-bank/testing/client-realtime.md#required-proof", "FT-003-AC-005 boundary geometry, resizing and metadata fixtures.", "Integration seam accepts each allowed quality input without proving UI persistence."]
+}

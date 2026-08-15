@@ -1,7 +1,7 @@
 ---
 description: Operator recovery procedure for Chromium/display failure and ordinary central-runtime restart with intact primary volumes.
 status: active
-last_updated: 2026-08-14
+last_updated: 2026-08-15
 source_of_truth:
   - .memory-bank/runbooks/display-and-central-restart.md
 ---
@@ -54,6 +54,10 @@ and the [manual serving-revision contract](../contracts/boundary-map.md#manual-s
   authenticated backend/realtime probes, intact-volume durable-state checks
   and display advertising state without printing credentials or protected
   payloads.
+- The intended kiosk already holds the manually copied current central
+  display-client token in its managed browser profile. The authoritative token
+  remains visible to an authenticated Admin in server settings; this recovery
+  procedure does not copy, reset or reveal it.
 
 If any precondition cannot be established, stop. Do not improvise a volume,
 credential, migration, browser flag or serving-setting repair.
@@ -70,7 +74,8 @@ credential, migration, browser flag or serving-setting repair.
    reload from the central HTTPS origin.
 5. Confirm the page reaches usable local advertising and that no prior
    personalized result, reference frame, QR/session token or active Attempt
-   state is restored.
+   state is restored. Confirm the existing central display-client credential
+   remains configured without printing or rendering its value.
 6. Run the browser portion of `scripts/check-ft003-recovery.sh` and retain its
    redacted result.
 
@@ -118,7 +123,8 @@ or data recovery after primary loss.
 ## Verification Targets
 
 - The browser procedure is followed from advertising and active/result state;
-  both runs prove automatic replacement, reload, advertising and state discard.
+  both runs prove automatic replacement, reload, advertising, retention of the
+  configured central credential and discard of personalized state.
 - The central procedure is followed from an ordinary role/server restart with
   intact volumes and proves role independence, durable-state preservation,
   queued Photo progress and fresh realtime admission.

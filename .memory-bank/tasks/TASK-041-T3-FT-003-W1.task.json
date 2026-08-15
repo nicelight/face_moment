@@ -1,0 +1,57 @@
+{
+  "id": "TASK-041-T3-FT-003-W1",
+  "title": "Persist display-client credentials and lifecycle",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-003",
+  "reqs": ["REQ-SEC-001"],
+  "depends_on": ["TASK-002-T2-FT-000-W0"],
+  "touched_files": ["src/face_moment/serving_control/", "migrations/versions/", "tests/serving_control/"],
+  "tier": "T3",
+  "gates": [
+    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
+    {"name": "Display credential persistence tests", "command": "docker compose run --rm backend python -m pytest tests/serving_control/test_display_client_access.py", "required": true},
+    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+  ],
+  "verify": [],
+  "docs": [".memory-bank/domains/display-client-access.md", ".memory-bank/contracts/boundary-map.md", ".memory-bank/features/FT-003.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "evidence_required": [
+    "display-client-access.md#postgresql-shape + #lifecycle-and-recovery RED: no owner table/lifecycle exists; GREEN: one linear migration and serving_control commands create a named kiosk with a current retrievable token_value and matching unique SHA-256 digest, preserve both plus active state across database restart, atomically replace both on reset, invalidate the old token, and make repeat deactivation safe; decisive comparison: upgrade/downgrade/re-upgrade, provision/reset/deactivate and mismatch-prevention fixtures inspect persisted rows while command output contains kiosk identity/lifecycle only; artifact: focused pytest and migration output under .tasks/TASK-041-T3-FT-003-W1/."
+  ],
+  "purpose": "Create the serving_control-owned display-client store and explicit provision/reset/deactivate lifecycle without also implementing authentication or any read surface.",
+  "success_outcome": "Every configured kiosk has one durable current token value and matching authentication digest whose explicit lifecycle survives restart and is mutated only by serving_control.",
+  "anti_goals": [
+    "Do not implement the realtime Bearer adapter, Admin page or kiosk configuration UI.",
+    "Do not print the current token from provision/reset commands or add one-time display, automatic rotation, pairing or a scheduler.",
+    "Do not store the ESP32 secret in display_clients."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Authentication adapter owned by TASK-057-T3-FT-003-W2",
+      "Admin token read and manual kiosk handoff owned by TASK-058-T3-FT-003-W2 and TASK-059-T3-FT-003-W3",
+      "Realtime admission and serving-context state owned by other FT-003 tasks"
+    ],
+    "stop_conditions": [
+      "The token value and digest cannot be atomically kept in sync in the owner repository.",
+      "A foreign module must write display_clients or a second migration stream is required.",
+      "Lifecycle output cannot avoid disclosing the token."
+    ]
+  },
+  "source_artifacts": [".memory-bank/domains/display-client-access.md#postgresql-shape", ".memory-bank/domains/display-client-access.md#lifecycle-and-recovery", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "normative_inputs": [".memory-bank/domains/display-client-access.md#postgresql-shape", ".memory-bank/domains/display-client-access.md#lifecycle-and-recovery", ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract", ".memory-bank/architecture/system-architecture.md"],
+  "constraints": [
+    "Use face_moment, the shared SQLAlchemy Base/MetaData and the current linear Alembic head.",
+    "Generate at least 32 random bytes before URL-safe encoding and persist token_value plus its matching digest atomically.",
+    "Use only task-owned disposable rows in proof and clean them up without touching operator/default rows."
+  ],
+  "invariants": [
+    "The persisted current token_value and token_hash_sha256 always match and survive database restart.",
+    "Provision/reset command output never reveals the current token; authorized retrieval belongs to the Admin read task.",
+    "Only serving_control mutates display_clients."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/display-client-access.md#verification-targets",
+    "Migration/repository proof covers current-value/digest consistency, restart persistence and explicit lifecycle transitions.",
+    "Authorization review finds no foreign write and command-output scan finds no credential or digest."
+  ]
+}
