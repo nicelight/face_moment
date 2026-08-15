@@ -79,7 +79,9 @@
   ],
   "normative_inputs": [
     ".memory-bank/domains/photo-processing.md#queue-and-recovery-health-projection",
-    ".memory-bank/contracts/boundary-map.md#processing-status-projections"
+    ".memory-bank/contracts/boundary-map.md#processing-status-projections",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/contracts/boundary-map.md"
   ],
   "constraints": [
     "Use direct PostgreSQL reads for one SPA and selected serving revision.",

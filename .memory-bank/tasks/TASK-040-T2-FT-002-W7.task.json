@@ -1,7 +1,7 @@
 {
   "id": "TASK-040-T2-FT-002-W7",
   "title": "Apply the guarded ordinary manual serving-revision switch",
-  "status": "planned",
+  "status": "done",
   "wave": "W7",
   "feature": "FT-002",
   "reqs": [
@@ -36,7 +36,17 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "PASS",
+      "completed_at": "2026-08-14T22:51:50+05:00",
+      "image": "face-moment:task-039@sha256:05d9971f503bbcd43da905762cded3e01d63334a514db7293655be0043b205db",
+      "summary": "Fresh scheduler-mode T2 verification passed the focused serving-control integration: target-B validation precedes the separate exact-A guard, invalid/unknown/ineligible and blocked cases preserve A and all tracked snapshots, clear guard commits B, and admission/switch serialize to one A outcome. Owner/boundary and non-goal audit found no bypass or scope leakage.",
+      "protocol": ".protocols/TASK-040-T2-FT-002-W7/verification.md"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-002.md",
     ".memory-bank/architecture/system-architecture.md",
@@ -83,7 +93,13 @@
     ".memory-bank/domains/photo-admission.md#admission-time-serving-revision-lineage",
     ".memory-bank/domains/photo-processing.md#ordinary-serving-revision-guard",
     ".memory-bank/states/lifecycle-map.md#ordinary-serving-revision-change-guard",
-    ".memory-bank/testing/photo-processing.md#terminal-and-compatibility-matrix"
+    ".memory-bank/testing/photo-processing.md#terminal-and-compatibility-matrix",
+    ".memory-bank/architecture/system-architecture.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/testing/photo-processing.md"
   ],
   "constraints": [
     "Inside the owner-held serving context, serving_control resolves exact current A, first calls processing-owned target-B validation, and only for a validated B separately calls the completed processing-owned read-only exact-A guard; neither accepted processing boundary is replaced by the other, and the owner returns the contract result naming requested and committed revisions.",

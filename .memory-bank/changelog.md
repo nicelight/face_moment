@@ -4,21 +4,42 @@ status: active
 ---
 # Changelog
 
+## [2026-08-14] Wave W7 — verified compatible processing and serving switch
+- Reconciled the scheduler-owned `done` closures for
+  `TASK-036-T3-FT-002-W7` and `TASK-040-T2-FT-002-W7` with their indexed
+  functional evidence. TASK-036 retains its first semantic-fail and final
+  retry `PASS` plus `semantic-pass`; TASK-040 has the scheduler-owned T2
+  verification `PASS` for the guarded A-to-B switch and admission
+  serialization.
+- Reconciled `FT-002` as `verified` after all 23 indexed FT-002 task records
+  reached `done` and the durable feature-level semantic gate is
+  `semantic-pass`; the feature document is now `active` with its existing
+  canonical SDD links unchanged.
+- Advanced `REQ-ING-003`, `REQ-ING-004` and `REQ-REL-002` to `verified` in the
+  RTM. Kept `REQ-SRCH-001`, `REQ-SEC-001` and `REQ-ARCH-001` `planned` because
+  their other mapped product features remain unfinished.
+- Kept `EP-001` `planned` because `FT-012` remains unfinished. Existing task,
+  feature, epic and root routers already cover the reconciled documents; no
+  task promotion/blocking, dependency, planning, spec, code or protocol-status
+  decision was made by this sync.
+
 ## [2026-08-14] Wave W6 — reconciled processing observation closures
 - Reconciled the already-recorded scheduler `done` states for
   `TASK-029-T2-FT-002-W6`, `TASK-031-T2-FT-002-W6`,
-  `TASK-035-T3-FT-002-W6`, and `TASK-038-T2-FT-002-W6` with their indexed
-  independent evidence. TASK-035 retains its Attempt 1 `semantic-fail` and
-  final Attempt 2 `PASS` plus `semantic-pass`; the earlier successful
-  functional verification remains part of that first unsuccessful T3 attempt.
+  `TASK-035-T3-FT-002-W6`, `TASK-038-T2-FT-002-W6`, and
+  `TASK-039-T2-FT-002-W6` with their indexed independent evidence.
+  `TASK-035` retains its Attempt 1 `semantic-fail` and final Attempt 2 `PASS`
+  plus `semantic-pass`; the earlier successful functional verification remains
+  part of that first unsuccessful T3 attempt.
 - The closure evidence covers the bounded shared-worker Calibration hold and
   resume, immutable admission-lineage status selection, truthful independent
-  uploader polling, and the authenticated processing-health API. TASK-031's
-  historical selector-gap stop report and its subsequent planning repair
-  remain linked through TASK-038 rather than being replaced by the final PASS.
+  uploader polling, the authenticated processing-health API, and the
+  processing-owned exact-A read-only ordinary serving-revision guard. TASK-031's
+  historical selector-gap stop report and its subsequent planning repair remain
+  linked through TASK-038 rather than being replaced by the final PASS.
 - Kept `FT-002`, its affected RTM rows, and `EP-001` `planned` because the W7
-  processing-health UI/UAT obligation remains. The authoritative record for
-  `TASK-036-T3-FT-002-W7` is already `ready`; this sync made no promotion,
+  processing-health UI/UAT and serving-control obligations remain indexed;
+  `TASK-040-T2-FT-002-W7` remains `planned`. This sync made no promotion,
   dependent-state, task, evidence, product/design/spec, code, or Global
   Backbone Planning Revision `4` decision.
 

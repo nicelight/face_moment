@@ -11,7 +11,10 @@ from face_moment.inventory.candidate_staging import StagedCandidate
 from face_moment.inventory.photo_persistence import Photo
 from face_moment.inventory.validation import ValidatedJpegCandidate
 from face_moment.processing.initial_pending import InitialPendingRepository
-from face_moment.serving_control.ingest_target import IngestTarget
+from face_moment.serving_control.ingest_target import (
+    IngestTarget,
+    IngestTargetRepository,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,13 +59,16 @@ class AtomicPhotoAdmission:
     ) -> Photo:
         """Commit the complete cross-slice admission pair or publish neither."""
         with self._session.begin():
+            current_target = IngestTargetRepository(self._session).lock_ingest_target(
+                ingest_target.spa_id
+            )
             validated = candidate.validated_jpeg
             photo = Photo(
-                spa_id=ingest_target.spa_id,
+                spa_id=current_target.spa_id,
                 visit_date=validated.visit_date,
                 captured_at=validated.captured_at,
                 captured_at_source=validated.captured_at_source,
-                admission_pipeline_revision_id=ingest_target.pipeline_revision_id,
+                admission_pipeline_revision_id=current_target.pipeline_revision_id,
                 uploader_id=uploader_id,
                 checksum_sha256=validated.checksum_sha256,
                 original_object_key=candidate.staged_candidate.key,
@@ -76,7 +82,7 @@ class AtomicPhotoAdmission:
             self._session.refresh(photo)
             InitialPendingRepository(self._session).create_initial_pending(
                 photo_id=photo.id,
-                pipeline_revision_id=ingest_target.pipeline_revision_id,
+                pipeline_revision_id=current_target.pipeline_revision_id,
             )
             self._after_pending_before_commit()
         return photo

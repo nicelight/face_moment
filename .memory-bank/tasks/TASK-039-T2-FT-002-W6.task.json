@@ -1,7 +1,7 @@
 {
   "id": "TASK-039-T2-FT-002-W6",
   "title": "Project the exact-A ordinary serving-revision backlog guard",
-  "status": "planned",
+  "status": "done",
   "wave": "W6",
   "feature": "FT-002",
   "reqs": [
@@ -35,7 +35,18 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "PASS",
+      "completed_at": "2026-08-14T22:10:46+05:00",
+      "image": "face-moment:task-039@sha256:05d9971f503bbcd43da905762cded3e01d63334a514db7293655be0043b205db",
+      "summary": "Fresh independent packaged T2 verification passed the exact-A five-state matrix, proving pending/processing blockers, terminal-state non-blockers, SPA/admission-A/exact-state lineage, SELECT-only behavior, unchanged snapshots, safe cleanup and no TASK-040 scope leakage.",
+      "protocol": ".protocols/TASK-039-T2-FT-002-W6/verification.md",
+      "report": ".tasks/TASK-039-T2-FT-002-W6/TASK-039-T2-FT-002-W6-S-VERIFY-final-report-docs-01.md"
+    }
+  ],
   "docs": [
     ".memory-bank/contracts/boundary-map.md",
     ".memory-bank/domains/photo-admission.md",
@@ -78,7 +89,12 @@
     ".memory-bank/domains/photo-admission.md#admission-time-serving-revision-lineage",
     ".memory-bank/domains/photo-processing.md#ordinary-serving-revision-guard",
     ".memory-bank/states/lifecycle-map.md#ordinary-serving-revision-change-guard",
-    ".memory-bank/testing/photo-processing.md#terminal-and-compatibility-matrix"
+    ".memory-bank/testing/photo-processing.md#terminal-and-compatibility-matrix",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/domains/photo-admission.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/testing/photo-processing.md"
   ],
   "constraints": [
     "Processing receives the stable serving context and exact current A, considers only the SPA's Photos with immutable admission_pipeline_revision_id=A and their exact composite-key state, and returns only the read-only guard result.",

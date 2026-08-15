@@ -88,7 +88,10 @@
     ".memory-bank/contracts/photo-processing-api.md#admission-lineage-selector",
     ".memory-bank/contracts/photo-processing-api.md#per-photo-processing-status",
     ".memory-bank/testing/index.md#ui-verification",
-    ".memory-bank/testing/photo-processing.md#terminal-and-compatibility-matrix"
+    ".memory-bank/testing/photo-processing.md#terminal-and-compatibility-matrix",
+    ".memory-bank/contracts/photo-processing-api.md",
+    ".memory-bank/testing/index.md",
+    ".memory-bank/testing/photo-processing.md"
   ],
   "constraints": [
     "Extend the existing plain same-origin uploader page and poll only accepted photo_id values.",

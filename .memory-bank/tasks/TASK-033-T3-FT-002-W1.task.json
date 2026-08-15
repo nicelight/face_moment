@@ -98,7 +98,11 @@
     ".memory-bank/domains/photo-processing.md#postgresql-capacity-observation",
     ".memory-bank/architecture/system-architecture.md#AD-011",
     ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries",
-    ".memory-bank/contracts/photo-processing-api.md#failure-and-privacy-contract"
+    ".memory-bank/contracts/photo-processing-api.md#failure-and-privacy-contract",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/architecture/system-architecture.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/contracts/photo-processing-api.md"
   ],
   "constraints": [
     "Use one configured read-only filesystem view and a statvfs-equivalent observation.",

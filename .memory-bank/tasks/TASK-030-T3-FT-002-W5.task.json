@@ -98,7 +98,10 @@
     ".memory-bank/contracts/photo-processing-api.md#failure-and-privacy-contract",
     ".memory-bank/contracts/boundary-map.md#independent-photo-admission",
     ".memory-bank/contracts/boundary-map.md#processing-status-projections",
-    ".memory-bank/architecture/system-architecture.md#AD-002"
+    ".memory-bank/architecture/system-architecture.md#AD-002",
+    ".memory-bank/contracts/photo-processing-api.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/architecture/system-architecture.md"
   ],
   "constraints": [
     "GET /api/inventory/photos/{photo_id}/processing uses the existing active staff session.",

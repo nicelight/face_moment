@@ -6,6 +6,7 @@ from face_moment.serving_control.ingest_target import (
     IngestTarget,
     IngestTargetRepository,
     InvalidIngestTargetTimezoneError,
+    ServingRevisionSwitchResult,
     UnknownIngestTargetError,
 )
 
@@ -15,5 +16,6 @@ __all__ = [
     "IngestTarget",
     "IngestTargetRepository",
     "InvalidIngestTargetTimezoneError",
+    "ServingRevisionSwitchResult",
     "UnknownIngestTargetError",
 ]
