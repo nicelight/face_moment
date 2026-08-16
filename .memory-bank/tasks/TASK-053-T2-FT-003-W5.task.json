@@ -1,7 +1,7 @@
 {
   "id": "TASK-053-T2-FT-003-W5",
   "title": "Branch outcomes with stale discard and fresh retry",
-  "status": "planned",
+  "status": "blocked",
   "wave": "W5",
   "feature": "FT-003",
   "reqs": ["REQ-CAP-001", "REQ-UX-004", "REQ-REL-001"],
@@ -9,7 +9,7 @@
   "touched_files": ["client/", "tests/client/"],
   "tier": "T2",
   "gates": [{"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}],
-  "verify": [],
+  "verify": [{"stage": "closure", "verdict": "blocked", "completed_at": "2026-08-16T13:24:31+05:00", "summary": "Transitive dependency TASK-052-T2-FT-003-W4 is blocked by TASK-046-T3-FT-003-W2; TASK-053 cannot be promoted or executed through the blocked sensor/trigger path.", "evidence": [".memory-bank/tasks/TASK-052-T2-FT-003-W4.task.json", ".memory-bank/tasks/TASK-046-T3-FT-003-W2.task.json"]}],
   "docs": [".memory-bank/features/FT-003.md", ".memory-bank/states/lifecycle-map.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
   "evidence_required": [
     "FT-003-AC-007 RED: submitted attempts have no typed outcome lifecycle; GREEN: timeout, disconnect, late response and every admitted non-success never replace a newer state, return directly to advertising, start no success cooldown and permit only a new capture/series for retry, while a typed result enters the minimal non-personal holding state; decisive comparison: injected sequences compare state order, stale discard, capture identity and cooldown eligibility without asserting communication-notice presentation; artifact: Playwright transcript and state logs under .tasks/TASK-053-T2-FT-003-W5/."

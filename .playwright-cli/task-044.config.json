@@ -1,0 +1,11 @@
+{
+  "browser": {
+    "contextOptions": {
+      "ignoreHTTPSErrors": true
+    }
+  },
+  "timeouts": {
+    "navigation": 10000
+  },
+  "outputDir": ".tasks/TASK-044-T2-FT-003-W1"
+}

@@ -1,7 +1,7 @@
 {
   "id": "TASK-057-T3-FT-003-W2",
   "title": "Authenticate display-client Bearer credentials",
-  "status": "planned",
+  "status": "in_progress",
   "wave": "W2",
   "feature": "FT-003",
   "reqs": ["REQ-SEC-001"],

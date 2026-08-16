@@ -1,7 +1,7 @@
 {
   "id": "TASK-042-T2-FT-003-W1",
   "title": "Persist active-search context settings",
-  "status": "planned",
+  "status": "done",
   "wave": "W1",
   "feature": "FT-003",
   "reqs": ["REQ-CAP-002", "REQ-REL-001"],
@@ -13,7 +13,46 @@
     {"name": "Serving-context persistence tests", "command": "docker compose run --rm backend python -m pytest tests/serving_control/test_realtime_context.py", "required": true},
     {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "FAIL",
+      "completed_at": "2026-08-16T04:25:14+05:00",
+      "summary": "Fresh Focus A verification passed the disposable migration round-trip, valid/restart persistence, revision increments, validation/duplicate rejection and cleanup, but a rejected quality-settings update partially persisted threshold and min-query quality after session commit while settings_revision remained unchanged at 4.",
+      "protocol": ".protocols/TASK-042-T2-FT-003-W1/verification.md",
+      "report": ".tasks/TASK-042-T2-FT-003-W1/TASK-042-T2-FT-003-W1-S-VERIFY-final-report-docs-01.md",
+      "probe": ".tasks/TASK-042-T2-FT-003-W1/verify_persistence_probe.py"
+    },
+    {
+      "stage": "verify",
+      "attempt": 2,
+      "verdict": "FAIL",
+      "completed_at": "2026-08-16T04:34:13+05:00",
+      "summary": "Attempt 2 fixed JSON-validation partial persistence, but fresh verification found the same partial unrevisioned mutation when timezone-naive timestamps are rejected after ORM assignment in reference-setting and active-date updates.",
+      "protocol": ".protocols/TASK-042-T2-FT-003-W1/verification.md",
+      "report": ".tasks/TASK-042-T2-FT-003-W1/TASK-042-T2-FT-003-W1-S-VERIFY-final-report-docs-02.md"
+    },
+    {
+      "stage": "verify",
+      "attempt": 3,
+      "verdict": "PASS",
+      "completed_at": "2026-08-16T04:42:00+05:00",
+      "summary": "Fresh Attempt 3 verification passed hostile commit-after-rejection JSON and timestamp probes, valid/restart persistence, migration round-trip, cleanup, mypy, lint and owner/scope review; both prior partial-persistence defects are corrected.",
+      "protocol": ".protocols/TASK-042-T2-FT-003-W1/verification.md",
+      "report": ".tasks/TASK-042-T2-FT-003-W1/TASK-042-T2-FT-003-W1-S-VERIFY-final-report-docs-03.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "completed_at": "2026-08-16T04:42:00+05:00",
+      "summary": "Scheduler closed TASK-042 after Attempt 3 functional PASS; two bounded verification failures were corrected within the task scope and feature-level semantic verification remains scheduled at the FT-003 boundary.",
+      "evidence": [
+        ".tasks/TASK-042-T2-FT-003-W1/TASK-042-T2-FT-003-W1-S-EXECUTE-final-report-code-03.md",
+        ".tasks/TASK-042-T2-FT-003-W1/TASK-042-T2-FT-003-W1-S-VERIFY-final-report-docs-03.md"
+      ]
+    }
+  ],
   "docs": [".memory-bank/domains/realtime-search.md", ".memory-bank/contracts/boundary-map.md", ".memory-bank/features/FT-003.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
   "evidence_required": [
     "realtime-search.md#active-search-context-persistence RED: the owner settings stores and provision/update path are absent; GREEN: the linear migration adds active date/revision fields and one reference_search_settings row per accepted key, serving_control alone validates and persists threshold/quality/calibration values, updates settings_revision atomically, and an isolated provision/update command produces deterministic task fixtures across restart; decisive comparison: migration round-trip, valid/invalid setting and revision-increment fixtures inspect only owner rows; artifact: focused pytest and migration output under .tasks/TASK-042-T2-FT-003-W1/."

@@ -1,7 +1,7 @@
 {
   "id": "TASK-058-T3-FT-003-W2",
   "title": "Expose current kiosk tokens in authenticated Admin settings",
-  "status": "planned",
+  "status": "ready",
   "wave": "W2",
   "feature": "FT-003",
   "reqs": ["REQ-SEC-001"],

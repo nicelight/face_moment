@@ -1,0 +1,5 @@
+{
+  "LocalNetworkAccessAllowedForUrls": [
+    "https://localhost:8443"
+  ]
+}

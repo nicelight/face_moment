@@ -1,7 +1,7 @@
 {
   "id": "TASK-061-T2-FT-003-W2",
   "title": "Select and recover the kiosk camera",
-  "status": "planned",
+  "status": "ready",
   "wave": "W2",
   "feature": "FT-003",
   "reqs": ["REQ-CAP-001", "REQ-REL-001"],

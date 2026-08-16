@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
+from datetime import date, datetime
 from typing import TYPE_CHECKING, Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from sqlalchemy import Boolean, ForeignKey, String, Uuid, select
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Uuid, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from face_moment.infrastructure.database import Base
@@ -27,6 +28,13 @@ class Spa(Base):
     timezone: Mapped[str] = mapped_column(String(_MAX_TIMEZONE_LENGTH), nullable=False)
     active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default="true"
+    )
+    active_visit_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    settings_revision: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
+    settings_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
     serving_pipeline_revision_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),

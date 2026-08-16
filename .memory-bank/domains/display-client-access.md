@@ -118,9 +118,11 @@ makes that value authenticate as invalid until an explicit lifecycle action.
 
 ## Verification Targets
 
-- Repository/migration proof creates one row, preserves the current retrievable
-  token plus matching digest across a database restart, authenticates the
-  current value and rejects wrong/inactive/old-reset tokens.
+- Repository/migration proof runs its upgrade/downgrade round-trip in a
+  task-owned disposable PostgreSQL database, creates one row, preserves the
+  current retrievable token plus matching digest across a database restart,
+  authenticates the current value and rejects wrong/inactive/old-reset tokens,
+  then drops the probe database without touching operator/default rows.
 - Admin-settings proof shows the same current value on repeated authorized
   reads, returns `403` to a photographer, returns no credential to invalid
   staff sessions and proves `no-store` plus URL/log/analytics redaction.

@@ -1,7 +1,7 @@
 {
   "id": "TASK-046-T3-FT-003-W2",
   "title": "Integrate central-origin Chromium with the ESP32 long-poll",
-  "status": "planned",
+  "status": "blocked",
   "wave": "W2",
   "feature": "FT-003",
   "reqs": ["REQ-CAP-001", "REQ-SEC-001", "REQ-SEC-002"],
@@ -12,7 +12,27 @@
     {"name": "ESP32 fixture contract tests", "command": "docker compose run --rm backend python -m pytest tests/client/test_sensor_passage_fixture.py", "required": true},
     {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "NEEDS-CLARIFICATION",
+      "completed_at": "2026-08-16T13:20:00+05:00",
+      "summary": "Fresh independent verification proved the client poller, fixture contract and central-origin browser flow, but the operator reported a second real kiosk Chrome crash during verification. No post-crash kiosk observation is available, so stable managed-browser runtime evidence cannot be claimed.",
+      "protocol": ".protocols/TASK-046-T3-FT-003-W2/verification.md",
+      "report": ".tasks/TASK-046-T3-FT-003-W2/TASK-046-T3-FT-003-W2-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "blocked",
+      "completed_at": "2026-08-16T13:24:31+05:00",
+      "summary": "TASK-046 is blocked on the runtime evidence gap: after the second operator-reported kiosk Chrome crash, no safe post-crash observation proves a stable managed kiosk session. Do not restart Chrome as an inferred tactic. Resume only after the operator/runtime owner confirms a stable kiosk session, then rerun /verify TASK-046-T3-FT-003-W2; keep /red-verify separate.",
+      "evidence": [
+        ".protocols/TASK-046-T3-FT-003-W2/verification.md",
+        ".tasks/TASK-046-T3-FT-003-W2/TASK-046-T3-FT-003-W2-S-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
   "docs": [".memory-bank/contracts/sensor-passage-api.md", ".memory-bank/features/FT-003.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
   "evidence_required": [
     "FT-003-AC-003 RED: the central-origin client holds no sensor request; GREEN: managed Chromium consuming TASK-063's installed exact-origin LNA policy holds exactly one authenticated 10-second GET /api/v1/passage-events/next to the fixed mDNS ESP32, immediately continues after 200 or 204, strictly decodes events, suppresses duplicate transport deliveries in memory, keeps the manually configured sensor secret only in the Authorization header, and has no bridge/local server/WebSocket/discovery route; decisive comparison: the protocol-equivalent fixture counts polls and tests exact-origin CORS/OPTIONS/401/403 while URL/log/topology scans prove absence of leakage and alternate transports; artifact: Playwright transcript and fixture logs under .tasks/TASK-046-T3-FT-003-W2/."

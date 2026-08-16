@@ -1,7 +1,7 @@
 {
   "id": "TASK-062-T2-FT-003-W2",
   "title": "Persist and apply kiosk JPEG quality",
-  "status": "planned",
+  "status": "ready",
   "wave": "W2",
   "feature": "FT-003",
   "reqs": ["REQ-CAP-002"],

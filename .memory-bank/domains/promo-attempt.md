@@ -46,6 +46,10 @@ The migration MUST use the project-wide `face_moment` schema, shared
 `Base/MetaData` and current linear Alembic stream. No database cascade may
 delete the core Attempt with a Photo or diagnostic record.
 
+Migration and repository proof uses a uniquely named task-owned disposable
+database for upgrade/downgrade/re-upgrade and removes it after the probe; no
+shared operator/default database is downgraded as test setup.
+
 ## Admission And Transitions
 
 - Transport/auth/validation/readiness rejection creates no row.

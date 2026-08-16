@@ -38,6 +38,10 @@ active-date staff API is defined by the
 date rollover, automatic threshold change, settings history or generic
 configuration platform is introduced.
 
+Migration and repository proof for this owner state uses a uniquely named
+task-owned disposable PostgreSQL database and removes it after the round-trip;
+the shared operator/default database is never downgraded as test setup.
+
 ## Immutable Active-Search Context
 
 Before domain admission, `serving_control` resolves one immutable context from

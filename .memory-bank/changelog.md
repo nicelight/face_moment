@@ -4,6 +4,48 @@ status: active
 ---
 # Changelog
 
+## [2026-08-16] FT-003 — kiosk sandbox/service boundary execution handoff
+- Added the source-managed `deploy/kiosk/spa-promo-client.service` boundary:
+  Chromium is pinned to the central `https://localhost:8443/` origin, runs as
+  `display` with `NoNewPrivileges=yes`, uses only the allow-listed kiosk/
+  first-run/profile flags, and explicitly has no automatic restart in this
+  task's scope.
+- Added `scripts/check-kiosk-browser.sh`, a read-only redacted inspection that
+  rejects sandbox-bypass/unsafe flags and credential hooks, checks the service
+  identity and exact origin, and optionally observes the effective process
+  without reading browser-profile contents.
+- Attempt 1 recorded honest claim RED before implementation and source/static
+  GREEN afterward. The current development host has no `display` account, no
+  managed Chromium process and no reachable central origin; live pilot-host
+  verification remains with `/verify`. TASK-046/064/065, managed LNA policy,
+  recovery/restart, sensor/trigger/detector/submission and AC-006 admission
+  remain outside this handoff.
+
+## [2026-08-16] Wave W1 — closed TASK-063 managed kiosk policy boundary
+- Reconciled TASK-063 as `done` after real host-managed Google Chrome policy
+  evidence: `chrome://policy` reported the exact
+  `https://localhost:8443` origin as Machine/Mandatory/OK and retained it
+  after a browser restart.
+- Added the bounded real-CDP listed/unlisted origin probe: the managed kiosk
+  origin is `granted` for the Local Network Access permission names while an
+  unlisted origin remains `prompt`; the kiosk page was restored afterward.
+- Preserved `REQ-SEC-001`, `REQ-SEC-002`, and FT-003 lifecycle as `planned`
+  because the remaining SSH, private-topology, sensor CORS/token, and other
+  acceptance criteria are not closed by TASK-063.
+
+## [2026-08-16] Wave W1 — environment-bounded SSH and topology controls
+- Reconciled TASK-064 and TASK-065 source outcomes and independent evidence:
+  managed key-only SSH policy/checker and edge-only private-port bindings are
+  present, with no operator-key, credential, application, or internal-port
+  mutation.
+- Kept TASK-064 `blocked` because this host has no `sshd`, so effective SSH
+  configuration and real key/password/display probes cannot be verified.
+- Kept TASK-065 `blocked` because the bounded local scan observes a
+  pre-existing native PostgreSQL listener on `127.0.0.1:5432` and no distinct
+  outside observer is available; source-only Compose evidence is insufficient
+  for the T3 topology claim. Both records retain exact pilot-host-capable
+  resume routes.
+
 ## [2026-08-14] Wave W7 — verified compatible processing and serving switch
 - Reconciled the scheduler-owned `done` closures for
   `TASK-036-T3-FT-002-W7` and `TASK-040-T2-FT-002-W7` with their indexed

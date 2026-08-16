@@ -1,0 +1,106 @@
+:root {
+  color-scheme: dark;
+  font-family: system-ui, sans-serif;
+  background: #101827;
+  color: #f3f6fb;
+}
+
+body {
+  box-sizing: border-box;
+  margin: 0;
+  min-height: 100vh;
+  padding: clamp(1.5rem, 5vw, 5rem);
+  background: radial-gradient(circle at top right, #263a5b, #101827 55%);
+}
+
+.site-header,
+.navigation,
+.client-view {
+  width: min(100%, 68rem);
+  margin-inline: auto;
+}
+
+.site-header {
+  margin-bottom: 2rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  color: #87b8ff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0.5rem;
+  font-size: clamp(2.5rem, 8vw, 5.5rem);
+  line-height: 0.95;
+}
+
+.subtitle {
+  margin-bottom: 0;
+  color: #b6c2d5;
+  font-size: 1.1rem;
+}
+
+.navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.navigation a {
+  border: 1px solid #516886;
+  border-radius: 999px;
+  color: #f3f6fb;
+  padding: 0.6rem 1rem;
+  text-decoration: none;
+}
+
+.navigation a:hover,
+.navigation a:focus-visible {
+  border-color: #87b8ff;
+  outline: 2px solid #87b8ff;
+  outline-offset: 2px;
+}
+
+.view-card {
+  min-height: 14rem;
+  border: 1px solid #516886;
+  border-radius: 1.5rem;
+  padding: clamp(1.5rem, 5vw, 4rem);
+  background: rgba(16, 24, 39, 0.76);
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.24);
+}
+
+.view-card h2 {
+  font-size: clamp(2rem, 5vw, 4rem);
+}
+
+.view-card p {
+  max-width: 42rem;
+  color: #c7d2e3;
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  line-height: 1.5;
+}
+
+.advertising-card {
+  border-color: #4e9f82;
+}
+
+.notice {
+  margin-inline: auto;
+  max-width: 68rem;
+  border: 1px solid #d59b4c;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}

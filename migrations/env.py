@@ -14,6 +14,9 @@ from face_moment.processing import initial_pending
 from face_moment.processing import persistence as processing_persistence
 from face_moment.processing import revisions as pipeline_revisions
 from face_moment.serving_control import ingest_target as serving_ingest_target
+from face_moment.serving_control import display_client_access
+from face_moment.serving_control import realtime_context
+from face_moment.promo import attempt as promo_attempt
 
 _ = staff_principals
 _ = staff_sessions
@@ -22,6 +25,9 @@ _ = initial_pending
 _ = processing_persistence
 _ = pipeline_revisions
 _ = serving_ingest_target
+_ = display_client_access
+_ = realtime_context
+_ = promo_attempt
 
 config = context.config
 if config.config_file_name is not None:

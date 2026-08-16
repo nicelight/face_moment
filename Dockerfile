@@ -17,6 +17,7 @@ FROM python:3.11-slim-bookworm AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    FACE_MOMENT_CLIENT_ROOT=/app/client \
     PIP_NO_CACHE_DIR=1
 
 RUN apt-get update \
@@ -34,6 +35,7 @@ COPY --chown=app:app migrations ./migrations
 COPY --chown=app:app scripts/runtime-storage-probe.py ./scripts/runtime-storage-probe.py
 COPY --chown=app:app src ./src
 COPY --chown=app:app tests ./tests
+COPY --chown=app:app client ./client
 COPY --chown=app:app deploy/Caddyfile ./deploy/Caddyfile
 
 USER app

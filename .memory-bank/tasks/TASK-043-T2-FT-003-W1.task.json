@@ -1,7 +1,7 @@
 {
   "id": "TASK-043-T2-FT-003-W1",
   "title": "Persist the promo-owned core Attempt",
-  "status": "planned",
+  "status": "done",
   "wave": "W1",
   "feature": "FT-003",
   "reqs": [
@@ -33,7 +33,27 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "PASS",
+      "completed_at": "2026-08-16T04:56:06+05:00",
+      "summary": "Fresh independent verification passed full Attempt persistence, restart, duplicate-key arbitration under concurrency, state and range validation, migration round-trip with unrelated-row preservation, promo-only ownership, no foreign cascade and cleanup checks.",
+      "protocol": ".protocols/TASK-043-T2-FT-003-W1/verification.md",
+      "report": ".tasks/TASK-043-T2-FT-003-W1/TASK-043-T2-FT-003-W1-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "completed_at": "2026-08-16T04:56:06+05:00",
+      "summary": "Scheduler closed TASK-043 after the T2 functional verification PASS; feature-level semantic verification remains scheduled at the FT-003 boundary.",
+      "evidence": [
+        ".tasks/TASK-043-T2-FT-003-W1/TASK-043-T2-FT-003-W1-S-EXECUTE-final-report-code-01.md",
+        ".tasks/TASK-043-T2-FT-003-W1/TASK-043-T2-FT-003-W1-S-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/domains/promo-attempt.md",
     ".memory-bank/contracts/boundary-map.md",

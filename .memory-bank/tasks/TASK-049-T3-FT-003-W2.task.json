@@ -1,7 +1,7 @@
 {
   "id": "TASK-049-T3-FT-003-W2",
   "title": "Run Chromium sandboxed as the display user",
-  "status": "planned",
+  "status": "blocked",
   "wave": "W2",
   "feature": "FT-003",
   "reqs": ["REQ-SEC-001"],
@@ -12,7 +12,28 @@
     {"name": "Kiosk browser inspection", "command": "bash scripts/check-kiosk-browser.sh", "required": true},
     {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "NEEDS-CLARIFICATION",
+      "completed_at": "2026-08-16T14:52:00+05:00",
+      "summary": "Fresh independent verification passed source/static kiosk policy checks, but effective pilot-host proof is unavailable: the display account, /usr/bin/chromium, installed service and managed display process are absent. The reachable origin GET returned 200; the checker HEAD 405 is not treated as outage. An unrelated unmanaged Chrome with unsafe flags was observed, not used as proof and not stopped.",
+      "protocol": ".protocols/TASK-049-T3-FT-003-W2/verification.md",
+      "report": ".tasks/TASK-049-T3-FT-003-W2/TASK-049-T3-FT-003-W2-S-VERIFY-final-report-docs-01.md",
+      "runtime_evidence": ".tasks/TASK-049-T3-FT-003-W2/verifier-runtime-probe-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "blocked",
+      "completed_at": "2026-08-16T14:53:18+05:00",
+      "summary": "TASK-049 is blocked on the upstream pilot-host capability gap. Source-only GREEN cannot close this T3 task. Resume only in an authorized pilot-host-capable context where the source-managed unit is already installed and running as display, then rerun fresh /verify; do not install, start, stop or restore kiosk Chrome/service as an inferred tactic. Direct dependent TASK-054 is already blocked by TASK-046/TASK-052.",
+      "evidence": [
+        ".protocols/TASK-049-T3-FT-003-W2/verification.md",
+        ".tasks/TASK-049-T3-FT-003-W2/verifier-runtime-probe-01.md"
+      ]
+    }
+  ],
   "docs": [".memory-bank/features/FT-003.md", ".memory-bank/runbooks/display-and-central-restart.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
   "evidence_required": [
     "FT-003-AC-009 RED: no source-managed kiosk execution artifact or focused inspection exists; GREEN: the client-serving Chromium process runs sandboxed without --no-sandbox as the non-privileged autologin display user, whose effective groups/access exclude sudo, Docker and deployment secrets; decisive comparison: scripts/check-kiosk-browser.sh compares effective process UID/command flags and display-user privilege probes against the accepted control without printing profile secrets; artifact: redacted inspection output under .tasks/TASK-049-T3-FT-003-W2/."
