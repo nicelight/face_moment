@@ -1,7 +1,7 @@
 {
   "id": "TASK-057-T3-FT-003-W2",
   "title": "Authenticate display-client Bearer credentials",
-  "status": "blocked",
+  "status": "done",
   "wave": "W2",
   "feature": "FT-003",
   "reqs": ["REQ-SEC-001"],
@@ -36,10 +36,38 @@
       "stage": "closure",
       "verdict": "blocked",
       "completed_at": "2026-08-16T16:18:00+05:00",
-      "summary": "TASK-057 is blocked by the external Docker/Buildx progress gap during Attempt 3. The bounded correction and fresh RED are preserved, but current-source GREEN image, mypy, mb-lint and cleanup receipts are unavailable because docker compose build backend remained idle for 5:34 at near-zero CPU without producing an artifact. Resume only after Docker/Buildx is stable with fresh /exe TASK-057, then /verify and separate /red-verify; do not reuse older attempts or old image.",
+      "summary": "The external Docker/Buildx progress gap that blocked Attempt 3 is resolved: the operator produced current image face-moment:manual-20260817 on the healthy desktop-linux builder. The bounded correction and fresh RED remain preserved. Resume with a fresh /exe TASK-057 using the current image, then fresh /verify and separate /red-verify; do not reuse older attempts or old image.",
       "evidence": [
         ".tasks/TASK-057-T3-FT-003-W2/TASK-057-T3-FT-003-W2-S-EXECUTE-final-report-code-03.md",
         ".protocols/TASK-057-T3-FT-003-W2/handoff.md"
+      ]
+    },
+    {
+      "stage": "verify",
+      "attempt": 2,
+      "verdict": "PASS",
+      "completed_at": "2026-08-17T23:40:00+05:00",
+      "summary": "Fresh independent verification on the operator-provided current image passed the auth contract matrix, focused regression probe, mypy, lint, cleanup and forbidden-scope review. Missing, malformed, unknown, reset-old and inactive credential paths returned the required non-disclosing outcomes; valid principal projection and rate-limit behavior passed.",
+      "protocol": ".protocols/TASK-057-T3-FT-003-W2/verification.md",
+      "report": ".tasks/TASK-057-T3-FT-003-W2/TASK-057-T3-FT-003-W2-S-VERIFY-final-report-docs-02.md"
+    },
+    {
+      "stage": "red-verify",
+      "attempt": 3,
+      "verdict": "semantic-pass",
+      "completed_at": "2026-08-17T23:47:00+05:00",
+      "summary": "Fresh adversarial review passed the corrected no-autoflush read boundary, uniform invalid-credential query shape, immutable row-authoritative principal, body override rejection, deterministic rate limits, redaction and cleanup. No material semantic finding remains; kiosk crash evidence is outside TASK-057.",
+      "protocol": ".protocols/TASK-057-T3-FT-003-W2/red-verification.md",
+      "report": ".tasks/TASK-057-T3-FT-003-W2/TASK-057-T3-FT-003-W2-S-RED-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "completed_at": "2026-08-17T23:48:46+05:00",
+      "summary": "Scheduler closed TASK-057 after fresh functional PASS and required T3 semantic-pass using the operator-provided current image. The earlier semantic-fail and external Docker/Buildx blocker were resolved within the accepted task scope; no kiosk/runtime crash issue is attributed to this task.",
+      "evidence": [
+        ".tasks/TASK-057-T3-FT-003-W2/TASK-057-T3-FT-003-W2-S-VERIFY-final-report-docs-02.md",
+        ".tasks/TASK-057-T3-FT-003-W2/TASK-057-T3-FT-003-W2-S-RED-VERIFY-final-report-docs-01.md"
       ]
     }
   ],

@@ -38,6 +38,7 @@ def create_role_app(
                 state["ready"] = False
 
     app = FastAPI(title=f"Face Moment {role}", lifespan=lifespan)
+    app.state.role_state = state
 
     @app.get("/healthz")
     def health() -> dict[str, object]:

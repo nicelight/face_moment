@@ -32,6 +32,15 @@ https://localhost:8443 {
 			}
 		}
 
+		handle /api/realtime/attempts {
+			request_body {
+				max_size 20MiB
+			}
+			reverse_proxy realtime:8002 {
+				header_up X-Forwarded-For {remote_host}
+			}
+		}
+
 		handle /api/inventory/* {
 			reverse_proxy backend:8000 {
 				header_up X-Forwarded-For {remote_host}

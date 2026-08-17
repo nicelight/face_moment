@@ -4,7 +4,7 @@ const DEFAULT_RETRY_DELAY_MS = 1_000;
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-function sensorEndpoint(host) {
+export function normalizeSensorHost(host) {
   const configured = String(host ?? "").trim();
   if (!configured) throw new Error("sensor_host_missing");
 
@@ -21,7 +21,11 @@ function sensorEndpoint(host) {
   if (url.pathname !== "/" && url.pathname !== "") {
     throw new Error("sensor_host_path_invalid");
   }
-  return `${url.origin}${PASSAGE_PATH}`;
+  return url.origin;
+}
+
+function sensorEndpoint(host) {
+  return `${normalizeSensorHost(host)}${PASSAGE_PATH}`;
 }
 
 function isNonNegativeInteger(value) {

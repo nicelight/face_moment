@@ -1,7 +1,7 @@
 {
   "id": "TASK-060-T2-FT-003-W2",
   "title": "Resolve immutable realtime context and readiness",
-  "status": "blocked",
+  "status": "done",
   "wave": "W2",
   "feature": "FT-003",
   "reqs": ["REQ-CAP-002", "REQ-REL-001"],
@@ -27,12 +27,31 @@
       "stage": "closure",
       "verdict": "blocked",
       "completed_at": "2026-08-17T19:03:57+05:00",
-      "summary": "TASK-060 is blocked by the external Docker/Buildx image-build availability gap during bounded Attempt 2. The owner-lock correction and source-overlay 8-test GREEN are retained, but current-image mypy and focused pytest gates could not be completed; no task-local failure disposition is made.",
+      "summary": "The external Docker/Buildx image-build availability gap that blocked bounded Attempt 2 is resolved: the operator produced current image face-moment:manual-20260817 on the healthy desktop-linux builder, with current-image mypy and focused realtime-context tests passing. The owner-lock correction and source-overlay GREEN remain retained. Resume with a fresh /exe TASK-060 using the current image, then fresh /verify and T2 closure.",
       "evidence": [
         ".tasks/TASK-060-T2-FT-003-W2/TASK-060-T2-FT-003-W2-S-EXECUTE-final-report-code-02.md",
         ".protocols/TASK-060-T2-FT-003-W2/handoff.md"
       ],
       "resume_route": "stable Docker/Buildx environment, then fresh `/exe TASK-060-T2-FT-003-W2` Attempt 2 recovery, `/verify`, and T2 closure"
+    },
+    {
+      "stage": "verify",
+      "attempt": 2,
+      "verdict": "PASS",
+      "completed_at": "2026-08-17T23:58:00+05:00",
+      "summary": "Fresh independent T2 verification on the operator-provided current image passed owner-lock and coherent-snapshot behavior under a supported settings update, focused realtime-context tests, mypy, lint, cleanup and forbidden-scope review. The earlier mixed-owner snapshot defect is no longer reproducible.",
+      "protocol": ".protocols/TASK-060-T2-FT-003-W2/verification.md",
+      "report": ".tasks/TASK-060-T2-FT-003-W2/TASK-060-T2-FT-003-W2-S-VERIFY-final-report-docs-02.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "completed_at": "2026-08-18T00:03:01+05:00",
+      "summary": "Scheduler closed TASK-060 after fresh T2 verification PASS. The owner-lock correction and current-image gates passed; the earlier Docker/Buildx blocker and mixed-owner snapshot finding are resolved within task scope. No kiosk/runtime crash issue is attributed to this task.",
+      "evidence": [
+        ".tasks/TASK-060-T2-FT-003-W2/TASK-060-T2-FT-003-W2-S-VERIFY-final-report-docs-02.md",
+        ".tasks/TASK-060-T2-FT-003-W2/TASK-060-T2-FT-003-W2-S-EXECUTE-final-report-code-03.md"
+      ]
     }
   ],
   "docs": [".memory-bank/domains/realtime-search.md", ".memory-bank/contracts/boundary-map.md", ".memory-bank/features/FT-003.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],

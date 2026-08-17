@@ -105,6 +105,51 @@ h1 {
   padding: 1rem;
 }
 
+.display-client-panel {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 38rem;
+  margin-top: 2rem;
+  border-top: 1px solid #516886;
+  padding-top: 1.5rem;
+}
+
+.display-client-panel h3 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.display-client-panel label {
+  font-weight: 700;
+}
+
+.display-client-panel input,
+.display-client-panel button {
+  border: 1px solid #7188a8;
+  border-radius: 0.6rem;
+  color: #f3f6fb;
+  background: #18263b;
+  padding: 0.75rem 1rem;
+  font: inherit;
+}
+
+.display-client-panel button {
+  justify-self: start;
+  cursor: pointer;
+}
+
+.display-client-panel button:hover,
+.display-client-panel button:focus-visible,
+.display-client-panel input:focus-visible {
+  border-color: #87b8ff;
+  outline: 2px solid #87b8ff;
+  outline-offset: 2px;
+}
+
+.display-client-status {
+  margin-bottom: 0;
+}
+
 .camera-panel {
   display: grid;
   gap: 1rem;
@@ -179,5 +224,84 @@ h1 {
 }
 
 .camera-status {
+  margin-bottom: 0;
+}
+
+.sensor-panel {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 38rem;
+  margin-top: 2rem;
+}
+
+.sensor-panel h3 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.sensor-panel label {
+  font-weight: 700;
+}
+
+.sensor-panel input,
+.sensor-panel button {
+  border: 1px solid #7188a8;
+  border-radius: 0.6rem;
+  color: #f3f6fb;
+  background: #18263b;
+  padding: 0.75rem 1rem;
+  font: inherit;
+}
+
+.sensor-panel button {
+  justify-self: start;
+  cursor: pointer;
+}
+
+.sensor-panel button:hover,
+.sensor-panel button:focus-visible,
+.sensor-panel input:focus-visible {
+  border-color: #87b8ff;
+  outline: 2px solid #87b8ff;
+  outline-offset: 2px;
+}
+
+.sensor-status {
+  margin-bottom: 0;
+}
+
+.trigger-panel {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 38rem;
+  margin-top: 2rem;
+  border-top: 1px solid #516886;
+  padding-top: 1.5rem;
+}
+
+.trigger-panel h3 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.trigger-panel button {
+  justify-self: start;
+  border: 1px solid #7188a8;
+  border-radius: 0.6rem;
+  color: #f3f6fb;
+  background: #18263b;
+  padding: 0.75rem 1rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.trigger-panel button:hover,
+.trigger-panel button:focus-visible {
+  border-color: #87b8ff;
+  outline: 2px solid #87b8ff;
+  outline-offset: 2px;
+}
+
+.trigger-status {
   margin-bottom: 0;
 }

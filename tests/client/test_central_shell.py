@@ -16,10 +16,21 @@ def test_central_shell_is_plain_static_and_uses_same_origin_navigation() -> None
     assert 'href="#configuration"' in html
     assert 'href="#debug"' in html
     assert 'id="client-view"' in html
+    assert 'hostInput.id = "sensor-host"' in module
+    assert 'idInput.id = "sensor-id"' in module
+    assert 'secretInput.id = "sensor-secret"' in module
+    assert 'save.id = "sensor-save"' in module
+    assert 'input.id = "display-client-token"' in module
+    assert 'save.id = "display-client-save"' in module
+    assert 'face-moment:display-client-configured' in module
+    assert 'testTrigger.id = "test-trigger"' in module
+    assert 'face-moment:trigger-request' in module
+    assert 'trigger_source: "physical"' in module
     assert "Добро пожаловать" in module
     assert "local advertising" not in module.lower()
     assert "fetch(" not in module
     assert "WebSocket" not in module
+    assert "__FACE_MOMENT_SENSOR_CONFIG__" not in module
     assert "http://" not in html + module + stylesheet
     assert "https://" not in html + module + stylesheet
 

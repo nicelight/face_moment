@@ -1,7 +1,7 @@
 {
   "id": "TASK-059-T3-FT-003-W3",
   "title": "Manually hand off the central token to the kiosk profile",
-  "status": "blocked",
+  "status": "done",
   "wave": "W3",
   "feature": "FT-003",
   "reqs": ["REQ-SEC-001", "REQ-REL-001"],
@@ -19,6 +19,63 @@
         ".memory-bank/tasks/TASK-057-T3-FT-003-W2.task.json"
       ],
       "resume_route": "close TASK-057 through its recorded stable-Docker fresh `/exe` -> `/verify` -> `/red-verify` route, then rerun promotion"
+    },
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "PASS",
+      "completed_at": "2026-08-18T01:35:00+05:00",
+      "summary": "Fresh independent verification passed central-token copy, profile persistence across reload/Chromium restart/replacement, Authorization-only use, leakage scans, cleanup and forbidden-scope review. The external realtime 502 was classified as a pre-existing restart-loop outside TASK-059.",
+      "protocol": ".protocols/TASK-059-T3-FT-003-W3/verification.md",
+      "report": ".tasks/TASK-059-T3-FT-003-W3/TASK-059-T3-FT-003-W3-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "red-verify",
+      "attempt": 1,
+      "verdict": "semantic-concern",
+      "completed_at": "2026-08-18T01:49:00+05:00",
+      "summary": "Fresh adversarial review found an unresolved security/ownership branch: the public client #configuration UI allows an unauthenticated local user to overwrite the kiosk token in localStorage. Canonical docs require an authenticated operator/developer to perform the manual handoff but do not explicitly decide whether the local save control must enforce that role. Task remains open pending operator clarification; the realtime 502 remains external.",
+      "protocol": ".protocols/TASK-059-T3-FT-003-W3/red-verification.md",
+      "report": ".tasks/TASK-059-T3-FT-003-W3/TASK-059-T3-FT-003-W3-S-RED-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "clarification",
+      "verdict": "resolved",
+      "completed_at": "2026-08-18T02:00:00+05:00",
+      "summary": "Operator selected physical/local access to the managed Linux browser profile as sufficient for setting and replacing the manually handed-off kiosk token. An additional authenticated role restriction on the client Save control is not required for this pilot handoff; fresh execution and independent verification remain required.",
+      "evidence": [
+        ".protocols/AUTONOMOUS-RUN/decision-log.md",
+        ".protocols/AUTONOMOUS-RUN/status.md"
+      ]
+    },
+    {
+      "stage": "verify",
+      "attempt": 2,
+      "verdict": "PASS",
+      "completed_at": "2026-08-18T02:41:40+05:00",
+      "summary": "Fresh independent verification after Attempt 2 passed manual kiosk profile save, persistence across reload and Chromium restart, replacement/reset seam, Authorization-only use, no URL/non-Authorization-header/console leakage, no automatic injection path and cleanup. Operator policy allows physical/local managed-profile access without an additional Save role-gate. The observed realtime 502 was classified as the external restart-loop and excluded from TASK-059.",
+      "protocol": ".protocols/TASK-059-T3-FT-003-W3/verification.md",
+      "report": ".tasks/TASK-059-T3-FT-003-W3/TASK-059-T3-FT-003-W3-S-VERIFY-final-report-docs-02.md"
+    },
+    {
+      "stage": "red-verify",
+      "attempt": 2,
+      "verdict": "semantic-pass",
+      "completed_at": "2026-08-18T02:44:46+05:00",
+      "summary": "Fresh adversarial semantic review found no material break in the task-scoped manual kiosk-profile handoff. Manual provenance, managed-profile persistence/replacement, Authorization-only transport, no leakage, no automatic transfer and forbidden-scope boundaries were supported by current implementation and fresh browser evidence. The operator's physical/local-access policy was applied without reopening it; the external realtime 502 was excluded.",
+      "protocol": ".protocols/TASK-059-T3-FT-003-W3/red-verification.md",
+      "report": ".tasks/TASK-059-T3-FT-003-W3/TASK-059-T3-FT-003-W3-S-RED-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "completed_at": "2026-08-18T02:44:46+05:00",
+      "summary": "TASK-059 closed after fresh execution reconciliation, independent functional PASS and required T3 semantic-pass. No product code change was needed after the accepted local-access policy decision.",
+      "evidence": [
+        ".tasks/TASK-059-T3-FT-003-W3/TASK-059-T3-FT-003-W3-S-EXECUTE-final-report-docs-02.md",
+        ".tasks/TASK-059-T3-FT-003-W3/TASK-059-T3-FT-003-W3-S-VERIFY-final-report-docs-02.md",
+        ".tasks/TASK-059-T3-FT-003-W3/TASK-059-T3-FT-003-W3-S-RED-VERIFY-final-report-docs-01.md"
+      ]
     }
   ],
   "docs": [".memory-bank/features/FT-003.md", ".memory-bank/domains/display-client-access.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],

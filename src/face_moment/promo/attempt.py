@@ -247,6 +247,38 @@ class PromoAttemptRepository:
             raise PromoAttemptNotFoundError(f"{spa_id}/{client_attempt_id}")
         return attempt
 
+    def mark_no_proposals(
+        self, attempt: PromoAttempt, *, now: datetime | None = None
+    ) -> PromoAttempt:
+        """Close an admitted zero-proposal Attempt without invoking search."""
+
+        if attempt.processing_status != "accepted":
+            raise ValueError("only an accepted Attempt can be closed as no_proposals")
+        timestamp = _utc(now)
+        attempt.processing_status = "no_success"
+        attempt.domain_outcome = "no_proposals"
+        attempt.slot_decided_at = timestamp
+        attempt.search_finished_at = timestamp
+        attempt.updated_at = timestamp
+        self._session.flush()
+        return attempt
+
+    def mark_internal_failure(
+        self, attempt: PromoAttempt, *, now: datetime | None = None
+    ) -> PromoAttempt:
+        """Record the accepted FT-003 seam before FT-004 search is wired."""
+
+        if attempt.processing_status != "accepted":
+            raise ValueError("only an accepted Attempt can be marked internal_failure")
+        timestamp = _utc(now)
+        attempt.processing_status = "internal_failure"
+        attempt.domain_outcome = None
+        attempt.slot_decided_at = timestamp
+        attempt.search_finished_at = timestamp
+        attempt.updated_at = timestamp
+        self._session.flush()
+        return attempt
+
     def _find(
         self, spa_id: uuid.UUID, client_attempt_id: uuid.UUID
     ) -> PromoAttempt | None:
@@ -331,3 +363,11 @@ class PromoAttemptRepository:
             "created_at": now,
             "updated_at": now,
         }
+
+
+def _utc(value: datetime | None) -> datetime:
+    if value is None:
+        return datetime.now(timezone.utc)
+    if value.tzinfo is None:
+        raise ValueError("promo Attempt timestamps must be timezone-aware")
+    return value.astimezone(timezone.utc)
