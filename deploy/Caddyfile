@@ -56,6 +56,12 @@ https://localhost:8443 {
 			}
 		}
 
+		handle /staff/display-clients {
+			reverse_proxy backend:8000 {
+				header_up X-Forwarded-For {remote_host}
+			}
+		}
+
 		handle /client/* {
 			reverse_proxy backend:8000
 		}

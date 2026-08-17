@@ -1,7 +1,7 @@
 {
   "id": "TASK-045-T3-FT-003-W3",
   "title": "Admit structurally bounded realtime requests",
-  "status": "planned",
+  "status": "blocked",
   "wave": "W3",
   "feature": "FT-003",
   "reqs": ["REQ-CAP-002", "REQ-DIAG-001", "REQ-SEC-001"],
@@ -13,7 +13,19 @@
     {"name": "Realtime attempt API tests", "command": "docker compose run --rm backend python -m pytest tests/promo/test_realtime_attempt_api.py", "required": true},
     {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "closure",
+      "verdict": "blocked",
+      "completed_at": "2026-08-17T19:03:57+05:00",
+      "summary": "TASK-045 is blocked by its unfinished upstream dependencies TASK-057 and TASK-060; TASK-060 is blocked on the external Docker/Buildx image-build capability gap and cannot be promoted through this prerequisite.",
+      "evidence": [
+        ".memory-bank/tasks/TASK-060-T2-FT-003-W2.task.json",
+        ".memory-bank/tasks/TASK-057-T3-FT-003-W2.task.json"
+      ],
+      "resume_route": "close the blocked upstream tasks through their recorded fresh `/exe` -> `/verify` routes, then rerun the scheduler promotion pass"
+    }
+  ],
   "docs": [".memory-bank/contracts/realtime-attempt-api.md", ".memory-bank/domains/promo-attempt.md", ".memory-bank/features/FT-003.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
   "evidence_required": [
     "FT-003-AC-006 RED: POST /api/realtime/attempts is absent; GREEN: the real edge/application boundary strictly validates manifest v1 and ordered crop_000..crop_019 JPEG parts, admits one request key once with its immutable snapshot, maps zero proposals to one explicit non-success Attempt, returns stored/in_progress idempotency results, accepts 20,971,520 total bytes and rejects 20,971,521 with 413 before any Attempt, and maps prerequisite auth/readiness failures without duplicating their owned proofs; decisive comparison: direct boundary requests inspect status/outcome and Attempt rows for valid, invalid, duplicate, zero and exact-byte fixtures; artifact: focused pytest and edge evidence under .tasks/TASK-045-T3-FT-003-W3/."

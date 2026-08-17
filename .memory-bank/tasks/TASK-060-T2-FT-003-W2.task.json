@@ -1,7 +1,7 @@
 {
   "id": "TASK-060-T2-FT-003-W2",
   "title": "Resolve immutable realtime context and readiness",
-  "status": "ready",
+  "status": "blocked",
   "wave": "W2",
   "feature": "FT-003",
   "reqs": ["REQ-CAP-002", "REQ-REL-001"],
@@ -13,7 +13,28 @@
     {"name": "Realtime context resolver tests", "command": "docker compose run --rm backend python -m pytest tests/serving_control/test_realtime_context.py", "required": true},
     {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "FAIL",
+      "completed_at": "2026-08-17T18:25:57+05:00",
+      "summary": "Fresh independent T2 verification found a reproducible mixed owner snapshot: after a supported settings update commits between the SPA read and settings read, resolve_realtime_context returned settings_revision=3 with threshold=0.91 and quality version 2. Focused tests (7), mypy (57 files), mb-lint (87 files), git diff --check, closed SQL-only, invalid-release 503 and nested-immutability probes otherwise passed. See the admitted finding in the protocol/report.",
+      "protocol": ".protocols/TASK-060-T2-FT-003-W2/verification.md",
+      "report": ".tasks/TASK-060-T2-FT-003-W2/TASK-060-T2-FT-003-W2-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "blocked",
+      "completed_at": "2026-08-17T19:03:57+05:00",
+      "summary": "TASK-060 is blocked by the external Docker/Buildx image-build availability gap during bounded Attempt 2. The owner-lock correction and source-overlay 8-test GREEN are retained, but current-image mypy and focused pytest gates could not be completed; no task-local failure disposition is made.",
+      "evidence": [
+        ".tasks/TASK-060-T2-FT-003-W2/TASK-060-T2-FT-003-W2-S-EXECUTE-final-report-code-02.md",
+        ".protocols/TASK-060-T2-FT-003-W2/handoff.md"
+      ],
+      "resume_route": "stable Docker/Buildx environment, then fresh `/exe TASK-060-T2-FT-003-W2` Attempt 2 recovery, `/verify`, and T2 closure"
+    }
+  ],
   "docs": [".memory-bank/domains/realtime-search.md", ".memory-bank/contracts/boundary-map.md", ".memory-bank/features/FT-003.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
   "evidence_required": [
     "realtime-search.md#immutable-active-search-context RED: no owner resolver/readiness boundary exists; GREEN: one call consumes the authenticated spa_id plus owner stores and committed serving revision to return the exact immutable snapshot, copies it before admission, never accepts client overrides, and reports closed 503 readiness before promo admission with no Attempt/search/session whenever any required value/model admission is absent; decisive comparison: complete/missing/override and settings-change-after-resolution fixtures inspect snapshot immutability and zero downstream writes; artifact: focused pytest under .tasks/TASK-060-T2-FT-003-W2/."

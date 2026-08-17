@@ -4,6 +4,21 @@ status: active
 ---
 # Changelog
 
+## [2026-08-17] Wave W2 — reconciled camera and kiosk-quality closures
+- Reconciled the scheduler-owned `done` closures for `TASK-061-T2-FT-003-W2`
+  and `TASK-062-T2-FT-003-W2` with their indexed independent T2 verification
+  evidence. Camera selection now invalidates stale overlapping media opens;
+  kiosk JPEG quality exposes exactly the six accepted values, persists in the
+  managed profile, and applies changes only to the next Attempt snapshot.
+- Preserved the earlier `TASK-061` verification FAIL and bounded retry history;
+  no per-task `/red-verify` was required for these T2 tasks. Focused,
+  managed-Chromium, container-shell and Memory Bank gates are linked from the
+  task records and verification protocols.
+- Kept `FT-003` and its mapped requirements `planned` because the remaining
+  FT-003 tasks are either blocked on recorded upstream/environment evidence or
+  unfinished. No promotion, unblock, new task, dependency, spec or contract
+  decision was made by this sync.
+
 ## [2026-08-16] FT-003 — kiosk sandbox/service boundary execution handoff
 - Added the source-managed `deploy/kiosk/spa-promo-client.service` boundary:
   Chromium is pinned to the central `https://localhost:8443/` origin, runs as

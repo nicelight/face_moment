@@ -104,3 +104,80 @@ h1 {
   border-radius: 0.75rem;
   padding: 1rem;
 }
+
+.camera-panel {
+  display: grid;
+  gap: 1rem;
+  max-width: 52rem;
+  margin-top: 2rem;
+}
+
+.quality-panel {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 22rem;
+  margin-top: 2rem;
+}
+
+.quality-panel label {
+  font-weight: 700;
+}
+
+.quality-panel select {
+  border: 1px solid #7188a8;
+  border-radius: 0.6rem;
+  color: #f3f6fb;
+  background: #18263b;
+  padding: 0.75rem 1rem;
+  font: inherit;
+}
+
+.quality-panel select:focus-visible {
+  border-color: #87b8ff;
+  outline: 2px solid #87b8ff;
+  outline-offset: 2px;
+}
+
+.quality-status {
+  margin-bottom: 0;
+}
+
+.camera-panel label {
+  font-weight: 700;
+}
+
+.camera-panel select,
+.camera-panel button {
+  border: 1px solid #7188a8;
+  border-radius: 0.6rem;
+  color: #f3f6fb;
+  background: #18263b;
+  padding: 0.75rem 1rem;
+  font: inherit;
+}
+
+.camera-panel button {
+  justify-self: start;
+  cursor: pointer;
+}
+
+.camera-panel button:hover,
+.camera-panel button:focus-visible,
+.camera-panel select:focus-visible {
+  border-color: #87b8ff;
+  outline: 2px solid #87b8ff;
+  outline-offset: 2px;
+}
+
+.camera-preview {
+  width: min(100%, 48rem);
+  min-height: 12rem;
+  border: 1px solid #516886;
+  border-radius: 1rem;
+  background: #090e18;
+  object-fit: contain;
+}
+
+.camera-status {
+  margin-bottom: 0;
+}

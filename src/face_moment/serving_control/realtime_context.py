@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from enum import StrEnum
 import json
 import math
+from types import MappingProxyType
 from typing import cast
 import uuid
 
@@ -22,12 +24,17 @@ from sqlalchemy.orm import Mapped, Session, mapped_column
 from sqlalchemy.sql import func
 
 from face_moment.infrastructure.database import Base
-from face_moment.processing.revisions import PipelineCode
+from face_moment.processing.revisions import (
+    IneligiblePipelineRevisionError,
+    PipelineCode,
+    PipelineRevisionRepository,
+)
 from face_moment.serving_control.ingest_target import Spa
 
 _MAX_QUALITY_SETTINGS_KEYS = 16
 _MAX_QUALITY_SETTINGS_BYTES = 4096
 _MAX_QUERY_SOURCE_LENGTH = 32
+_MAX_RELEASE_ID_LENGTH = 255
 
 
 class QuerySource(StrEnum):
@@ -81,6 +88,33 @@ class ReferenceSearchSettingsAlreadyExistsError(ValueError):
 
 class UnknownRealtimeContextSpaError(LookupError):
     pass
+
+
+class RealtimeReadinessClosedError(RuntimeError):
+    """The realtime boundary must return 503 before promo admission."""
+
+    status_code = 503
+
+    def __init__(self, missing_fields: tuple[str, ...]) -> None:
+        self.missing_fields = missing_fields
+        super().__init__("realtime readiness is closed")
+
+
+@dataclass(frozen=True, slots=True)
+class RealtimeContext:
+    """One copied, server-authoritative context for a realtime Attempt."""
+
+    settings_revision: int
+    spa_id: uuid.UUID
+    visit_date: date
+    pipeline_revision_id: uuid.UUID
+    pipeline_code: PipelineCode
+    query_source: QuerySource
+    reference_threshold: float
+    min_query_face_quality: float
+    quality_settings: Mapping[str, object]
+    calibration_id: uuid.UUID | None
+    release_id: str
 
 
 class RealtimeContextRepository:
@@ -223,6 +257,102 @@ class RealtimeContextRepository:
             )
         )
 
+    def resolve_realtime_context(
+        self,
+        *,
+        spa_id: uuid.UUID,
+        admitted_pipeline_revision_id: uuid.UUID | None,
+        release_id: str,
+    ) -> RealtimeContext:
+        """Resolve the complete owner snapshot before realtime admission.
+
+        The caller supplies only the authenticated SPA identity and the
+        already-admitted model revision identity. Date, revision, query source,
+        threshold, quality settings and calibration are read from owner state.
+        This method performs reads only; a closed result is intentionally
+        represented as a bounded 503-classified exception for the realtime
+        boundary to map before promo admission.
+        """
+
+        # Supported serving-control updates lock this owner row before changing
+        # the revision, active date, or settings. Holding the same lock across
+        # all reads keeps those values in one coherent owner snapshot.
+        spa = self._load_spa(spa_id, for_update=True)
+        missing_fields: list[str] = []
+        if spa.settings_revision <= 0:
+            missing_fields.append("settings_revision")
+        if spa.active_visit_date is None:
+            missing_fields.append("visit_date")
+
+        try:
+            revision = PipelineRevisionRepository(self._session).resolve_eligible(
+                spa.serving_pipeline_revision_id
+            )
+        except IneligiblePipelineRevisionError:
+            revision = None
+            missing_fields.append("pipeline_revision")
+
+        settings: ReferenceSearchSettings | None = None
+        if revision is not None:
+            settings = self._session.scalar(
+                select(ReferenceSearchSettings).where(
+                    ReferenceSearchSettings.spa_id == spa.id,
+                    ReferenceSearchSettings.pipeline_code == revision.pipeline_code.value,
+                    ReferenceSearchSettings.query_source
+                    == QuerySource.REFERENCE.value,
+                )
+            )
+            if settings is None:
+                missing_fields.append("reference_search_settings")
+
+            if admitted_pipeline_revision_id is None:
+                missing_fields.append("model_admission")
+            elif admitted_pipeline_revision_id != revision.id:
+                missing_fields.append("model_revision")
+        else:
+            if admitted_pipeline_revision_id is None:
+                missing_fields.append("model_admission")
+
+        try:
+            normalized_release_id = self._release_id(release_id)
+        except ValueError:
+            normalized_release_id = ""
+            missing_fields.append("release_id")
+
+        if missing_fields or revision is None or settings is None:
+            raise RealtimeReadinessClosedError(tuple(dict.fromkeys(missing_fields)))
+
+        try:
+            threshold = self._finite(
+                settings.reference_threshold, "reference_threshold"
+            )
+            min_query_face_quality = self._finite(
+                settings.min_query_face_quality, "min_query_face_quality"
+            )
+            quality_settings = self._quality_settings(settings.quality_settings)
+        except ValueError as error:
+            raise RealtimeReadinessClosedError((str(error).split(" ", 1)[0],)) from None
+
+        if spa.active_visit_date is None:
+            raise RealtimeReadinessClosedError(("visit_date",))
+
+        frozen_quality_settings = cast(
+            Mapping[str, object], _freeze_json(quality_settings)
+        )
+        return RealtimeContext(
+            settings_revision=spa.settings_revision,
+            spa_id=spa.id,
+            visit_date=spa.active_visit_date,
+            pipeline_revision_id=revision.id,
+            pipeline_code=revision.pipeline_code,
+            query_source=QuerySource.REFERENCE,
+            reference_threshold=threshold,
+            min_query_face_quality=min_query_face_quality,
+            quality_settings=frozen_quality_settings,
+            calibration_id=settings.calibration_id,
+            release_id=normalized_release_id,
+        )
+
     def _load_spa(self, spa_id: uuid.UUID, *, for_update: bool) -> Spa:
         statement = select(Spa).where(Spa.id == spa_id)
         if for_update:
@@ -239,6 +369,17 @@ class RealtimeContextRepository:
         if not isinstance(pipeline_code, PipelineCode):
             raise ValueError(f"unsupported pipeline code: {pipeline_code}")
         return pipeline_code.value
+
+    @staticmethod
+    def _release_id(release_id: str) -> str:
+        if not isinstance(release_id, str):
+            raise ValueError("release_id must be a non-empty string")
+        normalized = release_id.strip()
+        if not normalized:
+            raise ValueError("release_id must be a non-empty string")
+        if len(normalized) > _MAX_RELEASE_ID_LENGTH:
+            raise ValueError("release_id exceeds 255 characters")
+        return normalized
 
     @staticmethod
     def _finite(value: float, field_name: str) -> float:
@@ -282,3 +423,13 @@ class RealtimeContextRepository:
     def _touch_spa(spa: Spa, now: datetime | None) -> None:
         spa.settings_revision += 1
         spa.settings_updated_at = RealtimeContextRepository._utc(now)
+
+
+def _freeze_json(value: object) -> object:
+    if isinstance(value, dict):
+        return MappingProxyType(
+            {str(key): _freeze_json(item) for key, item in value.items()}
+        )
+    if isinstance(value, list):
+        return tuple(_freeze_json(item) for item in value)
+    return value

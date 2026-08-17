@@ -2,14 +2,16 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from datetime import date, datetime, timezone
+from inspect import signature
 import importlib
 import math
+from threading import Event, Thread
 import uuid
 
 import pytest
 from alembic import command as alembic_command
 from alembic.config import Config
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session
 
@@ -17,6 +19,8 @@ from face_moment.infrastructure.database import APP_SCHEMA
 from face_moment.infrastructure.settings import Settings
 from face_moment.processing import PipelineCode, PipelineRevisionRepository
 from face_moment.serving_control import (
+    QuerySource,
+    RealtimeReadinessClosedError,
     ReferenceSearchSettingsAlreadyExistsError,
     ReferenceSearchSettingsNotFoundError,
     RealtimeContextRepository,
@@ -273,3 +277,255 @@ def test_realtime_context_migration_round_trip(
     assert "reference_search_settings" in inspect(
         disposable_context_engine
     ).get_table_names(schema=APP_SCHEMA)
+
+
+def _prepare_complete_realtime_context(
+    engine: Engine,
+    spa_id: uuid.UUID,
+) -> None:
+    with Session(engine) as session:
+        repository = RealtimeContextRepository(session)
+        repository.provision_reference_settings(
+            spa_id=spa_id,
+            pipeline_code=PipelineCode.OPENCV_SFACE,
+            reference_threshold=0.71,
+            min_query_face_quality=0.42,
+            quality_settings={"version": 1, "minimum_edge": 48},
+            calibration_id=uuid.UUID("11111111-1111-1111-1111-111111111111"),
+            now=datetime(2026, 8, 17, 0, 1, tzinfo=timezone.utc),
+        )
+        repository.update_active_visit_date(
+            spa_id=spa_id,
+            active_visit_date=date(2026, 8, 17),
+            now=datetime(2026, 8, 17, 0, 1, tzinfo=timezone.utc),
+        )
+        session.commit()
+
+
+def test_resolve_realtime_context_returns_complete_owner_snapshot_without_writes(
+    disposable_context_engine: Engine,
+) -> None:
+    spa_id, revision_id = _create_spa(disposable_context_engine)
+    try:
+        _prepare_complete_realtime_context(disposable_context_engine, spa_id)
+        statements: list[str] = []
+
+        def capture_statement(
+            _connection: object,
+            _cursor: object,
+            statement: str,
+            _parameters: object,
+            _context: object,
+            _executemany: bool,
+        ) -> None:
+            statements.append(statement)
+
+        event.listen(disposable_context_engine, "before_cursor_execute", capture_statement)
+        try:
+            with Session(disposable_context_engine) as session:
+                context = RealtimeContextRepository(session).resolve_realtime_context(
+                    spa_id=spa_id,
+                    admitted_pipeline_revision_id=revision_id,
+                    release_id=" server-2026.08.17 ",
+                )
+        finally:
+            event.remove(
+                disposable_context_engine, "before_cursor_execute", capture_statement
+            )
+
+        assert context.spa_id == spa_id
+        assert context.settings_revision == 3
+        assert context.visit_date == date(2026, 8, 17)
+        assert context.pipeline_revision_id == revision_id
+        assert context.pipeline_code is PipelineCode.OPENCV_SFACE
+        assert context.query_source is QuerySource.REFERENCE
+        assert context.reference_threshold == 0.71
+        assert context.min_query_face_quality == 0.42
+        assert context.quality_settings == {"version": 1, "minimum_edge": 48}
+        assert context.calibration_id == uuid.UUID(
+            "11111111-1111-1111-1111-111111111111"
+        )
+        assert context.release_id == "server-2026.08.17"
+        assert all(statement.lstrip().upper().startswith("SELECT") for statement in statements)
+    finally:
+        _cleanup(disposable_context_engine, spa_id, revision_id)
+
+
+def test_resolved_context_isolated_from_later_owner_setting_changes(
+    disposable_context_engine: Engine,
+) -> None:
+    spa_id, revision_id = _create_spa(disposable_context_engine)
+    try:
+        _prepare_complete_realtime_context(disposable_context_engine, spa_id)
+        with Session(disposable_context_engine) as session:
+            context = RealtimeContextRepository(session).resolve_realtime_context(
+                spa_id=spa_id,
+                admitted_pipeline_revision_id=revision_id,
+                release_id="server-2026.08.17",
+            )
+
+        with Session(disposable_context_engine) as session:
+            RealtimeContextRepository(session).update_reference_settings(
+                spa_id=spa_id,
+                pipeline_code=PipelineCode.OPENCV_SFACE,
+                reference_threshold=0.91,
+                min_query_face_quality=0.77,
+                quality_settings={"version": 2, "minimum_edge": 64},
+                now=datetime(2026, 8, 17, 0, 2, tzinfo=timezone.utc),
+            )
+            session.commit()
+
+        assert context.reference_threshold == 0.71
+        assert context.min_query_face_quality == 0.42
+        assert context.quality_settings == {"version": 1, "minimum_edge": 48}
+        with pytest.raises(TypeError):
+            context.quality_settings["version"] = 2  # type: ignore[index]
+    finally:
+        _cleanup(disposable_context_engine, spa_id, revision_id)
+
+
+def test_resolve_realtime_context_serializes_supported_settings_update(
+    disposable_context_engine: Engine,
+) -> None:
+    spa_id, revision_id = _create_spa(disposable_context_engine)
+    updater_engine = create_engine(disposable_context_engine.url, pool_pre_ping=True)
+    update_started = Event()
+    update_errors: list[BaseException] = []
+    updater_thread: Thread | None = None
+    triggered = False
+
+    def update_settings() -> None:
+        update_started.set()
+        try:
+            with Session(updater_engine) as session:
+                RealtimeContextRepository(session).update_reference_settings(
+                    spa_id=spa_id,
+                    pipeline_code=PipelineCode.OPENCV_SFACE,
+                    reference_threshold=0.91,
+                    min_query_face_quality=0.77,
+                    quality_settings={"version": 2},
+                    now=datetime(2026, 8, 17, 0, 2, tzinfo=timezone.utc),
+                )
+                session.commit()
+        except BaseException as error:
+            update_errors.append(error)
+
+    def interleave_supported_update(
+        _connection: object,
+        _cursor: object,
+        statement: str,
+        _parameters: object,
+        _context: object,
+        _executemany: bool,
+    ) -> None:
+        nonlocal triggered, updater_thread
+        if triggered or "pipeline_revisions" not in statement.lower():
+            return
+        triggered = True
+        updater_thread = Thread(target=update_settings)
+        updater_thread.start()
+        assert update_started.wait(timeout=5)
+
+    try:
+        _prepare_complete_realtime_context(disposable_context_engine, spa_id)
+        event.listen(
+            disposable_context_engine,
+            "before_cursor_execute",
+            interleave_supported_update,
+        )
+        try:
+            with Session(disposable_context_engine) as session:
+                context = RealtimeContextRepository(session).resolve_realtime_context(
+                    spa_id=spa_id,
+                    admitted_pipeline_revision_id=revision_id,
+                    release_id="server-2026.08.17",
+                )
+        finally:
+            event.remove(
+                disposable_context_engine,
+                "before_cursor_execute",
+                interleave_supported_update,
+            )
+
+        assert triggered
+        assert updater_thread is not None
+        updater_thread.join(timeout=5)
+        assert not updater_thread.is_alive()
+        assert update_errors == []
+        assert context.settings_revision == 3
+        assert context.reference_threshold == 0.71
+        assert context.min_query_face_quality == 0.42
+        assert context.quality_settings == {"version": 1, "minimum_edge": 48}
+
+        with Session(disposable_context_engine) as session:
+            updated_settings = RealtimeContextRepository(session).get_reference_settings(
+                spa_id=spa_id,
+                pipeline_code=PipelineCode.OPENCV_SFACE,
+            )
+            assert updated_settings.reference_threshold == 0.91
+            assert updated_settings.quality_settings == {"version": 2}
+    finally:
+        if updater_thread is not None and updater_thread.is_alive():
+            updater_thread.join(timeout=5)
+        updater_engine.dispose()
+        _cleanup(disposable_context_engine, spa_id, revision_id)
+
+
+def test_missing_owner_value_or_model_admission_closes_realtime_with_503(
+    disposable_context_engine: Engine,
+) -> None:
+    spa_id, revision_id = _create_spa(disposable_context_engine)
+    try:
+        with Session(disposable_context_engine) as session:
+            with pytest.raises(RealtimeReadinessClosedError) as error:
+                RealtimeContextRepository(session).resolve_realtime_context(
+                    spa_id=spa_id,
+                    admitted_pipeline_revision_id=None,
+                    release_id="server-2026.08.17",
+                )
+
+        assert error.value.status_code == 503
+        assert error.value.missing_fields == (
+            "visit_date",
+            "reference_search_settings",
+            "model_admission",
+        )
+
+        _prepare_complete_realtime_context(disposable_context_engine, spa_id)
+        with Session(disposable_context_engine) as session:
+            with pytest.raises(RealtimeReadinessClosedError) as missing_model:
+                RealtimeContextRepository(session).resolve_realtime_context(
+                    spa_id=spa_id,
+                    admitted_pipeline_revision_id=None,
+                    release_id="server-2026.08.17",
+                )
+        assert missing_model.value.missing_fields == ("model_admission",)
+    finally:
+        _cleanup(disposable_context_engine, spa_id, revision_id)
+
+
+def test_client_cannot_supply_context_overrides_or_a_different_model_revision(
+    disposable_context_engine: Engine,
+) -> None:
+    spa_id, revision_id = _create_spa(disposable_context_engine)
+    try:
+        _prepare_complete_realtime_context(disposable_context_engine, spa_id)
+        parameters = signature(
+            RealtimeContextRepository.resolve_realtime_context
+        ).parameters
+        assert "visit_date" not in parameters
+        assert "pipeline_code" not in parameters
+        assert "reference_threshold" not in parameters
+        assert "quality_settings" not in parameters
+
+        with Session(disposable_context_engine) as session:
+            with pytest.raises(RealtimeReadinessClosedError) as error:
+                RealtimeContextRepository(session).resolve_realtime_context(
+                    spa_id=spa_id,
+                    admitted_pipeline_revision_id=uuid.uuid4(),
+                    release_id="server-2026.08.17",
+                )
+        assert error.value.status_code == 503
+        assert error.value.missing_fields == ("model_revision",)
+    finally:
+        _cleanup(disposable_context_engine, spa_id, revision_id)

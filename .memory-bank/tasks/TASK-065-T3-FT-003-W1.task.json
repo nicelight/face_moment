@@ -23,7 +23,7 @@
       "stage": "closure",
       "verdict": "blocked",
       "completed_at": "2026-08-16T12:30:02+05:00",
-      "summary": "TASK-065 is blocked on the upstream pilot-host/external-observer capability and ownership of the pre-existing host PostgreSQL listener. Resume /exe TASK-065-T3-FT-003-W1 on an isolated pilot-host-capable environment with an authorized outside observer; do not publish internal ports or mutate native PostgreSQL as an inferred task tactic.",
+      "summary": "The real-runtime topology proof is deferred until the application is actually running in the real runtime; before that point this verification is optional and is not a blocker for local feature implementation. Keep the task-specific acceptance evidence pending. Later, run /exe TASK-065-T3-FT-003-W1 on an isolated pilot-host-capable environment with an authorized outside observer; do not publish internal ports or mutate native PostgreSQL as an inferred task tactic.",
       "evidence": [
         ".protocols/TASK-065-T3-FT-003-W1/verification.md",
         ".tasks/TASK-065-T3-FT-003-W1/TASK-065-T3-FT-003-W1-S-VERIFY-final-report-docs-01.md"

@@ -27,7 +27,7 @@
       "stage": "closure",
       "verdict": "blocked",
       "completed_at": "2026-08-16T14:53:18+05:00",
-      "summary": "TASK-049 is blocked on the upstream pilot-host capability gap. Source-only GREEN cannot close this T3 task. Resume only in an authorized pilot-host-capable context where the source-managed unit is already installed and running as display, then rerun fresh /verify; do not install, start, stop or restore kiosk Chrome/service as an inferred tactic. Direct dependent TASK-054 is already blocked by TASK-046/TASK-052.",
+      "summary": "TASK-049 still requires a real-machine pilot-host check for its T3 acceptance; that deferred evidence is not a blocker for local feature development or independent local tasks. Source-only GREEN cannot close this task. Resume later in an authorized pilot-host-capable context where the source-managed unit is already installed and running as display, then rerun fresh /verify; do not install, start, stop or restore kiosk Chrome/service as an inferred tactic. Direct dependent TASK-054 remains separately blocked by TASK-046/TASK-052.",
       "evidence": [
         ".protocols/TASK-049-T3-FT-003-W2/verification.md",
         ".tasks/TASK-049-T3-FT-003-W2/verifier-runtime-probe-01.md"

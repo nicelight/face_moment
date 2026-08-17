@@ -1,7 +1,7 @@
 {
   "id": "TASK-062-T2-FT-003-W2",
   "title": "Persist and apply kiosk JPEG quality",
-  "status": "ready",
+  "status": "done",
   "wave": "W2",
   "feature": "FT-003",
   "reqs": ["REQ-CAP-002"],
@@ -9,7 +9,29 @@
   "touched_files": ["client/", "tests/client/"],
   "tier": "T2",
   "gates": [{"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "PASS",
+      "completed_at": "2026-08-17T20:55:44+05:00",
+      "summary": "Fresh independent T2 verification passed the exact 0.7/0.75/0.8/0.85/0.9/0.95 allow-list and default 0.85, managed-profile localStorage reload and Chromium restart retention, immutable active Attempt snapshot, and next-Attempt-only application. Fresh focused, syntax, diff, mb-lint and container gates also passed. Source/access-log inspection found no crop, encoding, multipart or server mutation and no scope expansion. Finding-adjudication used behavior/state and boundary/scope focuses; Codex Luna xhigh runtime co-review was unavailable because no delegated-reviewer/subagent launch API was exposed, including the one required retry.",
+      "protocol": ".protocols/TASK-062-T2-FT-003-W2/verification.md",
+      "report": ".tasks/TASK-062-T2-FT-003-W2/TASK-062-T2-FT-003-W2-S-VERIFY-final-report-docs-01.md",
+      "browser_evidence": ".tasks/TASK-062-T2-FT-003-W2/TASK-062-T2-FT-003-W2-S-VERIFY-probe-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "completed_at": "2026-08-17T20:56:00+05:00",
+      "summary": "Scheduler closed TASK-062 after fresh T2 /verify PASS; the six-value kiosk JPEG quality profile, persistence and immutable next-Attempt snapshot outcome is complete. No per-task /red-verify is required for T2.",
+      "evidence": [
+        ".protocols/TASK-062-T2-FT-003-W2/verification.md",
+        ".tasks/TASK-062-T2-FT-003-W2/TASK-062-T2-FT-003-W2-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-062-T2-FT-003-W2/TASK-062-T2-FT-003-W2-S-EXECUTE-final-report-code-01.md"
+      ]
+    }
+  ],
   "docs": [".memory-bank/features/FT-003.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
   "evidence_required": [
     "FT-003-AC-014 RED: no JPEG quality setting exists; GREEN: configuration/debug UI exposes exactly 0.7/0.75/0.8/0.85/0.9/0.95 with default 0.85, persists one selection in the managed kiosk profile across reload/Chromium restart, snapshots it at Attempt start, and records/applies a change only from the next Attempt; decisive comparison: every value/default/reload/restart/change-during-active fixtures compare profile and emitted next-Attempt seam; artifact: Playwright transcript under .tasks/TASK-062-T2-FT-003-W2/."

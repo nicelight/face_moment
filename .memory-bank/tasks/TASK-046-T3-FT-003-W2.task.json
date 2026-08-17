@@ -1,7 +1,7 @@
 {
   "id": "TASK-046-T3-FT-003-W2",
   "title": "Integrate central-origin Chromium with the ESP32 long-poll",
-  "status": "blocked",
+  "status": "in_progress",
   "wave": "W2",
   "feature": "FT-003",
   "reqs": ["REQ-CAP-001", "REQ-SEC-001", "REQ-SEC-002"],
@@ -26,11 +26,20 @@
       "stage": "closure",
       "verdict": "blocked",
       "completed_at": "2026-08-16T13:24:31+05:00",
-      "summary": "TASK-046 is blocked on the runtime evidence gap: after the second operator-reported kiosk Chrome crash, no safe post-crash observation proves a stable managed kiosk session. Do not restart Chrome as an inferred tactic. Resume only after the operator/runtime owner confirms a stable kiosk session, then rerun /verify TASK-046-T3-FT-003-W2; keep /red-verify separate.",
+      "summary": "Operator clarified that the current Linux development/test computer is the authoritative test runtime and no separate real kiosk computer is required at this stage. The real-kiosk post-crash observation is deferred to a later pilot phase and is not a blocker for current local development. Keep this task's runtime acceptance evidence pending; rerun /verify TASK-046-T3-FT-003-W2 on the current Linux test runtime when resumed, then keep /red-verify separate.",
       "evidence": [
         ".protocols/TASK-046-T3-FT-003-W2/verification.md",
         ".tasks/TASK-046-T3-FT-003-W2/TASK-046-T3-FT-003-W2-S-VERIFY-final-report-docs-01.md"
       ]
+    },
+    {
+      "stage": "verify",
+      "attempt": 2,
+      "verdict": "PASS",
+      "completed_at": "2026-08-17T21:23:53+05:00",
+      "summary": "Fresh verifier-owned focused, container, mb-lint, exact central-origin browser and malformed/failed-poll recovery evidence passed on the authoritative Linux development/test runtime; one authenticated poll, 200/204 continuation, strict decode, duplicate suppression, CORS/auth, redaction and advertising recovery are proved. Lifecycle/status unchanged; per-task T3 red-verify remains separate.",
+      "protocol": ".protocols/TASK-046-T3-FT-003-W2/verification.md",
+      "report": ".tasks/TASK-046-T3-FT-003-W2/TASK-046-T3-FT-003-W2-S-VERIFY-final-report-docs-02.md"
     }
   ],
   "docs": [".memory-bank/contracts/sensor-passage-api.md", ".memory-bank/features/FT-003.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],

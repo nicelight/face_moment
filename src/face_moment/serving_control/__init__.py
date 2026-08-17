@@ -23,11 +23,18 @@ from face_moment.serving_control.display_client_auth import (
     InvalidDisplayClientCredentials,
     authenticate_display_client,
 )
+from face_moment.serving_control.display_client_admin import (
+    DisplayClientAdminAccessDeniedError,
+    DisplayClientAdminRecord,
+    read_display_client_admin,
+)
 from face_moment.serving_control.realtime_context import (
     QuerySource,
+    RealtimeContext,
     ReferenceSearchSettings,
     ReferenceSearchSettingsAlreadyExistsError,
     ReferenceSearchSettingsNotFoundError,
+    RealtimeReadinessClosedError,
     RealtimeContextRepository,
     UnknownRealtimeContextSpaError,
 )
@@ -50,10 +57,15 @@ __all__ = [
     "DisplayClientRateLimiter",
     "InvalidDisplayClientCredentials",
     "authenticate_display_client",
+    "DisplayClientAdminAccessDeniedError",
+    "DisplayClientAdminRecord",
+    "read_display_client_admin",
     "QuerySource",
+    "RealtimeContext",
     "ReferenceSearchSettings",
     "ReferenceSearchSettingsAlreadyExistsError",
     "ReferenceSearchSettingsNotFoundError",
+    "RealtimeReadinessClosedError",
     "RealtimeContextRepository",
     "UnknownRealtimeContextSpaError",
 ]

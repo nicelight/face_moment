@@ -1,0 +1,33 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - paragraph [ref=e3]: Face Moment
+    - heading "SpaPromoClient" [level=1] [ref=e4]
+    - paragraph [ref=e5]: Центральный экран СПА
+  - navigation "Навигация клиента" [ref=e6]:
+    - link "Реклама" [ref=e7] [cursor=pointer]:
+      - /url: "#advertising"
+    - link "Конфигурация" [ref=e8] [cursor=pointer]:
+      - /url: "#configuration"
+    - link "Диагностика" [ref=e9] [cursor=pointer]:
+      - /url: "#debug"
+  - main [ref=e10]:
+    - generic [ref=e11]:
+      - heading "Конфигурация" [level=2] [ref=e12]
+      - paragraph [ref=e13]: Выберите камеру явно для предварительного просмотра и захвата.
+      - generic [ref=e14]:
+        - generic [ref=e15]: Качество JPEG
+        - combobox "Качество JPEG" [ref=e16]:
+          - option "0.7"
+          - option "0.75"
+          - option "0.8"
+          - option "0.85" [selected]
+          - option "0.9"
+          - option "0.95"
+        - status [ref=e17]: Изменение применяется со следующей попытки.
+      - generic [ref=e18]:
+        - generic [ref=e19]: Камера
+        - combobox "Камера" [ref=e20]:
+          - option "Выберите камеру" [disabled] [selected]
+        - button "Обновить список" [ref=e21] [cursor=pointer]
+        - generic "Предварительный просмотр выбранной камеры" [ref=e22]
+        - status [ref=e23]: Список камер загружается.

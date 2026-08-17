@@ -177,6 +177,15 @@ class DisplayClientRepository:
             )
         )
 
+    def list_all(self) -> list[DisplayClient]:
+        """Publish every configured kiosk in stable owner-defined order."""
+
+        return list(
+            self._session.scalars(
+                select(DisplayClient).order_by(DisplayClient.name, DisplayClient.id)
+            )
+        )
+
     def _load(self, display_client_id: uuid.UUID, *, for_update: bool = False) -> DisplayClient:
         statement = select(DisplayClient).where(DisplayClient.id == display_client_id)
         if for_update:

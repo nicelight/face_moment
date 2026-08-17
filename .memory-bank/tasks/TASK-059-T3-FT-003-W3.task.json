@@ -1,7 +1,7 @@
 {
   "id": "TASK-059-T3-FT-003-W3",
   "title": "Manually hand off the central token to the kiosk profile",
-  "status": "planned",
+  "status": "blocked",
   "wave": "W3",
   "feature": "FT-003",
   "reqs": ["REQ-SEC-001", "REQ-REL-001"],
@@ -9,7 +9,18 @@
   "touched_files": ["client/", "tests/client/"],
   "tier": "T3",
   "gates": [{"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "closure",
+      "verdict": "blocked",
+      "completed_at": "2026-08-17T19:03:57+05:00",
+      "summary": "TASK-059 is blocked by upstream TASK-057. No implementation or verification was started for this task.",
+      "evidence": [
+        ".memory-bank/tasks/TASK-057-T3-FT-003-W2.task.json"
+      ],
+      "resume_route": "close TASK-057 through its recorded stable-Docker fresh `/exe` -> `/verify` -> `/red-verify` route, then rerun promotion"
+    }
+  ],
   "docs": [".memory-bank/features/FT-003.md", ".memory-bank/domains/display-client-access.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
   "evidence_required": [
     "FT-003-AC-020 RED: the kiosk has no central-token field or durable profile copy; GREEN: an authenticated operator/developer manually reads TASK-058's current token for the intended named kiosk, copies it into that kiosk's client configuration field, persists it in the managed browser profile, authenticates a real request after page reload and Chromium restart, then repeats the manual copy after reset invalidates the old value; decisive comparison: old/new token auth results and profile reload/restart behavior plus a route/config scan prove no server push, pairing, enrollment or deployment-policy injection and no URL/log leakage; artifact: Playwright transcript and redacted scans under .tasks/TASK-059-T3-FT-003-W3/."

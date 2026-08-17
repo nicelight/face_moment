@@ -10,19 +10,21 @@ import uuid
 import pytest
 from alembic import command as alembic_command
 from alembic.config import Config
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session
 
 from face_moment.infrastructure.settings import Settings
 from face_moment.processing import PipelineCode, PipelineRevisionRepository
 from face_moment.serving_control import (
+    DisplayClient,
     DisplayClientRateLimitError,
     DisplayClientRateLimiter,
     DisplayClientPrincipal,
     DisplayClientRepository,
     InvalidDisplayClientCredentials,
     authenticate_display_client,
+    hash_display_client_token,
 )
 from face_moment.serving_control.ingest_target import IngestTargetRepository
 from tests.pipeline_compatibility import PIPELINE_COMPATIBILITY
@@ -155,6 +157,108 @@ def test_active_token_returns_only_authoritative_principal(
     }
     assert not hasattr(principal, "token_value")
     assert not hasattr(principal, "token_hash_sha256")
+
+
+def test_auth_read_does_not_autoflush_dirty_or_pending_session(
+    display_auth_fixture: _AuthFixture,
+) -> None:
+    fixture = display_auth_fixture
+    with Session(fixture.engine) as session:
+        active_client = session.get(DisplayClient, fixture.active_client_id)
+        assert active_client is not None
+        active_client.name = "task057-dirty-name"
+        pending_client = DisplayClient(
+            id=uuid.uuid4(),
+            spa_id=fixture.active_spa_id,
+            name="task057-pending",
+            token_hash_sha256=hash_display_client_token("task057-pending-token"),
+            token_value="p" * 43,
+            active=True,
+            created_at=datetime(2026, 8, 16, 11, 0, tzinfo=timezone.utc),
+        )
+        session.add(pending_client)
+        statements: list[str] = []
+
+        def capture_statement(
+            _connection: object,
+            _cursor: object,
+            statement: str,
+            _parameters: object,
+            _context: object,
+            _executemany: bool,
+        ) -> None:
+            statements.append(statement)
+
+        event.listen(fixture.engine, "before_cursor_execute", capture_statement)
+        try:
+            principal = authenticate_display_client(
+                session,
+                authorization=f"Bearer {fixture.active_token}",
+                ip_address="198.18.0.10",
+                rate_limiter=DisplayClientRateLimiter(limit=100, window_seconds=60),
+                now=datetime(2026, 8, 16, 11, 0, tzinfo=timezone.utc),
+            )
+        finally:
+            event.remove(fixture.engine, "before_cursor_execute", capture_statement)
+
+        assert principal == DisplayClientPrincipal(
+            display_client_id=fixture.active_client_id,
+            spa_id=fixture.active_spa_id,
+        )
+        assert active_client in session.dirty
+        assert pending_client in session.new
+
+    assert statements
+    assert all(statement.lstrip().upper().startswith("SELECT") for statement in statements)
+
+
+def test_invalid_credential_states_use_one_select_shape(
+    display_auth_fixture: _AuthFixture,
+) -> None:
+    fixture = display_auth_fixture
+    authorizations = (
+        None,
+        "Basic not-a-bearer",
+        "Bearer unknown-display-token",
+        f"Bearer {fixture.reset_old_token}",
+        f"Bearer {fixture.inactive_token}",
+    )
+    query_shapes: list[str] = []
+
+    for authorization in authorizations:
+        statements: list[str] = []
+        with Session(fixture.engine) as session:
+            def capture_statement(
+                _connection: object,
+                _cursor: object,
+                statement: str,
+                _parameters: object,
+                _context: object,
+                _executemany: bool,
+            ) -> None:
+                statements.append(statement)
+
+            event.listen(fixture.engine, "before_cursor_execute", capture_statement)
+            try:
+                with pytest.raises(InvalidDisplayClientCredentials) as error:
+                    authenticate_display_client(
+                        session,
+                        authorization=authorization,
+                        ip_address="198.18.0.10",
+                        rate_limiter=DisplayClientRateLimiter(
+                            limit=100, window_seconds=60
+                        ),
+                        now=datetime(2026, 8, 16, 11, 0, tzinfo=timezone.utc),
+                    )
+            finally:
+                event.remove(fixture.engine, "before_cursor_execute", capture_statement)
+
+        assert str(error.value) == ""
+        assert len(statements) == 1
+        assert statements[0].lstrip().upper().startswith("SELECT")
+        query_shapes.append(" ".join(statements[0].split()))
+
+    assert len(set(query_shapes)) == 1
 
 
 @pytest.mark.parametrize(

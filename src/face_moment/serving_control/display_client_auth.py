@@ -25,6 +25,9 @@ class DisplayClientRateLimitError(Exception):
     """The display-client token or request IP exceeded its configured limit."""
 
 
+_INVALID_CREDENTIAL_DIGEST = b"\x00" * 32
+
+
 @dataclass(frozen=True, slots=True)
 class DisplayClientPrincipal:
     """The only identity published by display-client authentication."""
@@ -100,15 +103,17 @@ def authenticate_display_client(
         now=_utc(now),
     ):
         raise DisplayClientRateLimitError
-    if token_digest is None:
-        raise InvalidDisplayClientCredentials
 
-    client = database_session.scalar(
-        select(DisplayClient).where(
-            DisplayClient.token_hash_sha256 == token_digest,
-            DisplayClient.active.is_(True),
-        )
+    lookup_digest = (
+        token_digest if token_digest is not None else _INVALID_CREDENTIAL_DIGEST
     )
+    with database_session.no_autoflush:
+        client = database_session.scalar(
+            select(DisplayClient).where(
+                DisplayClient.token_hash_sha256 == lookup_digest,
+                DisplayClient.active.is_(True),
+            )
+        )
     if client is None:
         raise InvalidDisplayClientCredentials
     return DisplayClientPrincipal(
