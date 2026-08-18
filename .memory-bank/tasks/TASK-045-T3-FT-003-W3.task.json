@@ -44,6 +44,16 @@
         ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-EXECUTE-continuation-01.md"
       ],
       "resume_route": "restore local realtime readiness with one active SPA and refresh the active edge image/config, then fresh `/verify TASK-045-T3-FT-003-W3`; do not create SPA/DB state as an inferred verification tactic"
+    },
+    {
+      "stage": "runtime-provision",
+      "verdict": "blocked",
+      "completed_at": "2026-08-18T02:56:11+05:00",
+      "summary": "Operator-authorized bounded provisioning stopped before mutation. The current mounted model directory has none of the four supported model assets, runtime model identity/version/dimension settings are empty, and read-only SQL reports zero pipeline_revisions. Creating a guessed eligible revision or SPA would be fake readiness data, so no DB write or service restart was performed.",
+      "evidence": [
+        ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-EXECUTE-runtime-provision-blocked-01.md"
+      ],
+      "resume_route": "provide real supported model assets and matching non-empty runtime configuration, obtain the corresponding eligible pipeline revision through its accepted owner, then retry the bounded one-SPA provisioning and fresh `/verify TASK-045-T3-FT-003-W3`"
     }
   ],
   "docs": [".memory-bank/contracts/realtime-attempt-api.md", ".memory-bank/domains/promo-attempt.md", ".memory-bank/features/FT-003.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],

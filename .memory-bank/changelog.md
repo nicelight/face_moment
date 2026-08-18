@@ -4,6 +4,15 @@ status: active
 ---
 # Changelog
 
+## [2026-08-18] Operator decision — OpenCV 5 migration strategy
+- Added the operator-directed strategic plan for migrating the runtime from
+  pinned OpenCV 4.10.0 to OpenCV 5, with SFace, InsightFace/Buffalo M,
+  model-admission, runtime, rollback and acceptance gates.
+- Kept implementation, dependency pins, database state, task statuses and
+  TASK-045 evidence unchanged. The plan explicitly treats OpenCV as a runtime
+  library rather than a model replacement and requires real model assets before
+  runtime acceptance.
+
 ## [2026-08-17] Wave W2 — reconciled camera and kiosk-quality closures
 - Reconciled the scheduler-owned `done` closures for `TASK-061-T2-FT-003-W2`
   and `TASK-062-T2-FT-003-W2` with their indexed independent T2 verification

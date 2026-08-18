@@ -69,6 +69,8 @@ status: active
   Spine.
 - [.memory-bank/guides/](guides/): Valid HOW docs для использования, запуска и troubleshooting.
 - [.memory-bank/adrs/](adrs/): ADR решения.
+- [opencv5_Migration.md](../opencv5_Migration.md): операторский стратегический
+  план перехода runtime на OpenCV 5.
 
 - [.memory-bank/domains/index.md](domains/index.md): subject-based domain
   models, storage, schemas, migrations and persistence rules.
