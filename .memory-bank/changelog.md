@@ -13,6 +13,18 @@ status: active
   library rather than a model replacement and requires real model assets before
   runtime acceptance.
 
+## [2026-08-18] OpenCV 5 dependency migration — source boundary
+- Updated the sole runtime dependency pin to
+  `opencv-python-headless==5.0.0.93`; Python, ONNX Runtime and InsightFace
+  remain unchanged, while NumPy is pinned to `2.2.6` because the OpenCV 5
+  wheel requires NumPy 2 on Python 3.11.
+- Added focused OpenCV 5 regression/native smoke coverage for image
+  decode/encode/resize and the existing YuNet/SFace APIs. Model loading is
+  asset-mounted and does not create database revisions or SPA state.
+- Container build and full runtime acceptance remain open because the current
+  package-index/Docker environment could not complete dependency resolution;
+  no product task status or TASK-045 evidence was changed.
+
 ## [2026-08-17] Wave W2 — reconciled camera and kiosk-quality closures
 - Reconciled the scheduler-owned `done` closures for `TASK-061-T2-FT-003-W2`
   and `TASK-062-T2-FT-003-W2` with their indexed independent T2 verification

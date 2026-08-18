@@ -1,0 +1,6 @@
+[console_scripts]
+face-moment-backend = face_moment.entrypoints.backend:main
+face-moment-background-worker = face_moment.entrypoints.background_worker:main
+face-moment-migrate = face_moment.entrypoints.migrate:main
+face-moment-provision-staff = face_moment.platform.auth.cli:main
+face-moment-realtime = face_moment.entrypoints.realtime:main

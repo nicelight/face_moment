@@ -1,0 +1,19 @@
+Metadata-Version: 2.4
+Name: face-moment
+Version: 0.1.0
+Summary: Executable Foundation walking skeleton for Face Moment.
+Requires-Python: <3.12,>=3.11
+Requires-Dist: alembic==1.16.4
+Requires-Dist: argon2-cffi==25.1.0
+Requires-Dist: boto3==1.39.14
+Requires-Dist: fastapi==0.116.1
+Requires-Dist: insightface==0.7.3
+Requires-Dist: mypy==1.17.0
+Requires-Dist: numpy==2.2.6
+Requires-Dist: onnxruntime==1.22.1
+Requires-Dist: opencv-python-headless==5.0.0.93
+Requires-Dist: psycopg[binary]==3.2.9
+Requires-Dist: pytest==8.4.1
+Requires-Dist: python-multipart==0.0.20
+Requires-Dist: sqlalchemy==2.0.41
+Requires-Dist: uvicorn==0.35.0

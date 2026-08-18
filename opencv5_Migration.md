@@ -1,7 +1,7 @@
 # Стратегический план миграции Face Moment на OpenCV 5
 
 **Дата:** 2026-08-18  
-**Статус:** операторское решение принято; реализация не начата  
+**Статус:** dependency migration выполнена; container/runtime acceptance ещё не закрыта
 **Целевой runtime:** точно закреплённая версия `opencv-python-headless` 5.x
 
 ## Цель
@@ -26,16 +26,33 @@ SFace, SCRFD и Buffalo M устанавливаются и проверяютс
 версию не нужно менять одновременно с OpenCV 5. Совместимость проверяется в
 рамках запуска существующего pipeline.
 
-TASK-045 сейчас блокируется отсутствующими реальными модельными файлами,
-конфигурацией, допустимой pipeline revision и active SPA. Само обновление
-OpenCV эти условия не создаёт автоматически.
+## Уже выполнено в исходниках
+
+- В `pyproject.toml` закреплён `opencv-python-headless==5.0.0.93`.
+- В `pyproject.toml` закреплён совместимый `numpy==2.2.6`: native package
+  metadata OpenCV 5 требует NumPy 2 для Python 3.11.
+- Добавлен regression smoke для обязательных image operations и наличия
+  `FaceDetectorYN`/`FaceRecognizerSF`.
+- Добавлен native SFace smoke, который при наличии model volume загружает
+  YuNet/SFace, выполняет detection и, если найдено лицо, `alignCrop`/`feature`.
+
+Полная container-проверка и runtime provisioning остаются отдельным этапом:
+они не считаются выполненными по одному изменению dependency pin.
+
+TASK-045 сейчас блокируется runtime-конфигурацией, допустимой pipeline revision
+и active SPA. Четыре ONNX-файла уже присутствуют в workspace, но их наличие
+само по себе не доказывает native admission, соответствие metadata или
+готовность runtime. Само обновление OpenCV эти условия не создаёт
+автоматически.
 
 ## План работ
 
 ### 1. Обновить runtime-зависимость
 
 - закрепить конкретную проверенную версию OpenCV 5;
-- сохранить Python 3.11, NumPy, ONNX Runtime и InsightFace без изменений;
+- сохранить Python 3.11, ONNX Runtime и InsightFace без изменений; NumPy
+  поднять до совместимого exact pin, потому что wheel OpenCV 5 требует
+  `numpy>=2` на Python 3.11;
 - пересобрать Docker image;
 - проверить импорт `cv2` и фактическую версию внутри контейнера.
 
@@ -51,9 +68,9 @@ OpenCV эти условия не создаёт автоматически.
 Исправлять только фактически обнаруженные несовместимости. Архитектуру
 pipeline не менять без необходимости.
 
-### 3. Установить реальные модели
+### 3. Подтвердить model assets
 
-Подготовить и зафиксировать:
+Проверить и зафиксировать:
 
 - `yunet.onnx`;
 - `sface.onnx`;
