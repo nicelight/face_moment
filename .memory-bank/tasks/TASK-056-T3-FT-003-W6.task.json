@@ -11,8 +11,8 @@
   "gates": [{"name": "Recovery check command syntax", "command": "bash -n scripts/check-ft003-recovery.sh", "required": true}, {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}],
   "verify": [
     {
-      "stage": "reconciliation",
-      "verdict": "deferred",
+      "stage": "closure",
+      "verdict": "blocked",
       "completed_at": "2026-08-16T12:06:13+05:00",
       "summary": "Direct dependency TASK-064 is blocked on missing effective pilot-host SSH capability; TASK-056 cannot be promoted or executed through that dependency until TASK-064 is done.",
       "evidence": [
@@ -20,13 +20,13 @@
       ]
     },
     {
-      "stage": "closure",
-      "verdict": "blocked",
+      "stage": "reconciliation",
+      "verdict": "deferred",
       "completed_at": "2026-08-18T12:05:00+05:00",
-      "summary": "Inherited TASK-051 environment blocker: the corrected central recovery check requires a no-KDE/no-Chromium runtime, but the current authorized Linux development host has an active KDE/Wayland session. TASK-056 remains blocked by this dependency in addition to TASK-064/TASK-054.",
+      "summary": "TASK-051, TASK-064 and TASK-049 runtime evidence is deferred until a real server exists. TASK-056 remains planned for that later recovery-evidence phase and is not a current queue blocker.",
       "evidence": [
         ".memory-bank/tasks/TASK-051-T3-FT-003-W4.task.json",
-        ".tasks/TASK-051-T3-FT-003-W4/TASK-051-T3-FT-003-W4-S-EXECUTE-final-report-code-02.md"
+        ".tasks/TASK-051-T3-FT-003-W4/TASK-051-T3-FT-003-W4-S-EXECUTE-final-report-code-03.md"
       ],
       "inherited": false,
       "deferred_runtime_evidence": true,
