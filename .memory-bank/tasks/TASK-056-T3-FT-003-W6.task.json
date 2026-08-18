@@ -11,8 +11,8 @@
   "gates": [{"name": "Recovery check command syntax", "command": "bash -n scripts/check-ft003-recovery.sh", "required": true}, {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}],
   "verify": [
     {
-      "stage": "closure",
-      "verdict": "blocked",
+      "stage": "reconciliation",
+      "verdict": "deferred",
       "completed_at": "2026-08-16T12:06:13+05:00",
       "summary": "Direct dependency TASK-064 is blocked on missing effective pilot-host SSH capability; TASK-056 cannot be promoted or executed through that dependency until TASK-064 is done.",
       "evidence": [
@@ -28,8 +28,9 @@
         ".memory-bank/tasks/TASK-051-T3-FT-003-W4.task.json",
         ".tasks/TASK-051-T3-FT-003-W4/TASK-051-T3-FT-003-W4-S-EXECUTE-final-report-code-02.md"
       ],
-      "inherited": true,
-      "resume_route": "provide an authorized no-display Linux runtime, close TASK-051, then resume TASK-056 through its existing dependency routes"
+      "inherited": false,
+      "deferred_runtime_evidence": true,
+      "resume_route": "when the real server exists, resume TASK-056 through its existing recovery evidence route"
     }
   ],
   "docs": [".memory-bank/features/FT-003.md", ".memory-bank/runbooks/display-and-central-restart.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
