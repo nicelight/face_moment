@@ -24,6 +24,20 @@
         ".memory-bank/tasks/TASK-060-T2-FT-003-W2.task.json"
       ],
       "resume_route": "close the blocked upstream chain through its recorded fresh execution/verification routes, then rerun promotion"
+    },
+    {
+      "stage": "execute",
+      "attempt": 2,
+      "verdict": "BLOCKED",
+      "completed_at": "2026-08-18T12:05:00+05:00",
+      "summary": "Bounded retry corrected the no-display baseline and failure cleanup, but the current Linux host has an active KDE/Wayland session, so the corrected check intentionally stops before positive AC-011 runtime proof. Cleanup passed with zero task-owned rows and objects.",
+      "evidence": [
+        ".tasks/TASK-051-T3-FT-003-W4/TASK-051-T3-FT-003-W4-S-EXECUTE-final-report-code-02.md",
+        ".protocols/TASK-051-T3-FT-003-W4/progress.md",
+        "scripts/check-ft003-recovery.sh"
+      ],
+      "inherited": false,
+      "resume_route": "run the corrected check on an authorized no-display Linux runtime, then fresh /verify TASK-051-T3-FT-003-W4 and /red-verify TASK-051-T3-FT-003-W4"
     }
   ],
   "docs": [".memory-bank/features/FT-003.md", ".memory-bank/runbooks/display-and-central-restart.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],

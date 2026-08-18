@@ -1,7 +1,7 @@
 {
   "id": "TASK-045-T3-FT-003-W3",
   "title": "Admit structurally bounded realtime requests",
-  "status": "blocked",
+  "status": "done",
   "wave": "W3",
   "feature": "FT-003",
   "reqs": ["REQ-CAP-002", "REQ-DIAG-001", "REQ-SEC-001"],
@@ -54,6 +54,57 @@
         ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-EXECUTE-runtime-provision-blocked-01.md"
       ],
       "resume_route": "provide real supported model assets and matching non-empty runtime configuration, obtain the corresponding eligible pipeline revision through its accepted owner, then retry the bounded one-SPA provisioning and fresh `/verify TASK-045-T3-FT-003-W3`"
+    },
+    {
+      "stage": "runtime-provision",
+      "attempt": 2,
+      "verdict": "blocked",
+      "completed_at": "2026-08-18T10:36:12+05:00",
+      "summary": "All four real model files are now mounted and readable, but required admission metadata remains empty for both supported pipelines: IDs, versions, preprocessing/alignment/normalization versions, and embedding dimension. No coherent eligible revision can be created without real values; no DB transaction or service restart was performed.",
+      "evidence": [
+        ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-EXECUTE-runtime-provision-blocked-02.md"
+      ],
+      "resume_route": "provide complete real admission metadata for at least one supported pipeline, repeat read-only model admission, then retry the bounded one-SPA transaction and fresh `/verify TASK-045-T3-FT-003-W3`"
+    },
+    {
+      "stage": "runtime-provision",
+      "attempt": 3,
+      "verdict": "pass",
+      "completed_at": "2026-08-18T10:43:55+05:00",
+      "summary": "Fresh operator SFace/Buffalo admission evidence was reconciled against project adapter identities and exact file hashes. The bounded transaction kept the existing Buffalo revision, created a real SFace eligible revision, switched the same single active SPA to SFace, created SFace reference settings, and retained the existing display client. No broad reset or code/source change occurred.",
+      "evidence": [
+        ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-EXECUTE-runtime-provision-success-01.md"
+      ],
+      "resume_route": "recreate only realtime and edge with the confirmed SFACE_* environment values, verify realtime health and the current edge route, then fresh `/verify TASK-045-T3-FT-003-W3`"
+    },
+    {
+      "stage": "verify",
+      "attempt": 2,
+      "verdict": "PASS",
+      "completed_at": "2026-08-18T10:52:19+05:00",
+      "summary": "Independent verifier proved the task-owned matrix through the real HTTPS edge/application path: authentication and readiness mappings, strict manifest/crop validation, one-time zero-proposal admission with idempotent replay, exact 20,971,520-byte admission, 20,971,521-byte pre-admission rejection, no rows for rejected requests, and disposable cleanup. Focused gates also passed.",
+      "protocol": ".protocols/TASK-045-T3-FT-003-W3/verification.md",
+      "report": ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-VERIFY-final-report-docs-02.md"
+    },
+    {
+      "stage": "red-verify",
+      "attempt": 1,
+      "verdict": "semantic-pass",
+      "completed_at": "2026-08-18T11:09:42+05:00",
+      "summary": "Two independent semantic focuses found no evidenced material break of the accepted realtime admission outcome, no FT-004 scope leakage, and no required operator decision. The current local edge/runtime configuration, idempotency, rejection, cleanup and SPA/revision consistency remain coherent.",
+      "protocol": ".protocols/TASK-045-T3-FT-003-W3/red-verification.md",
+      "report": ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-RED-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "completed_at": "2026-08-18T11:09:42+05:00",
+      "summary": "TASK-045 runtime readiness was restored with real model assets, one active SPA and healthy HTTPS edge/runtime. Fresh functional verification and semantic verification both passed; the task is eligible for scheduler closure.",
+      "evidence": [
+        ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-VERIFY-final-report-docs-02.md",
+        ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-RED-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-EXECUTE-runtime-provision-success-01.md"
+      ]
     }
   ],
   "docs": [".memory-bank/contracts/realtime-attempt-api.md", ".memory-bank/domains/promo-attempt.md", ".memory-bank/features/FT-003.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],

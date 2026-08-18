@@ -18,6 +18,18 @@
       "evidence": [
         ".memory-bank/tasks/TASK-064-T3-FT-003-W1.task.json"
       ]
+    },
+    {
+      "stage": "closure",
+      "verdict": "blocked",
+      "completed_at": "2026-08-18T12:05:00+05:00",
+      "summary": "Inherited TASK-051 environment blocker: the corrected central recovery check requires a no-KDE/no-Chromium runtime, but the current authorized Linux development host has an active KDE/Wayland session. TASK-056 remains blocked by this dependency in addition to TASK-064/TASK-054.",
+      "evidence": [
+        ".memory-bank/tasks/TASK-051-T3-FT-003-W4.task.json",
+        ".tasks/TASK-051-T3-FT-003-W4/TASK-051-T3-FT-003-W4-S-EXECUTE-final-report-code-02.md"
+      ],
+      "inherited": true,
+      "resume_route": "provide an authorized no-display Linux runtime, close TASK-051, then resume TASK-056 through its existing dependency routes"
     }
   ],
   "docs": [".memory-bank/features/FT-003.md", ".memory-bank/runbooks/display-and-central-restart.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],

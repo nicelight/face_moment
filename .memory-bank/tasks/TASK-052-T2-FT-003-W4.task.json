@@ -1,7 +1,7 @@
 {
   "id": "TASK-052-T2-FT-003-W4",
   "title": "Form and submit the bounded client multipart request",
-  "status": "blocked",
+  "status": "ready",
   "wave": "W4",
   "feature": "FT-003",
   "reqs": ["REQ-CAP-002", "REQ-DIAG-001"],
