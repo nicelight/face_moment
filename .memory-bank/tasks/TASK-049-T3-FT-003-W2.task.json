@@ -1,7 +1,7 @@
 {
   "id": "TASK-049-T3-FT-003-W2",
   "title": "Run Chromium sandboxed as the display user",
-  "status": "blocked",
+  "status": "planned",
   "wave": "W2",
   "feature": "FT-003",
   "reqs": ["REQ-SEC-001"],
@@ -32,6 +32,15 @@
         ".protocols/TASK-049-T3-FT-003-W2/verification.md",
         ".tasks/TASK-049-T3-FT-003-W2/verifier-runtime-probe-01.md"
       ]
+    },
+    {
+      "stage": "reconciliation",
+      "verdict": "deferred",
+      "completed_at": "2026-08-18T12:30:00+05:00",
+      "summary": "Local source-managed kiosk policy and read-only inspection are accepted for the current Linux development phase. Real pilot-host process identity and privilege evidence is deferred until a real server/pilot host exists and is not a current queue gateway.",
+      "evidence": ["scripts/check-kiosk-browser.sh"],
+      "deferred_runtime_evidence": true,
+      "resume_route": "when a real pilot host exists, run the already-defined effective process/privilege check as follow-up acceptance evidence"
     }
   ],
   "docs": [".memory-bank/features/FT-003.md", ".memory-bank/runbooks/display-and-central-restart.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],

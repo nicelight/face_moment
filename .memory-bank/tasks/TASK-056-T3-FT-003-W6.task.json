@@ -1,7 +1,7 @@
 {
   "id": "TASK-056-T3-FT-003-W6",
   "title": "Execute the documented browser and central recovery",
-  "status": "blocked",
+  "status": "planned",
   "wave": "W6",
   "feature": "FT-003",
   "reqs": ["REQ-REL-003"],

@@ -1,7 +1,7 @@
 {
   "id": "TASK-053-T2-FT-003-W5",
   "title": "Branch outcomes with stale discard and fresh retry",
-  "status": "blocked",
+  "status": "planned",
   "wave": "W5",
   "feature": "FT-003",
   "reqs": ["REQ-CAP-001", "REQ-UX-004", "REQ-REL-001"],

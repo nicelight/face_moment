@@ -1,7 +1,7 @@
 {
   "id": "TASK-064-T3-FT-003-W1",
   "title": "Enforce key-only pilot SSH administration",
-  "status": "blocked",
+  "status": "planned",
   "wave": "W1",
   "feature": "FT-003",
   "reqs": ["REQ-SEC-001"],
@@ -28,6 +28,15 @@
         ".protocols/TASK-064-T3-FT-003-W1/verification.md",
         ".tasks/TASK-064-T3-FT-003-W1/TASK-064-T3-FT-003-W1-S-VERIFY-final-report-docs-01.md"
       ]
+    },
+    {
+      "stage": "reconciliation",
+      "verdict": "deferred",
+      "completed_at": "2026-08-18T12:30:00+05:00",
+      "summary": "The source-managed key-only SSH policy and local checker are accepted for current Linux development. Effective sshd and positive/negative host probes are deferred until a real server exists and are not a current queue gateway.",
+      "evidence": ["scripts/check-ssh-policy.sh"],
+      "deferred_runtime_evidence": true,
+      "resume_route": "when a real server exists, run the already-defined effective sshd and host probes as follow-up acceptance evidence"
     }
   ],
   "docs": [".memory-bank/features/FT-003.md", ".memory-bank/runbooks/display-and-central-restart.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],

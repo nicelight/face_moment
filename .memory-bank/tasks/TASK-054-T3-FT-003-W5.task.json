@@ -1,7 +1,7 @@
 {
   "id": "TASK-054-T3-FT-003-W5",
   "title": "Restart Chromium under the kiosk user service",
-  "status": "blocked",
+  "status": "planned",
   "wave": "W5",
   "feature": "FT-003",
   "reqs": ["REQ-REL-001"],

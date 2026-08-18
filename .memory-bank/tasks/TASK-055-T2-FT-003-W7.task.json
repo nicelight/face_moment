@@ -1,7 +1,7 @@
 {
   "id": "TASK-055-T2-FT-003-W7",
   "title": "Compose named failures into safe degraded advertising",
-  "status": "blocked",
+  "status": "planned",
   "wave": "W7",
   "feature": "FT-003",
   "reqs": ["REQ-UX-004", "REQ-REL-001", "REQ-DIAG-001"],

@@ -1,7 +1,7 @@
 {
   "id": "TASK-067-T2-FT-003-W6",
   "title": "Show the non-blocking server-communication notice",
-  "status": "blocked",
+  "status": "planned",
   "wave": "W6",
   "feature": "FT-003",
   "reqs": ["REQ-UX-004"],

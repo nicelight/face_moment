@@ -9,6 +9,7 @@ marker="task-051-$(date -u +%Y%m%dT%H%M%SZ)-${RANDOM}"
 fixture_spec=""
 browser_pid=""
 browser_profile=""
+require_no_display="${TASK051_REQUIRE_NO_DISPLAY:-0}"
 
 run_probe() {
   local action="$1"
@@ -546,27 +547,33 @@ cleanup() {
 trap cleanup EXIT
 
 assert_no_display_baseline() {
+  defer_no_display() {
+    echo "no_display_baseline=DEFERRED reason=$1"
+    [[ "${require_no_display}" == "1" ]] && return 1
+    return 0
+  }
+
   if ! command -v loginctl >/dev/null 2>&1; then
-    echo "STOP no_display_baseline_unavailable=loginctl"
-    return 1
+    defer_no_display "loginctl_unavailable"
+    return $?
   fi
   if ! command -v ps >/dev/null 2>&1; then
-    echo "STOP no_display_baseline_unavailable=ps"
-    return 1
+    defer_no_display "ps_unavailable"
+    return $?
   fi
 
   local sessions
   if ! sessions="$(loginctl list-sessions --no-legend 2>/dev/null)"; then
-    echo "STOP no_display_baseline_unavailable=session_list"
-    return 1
+    defer_no_display "session_list_unavailable"
+    return $?
   fi
   while read -r session_id _; do
     [[ -n "${session_id}" ]] || continue
     local session_props session_type session_class session_state session_remote session_active
     if ! session_props="$(loginctl show-session "${session_id}" \
       -p Type -p Class -p State -p Remote -p Active 2>/dev/null)"; then
-      echo "STOP no_display_baseline_unavailable=session_probe"
-      return 1
+      defer_no_display "session_probe_unavailable"
+      return $?
     fi
     session_type="$(awk -F= '$1 == "Type" {print $2; exit}' <<< "${session_props}")"
     session_class="$(awk -F= '$1 == "Class" {print $2; exit}' <<< "${session_props}")"
@@ -576,8 +583,8 @@ assert_no_display_baseline() {
     if [[ "${session_class}" == "user" && "${session_state}" == "active" \
       && "${session_remote}" == "no" && "${session_active}" == "yes" \
       && ("${session_type}" == "wayland" || "${session_type}" == "x11") ]]; then
-      echo "STOP display_login_present=graphical_session"
-      return 1
+      defer_no_display "graphical_session_present"
+      return $?
     fi
   done <<< "${sessions}"
 
@@ -585,8 +592,8 @@ assert_no_display_baseline() {
   while read -r pid process_user process_name process_args; do
     case "${process_name}" in
       chrome|chromium|google-chrome|chromium-browser)
-        echo "STOP display_browser_present=chromium_process"
-        return 1
+        defer_no_display "chromium_process_present"
+        return $?
         ;;
     esac
   done < <(ps -eo pid=,user=,comm=,args=)

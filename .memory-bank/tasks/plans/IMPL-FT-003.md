@@ -145,6 +145,11 @@ scope.
   claim ownership.
 - Host proof uses separate read-only checks for sandbox identity, LNA policy,
   SSH authentication and externally reachable ports.
+- Under the 2026-08-18 local-development decision, real pilot-host/server
+  evidence is deferred and is not a current queue gateway. The local queue
+  uses source/static and runnable Linux Compose/browser checks; effective SSH,
+  no-display-host, external-observer and operator-recovery evidence remains a
+  later acceptance follow-up when the real server exists.
 - `TASK-051` may create its own disposable credential, serving context, Attempt
   and Photo transition, then must clean them up; it never mutates or deletes
   operator/default state. This replaces the contradictory no-durable-state
