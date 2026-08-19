@@ -45,9 +45,9 @@
   ],
   "purpose": "Own the independently deployable private-port topology control.",
   "success_outcome": "Only the intended HTTPS edge is externally reachable; every internal role/data service stays private.",
-  "anti_goals": ["Do not change application routes, browser policies or SSH authentication.", "Do not publish PostgreSQL/MinIO/internal role ports for testing.", "Do not add firewall orchestration beyond the source-managed pilot topology."],
+  "anti_goals": ["Do not change application routes or browser policies.", "Do not publish PostgreSQL/MinIO/internal role ports for testing.", "Do not add firewall orchestration beyond the source-managed pilot topology."],
   "runtime_context": {
-    "forbidden_scope": ["Application behavior and credentials", "LNA/SSH/browser controls owned by TASK-063, TASK-064 and TASK-049", "Production network/firewall architecture"],
+    "forbidden_scope": ["Application behavior and credentials", "LNA/browser controls owned by TASK-063 and TASK-049", "Production network/firewall architecture"],
     "stop_conditions": ["Privacy cannot be proved without exposing an internal port.", "Fix requires a production network redesign.", "Inspection would disclose protected connection data."]
   },
   "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-019", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],

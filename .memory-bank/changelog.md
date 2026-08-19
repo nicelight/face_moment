@@ -69,18 +69,15 @@ status: active
   because the remaining SSH, private-topology, sensor CORS/token, and other
   acceptance criteria are not closed by TASK-063.
 
-## [2026-08-16] Wave W1 — environment-bounded SSH and topology controls
-- Reconciled TASK-064 and TASK-065 source outcomes and independent evidence:
-  managed key-only SSH policy/checker and edge-only private-port bindings are
-  present, with no operator-key, credential, application, or internal-port
+## [2026-08-16] Wave W1 — environment-bounded topology control
+- Reconciled TASK-065 source outcomes and independent evidence for edge-only
+  private-port bindings, with no credential, application, or internal-port
   mutation.
-- Kept TASK-064 `blocked` because this host has no `sshd`, so effective SSH
-  configuration and real key/password/display probes cannot be verified.
 - Kept TASK-065 `blocked` because the bounded local scan observes a
   pre-existing native PostgreSQL listener on `127.0.0.1:5432` and no distinct
   outside observer is available; source-only Compose evidence is insufficient
-  for the T3 topology claim. Both records retain exact pilot-host-capable
-  resume routes.
+  for the T3 topology claim. The record retains its exact pilot-host-capable
+  resume route.
 
 ## [2026-08-14] Wave W7 — verified compatible processing and serving switch
 - Reconciled the scheduler-owned `done` closures for

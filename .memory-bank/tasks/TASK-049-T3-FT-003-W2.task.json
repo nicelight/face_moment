@@ -1,7 +1,7 @@
 {
   "id": "TASK-049-T3-FT-003-W2",
   "title": "Run Chromium sandboxed as the display user",
-  "status": "planned",
+  "status": "done",
   "wave": "W2",
   "feature": "FT-003",
   "reqs": ["REQ-SEC-001"],
@@ -49,14 +49,14 @@
   ],
   "purpose": "Own only the kiosk browser process identity, sandbox and display-user privilege boundary.",
   "success_outcome": "The pilot browser is demonstrably sandboxed and non-privileged under the display user.",
-  "anti_goals": ["Do not implement LNA policy, SSH policy, port topology or automatic restart.", "Do not grant the display user any administrative/deployment access.", "Do not print browser-profile contents or credentials."],
+  "anti_goals": ["Do not implement LNA policy, port topology or automatic restart.", "Do not grant the display user any administrative/deployment access.", "Do not print browser-profile contents or credentials."],
   "runtime_context": {
-    "forbidden_scope": ["LNA/SSH/port controls owned by TASK-063, TASK-064 and TASK-065", "User-service restart behavior owned by TASK-054-T3-FT-003-W5", "Client application behavior"],
+    "forbidden_scope": ["LNA/port controls owned by TASK-063 and TASK-065", "User-service restart behavior owned by TASK-054-T3-FT-003-W5", "Client application behavior"],
     "stop_conditions": ["Chromium cannot run sandboxed as display.", "Inspection would require revealing profile secrets or changing operator credentials."]
   },
   "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-009", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
   "normative_inputs": [".memory-bank/features/FT-003.md#ft-003-ac-009--sandboxed-non-privileged-kiosk-browser", ".memory-bank/runbooks/display-and-central-restart.md#preconditions", ".memory-bank/architecture/system-architecture.md#deployment-and-recovery"],
   "constraints": ["Use source-managed kiosk artifacts and a read-only focused inspection command.", "Run on the pilot host without destructive account/group changes.", "Retain redacted output under the task directory."],
-  "invariants": ["Chromium runs as display with sandbox intact.", "The display user has no sudo, Docker-group or deployment-secret access.", "LNA, SSH and port claims remain outside this task."],
+  "invariants": ["Chromium runs as display with sandbox intact.", "The display user has no sudo, Docker-group or deployment-secret access.", "LNA and port claims remain outside this task."],
   "verification_targets": ["FT-003-AC-009 effective process identity/sandbox proof.", "Negative display-user privilege probes.", "Review of focused source-managed kiosk artifacts and redacted check output."]
 }

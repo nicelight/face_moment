@@ -1,7 +1,7 @@
 {
   "id": "TASK-051-T3-FT-003-W4",
   "title": "Prove central runtime independence and supply its check",
-  "status": "planned",
+  "status": "done",
   "wave": "W4",
   "feature": "FT-003",
   "reqs": ["REQ-REL-001"],

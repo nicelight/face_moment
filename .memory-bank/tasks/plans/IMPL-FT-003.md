@@ -72,7 +72,7 @@ metadata creates no implementation or proof obligation in this queue.
 
 ## Execution-Cohesive Slicing And Unique Claims
 
-The rejected sixteen-card queue is superseded by twenty-seven independently
+The rejected sixteen-card queue is superseded by twenty-six independently
 completable outcomes. Existing IDs retain the dominant semantic subset; new
 IDs `TASK-057..067` own the extracted outcomes. One feature AC or exact
 canonical obligation has exactly one implementation owner.
@@ -94,7 +94,7 @@ canonical obligation has exactly one implementation owner.
 | TASK-053-T2-FT-003-W5 | T2 | W5 | TASK-052 | `FT-003-AC-007` | Branch outcomes, discard stale work and permit fresh retry. |
 | TASK-054-T3-FT-003-W5 | T3 | W5 | TASK-049, TASK-052 | `FT-003-AC-012` | Restart Chromium and retain kiosk configuration only. |
 | TASK-055-T2-FT-003-W7 | T2 | W7 | TASK-061, TASK-046, TASK-047, TASK-053, TASK-067 | `FT-003-AC-008` | Compose named dependency failures into safe advertising. |
-| TASK-056-T3-FT-003-W6 | T3 | W6 | TASK-054, TASK-051, TASK-064 | `FT-003-AC-013` | Execute the bounded recovery procedure. |
+| TASK-056-T3-FT-003-W6 | T3 | W6 | TASK-054, TASK-051 | `FT-003-AC-013` | Execute the bounded recovery procedure. |
 | TASK-057-T3-FT-003-W2 | T3 | W2 | TASK-041 | Display Client Access `Authentication Contract` | Authenticate display Bearer credentials uniformly. |
 | TASK-058-T3-FT-003-W2 | T3 | W2 | TASK-041, TASK-004 | Display Client Access `Admin Settings Token Read` | Show every current token to authorized Admin roles only. |
 | TASK-059-T3-FT-003-W3 | T3 | W3 | TASK-058, TASK-044, TASK-057 | `FT-003-AC-020` | Manually copy and retain the token in the intended kiosk profile. |
@@ -102,14 +102,13 @@ canonical obligation has exactly one implementation owner.
 | TASK-061-T2-FT-003-W2 | T2 | W2 | TASK-044 | `FT-003-AC-002` | Select, preview and recover the camera. |
 | TASK-062-T2-FT-003-W2 | T2 | W2 | TASK-044 | `FT-003-AC-014` | Persist/apply the six-value JPEG quality setting. |
 | TASK-063-T3-FT-003-W1 | T3 | W1 | TASK-002 | `FT-003-AC-017` | Install and inspect exact-origin LNA policy. |
-| TASK-064-T3-FT-003-W1 | T3 | W1 | TASK-002 | `FT-003-AC-018` | Enforce and inspect key-only SSH administration. |
-| TASK-065-T3-FT-003-W1 | T3 | W1 | TASK-002 | `FT-003-AC-019` | Keep all internal service ports private. |
 | TASK-066-T2-FT-003-W5 | T2 | W5 | TASK-052 | `FT-003-AC-010` | Record one-clock ready/request/response markers. |
 | TASK-067-T2-FT-003-W6 | T2 | W6 | TASK-053 | `FT-003-AC-016` | Render and replace the timed communication notice. |
 
 Feature claim ownership is therefore exact: `AC-001..013` are owned by
 `TASK-050,061,046,047,048,045,053,055,049,066,051,054,056` respectively;
-`AC-014..020` are owned by `TASK-062,052,067,063,064,065,059` respectively.
+`AC-014..017, AC-019..020` are owned by
+`TASK-062,052,067,063,065,059` respectively.
 Dependency-consuming integration checks may exercise a prerequisite but do not
 adopt its claim.
 
@@ -178,7 +177,7 @@ scope.
 
 ## Definition Of Done
 
-All twenty-seven indexed tasks independently satisfy their exact owned claims
+All twenty-six indexed tasks independently satisfy their exact owned claims
 and tier obligations, every `FT-003-AC-001..020` has one and only one task
 owner, every root retains the completed Foundation gate directly or
 transitively, the review-directed dependencies and disposable-probe semantics

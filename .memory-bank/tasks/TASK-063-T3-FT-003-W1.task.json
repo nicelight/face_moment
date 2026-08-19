@@ -91,9 +91,9 @@
   ],
   "purpose": "Own the deployable/reversible managed Chromium LNA prerequisite independently of sensor application code.",
   "success_outcome": "Only the central Face Moment origin is pre-authorized for local-network access in the managed kiosk profile.",
-  "anti_goals": ["Do not implement ESP32 polling/CORS/Bearer behavior.", "Do not use wildcard or store any sensor/display secret in policy.", "Do not change kiosk sandbox, SSH or port topology."],
+  "anti_goals": ["Do not implement ESP32 polling/CORS/Bearer behavior.", "Do not use wildcard or store any sensor/display secret in policy.", "Do not change kiosk sandbox or port topology."],
   "runtime_context": {
-    "forbidden_scope": ["Sensor integration owned by TASK-046-T3-FT-003-W2", "Kiosk/SSH/port controls owned by TASK-049, TASK-064 and TASK-065", "Any deployment-policy secret injection"],
+    "forbidden_scope": ["Sensor integration owned by TASK-046-T3-FT-003-W2", "Kiosk/port controls owned by TASK-049 and TASK-065", "Any deployment-policy secret injection"],
     "stop_conditions": ["Effective Chromium policy cannot represent the exact origin.", "Validation requires a wildcard/unrelated origin.", "Inspection would expose browser-profile secrets."]
   },
   "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-017", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],

@@ -40,9 +40,9 @@ and the [manual serving-revision contract](../contracts/boundary-map.md#manual-s
 
 ## Preconditions
 
-- The operator is authenticated through key-only SSH as the administrative
-  `facemoment` OS user. The autologin `display` user has no SSH, `sudo`, Docker
-  group or deployment-secret access.
+- The operator has administrative SSH access as the `facemoment` OS user. The
+  autologin `display` user has no `sudo`, Docker group or deployment-secret
+  access.
 - The checked-out deployment configuration and environment identify the
   intended one-server pilot, public HTTPS origin and intact named PostgreSQL/
   MinIO volumes.

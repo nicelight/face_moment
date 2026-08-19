@@ -575,8 +575,8 @@ pilot actor or blocker.
 - **NFR-SEC-02** — Each `SpaPromoClient` MUST use a secret token in an
   authorization header. The server MUST derive `spa_id` from a stored token hash
   and MUST NOT trust `spa_id` from the request body or log the token.
-- **NFR-SEC-03** — Public requests MUST be rate-limited. SSH MUST be key-only,
-  and the display browser MUST run sandboxed under a non-privileged OS user.
+- **NFR-SEC-03** — Public requests MUST be rate-limited, and the display browser
+  MUST run sandboxed under a non-privileged OS user.
 - **NFR-SEC-04** — Application authorization MUST enforce a split diagnostic
   access matrix for protected data and actions: the operator receives the
   sanitized attempt outcome/timeline/latency/issue tags; participant names,

@@ -14,12 +14,15 @@ import {
   createJpegQualityController,
   JPEG_QUALITY_VALUES,
 } from "./jpeg-quality.js";
+import { createAttemptOutcomeController } from "./attempt-outcome.js";
+import { submitRealtimeAttempt } from "./realtime-attempt.js";
 
 const view = document.querySelector("#client-view");
 let detectorFailureMessage = false;
 let cameraController;
 let sensorClient;
 let triggerController;
+let attemptOutcomeController;
 const jpegQualityController = createJpegQualityController({
   onChange: updateQualityConfiguration,
 });
@@ -203,6 +206,138 @@ function updateTriggerStatus(state, message) {
   const status = document.querySelector("#trigger-status");
   if (status) status.textContent = message;
 }
+
+function restoreAdvertisingAfterFailure(detail) {
+  if (detail?.state !== "advertising" || detail?.handled !== true) return;
+  window.dispatchEvent(
+    new CustomEvent("face-moment:attempt-finished", {
+      detail: {
+        attemptId: detail.captureId ?? detail.attemptId,
+        success: false,
+        reason: detail.reason ?? "unsuccessful",
+      },
+    }),
+  );
+}
+
+function monotonicNowMs() {
+  return Math.max(0, Math.round(globalThis.performance?.now?.() ?? Date.now()));
+}
+
+function referenceSeriesReadyAt(detail) {
+  const readyAtMs = Number(detail?.reference_series_ready_at_ms);
+  const timeOrigin = Number(globalThis.performance?.timeOrigin);
+  if (Number.isFinite(readyAtMs) && Number.isFinite(timeOrigin)) {
+    const value = new Date(timeOrigin + readyAtMs);
+    if (Number.isFinite(value.getTime())) return value.toISOString();
+  }
+  return new Date().toISOString();
+}
+
+function newRealtimeAttemptId() {
+  const attemptId = globalThis.crypto?.randomUUID?.();
+  if (typeof attemptId !== "string" || !attemptId) {
+    throw new Error("crypto_random_uuid_unavailable");
+  }
+  return attemptId;
+}
+
+async function submitReadyReferenceSeries(detail, proposals) {
+  const captureId = detail?.attemptId;
+  let attemptId;
+  try {
+    attemptId = newRealtimeAttemptId();
+    window.dispatchEvent(
+      new CustomEvent("face-moment:attempt-request-start", {
+        detail: { attemptId, captureId },
+      }),
+    );
+
+    const qualitySnapshot = jpegQualityController.getActiveAttemptSnapshot();
+    const cameraSnapshot = cameraController?.snapshot?.() ?? {};
+    const localDetectionCompletedMs = monotonicNowMs();
+    const requestStartedMs = Math.max(localDetectionCompletedMs, monotonicNowMs());
+    const submitted = await submitRealtimeAttempt({
+      attemptId,
+      triggerSource: detail?.trigger_source,
+      jpegQuality: qualitySnapshot?.jpegQuality,
+      cameraDeviceId: cameraSnapshot.selectedDeviceId,
+      clientToken: readDisplayClientToken(),
+      timing: {
+        referenceSeriesReadyAt: referenceSeriesReadyAt(detail),
+        localDetectionCompletedMs,
+        requestStartedMs,
+      },
+      frames: detail?.frames,
+      frameTimestampsMs: detail?.frame_timestamps_ms,
+      proposals,
+    });
+    window.dispatchEvent(
+      new CustomEvent("face-moment:attempt-response", {
+        detail: {
+          attemptId,
+          captureId,
+          response: submitted.response,
+        },
+      }),
+    );
+  } catch {
+    if (attemptId) {
+      window.dispatchEvent(
+        new CustomEvent("face-moment:attempt-transport-failure", {
+          detail: { attemptId, captureId },
+        }),
+      );
+    } else {
+      window.dispatchEvent(
+        new CustomEvent("face-moment:attempt-finished", {
+          detail: {
+            attemptId: captureId,
+            success: false,
+            reason: "request_setup_failure",
+          },
+        }),
+      );
+    }
+  }
+}
+
+window.addEventListener("face-moment:attempt-request-start", (event) => {
+  try {
+    attemptOutcomeController?.beginAttempt({
+      attemptId: event.detail?.attemptId,
+      captureId: event.detail?.captureId,
+    });
+  } catch {
+    document.body.dataset.attemptState =
+      attemptOutcomeController?.state ?? "advertising";
+  }
+});
+
+window.addEventListener("face-moment:attempt-response", (event) => {
+  const pending = attemptOutcomeController?.handleResponse(
+    event.detail?.attemptId,
+    event.detail?.response,
+  );
+  if (pending) {
+    void pending.then((detail) =>
+      restoreAdvertisingAfterFailure({
+        ...detail,
+        captureId: event.detail?.captureId,
+      }),
+    );
+  }
+});
+
+window.addEventListener("face-moment:attempt-transport-failure", (event) => {
+  const result = attemptOutcomeController?.handleTransportFailure(
+    event.detail?.attemptId,
+  );
+  restoreAdvertisingAfterFailure({
+    ...result,
+    captureId: event.detail?.captureId,
+  });
+});
 
 function mountTriggerConfiguration(card) {
   const panel = document.createElement("div");
@@ -552,6 +687,7 @@ window.addEventListener("face-moment:reference-series-ready", async (event) => {
         detail: { proposals },
       }),
     );
+    void submitReadyReferenceSeries(event.detail, proposals);
   } catch (error) {
     renderDetectorFailure();
     window.dispatchEvent(
@@ -568,6 +704,17 @@ cameraController = createCameraController({
   onStateChange: updateCameraConfiguration,
   onDevices: updateCameraConfiguration,
   onError: () => updateCameraConfiguration(),
+});
+attemptOutcomeController = createAttemptOutcomeController({
+  onStateChange: ({ state, outcome }) => {
+    document.body.dataset.attemptState = state;
+    if (outcome) document.body.dataset.attemptOutcome = outcome;
+  },
+  onOutcome: (detail) => {
+    window.dispatchEvent(
+      new CustomEvent("face-moment:attempt-outcome", { detail }),
+    );
+  },
 });
 triggerController = createReferenceCaptureController({
   captureFrame: () => {
