@@ -1,7 +1,7 @@
 ---
 description: Canonical accepted module/change-unit dependency graph and boundary contracts for the Face Moment pilot.
 status: active
-last_updated: 2026-08-16
+last_updated: 2026-08-22
 source_of_truth:
   - .memory-bank/contracts/boundary-map.md
 ---
@@ -145,6 +145,8 @@ automatic reference search. It authenticates through the existing
 `staff_access` principal and authorizes the setting inside `serving_control`;
 transport, `staff_access`, `promo` and `processing` MUST NOT write the value.
 
+#### Staff active-date surface
+
 The minimum same-origin staff surface is:
 
 - `GET /staff/search-settings`: active-operator settings page;
@@ -164,6 +166,8 @@ mismatched CSRF on `PUT` returns `403`; unknown СПА returns `404`; invalid JS
 unknown fields or an invalid calendar date returns `422`. The surface uses the
 existing HTTPS-only staff session and adds no settings framework, date history,
 automatic rollover or client override.
+
+#### Missing-date realtime readiness
 
 Before the first successful setting, the value is absent. Realtime then reports
 closed serving readiness with `503` before `promo` admission, starts no search

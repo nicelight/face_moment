@@ -1,0 +1,79 @@
+{
+  "id": "TASK-072-T3-FT-004-W4",
+  "title": "Persist and publish the realtime result session",
+  "status": "planned",
+  "wave": "W4",
+  "feature": "FT-004",
+  "reqs": ["REQ-CAP-003", "REQ-REL-001", "REQ-SEC-001", "REQ-ARCH-001"],
+  "depends_on": ["TASK-071-T2-FT-004-W3", "TASK-043-T2-FT-003-W1"],
+  "touched_files": [
+    "migrations/versions/0013_promo_sessions.py",
+    "src/face_moment/promo/session.py",
+    "src/face_moment/promo/attempt.py",
+    "src/face_moment/promo/__init__.py",
+    "tests/promo/test_result_session.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
+    {"name": "Result session persistence tests", "command": "docker compose run --rm backend python -m pytest tests/promo/test_result_session.py", "required": true},
+    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-004.md",
+    ".memory-bank/domains/promo-attempt.md",
+    ".memory-bank/contracts/realtime-attempt-api.md",
+    ".memory-bank/tasks/plans/IMPL-FT-004.md"
+  ],
+  "evidence_required": [
+    "Promo Attempt `Atomic result-session publication` RED: face_moment.promo_sessions and atomic result publication are absent; GREEN: one assembled result creates one owner-only session with exact immutable SPA/date/union/teasers/N, digest-only QR ticket storage and one atomic Attempt result_issued transition, while duplicate terminal admission reconstructs the same response without search and every injected write failure publishes neither half; decisive comparison: migration/repository/transaction rows plus idempotent domain response; artifact: disposable PostgreSQL proof under .tasks/TASK-072-T3-FT-004-W4/."
+  ],
+  "purpose": "Persist the promo-owned result truth and publish it atomically with the core Attempt while protecting the QR-ticket secret and preserving idempotency.",
+  "success_outcome": "A valid assembly creates exactly one durable Promo session and terminal result Attempt in one transaction, stores only the QR ticket digest and can reconstruct the exact persisted domain response on repeat.",
+  "anti_goals": [
+    "Do not implement QR ticket exchange/browser access, phone continuation or display acknowledgement.",
+    "Do not rerun processing or recompute the result on an idempotent terminal repeat.",
+    "Do not add cross-owner Photo foreign keys/cascades, ticket rotation or recovery machinery."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Processing search and result-assembly algorithms",
+      "FT-005 display transitions and FT-006 browser-access columns/flows",
+      "Operator/default database downgrade or secret disclosure"
+    ],
+    "stop_conditions": [
+      "The migration cannot extend the single linear Alembic stream.",
+      "Atomic publication would require cross-owner writes or a distributed transaction.",
+      "Idempotent response reconstruction would require storing or logging plaintext QR tickets."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/domains/promo-attempt.md#atomic-result-session-publication",
+    ".protocols/FT-004/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-004.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/promo-attempt.md#atomic-result-session-publication",
+    ".memory-bank/domains/promo-attempt.md#result-session-shape",
+    ".memory-bank/domains/promo-attempt.md#admission-and-transitions",
+    ".memory-bank/contracts/realtime-attempt-api.md#response-version-1",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/contracts/boundary-map.md#authentication-and-data-specific-delivery"
+  ],
+  "constraints": [
+    "Create the next linear migration with the execution-time direct predecessor; verify this revision's direct down_revision, upgrade, downgrade and re-upgrade without asserting a mutable future exact head.",
+    "Use a uniquely named disposable PostgreSQL database, preserve unrelated prerequisite rows and remove only the probe database after success or failure.",
+    "Derive the opaque ticket by the canonical HMAC rule from a deployment secret that never enters PostgreSQL, logs or task artifacts."
+  ],
+  "invariants": [
+    "Teaser IDs are four unique members of session_result_photo_ids and N equals the full union cardinality.",
+    "Photo IDs are historical owner-local values, not ownership-crossing cascade keys.",
+    "A deadline, interruption, failure or insufficient result creates no session and cannot publish late."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/promo-attempt.md#verification-targets",
+    "Isolated migration/repository proof covers constraints, restart persistence and unrelated-row preservation.",
+    "Atomic failure injection and duplicate-terminal proof demonstrate no half publication, second session or second search."
+  ]
+}

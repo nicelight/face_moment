@@ -1,0 +1,76 @@
+{
+  "id": "TASK-068-T3-FT-004-W1",
+  "title": "Expose the operator-owned active search date",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-004",
+  "reqs": ["REQ-SRCH-003", "REQ-SEC-001", "REQ-ARCH-001"],
+  "depends_on": ["TASK-004-T3-FT-001-W2", "TASK-042-T2-FT-003-W1"],
+  "touched_files": [
+    "src/face_moment/serving_control/active_search_date.py",
+    "src/face_moment/serving_control/http.py",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/serving_control/test_active_search_date.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
+    {"name": "Active search date tests", "command": "docker compose run --rm backend python -m pytest tests/serving_control/test_active_search_date.py", "required": true},
+    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-004.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/domains/realtime-search.md",
+    ".memory-bank/tasks/plans/IMPL-FT-004.md"
+  ],
+  "evidence_required": [
+    "Boundary Map `Staff active-date surface` RED: the authenticated GET/PUT staff surface is absent; GREEN: an active operator can read and atomically change one accessible SPA date with matching CSRF, exact response shape and revision increment, while invalid sessions, roles, SPA access, CSRF, fields and dates receive the specified status without mutation; decisive comparison: HTTP/UI responses plus before/after owner rows; artifact: focused pytest and Playwright transcript/screenshots under .tasks/TASK-068-T3-FT-004-W1/."
+  ],
+  "purpose": "Give the operator the accepted same-origin control for the server-owned active visit date without exposing a generic settings framework or client override.",
+  "success_outcome": "The exact staff page and GET/PUT API authorize through the existing staff session, enforce CSRF and atomically publish the active date and positive settings revision from serving_control.",
+  "anti_goals": [
+    "Do not implement realtime search, Promo orchestration or client configuration.",
+    "Do not add automatic date rollover, settings history or a generic configuration platform.",
+    "Do not let transport or staff_access own or directly mutate serving settings."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Processing-owned query/search code and Promo-owned Attempt/session code",
+      "Display-client credential lifecycle or sensor configuration",
+      "Production staff accounts or operator/default SPA settings"
+    ],
+    "stop_conditions": [
+      "The surface cannot use the existing staff session and CSRF contract.",
+      "Authorization requires changing staff roles or the accepted SPA-access model.",
+      "A shared/global settings-contract decision is required."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/contracts/boundary-map.md#staff-active-date-surface",
+    ".protocols/FT-004/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-004.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/boundary-map.md#staff-active-date-surface",
+    ".memory-bank/domains/realtime-search.md#active-search-context-persistence",
+    ".memory-bank/domains/staff-access.md",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries"
+  ],
+  "constraints": [
+    "Reuse the existing staff principal, session cookie and fm_staff_csrf/X-CSRF-Token contract.",
+    "Use task-owned disposable staff and SPA rows; record their initial state, safe rerun result and cleanup without changing operator/default rows.",
+    "Use the installed playwright cli for the real same-origin page flow and retain its transcript and screenshots under the task artifact directory."
+  ],
+  "invariants": [
+    "Only serving_control mutates active_visit_date and settings_revision.",
+    "The client never supplies the active search date to the realtime request.",
+    "Rejected reads or writes disclose no inaccessible SPA settings and change no owner state."
+  ],
+  "verification_targets": [
+    ".memory-bank/contracts/boundary-map.md#staff-active-date-surface",
+    "Repository/API tests prove atomic revisioned mutation and every specified 401/403/404/422 branch.",
+    "Real-browser UAT proves an authorized operator can read/change the date and a photographer cannot."
+  ]
+}

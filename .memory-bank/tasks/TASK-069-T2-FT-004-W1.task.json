@@ -1,0 +1,86 @@
+{
+  "id": "TASK-069-T2-FT-004-W1",
+  "title": "Prepare and select native reference queries",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-004",
+  "reqs": ["REQ-SRCH-001", "REQ-SRCH-002", "REQ-ARCH-001"],
+  "depends_on": [
+    "TASK-019-T2-FT-002-W2",
+    "TASK-020-T2-FT-002-W2",
+    "TASK-026-T3-FT-002-W5",
+    "TASK-060-T2-FT-003-W2"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/face_engine.py",
+    "src/face_moment/processing/sface_adapter.py",
+    "src/face_moment/processing/buffalo_adapter.py",
+    "src/face_moment/processing/reference_query.py",
+    "tests/processing/test_reference_query.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
+    {"name": "Reference query tests", "command": "docker compose run --rm backend python -m pytest tests/processing/test_reference_query.py", "required": true},
+    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-004.md",
+    ".memory-bank/domains/realtime-search.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/tasks/plans/IMPL-FT-004.md"
+  ],
+  "evidence_required": [
+    "Realtime Search `Native reference-query operations` plus `Server-authoritative occurrence selection` RED: the processing FaceEngine seam supports Photo processing only and has no reference inspection/preparation or at-most-five selector; GREEN: both direct adapters inspect and prepare a crop only through their own admitted immutable revision, and the processing selector deterministically orders all occurrences by quality then occurrence_index, retains at most five and marks low-quality selections without tracking, clustering or deduplication; decisive comparison: ordered/tied/repeated-person/low-quality fixtures and native-call traces; artifact: focused pytest under .tasks/TASK-069-T2-FT-004-W1/."
+  ],
+  "purpose": "Extend the existing processing-owned direct engines with the smallest native reference-query seam and deterministic server selection needed by realtime search.",
+  "success_outcome": "Processing produces an ordered at-most-five selected-query observation set through the committed SFace or Buffalo M native path, with explicit quality gates and no cross-pipeline or identity-grouping behavior.",
+  "anti_goals": [
+    "Do not query PostgreSQL/pgvector, compute candidate pools or publish Promo state.",
+    "Do not add an engine registry, generic adapter factory, fallback pipeline or client-side selection.",
+    "Do not add tracking, identity clustering, deduplication, embedding merge or top-1/top-2 margin."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Exact Photo search and pHash ranking owned by TASK-070-T2-FT-004-W2",
+      "Promo result/session/orchestration code",
+      "Serving-setting mutation and model-asset download or fallback"
+    ],
+    "stop_conditions": [
+      "Native reference preparation cannot reuse the admitted direct adapters without another engine abstraction.",
+      "Selection requires person identity, tracking or cross-pipeline state.",
+      "The committed revision cannot remain immutable throughout one request."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/domains/realtime-search.md#native-reference-query-operations",
+    ".memory-bank/domains/realtime-search.md#server-authoritative-occurrence-selection",
+    ".protocols/FT-004/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-004.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/realtime-search.md#native-reference-query-operations",
+    ".memory-bank/domains/realtime-search.md#server-authoritative-occurrence-selection",
+    ".memory-bank/domains/realtime-search.md#realtime-model-admission",
+    ".memory-bank/domains/photo-processing.md#owner-local-engine-boundary",
+    ".memory-bank/domains/photo-processing.md#model-asset-admission",
+    ".memory-bank/contracts/boundary-map.md#processing-input-projections"
+  ],
+  "constraints": [
+    "Keep SFace YuNet/alignCrop and Buffalo M SCRFD/native-alignment preparation distinct.",
+    "Use the immutable RealtimeContext values supplied by the completed serving_control boundary without writing that owner state.",
+    "A selected unacceptable crop returns a bounded rejected observation; no gate weakening or alternate pipeline is allowed."
+  ],
+  "invariants": [
+    "Every crop is inspected independently before deterministic at-most-five selection.",
+    "Repeated occurrences of one physical person remain valid and may occupy all selected slots.",
+    "Only the committed validated pre-warmed revision processes a request."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/realtime-search.md#native-reference-query-operations",
+    ".memory-bank/domains/realtime-search.md#server-authoritative-occurrence-selection",
+    "Separate SFace and Buffalo traces prove native preparation and revision/dimension/asset mismatch rejection.",
+    "Ordered, tied, repeated-person and low-quality fixtures prove deterministic selection and every forbidden grouping path."
+  ]
+}

@@ -1,7 +1,7 @@
 ---
 description: Promo-owned core Attempt, realtime result assembly, result-session persistence and shared QR browser-access specification.
 status: active
-last_updated: 2026-08-06
+last_updated: 2026-08-22
 source_of_truth:
   - .memory-bank/domains/promo-attempt.md
 ---
@@ -165,6 +165,8 @@ The secret and ticket MUST NOT enter logs. Rotation/recovery machinery is not
 part of FT-004. The nullable browser fields are added by the later FT-006
 linear migration and remain null for every newly issued session until first
 open; they do not change FT-004 publication or terminal-repeat behavior.
+
+### Atomic result-session publication
 
 Publishing a result inserts this row and transitions its Attempt to
 `processing_status=result_issued`, `domain_outcome=result`,

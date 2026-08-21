@@ -1,0 +1,76 @@
+{
+  "id": "TASK-071-T2-FT-004-W3",
+  "title": "Assemble four teasers and truthful N",
+  "status": "planned",
+  "wave": "W3",
+  "feature": "FT-004",
+  "reqs": ["REQ-CAP-003", "REQ-ARCH-001"],
+  "depends_on": ["TASK-070-T2-FT-004-W2"],
+  "touched_files": [
+    "src/face_moment/promo/result_assembly.py",
+    "src/face_moment/promo/__init__.py",
+    "tests/promo/test_result_assembly.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
+    {"name": "Result assembly tests", "command": "docker compose run --rm backend python -m pytest tests/promo/test_result_assembly.py", "required": true},
+    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-004.md",
+    ".memory-bank/domains/promo-attempt.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/tasks/plans/IMPL-FT-004.md"
+  ],
+  "evidence_required": [
+    "FT-004-AC-003 RED: no promo-owned candidate union or teaser assembler exists; GREEN: repeated-Photo, weak-match-exclusion and diversity-tie fixtures produce exactly four unique threshold-valid teaser IDs, keep them inside the complete unique processed-detection union and set N to that union cardinality, while fewer than four returns insufficient_results; decisive comparison: deterministic assembly artifact versus fixture truth; artifact: focused pytest under .tasks/TASK-071-T2-FT-004-W3/."
+  ],
+  "purpose": "Implement the promo-owned deterministic candidate-pool algorithm without mixing search admission, persistence or display behavior into the assembly function.",
+  "success_outcome": "Given complete processing match observations, promo returns either four unique threshold-valid teasers plus the complete union and truthful N, or explicit insufficient_results.",
+  "anti_goals": [
+    "Do not query Photo/search stores, persist sessions or construct HTTP responses.",
+    "Do not use pHash as a match gate or guarantee complete group-member coverage.",
+    "Do not add tracking, identity clustering, replacement selection or N truncation."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Processing-owned selection/search/adapters and repositories",
+      "Promo session migrations, QR ticket secrets and Attempt transitions",
+      "FT-005 display rendering or acknowledgement"
+    ],
+    "stop_conditions": [
+      "Assembly requires missing product behavior beyond the canonical algorithm.",
+      "Four unique threshold-valid Photos cannot remain a subset of the complete union.",
+      "A deterministic tie cannot be resolved by the accepted similarity/photo_id order."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-004.md#ft-004-ac-003--truthful-four-teaser-result-and-n",
+    ".protocols/FT-004/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-004.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/promo-attempt.md#result-assembly",
+    ".memory-bank/domains/realtime-search.md#exact-compatible-search",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/invariants.md",
+    ".memory-bank/testing/client-realtime.md#reference-search-and-joint-correctness-proof"
+  ],
+  "constraints": [
+    "Consume the ordered typed match sets published by processing and retain selected-detection order.",
+    "Use pure deterministic fixtures; proof data is task-owned and needs no persistent runtime state.",
+    "Keep final farthest-first and fallback rules exactly within the canonical Result Assembly section."
+  ],
+  "invariants": [
+    "One Photo matching several detections contributes to the union and N once.",
+    "pHash only ranks already-valid candidates.",
+    "Fewer than four unique valid Photos cannot produce a partial result."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/promo-attempt.md#result-assembly",
+    "FT-004-AC-003 candidate fixtures reconcile teaser uniqueness/subset and N with the full union.",
+    "Insufficient, repeated and deterministic-tie fixtures prove the explicit non-success boundary."
+  ]
+}

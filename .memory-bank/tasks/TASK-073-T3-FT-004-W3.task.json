@@ -1,0 +1,78 @@
+{
+  "id": "TASK-073-T3-FT-004-W3",
+  "title": "Enforce the singleton realtime deadline",
+  "status": "planned",
+  "wave": "W3",
+  "feature": "FT-004",
+  "reqs": ["REQ-REL-001", "REQ-DIAG-001", "REQ-PERF-001", "REQ-ARCH-001"],
+  "depends_on": ["TASK-070-T2-FT-004-W2", "TASK-043-T2-FT-003-W1"],
+  "touched_files": [
+    "src/face_moment/promo/realtime_orchestration.py",
+    "src/face_moment/promo/attempt.py",
+    "src/face_moment/infrastructure/settings.py",
+    "tests/promo/test_realtime_orchestration.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
+    {"name": "Realtime orchestration tests", "command": "docker compose run --rm backend python -m pytest tests/promo/test_realtime_orchestration.py", "required": true},
+    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-004.md",
+    ".memory-bank/domains/promo-attempt.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/tasks/plans/IMPL-FT-004.md"
+  ],
+  "evidence_required": [
+    "FT-004-AC-007 RED: every admitted nonzero request currently ends internal_failure and no singleton owner exists; GREEN: with one instrumented owner holding the process-local slot, a concurrent valid request persists its own Attempt and returns busy before release with zero processing calls, the owner observes one positive deadline and discards late work, cleanup releases the slot, and only a fresh later request acquires it; decisive comparison: Attempt states/timestamps, response timing and processing-call trace; artifact: concurrency/deadline evidence under .tasks/TASK-073-T3-FT-004-W3/."
+  ],
+  "purpose": "Provide the promo-owned one-slot, one-deadline realtime execution boundary without queues, replay or distributed coordination.",
+  "success_outcome": "Exactly one admitted request owns inference at a time; concurrent admission returns typed busy immediately, deadlines publish no late result, every terminal path releases the slot and only a fresh request can run later.",
+  "anti_goals": [
+    "Do not add a waiter queue, database lock, lease, fencing token, scheduler or extra realtime replica.",
+    "Do not own result assembly/session publication or startup interruption.",
+    "Do not weaken query/search gates to meet the deadline."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Startup recovery owned by TASK-074-T3-FT-004-W1",
+      "Result assembly/session persistence and public HTTP response serialization",
+      "Production deployment or multiple-instance coordination"
+    ],
+    "stop_conditions": [
+      "The accepted one configured realtime process cannot guarantee singleton ownership with a process-local non-blocking primitive.",
+      "A deadline would require unsafe native-thread termination or a new subprocess watchdog.",
+      "The flow cannot persist busy/deadline stage facts through promo-owned transitions."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-004.md#ft-004-ac-007--singleton-admission-and-typed-busy",
+    ".protocols/FT-004/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-004.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/promo-attempt.md#singleton-runtime-orchestration",
+    ".memory-bank/domains/realtime-search.md#failure-and-deadline-behavior",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/states/lifecycle-map.md#automatic-attempt-and-display",
+    ".memory-bank/contracts/realtime-attempt-api.md#admission-idempotency-and-failures",
+    ".memory-bank/testing/client-realtime.md#reference-search-and-joint-correctness-proof"
+  ],
+  "constraints": [
+    "Use one positive deployment-configured deadline copied into each admitted Attempt and one process-local non-blocking slot.",
+    "Stateful concurrency probes create unique disposable clients/context/Attempts, are safe to rerun and remove only their own records.",
+    "Check the deadline before and after processing steps; a late native return is discarded rather than force-killed."
+  ],
+  "invariants": [
+    "The core Attempt exists before slot acquisition.",
+    "A busy Attempt never waits, runs inference later or resumes after slot release.",
+    "Slot release occurs after every terminal success/failure/exception path."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-004.md#ft-004-ac-007--singleton-admission-and-typed-busy",
+    "Held-slot concurrency proof distinguishes owner and busy Attempt states, response time and zero busy inference calls.",
+    "Deadline/exception/fresh-acquisition fixtures prove late discard and reliable cleanup without a waiter lifecycle."
+  ]
+}

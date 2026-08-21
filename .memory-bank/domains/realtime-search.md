@@ -1,7 +1,7 @@
 ---
 description: Server-authoritative reference-query selection and compatible exact realtime search contract.
 status: active
-last_updated: 2026-08-16
+last_updated: 2026-08-22
 source_of_truth:
   - .memory-bank/domains/realtime-search.md
 ---
@@ -72,6 +72,8 @@ window from client/server clocks or Photo upload order.
 
 ## Reference Query Boundary
 
+### Native reference-query operations
+
 The owner-local `FaceEngine` implementations from
 [Photo Processing](photo-processing.md) expose the smallest additional
 reference-query operations needed here:
@@ -82,6 +84,8 @@ reference-query operations needed here:
 - prepare a selected crop through that revision's native detector,
   preprocessing, alignment, normalization and embedding path.
 
+### Realtime model admission
+
 Before realtime readiness opens, the composition root follows the shared
 [model-asset admission](photo-processing.md#model-asset-admission) contract:
 resolve the committed selected validated revision, load and warm only its
@@ -91,6 +95,8 @@ assets keep readiness closed before Attempt admission or processing-state
 mutation. Search MUST NOT load a model on first request, fall back to the other
 pipeline, mix pipeline-native preparation, reuse another revision's embedding
 or silently switch revisions.
+
+### Server-authoritative occurrence selection
 
 For one request, `processing`:
 
