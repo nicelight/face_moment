@@ -4,6 +4,21 @@ status: active
 ---
 # Changelog
 
+## [2026-08-21] Wave W5 — automatic Chromium recovery closure
+- Reconciled the explicit-owner `done` closure for
+  `TASK-054-T3-FT-003-W5` after independent functional `PASS` and per-task
+  `semantic-pass`. Exact-PID Chromium `SIGKILL` replacement was proved in
+  advertising, active and result states; managed kiosk configuration survived,
+  while personalized state and realtime replay remained absent.
+- Reconciled the source-managed kiosk unit to `Restart=always`, the strict
+  non-destructive browser recovery check, and the runbook's canonical
+  `deploy/kiosk/spa-promo-client.service` plus `--browser` invocation.
+- Confirmed every indexed W5 task is now `done`. Kept FT-003, EP-002 and mapped
+  requirements `planned` because four accepted FT-003 tasks remain open in W1,
+  W6 and W7; this sync performs no promotion or feature closure.
+- Preserved the accepted local-development decision: real pilot-host evidence
+  remains a later follow-up and is not a current queue blocker.
+
 ## [2026-08-18] Operator decision — OpenCV 5 migration strategy
 - Added the operator-directed strategic plan for migrating the runtime from
   pinned OpenCV 4.10.0 to OpenCV 5, with SFace, InsightFace/Buffalo M,

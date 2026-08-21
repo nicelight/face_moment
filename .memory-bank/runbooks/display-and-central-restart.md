@@ -46,7 +46,7 @@ and the [manual serving-revision contract](../contracts/boundary-map.md#manual-s
 - The checked-out deployment configuration and environment identify the
   intended one-server pilot, public HTTPS origin and intact named PostgreSQL/
   MinIO volumes.
-- `deploy/systemd/user/spa-promo-client.service` is the source-managed user
+- `deploy/kiosk/spa-promo-client.service` is the source-managed user
   service installed for the `display` user. It starts sandboxed Chromium
   without `--no-sandbox` and uses `Restart=always`.
 - `scripts/check-ft003-recovery.sh` is the non-destructive check command
@@ -76,8 +76,8 @@ credential, migration, browser flag or serving-setting repair.
    personalized result, reference frame, QR/session token or active Attempt
    state is restored. Confirm the existing central display-client credential
    remains configured without printing or rendering its value.
-6. Run the browser portion of `scripts/check-ft003-recovery.sh` and retain its
-   redacted result.
+6. Run `scripts/check-ft003-recovery.sh --browser` and retain its redacted
+   browser-check result.
 
 Success requires automatic replacement/reload, usable advertising and absence
 of prior personalized client state. If the origin is unreachable, record that

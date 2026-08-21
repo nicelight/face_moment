@@ -86,7 +86,7 @@ def require_one(name: str, expected: str) -> None:
 require_one("User", "display")
 require_one("Group", "display")
 require_one("NoNewPrivileges", "yes")
-require_one("Restart", "no")
+require_one("Restart", "always")
 if setting("RestartSec"):
     fail("restart_timing_override_present")
 if setting("EnvironmentFile") or setting("ExecStartPre") or setting("ExecStartPost"):
@@ -119,7 +119,7 @@ print("service_identity=PASS user=display group=display")
 print("sandbox_bypass_flags=PASS absent")
 print("browser_flags=PASS allow_listed")
 print(f"real_origin_target=PASS origin={expected_origin}")
-print("restart_control=PASS disabled_for_this_boundary")
+print("restart_control=PASS automatic_browser_replacement_enabled")
 print("deployment_secret_surface=PASS no_environment_file_or_credential_hook")
 
 

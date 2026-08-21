@@ -4,6 +4,18 @@ set -euo pipefail
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${project_root}"
 
+case "${1:-}" in
+  --browser)
+    exec bash "${project_root}/scripts/check-kiosk-browser.sh"
+    ;;
+  "")
+    ;;
+  *)
+    echo "FAIL unsupported_argument=$1" >&2
+    exit 2
+    ;;
+esac
+
 origin="${FACE_MOMENT_ORIGIN:-https://localhost:8443}"
 marker="task-051-$(date -u +%Y%m%dT%H%M%SZ)-${RANDOM}"
 fixture_spec=""

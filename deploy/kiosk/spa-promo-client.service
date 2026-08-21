@@ -7,7 +7,7 @@ Type=simple
 User=display
 Group=display
 NoNewPrivileges=yes
-Restart=no
+Restart=always
 ExecStart=/usr/bin/chromium --kiosk --no-first-run --no-default-browser-check --user-data-dir=/home/display/.config/face-moment/kiosk-profile https://localhost:8443/
 
 [Install]
