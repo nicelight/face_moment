@@ -7,7 +7,15 @@ assert.match(
   app,
   /import \{ submitRealtimeAttempt \} from "\.\/realtime-attempt\.js";/,
 );
+assert.match(
+  app,
+  /import \{ createAttemptTimingRecorder \} from "\.\/attempt-timing\.js";/,
+);
 assert.match(app, /async function submitReadyReferenceSeries\(/);
+assert.match(app, /createAttemptTimingRecorder\(\{/);
+assert.match(app, /timing: timingRecorder\.manifestTiming\(\)/);
+assert.match(app, /timingRecorder\.recordResponseReceived\(\)/);
+assert.match(app, /timing: timingRecorder\.snapshot\(\)/);
 assert.match(app, /submitRealtimeAttempt\(\{/);
 assert.match(app, /new CustomEvent\("face-moment:attempt-request-start"/);
 assert.match(app, /new CustomEvent\("face-moment:attempt-response"/);
@@ -32,6 +40,8 @@ assert.ok(requestStart < submitCall, "request-start must precede request submiss
 assert.ok(submitCall < responseDispatch, "response must be emitted after submission");
 assert.ok(submitCall < transportDispatch, "transport failure must be emitted by the same path");
 assert.doesNotMatch(app, /window\.dispatchEvent\(new CustomEvent\("face-moment:attempt-response"/s);
+assert.doesNotMatch(app, /function monotonicNowMs\(/);
+assert.doesNotMatch(app, /function referenceSeriesReadyAt\(/);
 
 console.log(
   "production wiring GREEN: ready series calls the real realtime boundary and routes its response/transport completion into the outcome controller seam",

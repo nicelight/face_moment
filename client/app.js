@@ -16,6 +16,7 @@ import {
 } from "./jpeg-quality.js";
 import { createAttemptOutcomeController } from "./attempt-outcome.js";
 import { submitRealtimeAttempt } from "./realtime-attempt.js";
+import { createAttemptTimingRecorder } from "./attempt-timing.js";
 
 const view = document.querySelector("#client-view");
 let detectorFailureMessage = false;
@@ -220,20 +221,6 @@ function restoreAdvertisingAfterFailure(detail) {
   );
 }
 
-function monotonicNowMs() {
-  return Math.max(0, Math.round(globalThis.performance?.now?.() ?? Date.now()));
-}
-
-function referenceSeriesReadyAt(detail) {
-  const readyAtMs = Number(detail?.reference_series_ready_at_ms);
-  const timeOrigin = Number(globalThis.performance?.timeOrigin);
-  if (Number.isFinite(readyAtMs) && Number.isFinite(timeOrigin)) {
-    const value = new Date(timeOrigin + readyAtMs);
-    if (Number.isFinite(value.getTime())) return value.toISOString();
-  }
-  return new Date().toISOString();
-}
-
 function newRealtimeAttemptId() {
   const attemptId = globalThis.crypto?.randomUUID?.();
   if (typeof attemptId !== "string" || !attemptId) {
@@ -245,39 +232,44 @@ function newRealtimeAttemptId() {
 async function submitReadyReferenceSeries(detail, proposals) {
   const captureId = detail?.attemptId;
   let attemptId;
+  let timingRecorder;
   try {
     attemptId = newRealtimeAttemptId();
+    timingRecorder = createAttemptTimingRecorder({
+      attemptId,
+      captureId,
+      referenceSeriesReadyMonotonicMs:
+        detail?.reference_series_ready_at_ms,
+    });
+    timingRecorder.recordLocalDetectionCompleted();
+    timingRecorder.recordRequestStarted();
     window.dispatchEvent(
       new CustomEvent("face-moment:attempt-request-start", {
-        detail: { attemptId, captureId },
+        detail: { attemptId, captureId, timing: timingRecorder.snapshot() },
       }),
     );
 
     const qualitySnapshot = jpegQualityController.getActiveAttemptSnapshot();
     const cameraSnapshot = cameraController?.snapshot?.() ?? {};
-    const localDetectionCompletedMs = monotonicNowMs();
-    const requestStartedMs = Math.max(localDetectionCompletedMs, monotonicNowMs());
     const submitted = await submitRealtimeAttempt({
       attemptId,
       triggerSource: detail?.trigger_source,
       jpegQuality: qualitySnapshot?.jpegQuality,
       cameraDeviceId: cameraSnapshot.selectedDeviceId,
       clientToken: readDisplayClientToken(),
-      timing: {
-        referenceSeriesReadyAt: referenceSeriesReadyAt(detail),
-        localDetectionCompletedMs,
-        requestStartedMs,
-      },
+      timing: timingRecorder.manifestTiming(),
       frames: detail?.frames,
       frameTimestampsMs: detail?.frame_timestamps_ms,
       proposals,
     });
+    timingRecorder.recordResponseReceived();
     window.dispatchEvent(
       new CustomEvent("face-moment:attempt-response", {
         detail: {
           attemptId,
           captureId,
           response: submitted.response,
+          timing: timingRecorder.snapshot(),
         },
       }),
     );
@@ -285,7 +277,11 @@ async function submitReadyReferenceSeries(detail, proposals) {
     if (attemptId) {
       window.dispatchEvent(
         new CustomEvent("face-moment:attempt-transport-failure", {
-          detail: { attemptId, captureId },
+          detail: {
+            attemptId,
+            captureId,
+            timing: timingRecorder?.snapshot(),
+          },
         }),
       );
     } else {
