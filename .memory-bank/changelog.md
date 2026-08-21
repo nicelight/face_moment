@@ -4,6 +4,26 @@ status: active
 ---
 # Changelog
 
+## [2026-08-22] TASK-055 — verified and closed
+- Closed `TASK-055-T2-FT-003-W7` after independent verification returned `PASS`; failure matrix, lifecycle/wiring regressions, required quality gates, forbidden-path review, and ownership review were accepted.
+
+## [2026-08-22] TASK-056 — deferred non-blocking recovery evidence
+- Recorded the operator decision to keep `TASK-056-T3-FT-003-W6` planned for
+  later real-pilot browser/central-runtime recovery evidence.
+- Marked the task explicitly non-blocking for ongoing development; it resumes
+  only when the real server, intact primary volumes and pilot recovery
+  environment are available.
+
+## [2026-08-22] TASK-055 — safe degraded advertising integration
+- Added the minimal client integration that completes the local attempt
+  lifecycle after a BlazeFace load/detection failure, so the existing
+  recoverable detector notice returns the loaded client to genuinely retryable
+  advertising.
+- Added the focused Playwright AC-008 matrix for missing camera, sensor/service
+  unavailability, BlazeFace failure, central-service failure and absent
+  optional assets. No offline metadata, fallback transport or new server path
+  was introduced; T2 verification remains with `/verify`.
+
 ## [2026-08-21] Wave W5 — automatic Chromium recovery closure
 - Reconciled the explicit-owner `done` closure for
   `TASK-054-T3-FT-003-W5` after independent functional `PASS` and per-task

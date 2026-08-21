@@ -708,6 +708,15 @@ window.addEventListener("face-moment:reference-series-ready", async (event) => {
   } catch (error) {
     renderDetectorFailure();
     window.dispatchEvent(
+      new CustomEvent("face-moment:attempt-finished", {
+        detail: {
+          attemptId: event.detail?.attemptId,
+          success: false,
+          reason: "detector_failure",
+        },
+      }),
+    );
+    window.dispatchEvent(
       new CustomEvent("face-moment:detector-failure", {
         detail: { code: error?.code ?? "blazeface_unavailable" },
       }),

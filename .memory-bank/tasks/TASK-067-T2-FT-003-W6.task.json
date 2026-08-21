@@ -1,7 +1,7 @@
 {
   "id": "TASK-067-T2-FT-003-W6",
   "title": "Show the non-blocking server-communication notice",
-  "status": "in_progress",
+  "status": "done",
   "wave": "W6",
   "feature": "FT-003",
   "reqs": ["REQ-UX-004"],
@@ -11,7 +11,9 @@
   "gates": [{"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}],
   "verify": [
     {"stage": "closure", "verdict": "blocked", "completed_at": "2026-08-16T13:24:31+05:00", "summary": "Transitive dependency TASK-053-T2-FT-003-W5 is blocked by TASK-046-T3-FT-003-W2; TASK-067 cannot be promoted or executed through the blocked outcome path.", "evidence": [".memory-bank/tasks/TASK-053-T2-FT-003-W5.task.json", ".memory-bank/tasks/TASK-046-T3-FT-003-W2.task.json"]},
-    {"stage": "functional", "attempt": 1, "verdict": "PASS", "completed_at": "2026-08-21T23:51:38+05:00", "summary": "Fresh verifier-owned controlled-clock browser and focused client probes prove FT-003-AC-016 exact local text, communication-failure routing, immediate replacement, 5-10 second visibility, stale suppression, advertising/fresh-retry continuity, non-blocking presentation and no notice persistence.", "evidence": [".protocols/TASK-067-T2-FT-003-W6/verification.md", ".tasks/TASK-067-T2-FT-003-W6/TASK-067-T2-FT-003-W6-S-VERIFY-final-report-docs-01.md", ".tasks/TASK-067-T2-FT-003-W6/verify-browser-result.json", ".tasks/TASK-067-T2-FT-003-W6/verify-outcome-probe.mjs"]}
+    {"stage": "functional", "attempt": 1, "verdict": "PASS", "completed_at": "2026-08-21T23:51:38+05:00", "summary": "Fresh verifier-owned controlled-clock browser and focused client probes prove FT-003-AC-016 exact local text, communication-failure routing, immediate replacement, 5-10 second visibility, stale suppression, advertising/fresh-retry continuity, non-blocking presentation and no notice persistence.", "evidence": [".protocols/TASK-067-T2-FT-003-W6/verification.md", ".tasks/TASK-067-T2-FT-003-W6/TASK-067-T2-FT-003-W6-S-VERIFY-final-report-docs-01.md", ".tasks/TASK-067-T2-FT-003-W6/verify-browser-result.json", ".tasks/TASK-067-T2-FT-003-W6/verify-outcome-probe.mjs"]},
+    {"stage": "functional", "attempt": 2, "verdict": "PASS", "completed_at": "2026-08-22T00:02:40+05:00", "summary": "Fresh re-verification on current HEAD independently re-proves FT-003-AC-016 exact local text, communication-failure routing, immediate replacement, 5-10 second visibility, stale suppression, advertising/fresh-retry continuity, non-blocking presentation and no notice persistence; all task source/test hashes match the prior verified basis.", "evidence": [".protocols/TASK-067-T2-FT-003-W6/verification.md", ".tasks/TASK-067-T2-FT-003-W6/TASK-067-T2-FT-003-W6-S-VERIFY-final-report-docs-02.md", ".tasks/TASK-067-T2-FT-003-W6/verify-browser-result-attempt-2.json", ".tasks/TASK-067-T2-FT-003-W6/verify-outcome-probe-attempt-2.mjs"]},
+    {"stage": "closure", "verdict": "done", "completed_at": "2026-08-22T00:18:16+05:00", "summary": "Explicit lifecycle owner closed TASK-067 after fresh T2 verification PASS. FT-003-AC-016 exact notice text/time, replacement, bounded visibility, advertising/fresh-retry continuity, non-blocking presentation and no persistence are accepted.", "evidence": [".protocols/TASK-067-T2-FT-003-W6/verification.md", ".tasks/TASK-067-T2-FT-003-W6/TASK-067-T2-FT-003-W6-S-VERIFY-final-report-docs-02.md", ".tasks/TASK-067-T2-FT-003-W6/verify-browser-result-attempt-2.json"]}
   ],
   "docs": [".memory-bank/features/FT-003.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/states/lifecycle-map.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
   "evidence_required": [

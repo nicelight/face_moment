@@ -14,14 +14,14 @@
       "stage": "reconciliation",
       "verdict": "deferred",
       "completed_at": "2026-08-18T12:05:00+05:00",
-      "summary": "TASK-051 and TASK-049 runtime evidence is deferred until a real server exists. TASK-056 remains planned for that later recovery-evidence phase and is not a current queue blocker.",
+      "summary": "By explicit operator decision on 2026-08-22, TASK-056 remains planned as deferred real-pilot runtime evidence and is non-blocking for all ongoing development. It must not block selection or execution of unrelated or development-only tasks; resume only when the real server, intact primary volumes and pilot recovery environment exist.",
       "evidence": [
         ".memory-bank/tasks/TASK-051-T3-FT-003-W4.task.json",
         ".tasks/TASK-051-T3-FT-003-W4/TASK-051-T3-FT-003-W4-S-EXECUTE-final-report-code-03.md"
       ],
       "inherited": false,
       "deferred_runtime_evidence": true,
-      "resume_route": "when the real server exists, resume TASK-056 through its existing recovery evidence route"
+      "resume_route": "after development reaches the real-pilot validation phase, resume TASK-056 through its existing recovery evidence route; do not treat it as a prerequisite for ongoing development"
     }
   ],
   "docs": [".memory-bank/features/FT-003.md", ".memory-bank/runbooks/display-and-central-restart.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
