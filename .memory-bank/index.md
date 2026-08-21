@@ -36,6 +36,7 @@ status: active
 - [.memory-bank/roles/explorer.md](roles/explorer.md): Explorer role contract.
 - [.memory-bank/roles/implementer.md](roles/implementer.md): Implementer role contract.
 - [.memory-bank/roles/reviewer.md](roles/reviewer.md): Reviewer role contract.
+- [.memory-bank/roles/judge.md](roles/judge.md): Fresh read-only orchestration trajectory reviewer.
 - [.memory-bank/prd.md](prd.md): Clarified Product Requirements Document for the current one-СПА pilot.
 - [.memory-bank/product.md](product.md): Face Moment one-СПА pilot product
   identity, value, flow, constraints and non-goals (C4 L1).
