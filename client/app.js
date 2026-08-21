@@ -17,8 +17,12 @@ import {
 import { createAttemptOutcomeController } from "./attempt-outcome.js";
 import { submitRealtimeAttempt } from "./realtime-attempt.js";
 import { createAttemptTimingRecorder } from "./attempt-timing.js";
+import { createCommunicationNoticeController } from "./communication-notice.js";
 
 const view = document.querySelector("#client-view");
+const communicationNoticeController = createCommunicationNoticeController({
+  element: document.querySelector("#communication-notice"),
+});
 let detectorFailureMessage = false;
 let cameraController;
 let sensorClient;
@@ -221,6 +225,21 @@ function restoreAdvertisingAfterFailure(detail) {
   );
 }
 
+function showCommunicationNotice(detail) {
+  if (
+    detail?.handled !== true ||
+    detail?.stale === true ||
+    ![
+      "transport_failure",
+      "http_failure",
+      "typed_response_invalid",
+    ].includes(detail.reason)
+  ) {
+    return;
+  }
+  communicationNoticeController.show();
+}
+
 function newRealtimeAttemptId() {
   const attemptId = globalThis.crypto?.randomUUID?.();
   if (typeof attemptId !== "string" || !attemptId) {
@@ -316,12 +335,13 @@ window.addEventListener("face-moment:attempt-response", (event) => {
     event.detail?.response,
   );
   if (pending) {
-    void pending.then((detail) =>
+    void pending.then((detail) => {
+      showCommunicationNotice(detail);
       restoreAdvertisingAfterFailure({
         ...detail,
         captureId: event.detail?.captureId,
-      }),
-    );
+      });
+    });
   }
 });
 
@@ -329,6 +349,7 @@ window.addEventListener("face-moment:attempt-transport-failure", (event) => {
   const result = attemptOutcomeController?.handleTransportFailure(
     event.detail?.attemptId,
   );
+  showCommunicationNotice(result);
   restoreAdvertisingAfterFailure({
     ...result,
     captureId: event.detail?.captureId,
