@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
+DEFAULT_REALTIME_DEADLINE_MS = 3000
+
 
 @dataclass(frozen=True, slots=True)
 class Settings:
@@ -49,6 +51,7 @@ class Settings:
     buffalo_alignment_version: str | None
     buffalo_normalization_version: str | None
     buffalo_embedding_dimension: int | None
+    realtime_deadline_ms: int = DEFAULT_REALTIME_DEADLINE_MS
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -127,6 +130,9 @@ class Settings:
             buffalo_normalization_version=_optional("BUFFALO_NORMALIZATION_VERSION"),
             buffalo_embedding_dimension=_optional_positive_int(
                 "BUFFALO_EMBEDDING_DIMENSION"
+            ),
+            realtime_deadline_ms=_positive_int(
+                "REALTIME_DEADLINE_MS", str(DEFAULT_REALTIME_DEADLINE_MS)
             ),
         )
 

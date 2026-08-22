@@ -4,6 +4,70 @@ status: active
 ---
 # Changelog
 
+## [2026-08-22] Wave W4 — FT-004 result-session boundary reconciled
+- Reconciled the scheduler-owned `done` closure for
+  `TASK-072-T3-FT-004-W4` with fresh independent verification PASS and T3
+  semantic-pass evidence.
+- Reconciled the linear promo-session migration, atomic result publication,
+  digest-only QR ticket storage, exact terminal idempotency and injected
+  rollback proof; no search, assembly, singleton, startup or public-display
+  ownership was added.
+- Preserved FT-004, EP-002 and mapped requirements as `planned`: the final
+  TASK-075 boundary and feature-level semantic gate remain open. No feature
+  closure or terminal run decision was made by this sync.
+
+## [2026-08-22] Wave W3 — FT-004 orchestration boundary reconciled
+- Reconciled the scheduler-owned `done` closures for
+  `TASK-071-T2-FT-004-W3` and `TASK-073-T3-FT-004-W3` with their indexed fresh
+  verification evidence; TASK-073 retains the required T3 `semantic-pass`.
+- Recorded the promo-owned deterministic result assembly correction for the
+  exact-four selected-detection order and the singleton realtime
+  admission/deadline boundary with busy, late-discard and cleanup evidence.
+- Preserved FT-004, EP-002 and mapped requirements as `planned`: W4/W5 task
+  cards and the feature-level semantic gate remain open. No promotion,
+  dependent unblock, planning, spec or feature closure decision was made by
+  this sync.
+
+## [2026-08-22] Wave W2 — FT-004 exact search boundary reconciled
+- Reconciled the scheduler-owned `done` closure for
+  `TASK-070-T2-FT-004-W2` with its indexed independent T2 verification PASS.
+- Reconciled the processing-owned exact compatible search, deterministic
+  best-face grouping/order, query-quality threshold, independent occurrence
+  searches and private-preview pHash evidence; no Promo/grouping/fallback
+  boundary was added.
+- Preserved FT-004, EP-002 and mapped requirements as `planned`: downstream
+  FT-004 task cards and the feature-level semantic gate remain open. No
+  promotion, dependency, planning, spec or contract decision was made by this
+  sync.
+
+## [2026-08-22] Wave W1 — FT-004 initial execution boundary reconciled
+- Reconciled the scheduler-owned `done` closures for
+  `TASK-068-T3-FT-004-W1`, `TASK-069-T2-FT-004-W1` and
+  `TASK-074-T3-FT-004-W1` with their indexed independent verification
+  evidence; TASK-068 and TASK-074 retain required T3 `semantic-pass` records.
+- Reconciled the source-congruent execution evidence for the Staff active-date
+  surface, native SFace/Buffalo reference-query preparation and deterministic
+  startup interruption of stale realtime Attempts.
+- Preserved FT-004, EP-002 and all mapped requirements as `planned`: later
+  FT-004 tasks remain indexed and the feature-level acceptance gate is not
+  complete. No promotion, dependent unblock, planning, spec or contract
+  decision was made by this sync.
+- Preserved the explicit TASK-049/TASK-051/TASK-056 blocked/deferred routes and
+  TASK-065 planned/deferred route.
+
+## [2026-08-22] FT-004 — approved task decomposition
+- Reconciled the fresh task-plan `APPROVE` for FT-004 with Global Backbone
+  Planning Revision `4`; all four coverage groups passed across the eight
+  indexed schema-valid task cards, their dependencies and exact AC ownership.
+- Recorded `ARCHITECTURE_REVIEW: not_required`. Both required Codex Luna
+  co-review focus launches and retries were unavailable; no substitute model
+  or co-review finding was used, and the main Reviewer retained the accepted
+  verdict under the review contract.
+- Closed planning decomposition without promotion or lifecycle mutation:
+  FT-004, its mapped requirements and `TASK-068..075` remain `planned`.
+  Manual flow now routes to `/mb-doctor`; scheduler/autopilot flow routes to
+  `/mb-doctor --strict`.
+
 ## [2026-08-22] TASK-055 — verified and closed
 - Closed `TASK-055-T2-FT-003-W7` after independent verification returned `PASS`; failure matrix, lifecycle/wiring regressions, required quality gates, forbidden-path review, and ownership review were accepted.
 

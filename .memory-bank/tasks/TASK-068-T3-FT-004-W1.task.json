@@ -1,7 +1,7 @@
 {
   "id": "TASK-068-T3-FT-004-W1",
   "title": "Expose the operator-owned active search date",
-  "status": "planned",
+  "status": "done",
   "wave": "W1",
   "feature": "FT-004",
   "reqs": ["REQ-SRCH-003", "REQ-SEC-001", "REQ-ARCH-001"],
@@ -18,7 +18,36 @@
     {"name": "Active search date tests", "command": "docker compose run --rm backend python -m pytest tests/serving_control/test_active_search_date.py", "required": true},
     {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "PASS",
+      "completed_at": "2026-08-22T14:25:00+05:00",
+      "summary": "Fresh independent verification passed the task-owned Staff active-date surface: source-congruent API/page behavior, exact 401/403/404/422 and CSRF validation branches, atomic serving-control revision update, supporting same-origin UAT and disposable cleanup.",
+      "protocol": ".protocols/TASK-068-T3-FT-004-W1/verification.md",
+      "report": ".tasks/TASK-068-T3-FT-004-W1/TASK-068-T3-FT-004-W1-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "red-verify",
+      "attempt": 3,
+      "verdict": "semantic-pass",
+      "completed_at": "2026-08-22T14:32:00+05:00",
+      "summary": "Fresh adversarial semantic verification found no material finding across serving_control ownership, exact page/API routes, auth/CSRF and rejection matrix, non-mutation, row-lock/revision semantics, source congruence, forbidden scope, UAT and cleanup.",
+      "protocol": ".protocols/TASK-068-T3-FT-004-W1/red-verification.md",
+      "report": ".tasks/TASK-068-T3-FT-004-W1/TASK-068-T3-FT-004-W1-S-RED-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "completed_at": "2026-08-22T14:35:18+05:00",
+      "summary": "Scheduler closed TASK-068 after independent functional PASS, required T3 semantic-pass and Judge-supported lifecycle review; no code, spec or scope changes were made at closure.",
+      "evidence": [
+        ".tasks/TASK-068-T3-FT-004-W1/TASK-068-T3-FT-004-W1-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-068-T3-FT-004-W1/TASK-068-T3-FT-004-W1-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-004.md",
     ".memory-bank/contracts/boundary-map.md",

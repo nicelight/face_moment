@@ -1,7 +1,7 @@
 {
   "id": "TASK-071-T2-FT-004-W3",
   "title": "Assemble four teasers and truthful N",
-  "status": "planned",
+  "status": "done",
   "wave": "W3",
   "feature": "FT-004",
   "reqs": ["REQ-CAP-003", "REQ-ARCH-001"],
@@ -17,7 +17,46 @@
     {"name": "Result assembly tests", "command": "docker compose run --rm backend python -m pytest tests/promo/test_result_assembly.py", "required": true},
     {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "FAIL",
+      "completed_at": "2026-08-22T16:38:35+05:00",
+      "summary": "Fresh independent T2 verification passed union/N, repeated-Photo, rejected/weak exclusion, four-unique subset, tie, insufficient boundary, source congruence and all required gates, but found that the current assembler re-ranks an exactly-four multi-detection diverse pool and returns teaser order 2,3,4,1 instead of the canonical selected-detection order 1,2,3,4.",
+      "protocol": ".protocols/TASK-071-T2-FT-004-W3/verification.md",
+      "report": ".tasks/TASK-071-T2-FT-004-W3/TASK-071-T2-FT-004-W3-S-VERIFY-final-report-docs-01.md",
+      "finding_evidence": ".tasks/TASK-071-T2-FT-004-W3/verify-order-boundary.log"
+    },
+    {
+      "stage": "verify",
+      "attempt": 2,
+      "verdict": "PASS",
+      "completed_at": "2026-08-22T16:52:35+05:00",
+      "summary": "Fresh verifier-owned Attempt 2 probe and gates passed exact-four selected-detection order, >4 farthest-first, complete unique union/truthful N, repeated-Photo uniqueness, rejected/weak exclusion, deterministic tie/fallback/insufficient behavior, pure promo ownership and forbidden-scope checks. Previous Attempt 1 FAIL remained historical; task status stays in_progress.",
+      "protocol": ".protocols/TASK-071-T2-FT-004-W3/verification.md",
+      "report": ".tasks/TASK-071-T2-FT-004-W3/TASK-071-T2-FT-004-W3-S-VERIFY-final-report-docs-02.md",
+      "evidence": [
+        ".tasks/TASK-071-T2-FT-004-W3/verify-attempt-2-probe.log",
+        ".tasks/TASK-071-T2-FT-004-W3/verify-attempt-2-focused.log",
+        ".tasks/TASK-071-T2-FT-004-W3/verify-attempt-2-promo-regression.log",
+        ".tasks/TASK-071-T2-FT-004-W3/verify-attempt-2-mypy.log",
+        ".tasks/TASK-071-T2-FT-004-W3/verify-attempt-2-mb-lint.log",
+        ".tasks/TASK-071-T2-FT-004-W3/verify-attempt-2-diff-check.log"
+      ]
+    },
+    {
+      "stage": "closure",
+      "attempt": 1,
+      "verdict": "done",
+      "completed_at": "2026-08-22T16:55:00+05:00",
+      "summary": "Judge-supported T2 closure after fresh Attempt 2 independent VERDICT: PASS. Attempt 1 FAIL on exact-four ordering remains historical evidence; Attempt 2 corrected the branch and independently passed all task-owned functional, scope and gate checks.",
+      "protocol": ".protocols/TASK-071-T2-FT-004-W3/verification.md",
+      "report": ".tasks/TASK-071-T2-FT-004-W3/TASK-071-T2-FT-004-W3-S-VERIFY-final-report-docs-02.md",
+      "feature_level_closure": false,
+      "judge": "gpt-5.6-sol:xhigh"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-004.md",
     ".memory-bank/domains/promo-attempt.md",
@@ -47,7 +86,7 @@
     ]
   },
   "source_artifacts": [
-    ".memory-bank/features/FT-004.md#ft-004-ac-003--truthful-four-teaser-result-and-n",
+    ".memory-bank/features/FT-004.md#FT-004-AC-003",
     ".protocols/FT-004/plan.md",
     ".memory-bank/tasks/plans/IMPL-FT-004.md"
   ],

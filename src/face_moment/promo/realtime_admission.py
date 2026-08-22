@@ -15,6 +15,7 @@ import numpy as np
 from multipart import MultipartParser
 from multipart.multipart import MultipartParseError, parse_options_header
 
+from face_moment.infrastructure.settings import DEFAULT_REALTIME_DEADLINE_MS
 from face_moment.processing.revisions import PipelineCode
 from face_moment.serving_control.realtime_context import RealtimeContext
 
@@ -377,10 +378,15 @@ def _validate_jpeg(body: bytes) -> None:
 
 
 def admission_values(
-    payload: RealtimeAdmissionPayload, context: RealtimeContext
+    payload: RealtimeAdmissionPayload,
+    context: RealtimeContext,
+    *,
+    deadline_ms: int = DEFAULT_REALTIME_DEADLINE_MS,
 ) -> AdmissionRepositoryValues:
     """Translate validated client data and owner context to repository fields."""
 
+    if isinstance(deadline_ms, bool) or not isinstance(deadline_ms, int) or deadline_ms <= 0:
+        raise ValueError("deadline_ms must be positive")
     return {
         "spa_id": context.spa_id,
         "client_attempt_id": payload.attempt_id,
@@ -402,6 +408,6 @@ def admission_values(
         "threshold": context.reference_threshold,
         "quality_settings": context.quality_settings,
         "release_id": context.release_id,
-        "deadline_ms": 3000,
+        "deadline_ms": deadline_ms,
         "calibration_id": context.calibration_id,
     }

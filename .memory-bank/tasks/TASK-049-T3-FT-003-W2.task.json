@@ -1,7 +1,7 @@
 {
   "id": "TASK-049-T3-FT-003-W2",
   "title": "Run Chromium sandboxed as the display user",
-  "status": "done",
+  "status": "blocked",
   "wave": "W2",
   "feature": "FT-003",
   "reqs": ["REQ-SEC-001"],

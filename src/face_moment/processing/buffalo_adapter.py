@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import uuid
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol, cast
@@ -12,6 +13,10 @@ from insightface.model_zoo import get_model
 from numpy.typing import NDArray
 
 from face_moment.processing.revisions import EligiblePipelineRevision, PipelineCode
+from face_moment.processing.reference_query import (
+    PreparedReferenceQuery,
+    ReferenceQualityObservation,
+)
 from face_moment.processing.terminal_publication import TerminalFace
 
 
@@ -190,6 +195,38 @@ class BuffaloPhotoAdapter:
                 )
             )
         return tuple(faces)
+
+    def inspect_reference_crop(
+        self,
+        crop: NDArray[np.uint8],
+        quality_settings: Mapping[str, object],
+    ) -> ReferenceQualityObservation:
+        del quality_settings
+        faces = self.process_photo(crop)
+        if not faces:
+            return ReferenceQualityObservation(
+                reference_quality_score=0.0,
+                native_face_count=0,
+                gate_observations=(),
+            )
+        score = max(float(face.native_face.det_score) for face in faces)
+        return ReferenceQualityObservation(
+            reference_quality_score=score,
+            native_face_count=len(faces),
+            gate_observations=(("native_detection_confidence", score),),
+        )
+
+    def prepare_reference_query(
+        self, crop: NDArray[np.uint8]
+    ) -> PreparedReferenceQuery | None:
+        faces = self.process_photo(crop)
+        if not faces:
+            return None
+        face = max(faces, key=lambda item: float(item.native_face.det_score))
+        return PreparedReferenceQuery(
+            pipeline_revision_id=self._revision.id,
+            embedding=face.embedding,
+        )
 
     def process_for_terminal(
         self, photo: NDArray[np.uint8]

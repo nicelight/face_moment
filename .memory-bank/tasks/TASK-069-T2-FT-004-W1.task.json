@@ -1,7 +1,7 @@
 {
   "id": "TASK-069-T2-FT-004-W1",
   "title": "Prepare and select native reference queries",
-  "status": "planned",
+  "status": "done",
   "wave": "W1",
   "feature": "FT-004",
   "reqs": ["REQ-SRCH-001", "REQ-SRCH-002", "REQ-ARCH-001"],
@@ -24,7 +24,27 @@
     {"name": "Reference query tests", "command": "docker compose run --rm backend python -m pytest tests/processing/test_reference_query.py", "required": true},
     {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "PASS",
+      "completed_at": "2026-08-22T14:55:10+05:00",
+      "summary": "Fresh independent T2 verification passed native SFace/Buffalo reference preparation, inspect-all deterministic at-most-five selection, quality rejection, revision/asset isolation, owner-boundary checks, focused tests, adapter regressions, mypy and Memory Bank lint. Executor evidence remained supporting-only; lifecycle remains in_progress.",
+      "protocol": ".protocols/TASK-069-T2-FT-004-W1/verification.md",
+      "report": ".tasks/TASK-069-T2-FT-004-W1/TASK-069-T2-FT-004-W1-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "completed_at": "2026-08-22T14:58:32+05:00",
+      "summary": "Scheduler closed TASK-069 after independent T2 verification PASS and Judge-supported lifecycle review; no code, spec or scope changes were made at closure.",
+      "evidence": [
+        ".tasks/TASK-069-T2-FT-004-W1/TASK-069-T2-FT-004-W1-S-VERIFY-final-report-docs-01.md",
+        ".protocols/TASK-069-T2-FT-004-W1/verification.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-004.md",
     ".memory-bank/domains/realtime-search.md",

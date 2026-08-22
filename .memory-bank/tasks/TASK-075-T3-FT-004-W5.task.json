@@ -37,7 +37,7 @@
   ],
   "evidence_required": [
     "FT-004-AC-004 RED: the current nonzero public route ends internal_failure and has no controlled correctness rows; GREEN: one stable twenty-Attempt corpus records a manual pilot evaluator decision for all four teasers and every complete-union photo_id, and at least nineteen server-correctness rows contain only participants represented by processed selected detections while missed group members remain allowed; decisive comparison: per-Attempt ground-truth table and 19/20 count; artifact: redacted corpus manifest and reviewer record under .tasks/TASK-075-T3-FT-004-W5/. This task does not claim the later FT-005 QR/latency join.",
-    "FT-004-AC-005 PRE_IMPLEMENTATION_GREEN-or-RED: preserve and re-prove the completed display-Bearer hash authentication and deterministic test rate limiter through the final result route; GREEN requires token-derived SPA only, rejection of absent/foreign/body override, configured per-token/IP 429 behavior and zero token/header/digest material in persisted/searchable logs; decisive comparison: public requests, owner rows and redacted log scan; artifact: security evidence under .tasks/TASK-075-T3-FT-004-W5/.",
+    "FT-004-AC-005 RED: the current integrated result route lacks final proof of the completed display-Bearer hash authentication and deterministic test rate limiter; GREEN: preserve and re-prove through the final result route token-derived SPA only, rejection of absent/foreign/body override, configured per-token/IP 429 behavior and zero token/header/digest material in persisted/searchable logs; decisive comparison: public requests, owner rows and redacted log scan; artifact: security evidence under .tasks/TASK-075-T3-FT-004-W5/.",
     "FT-004-AC-006 RED: nonzero insufficient/partial/repeated-Photo cases cannot reach typed domain outcomes and missing context has no completed operational evidence check; GREEN: missing date returns pre-admission 503 with bounded token-free evidence, partial current ready inventory is searched without a group gate, fewer than four returns insufficient_results with no session, repeated Photo contributes once to N, and every exact result/non-success response follows response version 1; decisive comparison: response/Attempt/session/evidence rows for each fixture; artifact: boundary integration evidence under .tasks/TASK-075-T3-FT-004-W5/."
   ],
   "purpose": "Compose the completed serving, processing and promo outcomes behind the exact authenticated realtime endpoint and prove the remaining FT-004 public, correctness, security and non-success claims.",
@@ -61,9 +61,9 @@
     ]
   },
   "source_artifacts": [
-    ".memory-bank/features/FT-004.md#ft-004-ac-004--joint-controlled-attempt-correctness",
-    ".memory-bank/features/FT-004.md#ft-004-ac-005--token-bound-public-search-boundary",
-    ".memory-bank/features/FT-004.md#ft-004-ac-006--explicit-no-success-paths",
+    ".memory-bank/features/FT-004.md#FT-004-AC-004",
+    ".memory-bank/features/FT-004.md#FT-004-AC-005",
+    ".memory-bank/features/FT-004.md#FT-004-AC-006",
     ".protocols/FT-004/plan.md",
     ".memory-bank/tasks/plans/IMPL-FT-004.md"
   ],

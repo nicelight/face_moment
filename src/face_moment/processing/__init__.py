@@ -10,6 +10,18 @@ from face_moment.processing.revisions import (
     UnsupportedPipelineCodeError,
 )
 from face_moment.processing.searchable_projection import read_photo_processing_projection
+from face_moment.processing.persistence import (
+    CompatiblePhotoMatch,
+    ExactCompatibleSearchRepository,
+)
+from face_moment.processing.realtime_search import (
+    DetectionSearchObservation,
+    PhotoMatchObservation,
+    RealtimeSearchResult,
+    RealtimeSearchService,
+    opencv_phash64_v1,
+    search_realtime_references,
+)
 from face_moment.processing.serving_revision_guard import (
     ServingRevisionGuardProjection,
     ServingRevisionGuardRepository,
@@ -18,15 +30,23 @@ from face_moment.processing.serving_revision_guard import (
 
 __all__ = [
     "EligiblePipelineRevision",
+    "CompatiblePhotoMatch",
+    "DetectionSearchObservation",
+    "ExactCompatibleSearchRepository",
     "FaceEngine",
     "FakeFaceEngine",
     "InitialPendingRepository",
     "IneligiblePipelineRevisionError",
     "PipelineCode",
     "PipelineRevisionRepository",
+    "PhotoMatchObservation",
+    "RealtimeSearchResult",
+    "RealtimeSearchService",
+    "opencv_phash64_v1",
     "read_photo_processing_projection",
     "read_serving_revision_guard",
     "ServingRevisionGuardProjection",
     "ServingRevisionGuardRepository",
+    "search_realtime_references",
     "UnsupportedPipelineCodeError",
 ]

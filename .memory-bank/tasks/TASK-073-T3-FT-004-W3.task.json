@@ -1,7 +1,7 @@
 {
   "id": "TASK-073-T3-FT-004-W3",
   "title": "Enforce the singleton realtime deadline",
-  "status": "planned",
+  "status": "done",
   "wave": "W3",
   "feature": "FT-004",
   "reqs": ["REQ-REL-001", "REQ-DIAG-001", "REQ-PERF-001", "REQ-ARCH-001"],
@@ -18,7 +18,45 @@
     {"name": "Realtime orchestration tests", "command": "docker compose run --rm backend python -m pytest tests/promo/test_realtime_orchestration.py", "required": true},
     {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "PASS",
+      "completed_at": "2026-08-22T17:30:05+05:00",
+      "summary": "Fresh independent current-source verification passed the task-owned FT-004-AC-007 singleton/deadline outcome, required gates and disposable cleanup.",
+      "protocol": ".protocols/TASK-073-T3-FT-004-W3/verification.md",
+      "report": ".tasks/TASK-073-T3-FT-004-W3/TASK-073-T3-FT-004-W3-S-VERIFY-final-report-docs-01.md",
+      "evidence": [
+        ".tasks/TASK-073-T3-FT-004-W3/verify_independent_probe.py"
+      ]
+    },
+    {
+      "stage": "red-verify",
+      "attempt": 1,
+      "verdict": "semantic-pass",
+      "completed_at": "2026-08-22T17:40:47+05:00",
+      "summary": "Fresh adversarial semantic verification found no admitted findings or operator questions for FT-004-AC-007 and confirmed task ownership, forbidden-scope compliance and cleanup.",
+      "protocol": ".protocols/TASK-073-T3-FT-004-W3/red-verification.md",
+      "report": ".tasks/TASK-073-T3-FT-004-W3/TASK-073-T3-FT-004-W3-S-RED-VERIFY-final-report-docs-01.md",
+      "evidence": [
+        ".tasks/TASK-073-T3-FT-004-W3/red_semantic_probe.py"
+      ]
+    },
+    {
+      "stage": "closure",
+      "attempt": 1,
+      "verdict": "done",
+      "completed_at": "2026-08-22T17:45:04+05:00",
+      "summary": "Judge-supported T3 task closure after fresh independent PASS and required per-task semantic-pass; no findings/questions remain and required gates and cleanup passed. This closes TASK-073 only, not FT-004.",
+      "evidence": [
+        ".tasks/TASK-073-T3-FT-004-W3/TASK-073-T3-FT-004-W3-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-073-T3-FT-004-W3/TASK-073-T3-FT-004-W3-S-RED-VERIFY-final-report-docs-01.md"
+      ],
+      "feature_level_closure": false,
+      "judge": "gpt-5.6-sol:xhigh"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-004.md",
     ".memory-bank/domains/promo-attempt.md",
@@ -48,7 +86,7 @@
     ]
   },
   "source_artifacts": [
-    ".memory-bank/features/FT-004.md#ft-004-ac-007--singleton-admission-and-typed-busy",
+    ".memory-bank/features/FT-004.md#FT-004-AC-007",
     ".protocols/FT-004/plan.md",
     ".memory-bank/tasks/plans/IMPL-FT-004.md"
   ],
@@ -71,7 +109,7 @@
     "Slot release occurs after every terminal success/failure/exception path."
   ],
   "verification_targets": [
-    ".memory-bank/features/FT-004.md#ft-004-ac-007--singleton-admission-and-typed-busy",
+    ".memory-bank/features/FT-004.md#FT-004-AC-007",
     "Held-slot concurrency proof distinguishes owner and busy Attempt states, response time and zero busy inference calls.",
     "Deadline/exception/fresh-acquisition fixtures prove late discard and reliable cleanup without a waiter lifecycle."
   ]

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import uuid
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol, cast
@@ -11,6 +12,10 @@ import numpy as np
 from numpy.typing import NDArray
 
 from face_moment.processing.revisions import EligiblePipelineRevision, PipelineCode
+from face_moment.processing.reference_query import (
+    PreparedReferenceQuery,
+    ReferenceQualityObservation,
+)
 from face_moment.processing.terminal_publication import TerminalFace
 
 
@@ -185,6 +190,41 @@ class SFacePhotoAdapter:
             )
         return tuple(faces)
 
+    def inspect_reference_crop(
+        self,
+        crop: NDArray[np.uint8],
+        quality_settings: Mapping[str, object],
+    ) -> ReferenceQualityObservation:
+        del quality_settings
+        faces = self.process_photo(crop)
+        if not faces:
+            return ReferenceQualityObservation(
+                reference_quality_score=0.0,
+                native_face_count=0,
+                gate_observations=(),
+            )
+        score = max(self._detection_confidence(face.native_detection) for face in faces)
+        return ReferenceQualityObservation(
+            reference_quality_score=score,
+            native_face_count=len(faces),
+            gate_observations=(("native_detection_confidence", score),),
+        )
+
+    def prepare_reference_query(
+        self, crop: NDArray[np.uint8]
+    ) -> PreparedReferenceQuery | None:
+        faces = self.process_photo(crop)
+        if not faces:
+            return None
+        face = max(
+            faces,
+            key=lambda item: self._detection_confidence(item.native_detection),
+        )
+        return PreparedReferenceQuery(
+            pipeline_revision_id=self._revision.id,
+            embedding=face.embedding,
+        )
+
     def process_for_terminal(
         self, photo: NDArray[np.uint8]
     ) -> tuple[TerminalFace, ...]:
@@ -219,3 +259,9 @@ class SFacePhotoAdapter:
             or photo.shape[2] != 3
         ):
             raise InvalidSFacePhotoError("SFace requires a decoded BGR Photo")
+
+    @staticmethod
+    def _detection_confidence(detection: NDArray[np.float32]) -> float:
+        if detection.size <= 14:
+            raise InvalidSFacePhotoError("SFace detection lacks confidence")
+        return float(detection[14])

@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import uuid
+import math
+from dataclasses import dataclass
+from datetime import date
 from datetime import datetime
+from collections.abc import Sequence
 from typing import Any
 
 from sqlalchemy import (
@@ -14,12 +18,19 @@ from sqlalchemy import (
     String,
     Uuid,
     UniqueConstraint,
+    asc,
+    bindparam,
+    cast as sql_cast,
+    desc,
+    func,
+    select,
 )
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, Session, mapped_column
 from sqlalchemy.types import UserDefinedType
 
 from face_moment.infrastructure.database import Base
+from face_moment.inventory.photo_persistence import Photo
+from face_moment.processing.initial_pending import PhotoPipelineState
 
 
 class Vector(UserDefinedType[list[float]]):
@@ -29,6 +40,23 @@ class Vector(UserDefinedType[list[float]]):
 
     def get_col_spec(self, **_kw: Any) -> str:
         return "vector"
+
+
+def _vector_literal(values: Sequence[float]) -> str:
+    normalized = tuple(float(value) for value in values)
+    if not normalized or any(not math.isfinite(value) for value in normalized):
+        raise ValueError("query embedding must be finite and non-empty")
+    return "[" + ",".join(format(value, ".9g") for value in normalized) + "]"
+
+
+@dataclass(frozen=True, slots=True)
+class CompatiblePhotoMatch:
+    """One threshold-valid Photo match for one prepared detection."""
+
+    photo_id: uuid.UUID
+    pipeline_revision_id: uuid.UUID
+    cosine_similarity: float
+    preview_object_key: str
 
 
 class PhotoFace(Base):
@@ -125,6 +153,91 @@ class PhotoFace(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class ExactCompatibleSearchRepository:
+    """Processing-owned read boundary for exact compatible Photo search."""
+
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def search(
+        self,
+        *,
+        spa_id: uuid.UUID,
+        visit_date: date,
+        pipeline_revision_id: uuid.UUID,
+        query_embedding: Sequence[float],
+        reference_threshold: float,
+    ) -> tuple[CompatiblePhotoMatch, ...]:
+        """Search the immutable compatible ready scope using exact cosine distance."""
+
+        if not math.isfinite(float(reference_threshold)):
+            raise ValueError("reference_threshold must be finite")
+
+        query_vector = sql_cast(
+            bindparam("query_embedding", value=_vector_literal(query_embedding)),
+            Vector(),
+        )
+        cosine_distance = PhotoFace.embedding.op("<=>")(query_vector)
+        scoped = (
+            select(
+                Photo.id.label("photo_id"),
+                PhotoPipelineState.pipeline_revision_id.label(
+                    "pipeline_revision_id"
+                ),
+                PhotoPipelineState.preview_object_key.label("preview_object_key"),
+                func.min(cosine_distance).label("cosine_distance"),
+            )
+            .select_from(PhotoFace)
+            .join(Photo, Photo.id == PhotoFace.photo_id)
+            .join(
+                PhotoPipelineState,
+                (PhotoPipelineState.photo_id == Photo.id)
+                & (
+                    PhotoPipelineState.pipeline_revision_id
+                    == PhotoFace.pipeline_revision_id
+                ),
+            )
+            .where(
+                Photo.spa_id == spa_id,
+                Photo.visit_date == visit_date,
+                Photo.is_active.is_(True),
+                Photo.admission_pipeline_revision_id == pipeline_revision_id,
+                PhotoFace.pipeline_revision_id == pipeline_revision_id,
+                PhotoPipelineState.pipeline_revision_id == pipeline_revision_id,
+                PhotoPipelineState.status == "ready",
+                PhotoPipelineState.preview_object_key.is_not(None),
+                PhotoPipelineState.thumbnail_object_key.is_not(None),
+            )
+            .group_by(
+                Photo.id,
+                PhotoPipelineState.pipeline_revision_id,
+                PhotoPipelineState.preview_object_key,
+            )
+            .subquery("compatible_scope")
+        )
+        similarity = 1.0 - scoped.c.cosine_distance
+        statement = (
+            select(
+                scoped.c.photo_id,
+                scoped.c.pipeline_revision_id,
+                similarity.label("cosine_similarity"),
+                scoped.c.preview_object_key,
+            )
+            .where(similarity >= float(reference_threshold))
+            .order_by(desc(similarity), asc(scoped.c.photo_id))
+        )
+        rows = self._session.execute(statement).all()
+        return tuple(
+            CompatiblePhotoMatch(
+                photo_id=row.photo_id,
+                pipeline_revision_id=row.pipeline_revision_id,
+                cosine_similarity=float(row.cosine_similarity),
+                preview_object_key=row.preview_object_key,
+            )
+            for row in rows
+        )
 
 
 class ProcessingRuntimeStatus(Base):

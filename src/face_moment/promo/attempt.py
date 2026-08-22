@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import date, datetime, timezone
 import json
 import math
+from typing import TYPE_CHECKING
 import uuid
 
 from sqlalchemy import (
@@ -17,6 +18,7 @@ from sqlalchemy import (
     Uuid,
     UniqueConstraint,
     select,
+    update,
 )
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, Session, mapped_column
@@ -24,6 +26,10 @@ from sqlalchemy.sql import func
 
 from face_moment.infrastructure.database import Base
 from face_moment.processing.revisions import PipelineCode
+from face_moment.promo.result_assembly import ResultAssembly
+
+if TYPE_CHECKING:
+    from face_moment.promo.session import ResultSessionResponse
 
 _MAX_TEXT_LENGTH = 255
 _MAX_JSON_BYTES = 4096
@@ -252,30 +258,183 @@ class PromoAttemptRepository:
     ) -> PromoAttempt:
         """Close an admitted zero-proposal Attempt without invoking search."""
 
-        if attempt.processing_status != "accepted":
-            raise ValueError("only an accepted Attempt can be closed as no_proposals")
+        return self._mark_accepted_terminal(
+            attempt,
+            processing_status="no_success",
+            domain_outcome="no_proposals",
+            now=now,
+            error_message="only an accepted Attempt can be closed as no_proposals",
+        )
+
+    def mark_busy(
+        self, attempt: PromoAttempt, *, now: datetime | None = None
+    ) -> PromoAttempt:
+        """Close an admitted Attempt that cannot acquire the process-local slot."""
+
+        return self._mark_accepted_terminal(
+            attempt,
+            processing_status="no_success",
+            domain_outcome="busy",
+            now=now,
+            error_message="only an accepted Attempt can be closed as busy",
+        )
+
+    def mark_search_started(
+        self, attempt: PromoAttempt, *, now: datetime | None = None
+    ) -> PromoAttempt:
+        """Atomically move the slot owner from admission into processing."""
+
         timestamp = _utc(now)
-        attempt.processing_status = "no_success"
-        attempt.domain_outcome = "no_proposals"
-        attempt.slot_decided_at = timestamp
-        attempt.search_finished_at = timestamp
-        attempt.updated_at = timestamp
+        result = self._session.execute(
+            update(PromoAttempt)
+            .where(
+                PromoAttempt.id == attempt.id,
+                PromoAttempt.processing_status == "accepted",
+            )
+            .values(
+                processing_status="searching",
+                slot_decided_at=timestamp,
+                search_started_at=timestamp,
+                updated_at=timestamp,
+            )
+        )
+        if result.rowcount != 1:
+            self._session.refresh(attempt)
+            raise ValueError("only an accepted Attempt can start searching")
         self._session.flush()
         return attempt
+
+    def mark_deadline(
+        self, attempt: PromoAttempt, *, now: datetime | None = None
+    ) -> PromoAttempt:
+        """Discard a late processing return without publishing a result."""
+
+        return self._mark_active_terminal(
+            attempt,
+            processing_status="deadline",
+            domain_outcome="deadline",
+            now=now,
+            error_message="only an admitted Attempt can be closed as deadline",
+        )
 
     def mark_internal_failure(
         self, attempt: PromoAttempt, *, now: datetime | None = None
     ) -> PromoAttempt:
-        """Record the accepted FT-003 seam before FT-004 search is wired."""
+        """Record an admitted technical failure without changing foreign state."""
 
-        if attempt.processing_status != "accepted":
-            raise ValueError("only an accepted Attempt can be marked internal_failure")
+        return self._mark_active_terminal(
+            attempt,
+            processing_status="internal_failure",
+            domain_outcome=None,
+            now=now,
+            error_message="only an accepted Attempt can be marked internal_failure",
+        )
+
+    def publish_result(
+        self,
+        attempt: PromoAttempt,
+        assembly: ResultAssembly,
+        *,
+        qr_ticket_secret: bytes | str,
+        display_expires_at: datetime,
+        qr_issued_at: datetime | None = None,
+        failure_hook: Callable[[str], None] | None = None,
+    ) -> ResultSessionResponse:
+        """Publish the promo-owned session and terminal Attempt atomically."""
+
+        from face_moment.promo.session import PromoSessionRepository
+
+        return PromoSessionRepository(
+            self._session,
+            qr_ticket_secret=qr_ticket_secret,
+            failure_hook=failure_hook,
+        ).publish_result(
+            attempt,
+            assembly,
+            display_expires_at=display_expires_at,
+            qr_issued_at=qr_issued_at,
+        )
+
+    def interrupt_stale(
+        self, *, now: datetime | None = None
+    ) -> int:
+        """Terminally interrupt unfinished realtime Attempts at startup."""
+
         timestamp = _utc(now)
-        attempt.processing_status = "internal_failure"
-        attempt.domain_outcome = None
-        attempt.slot_decided_at = timestamp
-        attempt.search_finished_at = timestamp
-        attempt.updated_at = timestamp
+        result = self._session.execute(
+            update(PromoAttempt)
+            .where(PromoAttempt.processing_status.in_(("accepted", "searching")))
+            .values(
+                processing_status="interrupted",
+                domain_outcome="interrupted",
+                search_finished_at=timestamp,
+                updated_at=timestamp,
+            )
+        )
+        self._session.flush()
+        return result.rowcount
+
+    def _mark_accepted_terminal(
+        self,
+        attempt: PromoAttempt,
+        *,
+        processing_status: str,
+        domain_outcome: str | None,
+        now: datetime | None,
+        error_message: str,
+    ) -> PromoAttempt:
+        timestamp = _utc(now)
+        result = self._session.execute(
+            update(PromoAttempt)
+            .where(
+                PromoAttempt.id == attempt.id,
+                PromoAttempt.processing_status == "accepted",
+            )
+            .values(
+                processing_status=processing_status,
+                domain_outcome=domain_outcome,
+                slot_decided_at=timestamp,
+                search_finished_at=timestamp,
+                updated_at=timestamp,
+            )
+        )
+        if result.rowcount != 1:
+            self._session.refresh(attempt)
+            raise ValueError(error_message)
+        self._session.flush()
+        return attempt
+
+    def _mark_active_terminal(
+        self,
+        attempt: PromoAttempt,
+        *,
+        processing_status: str,
+        domain_outcome: str | None,
+        now: datetime | None,
+        error_message: str,
+    ) -> PromoAttempt:
+        timestamp = _utc(now)
+        result = self._session.execute(
+            update(PromoAttempt)
+            .where(
+                PromoAttempt.id == attempt.id,
+                PromoAttempt.processing_status.in_(
+                    ("accepted", "searching")
+                ),
+            )
+            .values(
+                processing_status=processing_status,
+                domain_outcome=domain_outcome,
+                slot_decided_at=func.coalesce(
+                    PromoAttempt.slot_decided_at, timestamp
+                ),
+                search_finished_at=timestamp,
+                updated_at=timestamp,
+            )
+        )
+        if result.rowcount != 1:
+            self._session.refresh(attempt)
+            raise ValueError(error_message)
         self._session.flush()
         return attempt
 

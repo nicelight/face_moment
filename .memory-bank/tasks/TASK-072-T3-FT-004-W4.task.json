@@ -1,7 +1,7 @@
 {
   "id": "TASK-072-T3-FT-004-W4",
   "title": "Persist and publish the realtime result session",
-  "status": "planned",
+  "status": "done",
   "wave": "W4",
   "feature": "FT-004",
   "reqs": ["REQ-CAP-003", "REQ-REL-001", "REQ-SEC-001", "REQ-ARCH-001"],
@@ -19,7 +19,45 @@
     {"name": "Result session persistence tests", "command": "docker compose run --rm backend python -m pytest tests/promo/test_result_session.py", "required": true},
     {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "PASS",
+      "completed_at": "2026-08-22T18:22:08+05:00",
+      "summary": "Fresh independent T3 verification passed atomic result-session publication, migration round-trip, injected rollback, exact terminal idempotency, digest-only QR storage, required gates and disposable cleanup; lifecycle remains in_progress.",
+      "protocol": ".protocols/TASK-072-T3-FT-004-W4/verification.md",
+      "report": ".tasks/TASK-072-T3-FT-004-W4/TASK-072-T3-FT-004-W4-S-VERIFY-final-report-docs-01.md",
+      "evidence": [
+        ".tasks/TASK-072-T3-FT-004-W4/verify_probe.py"
+      ]
+    },
+    {
+      "stage": "red-verify",
+      "attempt": 1,
+      "verdict": "semantic-pass",
+      "completed_at": "2026-08-22T18:30:00+05:00",
+      "summary": "Fresh adversarial semantic verification found no findings for atomic result-session publication, rollback, exact idempotency, digest-only QR, constraints, ownership or cleanup.",
+      "protocol": ".protocols/TASK-072-T3-FT-004-W4/red-verification.md",
+      "report": ".tasks/TASK-072-T3-FT-004-W4/TASK-072-T3-FT-004-W4-S-RED-VERIFY-final-report-docs-01.md",
+      "evidence": [
+        ".tasks/TASK-072-T3-FT-004-W4/red_probe_01.py"
+      ]
+    },
+    {
+      "stage": "closure",
+      "attempt": 1,
+      "verdict": "done",
+      "completed_at": "2026-08-22T18:34:05+05:00",
+      "summary": "Judge-supported T3 task closure after fresh independent PASS and semantic-pass; this closes TASK-072 only, not FT-004.",
+      "evidence": [
+        ".tasks/TASK-072-T3-FT-004-W4/TASK-072-T3-FT-004-W4-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-072-T3-FT-004-W4/TASK-072-T3-FT-004-W4-S-RED-VERIFY-final-report-docs-01.md"
+      ],
+      "feature_level_closure": false,
+      "judge": "gpt-5.6-sol:xhigh"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-004.md",
     ".memory-bank/domains/promo-attempt.md",

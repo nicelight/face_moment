@@ -10,7 +10,10 @@ from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse, Response
 from face_moment.entrypoints.common import create_role_app, run
 from face_moment.entrypoints.model_consumers import bind_model_consumer
-from face_moment.infrastructure.settings import Settings
+from face_moment.infrastructure.settings import (
+    DEFAULT_REALTIME_DEADLINE_MS,
+    Settings,
+)
 from face_moment.promo import PromoAttemptRepository, PromoAttemptNotFoundError
 from face_moment.promo.realtime_admission import (
     RealtimeBodyTooLargeError,
@@ -18,6 +21,7 @@ from face_moment.promo.realtime_admission import (
     admission_values,
     parse_realtime_multipart,
 )
+from face_moment.promo.startup_recovery import RealtimeStartupRecoveryRepository
 from face_moment.serving_control.display_client_auth import (
     DisplayClientRateLimiter,
     DisplayClientRateLimitError,
@@ -38,15 +42,30 @@ async def _realtime_lifecycle(
     binding = bind_model_consumer(settings)
     state["session_factory"] = binding.session_factory
     state["admitted_pipeline_revision_id"] = binding.adapter.pipeline_revision_id
+    state["realtime_deadline_ms"] = getattr(
+        settings, "realtime_deadline_ms", DEFAULT_REALTIME_DEADLINE_MS
+    )
     state["display_client_rate_limiter"] = DisplayClientRateLimiter(
         limit=60, window_seconds=60
     )
     state["health"] = {"production_model_loaded": True}
     try:
+        with binding.session_factory() as database_session:
+            recovered_count = RealtimeStartupRecoveryRepository(
+                database_session
+            ).recover()
+            database_session.commit()
+        state["health"].update(
+            {
+                "recovery_completed": True,
+                "last_recovered_count": recovered_count,
+            }
+        )
         yield
     finally:
         state.pop("session_factory", None)
         state.pop("admitted_pipeline_revision_id", None)
+        state.pop("realtime_deadline_ms", None)
         state.pop("display_client_rate_limiter", None)
         binding.close()
 
@@ -109,7 +128,13 @@ def create_app() -> FastAPI:
                 return _response_for_attempt(existing)
 
             attempt = repository.create_or_get(
-                **admission_values(payload, context),
+                **admission_values(
+                    payload,
+                    context,
+                    deadline_ms=state.get(
+                        "realtime_deadline_ms", DEFAULT_REALTIME_DEADLINE_MS
+                    ),
+                ),
             )
             if attempt.processing_status == "accepted":
                 if payload.proposal_count == 0:
