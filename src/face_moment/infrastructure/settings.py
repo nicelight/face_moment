@@ -4,6 +4,10 @@ import os
 from dataclasses import dataclass
 
 DEFAULT_REALTIME_DEADLINE_MS = 3000
+DEFAULT_REALTIME_RATE_LIMIT = 60
+DEFAULT_REALTIME_RATE_WINDOW_SECONDS = 60
+DEFAULT_REALTIME_RESULT_DISPLAY_MS = 15000
+DEFAULT_PROMO_QR_TICKET_SECRET = "face-moment-development-only-qr-ticket"
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,6 +56,10 @@ class Settings:
     buffalo_normalization_version: str | None
     buffalo_embedding_dimension: int | None
     realtime_deadline_ms: int = DEFAULT_REALTIME_DEADLINE_MS
+    realtime_rate_limit: int = DEFAULT_REALTIME_RATE_LIMIT
+    realtime_rate_window_seconds: int = DEFAULT_REALTIME_RATE_WINDOW_SECONDS
+    realtime_result_display_ms: int = DEFAULT_REALTIME_RESULT_DISPLAY_MS
+    promo_qr_ticket_secret: str = DEFAULT_PROMO_QR_TICKET_SECRET
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -133,6 +141,20 @@ class Settings:
             ),
             realtime_deadline_ms=_positive_int(
                 "REALTIME_DEADLINE_MS", str(DEFAULT_REALTIME_DEADLINE_MS)
+            ),
+            realtime_rate_limit=_positive_int(
+                "REALTIME_RATE_LIMIT", str(DEFAULT_REALTIME_RATE_LIMIT)
+            ),
+            realtime_rate_window_seconds=_positive_int(
+                "REALTIME_RATE_WINDOW_SECONDS",
+                str(DEFAULT_REALTIME_RATE_WINDOW_SECONDS),
+            ),
+            realtime_result_display_ms=_positive_int(
+                "REALTIME_RESULT_DISPLAY_MS",
+                str(DEFAULT_REALTIME_RESULT_DISPLAY_MS),
+            ),
+            promo_qr_ticket_secret=os.environ.get(
+                "PROMO_QR_TICKET_SECRET", DEFAULT_PROMO_QR_TICKET_SECRET
             ),
         )
 

@@ -2,19 +2,42 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from ipaddress import ip_address
 import os
-from typing import Any
+from typing import Any, cast
 
+import cv2
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse, Response
+import numpy as np
+from numpy.typing import NDArray
+from sqlalchemy.orm import Session
+
 from face_moment.entrypoints.common import create_role_app, run
 from face_moment.entrypoints.model_consumers import bind_model_consumer
+from face_moment.infrastructure.object_store import PrivateObjectStore
 from face_moment.infrastructure.settings import (
     DEFAULT_REALTIME_DEADLINE_MS,
+    DEFAULT_REALTIME_RATE_LIMIT,
+    DEFAULT_REALTIME_RATE_WINDOW_SECONDS,
+    DEFAULT_REALTIME_RESULT_DISPLAY_MS,
+    DEFAULT_PROMO_QR_TICKET_SECRET,
     Settings,
 )
-from face_moment.promo import PromoAttemptRepository, PromoAttemptNotFoundError
+from face_moment.processing import (
+    ExactCompatibleSearchRepository,
+    FaceEngine,
+    RealtimeSearchResult,
+    search_realtime_references,
+)
+from face_moment.processing.reference_query import ReferenceOccurrence
+from face_moment.promo import (
+    PromoAttemptRepository,
+    PromoAttemptNotFoundError,
+    PromoSessionRepository,
+    execute_realtime_attempt,
+)
 from face_moment.promo.realtime_admission import (
     RealtimeBodyTooLargeError,
     RealtimePayloadError,
@@ -41,12 +64,25 @@ async def _realtime_lifecycle(
 ) -> AsyncIterator[None]:
     binding = bind_model_consumer(settings)
     state["session_factory"] = binding.session_factory
+    state["model_adapter"] = binding.adapter
+    state["object_store"] = PrivateObjectStore(settings)
     state["admitted_pipeline_revision_id"] = binding.adapter.pipeline_revision_id
     state["realtime_deadline_ms"] = getattr(
         settings, "realtime_deadline_ms", DEFAULT_REALTIME_DEADLINE_MS
     )
+    state["realtime_result_display_ms"] = getattr(
+        settings, "realtime_result_display_ms", DEFAULT_REALTIME_RESULT_DISPLAY_MS
+    )
+    state["qr_ticket_secret"] = getattr(
+        settings, "promo_qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
+    )
     state["display_client_rate_limiter"] = DisplayClientRateLimiter(
-        limit=60, window_seconds=60
+        limit=getattr(settings, "realtime_rate_limit", DEFAULT_REALTIME_RATE_LIMIT),
+        window_seconds=getattr(
+            settings,
+            "realtime_rate_window_seconds",
+            DEFAULT_REALTIME_RATE_WINDOW_SECONDS,
+        ),
     )
     state["health"] = {"production_model_loaded": True}
     try:
@@ -64,8 +100,12 @@ async def _realtime_lifecycle(
         yield
     finally:
         state.pop("session_factory", None)
+        state.pop("model_adapter", None)
+        state.pop("object_store", None)
         state.pop("admitted_pipeline_revision_id", None)
         state.pop("realtime_deadline_ms", None)
+        state.pop("realtime_result_display_ms", None)
+        state.pop("qr_ticket_secret", None)
         state.pop("display_client_rate_limiter", None)
         binding.close()
 
@@ -106,8 +146,29 @@ def create_app() -> FastAPI:
                 raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS) from error
             except InvalidDisplayClientCredentials as error:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from error
+            repository = PromoAttemptRepository(database_session)
             try:
-                context = RealtimeContextRepository(database_session).resolve_realtime_context(
+                existing = repository.get_by_admission_key(
+                    spa_id=principal.spa_id,
+                    client_attempt_id=payload.attempt_id,
+                    for_update=True,
+                )
+            except PromoAttemptNotFoundError:
+                existing = None
+            if existing is not None:
+                database_session.commit()
+                return _response_for_attempt(
+                    existing,
+                    database_session=database_session,
+                    qr_ticket_secret=state.get(
+                        "qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
+                    ),
+                )
+
+            try:
+                context = RealtimeContextRepository(
+                    database_session
+                ).resolve_realtime_context(
                     spa_id=principal.spa_id,
                     admitted_pipeline_revision_id=state["admitted_pipeline_revision_id"],
                     release_id=os.environ.get("FACE_MOMENT_RELEASE_ID", "face-moment-runtime"),
@@ -115,17 +176,6 @@ def create_app() -> FastAPI:
             except (RealtimeReadinessClosedError, UnknownRealtimeContextSpaError) as error:
                 database_session.rollback()
                 raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE) from error
-
-            repository = PromoAttemptRepository(database_session)
-            try:
-                existing = repository.get_by_admission_key(
-                    spa_id=principal.spa_id, client_attempt_id=payload.attempt_id
-                )
-            except PromoAttemptNotFoundError:
-                existing = None
-            if existing is not None:
-                database_session.commit()
-                return _response_for_attempt(existing)
 
             attempt = repository.create_or_get(
                 **admission_values(
@@ -136,13 +186,58 @@ def create_app() -> FastAPI:
                     ),
                 ),
             )
-            if attempt.processing_status == "accepted":
-                if payload.proposal_count == 0:
-                    repository.mark_no_proposals(attempt)
-                else:
-                    repository.mark_internal_failure(attempt)
             database_session.commit()
-            return _response_for_attempt(attempt)
+            attempt = repository.get_by_admission_key(
+                spa_id=principal.spa_id,
+                client_attempt_id=payload.attempt_id,
+                for_update=True,
+            )
+            if attempt.processing_status != "accepted":
+                database_session.commit()
+                return _response_for_attempt(
+                    attempt,
+                    database_session=database_session,
+                    qr_ticket_secret=state.get(
+                        "qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
+                    ),
+                )
+            if payload.proposal_count == 0:
+                repository.mark_no_proposals(attempt)
+            else:
+                adapter = state.get("model_adapter")
+                if adapter is None or "object_store" not in state:
+                    repository.mark_internal_failure(attempt)
+                else:
+                    engine = cast(FaceEngine, adapter)
+
+                    def process_search() -> RealtimeSearchResult:
+                        return search_realtime_references(
+                            repository=ExactCompatibleSearchRepository(database_session),
+                            object_store=state["object_store"],
+                            context=context,
+                            engine=engine,
+                            occurrences=_reference_occurrences(payload),
+                        )
+
+                    execute_realtime_attempt(
+                        repository=repository,
+                        attempt=attempt,
+                        search=process_search,
+                        qr_ticket_secret=state.get(
+                            "qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
+                        ),
+                        result_display_ms=state.get(
+                            "realtime_result_display_ms", DEFAULT_REALTIME_RESULT_DISPLAY_MS
+                        ),
+                    )
+            database_session.commit()
+            return _response_for_attempt(
+                attempt,
+                database_session=database_session,
+                qr_ticket_secret=state.get(
+                    "qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
+                ),
+            )
 
     return app
 
@@ -165,19 +260,38 @@ async def _read_limited_body(request: Request) -> bytes:
     return b"".join(chunks)
 
 
-def _response_for_attempt(attempt: Any) -> Response:
+def _response_for_attempt(
+    attempt: Any,
+    *,
+    database_session: Session,
+    qr_ticket_secret: bytes | str,
+) -> Response:
     if attempt.processing_status == "internal_failure":
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"detail": "realtime processing is not available"},
         )
     outcome = attempt.domain_outcome
+    attempt_id = str(attempt.client_attempt_id)
+    if outcome == "result":
+        result = PromoSessionRepository(
+            database_session, qr_ticket_secret=qr_ticket_secret
+        ).response_for_attempt(attempt.id)
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "schema_version": 1,
+                "attempt_id": attempt_id,
+                "outcome": "result",
+                "result": _result_response(result),
+            },
+        )
     if outcome is None:
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={
                 "schema_version": 1,
-                "attempt_id": str(attempt.id),
+                "attempt_id": attempt_id,
                 "outcome": "in_progress",
             },
         )
@@ -185,10 +299,45 @@ def _response_for_attempt(attempt: Any) -> Response:
         status_code=status.HTTP_200_OK,
         content={
             "schema_version": 1,
-            "attempt_id": str(attempt.id),
+            "attempt_id": attempt_id,
             "outcome": outcome,
         },
     )
+
+
+def _result_response(result: Any) -> dict[str, Any]:
+    return {
+        "session_id": str(result.session_id),
+        "teasers": [
+            {
+                "photo_id": str(photo_id),
+                "media_url": f"/api/promo/media/{photo_id}",
+            }
+            for photo_id in result.teasers
+        ],
+        "n": result.n,
+        "qr_url": result.qr_url,
+        "qr_first_open_expires_at": _utc_iso(result.qr_first_open_expires_at),
+    }
+
+
+def _reference_occurrences(payload: Any) -> tuple[ReferenceOccurrence, ...]:
+    occurrences: list[ReferenceOccurrence] = []
+    for index, part in enumerate(payload.occurrences):
+        crop = cast(
+            NDArray[np.uint8],
+            cv2.imdecode(
+                np.frombuffer(part.body, dtype=np.uint8), cv2.IMREAD_COLOR
+            ),
+        )
+        if crop is None:
+            raise ValueError("validated realtime crop cannot be decoded")
+        occurrences.append(ReferenceOccurrence(occurrence_index=index, crop=crop))
+    return tuple(occurrences)
+
+
+def _utc_iso(value: datetime) -> str:
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def _client_ip(request: Request) -> str:

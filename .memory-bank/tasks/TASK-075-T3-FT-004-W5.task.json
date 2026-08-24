@@ -1,7 +1,7 @@
 {
   "id": "TASK-075-T3-FT-004-W5",
   "title": "Complete the authenticated realtime result boundary",
-  "status": "planned",
+  "status": "blocked",
   "wave": "W5",
   "feature": "FT-004",
   "reqs": ["REQ-SRCH-003", "REQ-CAP-003", "REQ-PERF-001", "REQ-REL-001", "REQ-DIAG-001", "REQ-SEC-001", "REQ-ARCH-001"],
@@ -27,7 +27,36 @@
     {"name": "Realtime boundary integration tests", "command": "docker compose run --rm backend python -m pytest tests/promo/test_realtime_attempt_integration.py tests/promo/test_ft004_correctness.py", "required": true},
     {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "NEEDS-CLARIFICATION",
+      "completed_at": "2026-08-22T19:24:48+05:00",
+      "summary": "Fresh independent source-congruent verification passed the authenticated v1 result/non-success boundary, Attempt/session ownership, display-token hash scope, deterministic token/IP limiting, redaction and cleanup for AC-005/AC-006. AC-004 is not closable because the authorized controlled 20-Attempt corpus, manual evaluator record and decisive 19/20 count are unavailable; no synthetic PASS is claimed. Task remains in_progress and requires the authorized corpus owner handoff before rerunning /verify.",
+      "protocol": ".protocols/TASK-075-T3-FT-004-W5/verification.md",
+      "report": ".tasks/TASK-075-T3-FT-004-W5/TASK-075-T3-FT-004-W5-S-VERIFY-final-report-docs-01.md",
+      "artifacts": [
+        ".tasks/TASK-075-T3-FT-004-W5/verify_boundary_probe.py",
+        ".tasks/TASK-075-T3-FT-004-W5/controlled-corpus-status.md",
+        ".tasks/TASK-075-T3-FT-004-W5/source-congruence.md"
+      ]
+    },
+    {
+      "stage": "closure",
+      "attempt": 1,
+      "verdict": "blocked",
+      "completed_at": "2026-08-22T19:31:23+05:00",
+      "summary": "Judge-supported HALT_QUALITY_GATES: TASK-075 is blocked on the external AC-004 evidence owner. AC-005 and AC-006 plus bounded integration gates pass, but authorized 20-Attempt corpus/evaluator and 19/20 server-correctness proof are unavailable. This is not a source failure and does not authorize /red-verify, retry or FT-004 closure.",
+      "evidence": [
+        ".protocols/TASK-075-T3-FT-004-W5/verification.md",
+        ".tasks/TASK-075-T3-FT-004-W5/TASK-075-T3-FT-004-W5-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-075-T3-FT-004-W5/controlled-corpus-status.md"
+      ],
+      "resume_route": "After an authorized owner provides a redacted manifest with 20 stable attempt_id values, evaluator role/criterion, ground truth for all four teasers and every complete-union photo_id, processed-selected-detection membership, per-Attempt verdict and server-correctness count >= 19/20, rerun fresh /verify TASK-075-T3-FT-004-W5; only after PASS run /red-verify.",
+      "judge": "gpt-5.6-sol:xhigh"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-004.md",
     ".memory-bank/contracts/realtime-attempt-api.md",

@@ -16,8 +16,10 @@ from face_moment.promo.session import (
     hash_qr_ticket,
 )
 from face_moment.promo.realtime_orchestration import (
+    RealtimeAttemptExecution,
     RealtimeOrchestrator,
     RealtimeProcessingOutcome,
+    execute_realtime_attempt,
 )
 
 __all__ = [
@@ -27,7 +29,9 @@ __all__ = [
     "ResultAssembly",
     "assemble_result",
     "RealtimeOrchestrator",
+    "RealtimeAttemptExecution",
     "RealtimeProcessingOutcome",
+    "execute_realtime_attempt",
     "FIRST_OPEN_TTL",
     "PromoSession",
     "PromoSessionNotFoundError",

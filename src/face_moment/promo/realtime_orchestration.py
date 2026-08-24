@@ -4,12 +4,15 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import threading
 import time
 from typing import Generic, Literal, Protocol, TypeVar
 
+from face_moment.processing.realtime_search import RealtimeSearchResult
 from face_moment.promo.attempt import PromoAttempt
+from face_moment.promo.result_assembly import ResultAssembly, assemble_result
+from face_moment.promo.session import ResultSessionResponse
 
 _PROCESS_LOCAL_REALTIME_SLOT = threading.BoundedSemaphore(1)
 T = TypeVar("T")
@@ -34,6 +37,24 @@ class AttemptStateWriter(Protocol):
     def mark_internal_failure(
         self, attempt: PromoAttempt, *, now: datetime | None = None
     ) -> PromoAttempt: ...
+
+    def mark_unacceptable_query(
+        self, attempt: PromoAttempt, *, now: datetime | None = None
+    ) -> PromoAttempt: ...
+
+    def mark_insufficient_results(
+        self, attempt: PromoAttempt, *, now: datetime | None = None
+    ) -> PromoAttempt: ...
+
+    def publish_result(
+        self,
+        attempt: PromoAttempt,
+        assembly: ResultAssembly,
+        *,
+        qr_ticket_secret: bytes | str,
+        display_expires_at: datetime,
+        qr_issued_at: datetime | None = None,
+    ) -> ResultSessionResponse: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -114,3 +135,99 @@ class RealtimeOrchestrator:
             return RealtimeProcessingOutcome(outcome="processing", value=value)
         finally:
             self._slot.release()
+
+
+RealtimeAttemptOutcome = Literal[
+    "result",
+    "busy",
+    "deadline",
+    "unacceptable_query",
+    "insufficient_results",
+    "interrupted",
+    "internal_failure",
+]
+
+
+@dataclass(frozen=True, slots=True)
+class RealtimeAttemptExecution:
+    """Promo-owned terminal handoff for one admitted realtime Attempt."""
+
+    outcome: RealtimeAttemptOutcome
+    session: ResultSessionResponse | None = None
+
+
+def execute_realtime_attempt(
+    *,
+    repository: AttemptStateWriter,
+    attempt: PromoAttempt,
+    search: Callable[[], RealtimeSearchResult],
+    qr_ticket_secret: bytes | str,
+    result_display_ms: int,
+    slot: threading.Semaphore | None = None,
+    clock: Callable[[], float] = time.monotonic,
+    utc_now: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
+) -> RealtimeAttemptExecution:
+    """Compose processing search, Promo assembly and session publication.
+
+    The caller supplies only the already-bound processing application call.
+    Attempt transitions, singleton/deadline and result/session ownership remain
+    in the Promo boundary.
+    """
+
+    if (
+        isinstance(result_display_ms, bool)
+        or not isinstance(result_display_ms, int)
+        or result_display_ms <= 0
+    ):
+        raise ValueError("result_display_ms must be positive")
+
+    processing = RealtimeOrchestrator(
+        repository,
+        slot=slot,
+        clock=clock,
+        utc_now=utc_now,
+    ).run(attempt, search)
+    if processing.outcome != "processing":
+        return RealtimeAttemptExecution(outcome=processing.outcome)
+    if processing.value is None:
+        repository.mark_internal_failure(attempt, now=utc_now())
+        return RealtimeAttemptExecution(outcome="internal_failure")
+
+    search_result = processing.value
+    if _is_unacceptable_query(search_result):
+        repository.mark_unacceptable_query(attempt, now=utc_now())
+        return RealtimeAttemptExecution(outcome="unacceptable_query")
+
+    assembly = assemble_result(search_result)
+    if assembly.outcome != "result":
+        repository.mark_insufficient_results(attempt, now=utc_now())
+        return RealtimeAttemptExecution(outcome="insufficient_results")
+
+    issued_at = _utc(utc_now())
+    try:
+        session = repository.publish_result(
+            attempt,
+            assembly,
+            qr_ticket_secret=qr_ticket_secret,
+            qr_issued_at=issued_at,
+            display_expires_at=issued_at
+            + timedelta(milliseconds=result_display_ms),
+        )
+    except Exception:
+        repository.mark_internal_failure(attempt, now=utc_now())
+        return RealtimeAttemptExecution(outcome="internal_failure")
+    return RealtimeAttemptExecution(outcome="result", session=session)
+
+
+def _is_unacceptable_query(search_result: RealtimeSearchResult) -> bool:
+    detections = search_result.detections
+    return bool(detections) and all(
+        detection.rejection_reason == "unacceptable_query"
+        for detection in detections
+    )
+
+
+def _utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        raise ValueError("realtime timestamps must be timezone-aware")
+    return value.astimezone(timezone.utc)

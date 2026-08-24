@@ -246,9 +246,19 @@ class PromoAttemptRepository:
         return attempt
 
     def get_by_admission_key(
-        self, *, spa_id: uuid.UUID, client_attempt_id: uuid.UUID
+        self,
+        *,
+        spa_id: uuid.UUID,
+        client_attempt_id: uuid.UUID,
+        for_update: bool = False,
     ) -> PromoAttempt:
-        attempt = self._find(spa_id, client_attempt_id)
+        statement = select(PromoAttempt).where(
+            PromoAttempt.spa_id == spa_id,
+            PromoAttempt.client_attempt_id == client_attempt_id,
+        )
+        if for_update:
+            statement = statement.with_for_update()
+        attempt = self._session.scalar(statement)
         if attempt is None:
             raise PromoAttemptNotFoundError(f"{spa_id}/{client_attempt_id}")
         return attempt
@@ -277,6 +287,32 @@ class PromoAttemptRepository:
             domain_outcome="busy",
             now=now,
             error_message="only an accepted Attempt can be closed as busy",
+        )
+
+    def mark_unacceptable_query(
+        self, attempt: PromoAttempt, *, now: datetime | None = None
+    ) -> PromoAttempt:
+        """Close an admitted Attempt when every selected query is unusable."""
+
+        return self._mark_active_terminal(
+            attempt,
+            processing_status="no_success",
+            domain_outcome="unacceptable_query",
+            now=now,
+            error_message="only an active Attempt can be closed as unacceptable_query",
+        )
+
+    def mark_insufficient_results(
+        self, attempt: PromoAttempt, *, now: datetime | None = None
+    ) -> PromoAttempt:
+        """Close an admitted Attempt without publishing a partial result."""
+
+        return self._mark_active_terminal(
+            attempt,
+            processing_status="no_success",
+            domain_outcome="insufficient_results",
+            now=now,
+            error_message="only an active Attempt can be closed as insufficient_results",
         )
 
     def mark_search_started(
