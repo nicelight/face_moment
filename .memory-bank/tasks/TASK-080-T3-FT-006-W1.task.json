@@ -1,0 +1,104 @@
+{
+  "id": "TASK-080-T3-FT-006-W1",
+  "title": "Persist the session-wide QR browser-access state",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-006",
+  "reqs": [
+    "REQ-UX-003",
+    "REQ-SEC-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-072-T3-FT-004-W4"
+  ],
+  "touched_files": [
+    "migrations/versions/0014_promo_browser_access.py",
+    "src/face_moment/promo/session.py",
+    "src/face_moment/promo/attempt.py",
+    "tests/promo/test_qr_browser_access.py",
+    "tests/promo/test_result_session.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "QR browser-access repository tests",
+      "command": "docker compose run --rm backend python -m pytest tests/promo/test_qr_browser_access.py tests/promo/test_result_session.py",
+      "required": true
+    },
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-006.md",
+    ".memory-bank/contracts/qr-continuation-api.md",
+    ".memory-bank/domains/promo-attempt.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/tasks/plans/IMPL-FT-006.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/domains/promo-attempt.md#shared-browser-access-persistence RED: promo_sessions has no persisted shared browser-access timestamps or atomic first-open/repeated-scan/activity owner path; GREEN: the next linear migration and promo repository preserve the nullable pair, admit first open only strictly before the 30-minute deadline, reuse one row across concurrent phones, advance shared last_seen on every valid repeated scan and explicit activity, and never advance it on passive access; decisive comparison: controlled-clock concurrent repository results, row cardinality and persisted timestamps before/after restart; artifact: isolated database migration/repository evidence under .tasks/TASK-080-T3-FT-006-W1/."
+  ],
+  "purpose": "Add the durable promo-owned state and repository operations required for one session-wide QR browser-access context.",
+  "success_outcome": "A result session can atomically admit/reuse the shared QR access context, advance one last-seen timestamp on valid repeated scans or explicit activity, and enforce irreversible derived idle expiry without a per-device grant or scheduler.",
+  "anti_goals": [
+    "Do not add a participant account, per-device grant row, access-state table, refresh token, expiry scheduler or cleanup job.",
+    "Do not change immutable session arrays, teaser order, N, QR issue time or display expiry.",
+    "Do not implement public phone routes, client rendering, purchase navigation or foreign Photo/processing writes."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production PostgreSQL, MinIO, credentials and deployment configuration",
+      "Inventory, processing, serving_control and diagnostics mutable state",
+      "Plaintext QR tickets, cookies, personalized payloads or raw storage identities in logs or artifacts"
+    ],
+    "stop_conditions": [
+      "The accepted linear migration cannot use its execution-time direct predecessor without requiring a mutable exact-head assertion.",
+      "Shared access requires a new grant/access table, scheduler, cleanup job or foreign capability write.",
+      "Concurrent first-open/repeated-scan/activity cannot be proved with isolated disposable data, controlled server time and safe cleanup.",
+      "The nullable timestamp pair would permit last_seen without first_opened or revive an expired context."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/domains/promo-attempt.md#shared-browser-access-persistence",
+    ".protocols/FT-006/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-006.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/qr-continuation-api.md#ticket-exchange",
+    ".memory-bank/contracts/qr-continuation-api.md#shared-expiry",
+    ".memory-bank/domains/promo-attempt.md#result-session-shape",
+    ".memory-bank/domains/promo-attempt.md#qr-browser-access",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/states/lifecycle-map.md#promo-qr-and-browser-session",
+    ".memory-bank/testing/client-realtime.md#phone-continuation-and-expiry-proof"
+  ],
+  "constraints": [
+    "Primary owner is promo under src/face_moment/promo/; use the existing face_moment.promo_sessions row and one sequential Alembic stream.",
+    "The migration must verify its direct down_revision, upgrade, downgrade and re-upgrade with unrelated prerequisite rows preserved; do not assert a mutable future head.",
+    "Fixtures use unique disposable session rows and controlled server time, prove safe rerun and restart persistence, and remove only task-owned data after each run.",
+    "Store only qr_ticket_hash_sha256; the opaque ticket secret and plaintext never enter PostgreSQL, logs or retained evidence."
+  ],
+  "invariants": [
+    "browser_first_opened_at and browser_last_seen_at are both null or both non-null, with last_seen greater than or equal to first_opened.",
+    "First open is admitted only when server_now is strictly before qr_first_open_expires_at; exact-boundary and late access cannot revive the context.",
+    "All phones share one browser state row; every valid repeated scan and explicit participant activity advances browser_last_seen_at, while passive reads, media loads, polling and timers do not.",
+    "Expiry is derived from browser_last_seen_at plus 60 minutes and is not stored, scheduled or reversed by stale access."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/promo-attempt.md#shared-browser-access-persistence",
+    "Isolated migration/repository proof covers the nullable-pair constraint, one shared row across concurrent first-open, repeated-scan and explicit-activity updates, passive non-extension, exact 30-minute and 60-minute boundaries, restart persistence and no per-device grant or scheduler.",
+    "The state probe preserves immutable session ticket/issue/teaser/union/N fields and proves task-owned cleanup without foreign capability writes."
+  ]
+}

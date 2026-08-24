@@ -1,7 +1,7 @@
 ---
 description: Canonical verification contract for client proposal submission, one-clock Promo latency and related diagnostics.
 status: active
-last_updated: 2026-08-15
+last_updated: 2026-08-24
 source_of_truth:
   - .memory-bank/testing/client-realtime.md
 ---
@@ -147,12 +147,13 @@ source_of_truth:
   principal scope, rate limiting, redaction, private topology, configuration,
   authorized teaser media, acknowledgement and display-state integration
   defined by the [Promo Display API](../contracts/promo-display-api.md).
-- Migration/repository proof fixes one positive result-display expiry for every
-  newly issued result and records confirmed/failed receipt plus the client
+- Existing-schema/repository proof fixes one positive result-display expiry for
+  every newly issued result and records confirmed/failed receipt plus the client
   monotonic QR-visible offset. Duplicate same-status acknowledgement is
   idempotent; conflict and late acknowledgement change nothing; pending expiry
-  derives terminal `unconfirmed` without scheduler or outbox. Every branch
-  proves that session/ticket/first-open expiry/teasers/union/`N` remain unchanged.
+  derives terminal `unconfirmed` without migration, historical backfill,
+  scheduler or outbox. Every branch proves that session/ticket/first-open
+  expiry/teasers/union/`N` remain unchanged.
 - Display-media proof uses only the authenticated same-origin proxy, returns
   `no-store` low-quality no-watermark JPEGs for the four issued teasers and
   rejects unknown, foreign or hard-purged references without raw MinIO keys,

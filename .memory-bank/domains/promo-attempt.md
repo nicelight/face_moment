@@ -1,7 +1,7 @@
 ---
 description: Promo-owned core Attempt, realtime result assembly, result-session persistence and shared QR browser-access specification.
 status: active
-last_updated: 2026-08-22
+last_updated: 2026-08-24
 source_of_truth:
   - .memory-bank/domains/promo-attempt.md
 ---
@@ -177,6 +177,8 @@ without rerunning search.
 
 ## QR Browser Access
 
+### Shared Browser-Access Persistence
+
 `promo` implements the exact
 [QR Continuation API](../contracts/qr-continuation-api.md) against the existing
 result-session row. The stored `qr_ticket_hash_sha256` validates both the QR
@@ -198,6 +200,8 @@ row exists. The migration adds the two nullable columns and a constraint that
 they are both null or both non-null with `last_seen >= first_opened`; existing
 issued rows preserve their ticket, first-open deadline, teaser arrays, union
 and `N` unchanged.
+
+### Participant Response Assembly
 
 Participant response assembly reads the immutable session plus accepted
 СПА/media projections. Soft-deleted referenced media remains eligible for the
@@ -231,11 +235,11 @@ deployment values projected through the display API. No settings table,
 acknowledgement outbox, background expiry job or reliable client-retry queue is
 introduced.
 
-The linear migration backfills a pre-existing `result_issued`/`pending` row's
-`display_expires_at` from its already persisted `updated_at`. Since no compliant
-pre-FT-005 acknowledgement could have been stored, the first post-migration read
-truthfully derives it as `unconfirmed` instead of inventing a new display window.
-Existing session/ticket/result fields remain unchanged.
+The accepted baseline already creates `display_status`, `display_expires_at`,
+`display_reported_at` and `qr_fully_visible_elapsed_ms` with the core Attempt,
+and atomic result publication already fixes the positive display window. FT-005
+therefore reuses those columns and adds no schema migration or historical
+backfill. Existing session/ticket/result fields remain unchanged.
 
 ## Edge Cases And Errors
 
@@ -254,8 +258,8 @@ Existing session/ticket/result fields remain unchanged.
 - A foreign-СПА, conflicting or late display report changes no Attempt/session
   state. Missing or hard-purged teaser media never causes replacement selection
   or `N` recalculation.
-- Migration downgrade removes only this feature revision in an isolated test;
-  it MUST NOT introduce another migration stream or cross-owner cascade.
+- Display-outcome implementation MUST reuse the existing Attempt columns; it
+  MUST NOT add another migration, storage owner or cross-owner cascade.
 
 ## Verification Targets
 
@@ -287,5 +291,6 @@ Existing session/ticket/result fields remain unchanged.
 - Phone assembly tests prove same-session СПА/date/available teaser/historical
   `N`, soft-delete continuity, ordered hard-purged-media skip, protected
   no-store delivery and zero foreign-owner writes or session reconstruction.
-- Migration proof separately covers the deterministic historical-pending
-  backfill and resulting derived `unconfirmed` without a stored terminal rewrite.
+- Schema/repository proof confirms that the existing Attempt columns support
+  timely terminal reports and derived `unconfirmed` without a stored terminal
+  rewrite or historical backfill.

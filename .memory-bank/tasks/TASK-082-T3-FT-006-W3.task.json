@@ -1,0 +1,83 @@
+{
+  "id": "TASK-082-T3-FT-006-W3",
+  "title": "Production acceptance: prove pilot topology and CTA boundary",
+  "status": "planned",
+  "wave": "W3",
+  "feature": "FT-006",
+  "reqs": [
+    "REQ-UX-002",
+    "REQ-SEC-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-081-T3-FT-006-W2"
+  ],
+  "touched_files": [
+    ".tasks/TASK-082-T3-FT-006-W3/"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-006.md",
+    ".memory-bank/contracts/qr-continuation-api.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/tasks/plans/IMPL-FT-006.md"
+  ],
+  "evidence_required": [
+    "FT-006-AC-005 RED_NOT_APPLICABLE: this task changes no application or deployment behavior and inducing a pre-change failure in the authorized pilot boundary would falsify the accepted setup; alternative proof: an authorized evaluator records that continuation is externally reachable only through HTTPS, PostgreSQL/MinIO/internal ports remain private, and the CTA reaches only the configured absolute HTTPS target without personalized parameters or claiming that target page; decisive comparison: redacted public/private exposure receipts and observed CTA destination against the accepted boundary; artifact: evaluator record and redacted topology/CTA receipts under .tasks/TASK-082-T3-FT-006-W3/."
+  ],
+  "purpose": "Make the final production-only decision that the deployed continuation topology exposes only the accepted HTTPS edge, keeps internal services private and preserves the configured external CTA boundary.",
+  "success_outcome": "The authorized pilot exposes continuation only through HTTPS, keeps PostgreSQL, MinIO and internal services private, and reaches only the configured absolute HTTPS purchase target without personalized parameters.",
+  "anti_goals": [
+    "Do not implement or repair application behavior, deployment, rate-limit configuration or the separate purchase/selfie-search page.",
+    "Do not mutate production secrets, participant identity, operator/default sessions, media or database state beyond the authorized controlled fixture.",
+    "Do not repeat same-session, multi-phone, media, browser-expiry or physical-join proof owned by TASK-081, and do not claim implementation of the target purchase page."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Application source, canonical contracts and deployment repair",
+      "Production secret mutation, unapproved participant data capture and raw credential/personalized payload retention",
+      "Direct public access to PostgreSQL, MinIO or internal service ports"
+    ],
+    "stop_conditions": [
+      "The authorized HTTPS edge or configured pilot boundary is unavailable or materially differs from the accepted setup.",
+      "The purchase target can be request-overridden or the public boundary requires a new service, allow-list framework or credential path.",
+      "The evaluator cannot retain a redacted, reproducible topology/CTA observation without credentials or personalized data."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-006.md#FT-006-AC-005",
+    ".protocols/FT-006/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-006.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/qr-continuation-api.md#failures-and-security",
+    ".memory-bank/contracts/qr-continuation-api.md#verification-targets",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries",
+    ".memory-bank/contracts/boundary-map.md#authentication-and-data-specific-delivery",
+    ".memory-bank/contracts/boundary-map.md#http-failure-contract",
+    ".memory-bank/contracts/qr-continuation-api.md#scope-and-ownership"
+  ],
+  "constraints": [
+    "Run only with an authorized evaluator, retain redacted evidence, and keep the configured target as a server-owned absolute HTTPS URL.",
+    "Topology and CTA artifacts omit credentials, session payloads, ticket/cookie values, personalized query data and raw storage identities.",
+    "This final task has no dependents and may remain planned until the authorized pilot edge and evaluator are available."
+  ],
+  "invariants": [
+    "Continuation is externally reachable only through the accepted HTTPS edge, with no public PostgreSQL, MinIO or internal-service bypass.",
+    "CTA navigation contains no session, ticket, teaser or N parameter and reaches only the configured target.",
+    "The purchase/selfie-search target remains a separately delivered external page and is not implemented or accepted by this task."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-006.md#FT-006-AC-005",
+    "Redacted pilot observations prove continuation has only the HTTPS public edge, PostgreSQL/MinIO/internal ports are private, and no direct storage/service bypass is accepted.",
+    "A redacted CTA observation proves the destination is the configured absolute HTTPS target with no session, ticket, teaser or N parameter and without accepting implementation of the target page."
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "id": "TASK-077-T3-FT-005-W2",
+  "title": "Record the authenticated post-render display outcome",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-005",
+  "reqs": [
+    "REQ-UX-001",
+    "REQ-SEC-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-066-T2-FT-003-W5",
+    "TASK-076-T3-FT-005-W1"
+  ],
+  "touched_files": [
+    "client/promo-display.js",
+    "client/app.js",
+    "src/face_moment/promo/display_outcome.py",
+    "src/face_moment/promo/http.py",
+    "src/face_moment/promo/attempt.py",
+    "src/face_moment/promo/__init__.py",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/client/test_promo_display_acknowledgement.mjs",
+    "tests/promo/test_promo_display_outcome.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Display outcome tests",
+      "command": "docker compose run --rm backend python -m pytest tests/promo/test_promo_display_outcome.py",
+      "required": true
+    },
+    {
+      "name": "Client acknowledgement tests",
+      "command": "node --test tests/client/test_promo_display_acknowledgement.mjs",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-005.md",
+    ".memory-bank/contracts/promo-display-api.md",
+    ".memory-bank/domains/promo-attempt.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/tasks/plans/IMPL-FT-005.md"
+  ],
+  "evidence_required": [
+    "FT-005-AC-003 RED: existing Attempt columns and pending publication have no authenticated report boundary or client post-render sender; GREEN: only four decoded teasers plus full QR visibility emits confirmed with the one-clock non-negative elapsed value, timely failed is best-effort, duplicate same-status is idempotent, conflicting/late reports are rejected and expired pending reads as unconfirmed; decisive comparison: client event trace, HTTP response and stored/effective Attempt state; artifact: disposable DB/API/client evidence under .tasks/TASK-077-T3-FT-005-W2/."
+  ],
+  "purpose": "Complete the single end-to-end confirmation result from successful client rendering to the promo-owned durable/effective display state.",
+  "success_outcome": "The authenticated display becomes confirmed only after complete render, records the original one-clock elapsed value idempotently, and otherwise preserves failed or derived unconfirmed truth without changing the Promo session.",
+  "anti_goals": [
+    "Do not add or alter an Alembic revision; reuse existing promo_attempts display columns.",
+    "Do not add an acknowledgement outbox, scheduler, reliable retry queue or stored unconfirmed transition.",
+    "Do not implement display/cooldown timers, phone continuation or change session/ticket/teaser/union/N truth."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Database migration history and foreign capability state",
+      "QR browser access, phone continuation and purchase navigation",
+      "Production credentials, operator/default Attempts or unredacted result artifacts"
+    ],
+    "stop_conditions": [
+      "The acknowledgement cannot remain a promo-owned transition through the existing Attempt repository.",
+      "The report would require a new schema field, scheduler, outbox or mutation of immutable session truth.",
+      "Client confirmation cannot be causally placed after four decodes and full QR visibility on the existing monotonic timeline.",
+      "Security/state probes cannot be isolated, safely rerun and cleaned without production authority."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-005.md#FT-005-AC-003",
+    ".protocols/FT-005/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-005.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/promo-display-api.md#display-acknowledgement",
+    ".memory-bank/contracts/promo-display-api.md#failures-and-security",
+    ".memory-bank/domains/promo-attempt.md#display-outcome",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/boundary-map.md#authentication-and-data-specific-delivery",
+    ".memory-bank/states/lifecycle-map.md#automatic-attempt-and-display",
+    ".memory-bank/testing/client-realtime.md#promo-presentation-and-display-outcome-proof"
+  ],
+  "constraints": [
+    "Primary owner is promo; the backend handler authenticates, validates and serializes but never owns the transition.",
+    "Reuse face_moment.promo_attempts display_status, display_expires_at, display_reported_at and qr_fully_visible_elapsed_ms through the promo repository.",
+    "Use token-derived spa_id and return 404 for foreign/unknown session identity without disclosure.",
+    "Use unique task-owned pending/result Attempts and sessions with controlled server/monotonic clocks, safe reruns, decisive state reads and cleanup limited to those fixtures."
+  ],
+  "invariants": [
+    "Confirmed is emitted only after all four teaser JPEGs decode and the QR is fully visible.",
+    "The first timely terminal report wins; same-status repeat preserves original values and conflict/late report changes nothing.",
+    "Unconfirmed is derived after expiry and is never stored or reopened.",
+    "No display report mutates the session, QR ticket/times, teaser IDs, complete union or N."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-005.md#FT-005-AC-003",
+    "Task-owned client/API/repository probe proves complete-render-only confirmed reporting, timely failed reporting, same-status idempotency, conflicting/late rejection, derived unconfirmed and the original monotonic elapsed value in existing face_moment.promo_attempts columns.",
+    "The same probe compares the immutable Promo session before and after every report and proves authenticated principal scope with no session/ticket/expiry/teaser/union/N mutation."
+  ]
+}

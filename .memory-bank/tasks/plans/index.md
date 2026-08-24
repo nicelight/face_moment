@@ -9,3 +9,5 @@ status: active
 - [IMPL-FT-002](IMPL-FT-002.md): compatible Photo processing and searchable readiness.
 - [IMPL-FT-003](IMPL-FT-003.md): sensor-triggered capture and attempt control.
 - [IMPL-FT-004](IMPL-FT-004.md): scoped realtime search and result assembly.
+- [IMPL-FT-005](IMPL-FT-005.md): truthful Promo presentation, display outcome and visible-QR acceptance.
+- [IMPL-FT-006](IMPL-FT-006.md): QR phone continuation and personalized-session expiry.

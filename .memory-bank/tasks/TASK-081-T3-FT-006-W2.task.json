@@ -1,0 +1,149 @@
+{
+  "id": "TASK-081-T3-FT-006-W2",
+  "title": "Expose protected phone continuation and shared expiry",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-006",
+  "reqs": [
+    "REQ-UX-002",
+    "REQ-UX-003",
+    "REQ-SEC-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-080-T3-FT-006-W1",
+    "TASK-078-T3-FT-005-W2"
+  ],
+  "touched_files": [
+    "src/face_moment/promo/qr_continuation.py",
+    "src/face_moment/promo/http.py",
+    "src/face_moment/promo/session.py",
+    "src/face_moment/inventory/promo_media_projection.py",
+    "src/face_moment/processing/preview_projection.py",
+    "src/face_moment/entrypoints/backend.py",
+    "src/face_moment/infrastructure/settings.py",
+    "client/phone.html",
+    "client/phone.js",
+    "client/styles.css",
+    "tests/promo/test_qr_continuation_api.py",
+    "tests/client/test_phone_continuation.mjs"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "QR continuation API tests",
+      "command": "docker compose run --rm backend python -m pytest tests/promo/test_qr_continuation_api.py",
+      "required": true
+    },
+    {
+      "name": "Phone client tests",
+      "command": "node --test tests/client/test_phone_continuation.mjs",
+      "required": true
+    },
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-006.md",
+    ".memory-bank/contracts/qr-continuation-api.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/domains/promo-attempt.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/testing/index.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/tasks/plans/IMPL-FT-006.md"
+  ],
+  "evidence_required": [
+    "FT-006-AC-001 RED: the current client/backend surface has no exact public QR exchange or protected phone session/media/activity boundary; GREEN: a valid ticket reaches the same session without a selfie, exposes the exact phone shape and CTA, preserves soft-delete/historical-N continuity, skips only unavailable issued media without rebuild/recalculation, and an authorized representative phone scans the exact FT-005 display-expiry QR after advertising resumes to read that same still-active session; decisive comparison: exact HTTP/client traces, physical session/content join and immutable session-row diff across media states; artifact: isolated API/client and redacted physical-join evidence under .tasks/TASK-081-T3-FT-006-W2/.",
+    "FT-006-AC-002 RED: the current surface cannot perform repeated real QR exchanges from multiple phones against one shared access context; GREEN: every valid first/repeated scan uses one session row, each repeated scan and explicit cross-phone activity advances the same browser_last_seen_at, passive access never advances it, and one 60-minute idle boundary expires all phones irreversibly; decisive comparison: controlled concurrent multi-phone HTTP/state traces, one-row cardinality and timestamps across scan/activity/passive/expiry operations; artifact: isolated multi-phone lifetime evidence under .tasks/TASK-081-T3-FT-006-W2/.",
+    "FT-006-AC-003 RED: the current surface does not prove independent QR first-open/browser-idle expiry or personalized-state isolation in a real browser; GREEN: controlled display, cooldown, first-open and shared-idle clocks remain independent, and a central-origin playwright cli flow proves cookie-protected reads/activity, local timer handling, rendered-state clearing before location.replace, no durable browser state, no-referrer/no-store behavior and post-expiry rejection without prior personal data; decisive comparison: browser/HTTP/state observations before and at each exact expiry boundary; artifact: Playwright CLI transcript, screenshots, video and trace plus isolated security evidence under .tasks/TASK-081-T3-FT-006-W2/.",
+    "FT-006-AC-004 RED: the current backend has no configured limiter covering /q, /phone and /api/phone/*; GREEN: positive deployment-backed phone limit/window settings instantiate one promo-boundary single-backend limiter, Caddy-forwarded clients receive separate budgets, and excess on every exact route returns 429 before personalized disclosure; decisive comparison: configured under/over-limit exact-route responses, client-key separation and redacted logs/artifacts; artifact: isolated rate-limit integration evidence under .tasks/TASK-081-T3-FT-006-W2/."
+  ],
+  "purpose": "Complete and prove the participant-visible multi-phone continuation as one protected, rate-limited public boundary over the promo-owned shared state and accepted read-only media projections.",
+  "success_outcome": "Valid first/repeated QR scans and explicit activity share one lifetime across phones, the same protected session renders without stale leakage, every public route enforces configured 429 limiting, and browser/physical-phone proof closes independent expiry and same-session continuation.",
+  "anti_goals": [
+    "Do not implement the separate purchase/selfie-search page; navigate to the configured absolute HTTPS target without personalized parameters.",
+    "Do not add participant login, per-device grants, refresh tokens, public MinIO/presigned URLs, media cache, replacement selection or session rebuild.",
+    "Do not mutate Photo, processing, serving-control, display or immutable Promo session truth from transport/client code.",
+    "Do not merge display expiry or success cooldown into phone access invalidation.",
+    "Do not add a distributed limiter, external edge-rate-limit service, shared limiter framework or new dependency; reuse the existing single-backend pattern inside the promo phone boundary."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Foreign capability writes, raw MinIO keys and production participant/session data",
+      "Purchase-page implementation, redirect allow-list service and second client origin",
+      "Ticket/cookie plaintext, personalized response bodies or referrer/query secrets in logs and artifacts"
+    ],
+    "stop_conditions": [
+      "The public boundary cannot preserve promo ownership while using only accepted inventory/processing projections.",
+      "A passive read, media load, timer, polling or page-visibility event would extend shared access.",
+      "A hard-purged teaser requires replacement selection, session rebuild, N recalculation or foreign state mutation.",
+      "Expired HTML/API/media/CTA paths cannot clear rendered state and redirect or reject without disclosing prior personalized data.",
+      "A positive configured public-route limit cannot cover every exact phone path with deterministic 429 behavior and forwarded-client separation.",
+      "The required central-origin playwright cli or authorized FT-005 physical-join input is unavailable, unsafe to retain in redacted form or materially differs from the accepted boundary."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-006.md#FT-006-AC-001",
+    ".memory-bank/features/FT-006.md#FT-006-AC-002",
+    ".memory-bank/features/FT-006.md#FT-006-AC-003",
+    ".memory-bank/features/FT-006.md#FT-006-AC-004",
+    ".memory-bank/tasks/TASK-078-T3-FT-005-W2.task.json",
+    ".protocols/FT-006/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-006.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/qr-continuation-api.md#ticket-exchange",
+    ".memory-bank/contracts/qr-continuation-api.md#phone-shell-and-session-read",
+    ".memory-bank/contracts/qr-continuation-api.md#activity-and-media",
+    ".memory-bank/contracts/qr-continuation-api.md#shared-expiry",
+    ".memory-bank/contracts/qr-continuation-api.md#failures-and-security",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/contracts/boundary-map.md#central-origin-client-delivery",
+    ".memory-bank/contracts/boundary-map.md#authentication-and-data-specific-delivery",
+    ".memory-bank/contracts/boundary-map.md#http-failure-contract",
+    ".memory-bank/domains/promo-attempt.md#result-session-shape",
+    ".memory-bank/domains/promo-attempt.md#qr-browser-access",
+    ".memory-bank/states/lifecycle-map.md#promo-qr-and-browser-session",
+    ".memory-bank/testing/index.md#ui-verification",
+    ".memory-bank/testing/client-realtime.md#phone-continuation-and-expiry-proof"
+  ],
+  "constraints": [
+    "Primary owner is promo; HTTP handlers and the client are adapters and may not write foreign capability state.",
+    "Use exactly the accepted ticket/cookie, endpoint paths, JSON shapes, status behavior, no-store and no-referrer rules; the purchase target is server-owned and request-overridable parameters are rejected.",
+    "Use unique disposable sessions, tickets, cookies and provider projections with known initial state, safe rerun, decisive response/state observation and cleanup limited to task fixtures.",
+    "Soft-deleted issued media remains readable; hard-purged/unavailable issued teaser IDs are skipped in original order and a disappeared item returns non-disclosing 404 without session mutation.",
+    "The final phone expiry proof joins the independent display-expiry seam from FT-005 but does not inherit its evidence or claim.",
+    "Implement one promo-boundary single-backend limiter with positive phone limit/window settings, keyed by the resolved client IP; use the accepted Caddy-overwritten X-Forwarded-For path and return 429 on every /q, /phone and /api/phone/* route before personalized disclosure.",
+    "Use the installed playwright cli against the central origin with disposable browser profiles; retain its transcript, screenshots, video and trace under .tasks/TASK-081-T3-FT-006-W2/ while omitting tickets, cookies and personalized response bodies.",
+    "The feature-completion physical join uses the exact QR/session retained by FT-005 after display expiry and an authorized representative phone; it changes no display/session truth and retains only redacted comparison evidence."
+  ],
+  "invariants": [
+    "Phone session_id, spa_name, authoritative visit_date and N come from the issued session; N and issued arrays never change.",
+    "Only the first currently loadable issued teaser is returned; no wider-union replacement, rebuild or recalculation occurs.",
+    "First QR exchange sets first-open/last-seen atomically; every valid repeated scan and explicit activity advances shared last-seen, while session/media reads and client timers never do.",
+    "At exact first-open or idle expiry, access is rejected or redirected, the cookie and rendered personal state are cleared, and stale access cannot revive it.",
+    "Every personalized response is protected, no-store and no-referrer; ticket, cookie, credential, payload and raw storage identity are redacted."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-006.md#FT-006-AC-001",
+    ".memory-bank/features/FT-006.md#FT-006-AC-002",
+    ".memory-bank/features/FT-006.md#FT-006-AC-003",
+    ".memory-bank/features/FT-006.md#FT-006-AC-004",
+    "Exact-path API/client fixtures cover ticket exchange, cookie attributes, shell/session/activity/media shapes, safe redirects, strict validation, positive rate-limit settings, forwarded-client separation and 429 on /q, /phone and every /api/phone/* route.",
+    "Controlled-clock multi-phone fixtures cover 30-minute first-open, valid repeated-scan last-seen advancement, 60-minute shared idle, explicit cross-phone activity, passive non-extension, restart persistence and irreversible expiry.",
+    "The integration fixture joins the FT-005 display-expiry observation to the phone first-open and idle clocks, proving display duration, success cooldown, QR first-open and browser-idle lifetimes remain independent without adopting FT-005 proof.",
+    "A central-origin playwright cli flow covers /q -> /phone, cookie-protected session/media/activity, local expiry, clearing personalized DOM before location.replace, no durable browser storage, URL/referrer/cache isolation and rejected post-expiry reads; retain transcript, screenshots, video and trace in the task artifact directory.",
+    "Same-session fixtures cover soft-delete continuity, every hard-purge combination, historical N, ordered skip/null, CTA navigation and no foreign writes or personalized leakage.",
+    "The feature-completion physical join scans the exact FT-005 QR after advertising resumes and compares session_id, СПА, authoritative visit_date, available issued teaser and N on an authorized representative phone without rerunning search."
+  ]
+}

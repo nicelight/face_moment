@@ -1,0 +1,95 @@
+{
+  "id": "TASK-079-T3-FT-005-W3",
+  "title": "Production acceptance: prove the joint visible and scannable QR gate",
+  "status": "planned",
+  "wave": "W3",
+  "feature": "FT-005",
+  "reqs": [
+    "REQ-PERF-001",
+    "REQ-UX-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-075-T3-FT-004-W5",
+    "TASK-076-T3-FT-005-W1",
+    "TASK-077-T3-FT-005-W2",
+    "TASK-078-T3-FT-005-W2"
+  ],
+  "touched_files": [
+    ".tasks/TASK-079-T3-FT-005-W3/"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Promo client regression tests",
+      "command": "node --test tests/client/test_promo_display.mjs tests/client/test_promo_display_acknowledgement.mjs tests/client/test_promo_display_timers.mjs",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-005.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/contracts/promo-display-api.md",
+    ".memory-bank/tasks/plans/IMPL-FT-005.md"
+  ],
+  "evidence_required": [
+    "FT-005-AC-002 RED_NOT_APPLICABLE: TASK-079 changes no application behavior and only evaluates the authorized production corpus, so inducing a pre-change behavior failure would falsify the accepted setup and absence of an evidence artifact says nothing about current behavior; alternative proof: evaluate every conjunct for all twenty authorized stable Attempt rows, preserve a pre-existing passing observation as GREEN when present, and require at least nineteen of those same rows to be correctness-valid, fully visible/scannable and below 10000 ms while timeout/no-match remain failures; decisive comparison: redacted twenty-row manifest and explicit 19/20 count; artifact: evaluator record, timing/scan receipts and redacted manifest under .tasks/TASK-079-T3-FT-005-W3/."
+  ],
+  "purpose": "Make the final production-only decision on the shared controlled twenty-Attempt visible/scannable QR performance target after all implementation outcomes are complete.",
+  "success_outcome": "At least nineteen of the same twenty authorized controlled Attempts pass server correctness, complete target-screen rendering, one-clock under-10-second visibility, programmatic QR decode and representative-phone scanning.",
+  "anti_goals": [
+    "Do not implement or repair application behavior, configuration, deployment or upstream FT-004 claims in this task.",
+    "Do not synthesize, replace, down-sample or exclude rows from the authorized twenty-Attempt corpus.",
+    "Do not claim FT-006 phone-session continuation, production rollout or recovery after primary loss."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Application source, canonical contract or deployment repair",
+      "Production secret mutation, participant identity disclosure or unapproved data capture",
+      "Operator/default database, session or media mutation beyond the authorized controlled run"
+    ],
+    "stop_conditions": [
+      "TASK-075 is not done or the authorized twenty stable Attempt IDs and evaluator ground truth are unavailable.",
+      "The configured pilot screen/camera/client or representative phone set is unavailable or materially differs from the accepted controlled setup.",
+      "A passing result would require excluding timeout/no-match, changing the denominator, fabricating a scan or combining different Attempt sets.",
+      "The probe would require new production authority, unsafe secret handling or unapproved participant data retention."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-005.md#FT-005-AC-002",
+    ".memory-bank/tasks/TASK-075-T3-FT-004-W5.task.json",
+    ".protocols/FT-005/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-005.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/testing/client-realtime.md#reference-search-and-joint-correctness-proof",
+    ".memory-bank/testing/client-realtime.md#promo-presentation-and-display-outcome-proof",
+    ".memory-bank/contracts/promo-display-api.md#verification-targets",
+    ".memory-bank/contracts/realtime-attempt-api.md#response-version-1",
+    ".memory-bank/states/lifecycle-map.md#automatic-attempt-and-display"
+  ],
+  "constraints": [
+    "Use exactly the same twenty stable attempt_id values and authorized FT-004 evaluator rows; dependency proof remains with TASK-075 and is joined, not inherited.",
+    "Run on the accepted 43-inch landscape logical 1920x1080 client setup with an authorized pilot evaluator and representative real phones.",
+    "Measure from reference_series_ready_at through full QR visibility on one client monotonic clock; never subtract client and server wall clocks.",
+    "Retain only redacted task-owned artifacts and record evaluator role, criterion, conditions, observed values and decisive per-row pass/fail comparison.",
+    "This final task has no dependents and may remain planned until its external prerequisites and authorization are satisfied."
+  ],
+  "invariants": [
+    "All twenty rows remain in the denominator and timeout/no-match are failures.",
+    "A row passes only when every server-correctness, render, timing, decode and representative-phone conjunct passes.",
+    "At least nineteen of the same twenty rows must pass; evidence from another corpus cannot substitute.",
+    "No production/application mutation may turn a failing acceptance run into a pass inside this task."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-005.md#FT-005-AC-002",
+    "Record the authorized redacted same-twenty manifest, one-clock values, target-screen result, programmatic decode, representative-phone scan and explicit joint 19/20 count.",
+    "Independently confirm no row exclusion, cross-clock subtraction, fabricated evaluator result, secret disclosure or task-external state mutation."
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "id": "TASK-078-T3-FT-005-W2",
+  "title": "Apply independent display and success-cooldown lifetimes",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-005",
+  "reqs": [
+    "REQ-UX-003",
+    "REQ-SEC-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-076-T3-FT-005-W1"
+  ],
+  "touched_files": [
+    "client/promo-display.js",
+    "client/app.js",
+    "client/trigger-series.js",
+    "src/face_moment/promo/display_config.py",
+    "src/face_moment/promo/http.py",
+    "src/face_moment/infrastructure/settings.py",
+    "src/face_moment/entrypoints/backend.py",
+    "src/face_moment/entrypoints/realtime.py",
+    "tests/client/test_promo_display_timers.mjs",
+    "tests/promo/test_promo_display_config.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Display configuration tests",
+      "command": "docker compose run --rm backend python -m pytest tests/promo/test_promo_display_config.py",
+      "required": true
+    },
+    {
+      "name": "Client timer tests",
+      "command": "node --test tests/client/test_promo_display_timers.mjs",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-005.md",
+    ".memory-bank/contracts/promo-display-api.md",
+    ".memory-bank/domains/promo-attempt.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/tasks/plans/IMPL-FT-005.md"
+  ],
+  "evidence_required": [
+    "FT-005-AC-004 RED: the current result state has no authenticated independent display/cooldown config or result-expiry transition; GREEN: two distinct positive values drive local result expiry and trigger cooldown independently, display expiry returns presentation to advertising, emits no session invalidation and the same QR session identity remains unchanged for later FT-006 proof; decisive comparison: config responses, controlled client clocks/events and unchanged session row; artifact: API/client/state receipts under .tasks/TASK-078-T3-FT-005-W2/."
+  ],
+  "purpose": "Complete the display-owned lifetime behavior without merging presentation expiry, successful-capture cooldown or QR-session authority.",
+  "success_outcome": "Authenticated independent positive configuration drives result display and success cooldown separately; visual expiry returns to advertising without invalidating or mutating the QR session.",
+  "anti_goals": [
+    "Do not implement QR first-open, browser-idle expiry, phone reads or session invalidation.",
+    "Do not add a settings table/framework, synchronize the two durations or infer one from the other.",
+    "Do not adopt target-screen 19/20 performance proof or acknowledgement state ownership."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "QR ticket/browser-access state and phone continuation",
+      "Serving-control settings mutation or generic configuration framework",
+      "Production credentials, deployment changes or operator/default session rows"
+    ],
+    "stop_conditions": [
+      "The backend and realtime roles cannot consume one consistent result-display value without a shared-contract redesign.",
+      "Timer behavior would invalidate or mutate the Promo session or require scheduler/background expiry work.",
+      "The two durations cannot remain independently configured positive values.",
+      "State/auth probes cannot use isolated fixtures and controlled clocks with safe cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-005.md#FT-005-AC-004",
+    ".protocols/FT-005/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-005.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/promo-display-api.md#display-configuration",
+    ".memory-bank/contracts/promo-display-api.md#client-outcome-rules",
+    ".memory-bank/domains/promo-attempt.md#display-outcome",
+    ".memory-bank/states/lifecycle-map.md#automatic-attempt-and-display",
+    ".memory-bank/states/lifecycle-map.md#promo-qr-and-browser-session",
+    ".memory-bank/contracts/boundary-map.md#central-origin-client-delivery",
+    ".memory-bank/testing/client-realtime.md#promo-presentation-and-display-outcome-proof"
+  ],
+  "constraints": [
+    "Primary owner is promo; backend/realtime entrypoints only bind the same deployment values and public adapter.",
+    "Return exactly the authenticated schema_version 1 config shape with two positive independent integers and no-store security behavior.",
+    "Use deterministic test values and controlled client/server clocks; keep session identity and fields read-only during expiry proof.",
+    "Preserve joinable display-expiry evidence for FT-006 without requiring or claiming the actual phone read."
+  ],
+  "invariants": [
+    "result_display_ms and success_cooldown_ms are positive and independent.",
+    "Display expiry changes only local presentation and never calls a session expiry/invalidation path.",
+    "Failure starts no success cooldown; only a complete valid Promo enters it.",
+    "Missing/invalid config returns 503 and never silently reuses the other duration."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-005.md#FT-005-AC-004",
+    "Task-owned config/API and controlled-client-clock probe independently varies result_display_ms and success_cooldown_ms, proves the exact authenticated response and rejects missing/invalid values without substituting one duration for the other.",
+    "The same probe proves display expiry returns presentation to advertising, preserves cooldown trigger semantics and leaves the exact QR session row unchanged and joinable to FT-006 without adopting phone-continuation proof."
+  ]
+}

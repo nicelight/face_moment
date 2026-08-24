@@ -1,0 +1,132 @@
+{
+  "id": "TASK-076-T3-FT-005-W1",
+  "title": "Present complete authenticated Promo with safe advertising fallback",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-005",
+  "reqs": [
+    "REQ-UX-001",
+    "REQ-UX-004",
+    "REQ-REL-001",
+    "REQ-SEC-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-021-T3-FT-002-W2",
+    "TASK-044-T2-FT-003-W1",
+    "TASK-053-T2-FT-003-W5",
+    "TASK-055-T2-FT-003-W7",
+    "TASK-057-T3-FT-003-W2",
+    "TASK-067-T2-FT-003-W6",
+    "TASK-071-T2-FT-004-W3",
+    "TASK-072-T3-FT-004-W4"
+  ],
+  "touched_files": [
+    "client/promo-display.js",
+    "client/app.js",
+    "client/index.html",
+    "client/styles.css",
+    "src/face_moment/promo/display_media.py",
+    "src/face_moment/promo/http.py",
+    "src/face_moment/promo/session.py",
+    "src/face_moment/promo/__init__.py",
+    "src/face_moment/inventory/promo_media_projection.py",
+    "src/face_moment/processing/preview_projection.py",
+    "src/face_moment/entrypoints/backend.py",
+    "src/face_moment/entrypoints/realtime.py",
+    "tests/client/test_promo_display.mjs",
+    "tests/promo/test_promo_display_api.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Promo display API tests",
+      "command": "docker compose run --rm backend python -m pytest tests/promo/test_promo_display_api.py",
+      "required": true
+    },
+    {
+      "name": "Promo client tests",
+      "command": "node --test tests/client/test_promo_display.mjs",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-005.md",
+    ".memory-bank/contracts/promo-display-api.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/tasks/plans/IMPL-FT-005.md"
+  ],
+  "evidence_required": [
+    "FT-005-AC-001 RED: the current result branch has no authenticated teaser endpoint or complete four-teaser Promo/QR renderer; GREEN: one exact v1 result renders four unique decoded low-quality no-watermark teasers, the accepted copy and a fully visible locally generated high-contrast QR at logical 1920x1080, with programmatic decode and one representative-phone scan; decisive comparison: fixture identities, target-layout assertions and scan result; artifact: automated receipts plus target-screen/phone evidence under .tasks/TASK-076-T3-FT-005-W1/.",
+    "FT-005-AC-005 RED: the current result state cannot reject partial media/QR/render failure as one integrated Promo outcome; GREEN: partial, stale, fewer-than-four, camera, network, processing, missing/undecodable media and optional-asset fixtures all leave or return the client to usable advertising, emit no final Promo/Chime or success cooldown, and preserve the accepted replaceable communication notice; decisive comparison: client state/event/timer trace for every named branch; artifact: redacted browser and focused-test evidence under .tasks/TASK-076-T3-FT-005-W1/."
+  ],
+  "purpose": "Complete the participant-visible success/failure branch by resolving exactly the issued authenticated teasers and rendering final Promo only when the full result is valid.",
+  "success_outcome": "A valid result produces one exact four-teaser truthful Promo with a visible local QR, while every invalid, partial, stale or failed branch stays or returns to advertising without success cooldown.",
+  "anti_goals": [
+    "Do not change realtime selection, search, teaser choice, result-session truth or N.",
+    "Do not implement display acknowledgement persistence, independent timers or phone continuation in this task.",
+    "Do not expose raw MinIO keys, presigned participant URLs, partial Promo, replacement media or an external QR service."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Realtime search/assembly algorithms and serving-setting mutation",
+      "QR ticket exchange, phone browser-access state and purchase navigation",
+      "Production credentials, operator/default rows or unredacted personalized artifacts"
+    ],
+    "stop_conditions": [
+      "Authenticated media cannot be resolved through promo-owned session authorization and accepted inventory/processing projections.",
+      "Business orchestration would need to move into an HTTP handler, infrastructure helper or composition root.",
+      "Complete Promo would require a new public origin, direct MinIO access, response-shape change or unresolved product choice.",
+      "T3 evidence cannot use isolated task-owned principals, rows, objects and cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-005.md#FT-005-AC-001",
+    ".memory-bank/features/FT-005.md#FT-005-AC-005",
+    ".protocols/FT-005/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-005.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/promo-display-api.md#teaser-media",
+    ".memory-bank/contracts/promo-display-api.md#client-outcome-rules",
+    ".memory-bank/contracts/realtime-attempt-api.md#response-version-1",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/contracts/boundary-map.md#central-origin-client-delivery",
+    ".memory-bank/contracts/boundary-map.md#authentication-and-data-specific-delivery",
+    ".memory-bank/domains/photo-processing.md#deterministic-private-derivatives",
+    ".memory-bank/states/lifecycle-map.md#automatic-attempt-and-display",
+    ".memory-bank/testing/client-realtime.md#promo-presentation-and-display-outcome-proof"
+  ],
+  "constraints": [
+    "Primary owner is promo under src/face_moment/promo/; SpaPromoClient is the external presentation party and backend is wiring only.",
+    "Cross only the accepted promo to inventory/processing Participant Promo projections; providers retain all Photo, visibility, derivative and processing writes.",
+    "Authenticate the display Bearer principal, derive spa_id from its stored hash and return no-store media without raw storage identity.",
+    "Use unique task-owned display client, Photo/session/Attempt rows and private object keys with known initial state, safe rerun identifiers, observable outcome and owned cleanup.",
+    "Use playwright cli for the agent-run real-browser proof: load the central-origin SpaPromoClient at logical 1920x1080, drive complete and incomplete result fixtures, retain the CLI transcript and target-screen screenshots/video/trace under .tasks/TASK-076-T3-FT-005-W1/, and join the authorized representative-phone scan observation without exposing its QR ticket.",
+    "Keep the QR implementation local, release-owned and minimal; do not add an external service or a second general client framework."
+  ],
+  "invariants": [
+    "Final Promo requires exactly four unique decoded issued teasers, exact truthful copy and one fully visible high-contrast QR.",
+    "Unknown, foreign, unavailable or hard-purged media produces no replacement, partial Promo, session mutation or N recalculation.",
+    "Every non-success path starts no final Chime or success cooldown and retry uses a fresh capture.",
+    "Token, digest, personalized payload and raw object identity never enter URLs, logs or retained evidence."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-005.md#FT-005-AC-001",
+    ".memory-bank/features/FT-005.md#FT-005-AC-005",
+    "Playwright CLI loads the real central-origin client at logical 1920x1080, renders the exact complete fixture, rejects each incomplete/failure fixture, and retains transcript plus target-screen screenshots/video/trace for the AC-001/AC-005 verdict.",
+    "Task-owned API/browser evidence proves authenticated issued-media scope, four decoded previews, local QR decode and representative-phone scan, safe advertising fallback, promo ownership and zero foreign writes without adopting provider-task proof."
+  ]
+}
