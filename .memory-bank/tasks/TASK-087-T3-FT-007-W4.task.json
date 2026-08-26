@@ -1,0 +1,99 @@
+{
+  "id": "TASK-087-T3-FT-007-W4",
+  "title": "Production acceptance: activate daily diagnostic retention cleanup",
+  "status": "planned",
+  "wave": "W4",
+  "feature": "FT-007",
+  "reqs": [
+    "REQ-DATA-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-083-T3-FT-007-W1",
+    "TASK-084-T2-FT-007-W2",
+    "TASK-085-T2-FT-007-W3",
+    "TASK-086-T3-FT-007-W3"
+  ],
+  "touched_files": [
+    "deploy/systemd/system/face-moment-retention-cleanup.service",
+    "deploy/systemd/system/face-moment-retention-cleanup.timer",
+    "scripts/check-ft007-retention-timer.sh"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Retention systemd unit verification",
+      "command": "systemd-analyze verify deploy/systemd/system/face-moment-retention-cleanup.service deploy/systemd/system/face-moment-retention-cleanup.timer",
+      "required": true
+    },
+    {
+      "name": "Retention activation check syntax",
+      "command": "bash -n scripts/check-ft007-retention-timer.sh",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-007.md",
+    ".memory-bank/contracts/diagnostic-retention-api.md",
+    ".memory-bank/runbooks/diagnostic-retention.md",
+    ".memory-bank/architecture/system-architecture.md",
+    ".memory-bank/tasks/plans/IMPL-FT-007.md"
+  ],
+  "evidence_required": [
+    "FT-007-AC-006 RED: the repository and pilot-host handoff have no source-managed daily retention service/timer, so no owner is assigned to activate the accepted cleanup command and ordinary expiry depends on an ad hoc manual invocation; GREEN: the reviewed one-shot service and persistent daily timer are installed unchanged on the explicitly authorized pilot host, enabled and active, invoke only the deployed owner-ordered cleanup command, expose a daily next trigger and produce one matching authorized latest-result observation without an internal scheduler or jobs subsystem; decisive comparison: source/installed unit hashes, redacted systemd enabled/active/list-timers state and latest run identity before/after one authorized service invocation; artifact: unit verification and redacted pilot-host activation receipts under .tasks/TASK-087-T3-FT-007-W4/."
+  ],
+  "purpose": "Assign and prove the production-only pilot-host activation that makes the reviewed idempotent cleanup command run daily without adding application scheduling machinery.",
+  "success_outcome": "The authorized pilot host has one source-managed persistent daily timer invoking only the accepted cleanup command, with observable activation and latest-result evidence.",
+  "anti_goals": [
+    "Do not change cleanup cutoffs, deletion ordering, latest-result schema, staff authorization or application business logic owned by TASK-086.",
+    "Do not add an internal scheduler, jobs/history table, queue, cron container, retry daemon or credential store.",
+    "Do not install or enable units on an unapproved host or manually select/delete participant records."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Unapproved hosts, systemd instances and deployment directories",
+      "Manual production PostgreSQL/MinIO mutation outside the reviewed cleanup command",
+      "Application cleanup/auth code, database migrations and FT-008..FT-011 behavior"
+    ],
+    "stop_conditions": [
+      "The exact pilot host, deployment directory or installation authority is unavailable at execution time.",
+      "Activation would require embedding credentials, changing the reviewed cleanup command or adding an internal scheduler/jobs subsystem.",
+      "Installed-unit or live-service proof cannot be redacted or bounded to the authorized pilot deployment.",
+      "The TASK-086 cleanup command and latest-result surface are not verified and closed."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-007.md#FT-007-AC-006",
+    ".protocols/FT-007/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-007.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/runbooks/diagnostic-retention.md#installation-and-activation",
+    ".memory-bank/runbooks/diagnostic-retention.md#verification-and-recovery",
+    ".memory-bank/contracts/diagnostic-retention-api.md#idempotent-cleanup-command",
+    ".memory-bank/architecture/system-architecture.md#runtime-shape"
+  ],
+  "constraints": [
+    "Primary operational owner is the authorized pilot-host operator; application cleanup remains promo-owned and the timer invokes only its public command.",
+    "Use source-managed systemd service/timer definitions with OnCalendar=daily and Persistent=true; the root-readable host environment file supplies only FACE_MOMENT_PROJECT_DIR and the service uses the exact runbook docker compose command without credentials.",
+    "The verification script defaults to read-only source/installed-state checks; a live one-shot invocation requires explicit pilot-host authorization and records only redacted status/latest-result evidence.",
+    "This final Production acceptance task has no dependents and remains planned until its authorized host evidence is available."
+  ],
+  "invariants": [
+    "Exactly one external timer activates retention daily; overlap is still rejected by the command's PostgreSQL advisory lock.",
+    "The timer owns no retention policy, database row, credential or participant-data decision.",
+    "Installed units match reviewed source and invoke no command other than the accepted cleanup entrypoint.",
+    "Activation evidence exposes no credential, raw object identity, participant payload or traceback."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-007.md#FT-007-AC-006",
+    "Source and installed-unit comparison proves the one-shot service invokes only the deployed cleanup entrypoint and the timer is daily, persistent, enabled and active.",
+    "Redacted pilot-host evidence records the next trigger and one authorized invocation's matching latest result without manual data mutation or internal scheduling machinery."
+  ]
+}

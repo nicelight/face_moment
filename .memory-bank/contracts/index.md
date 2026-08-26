@@ -6,6 +6,10 @@ status: active
 
 - [Boundary Map](boundary-map.md): capability ownership, public boundaries and
   cross-slice write rules.
+- [Client Diagnostic API](client-diagnostic-api.md): authenticated best-effort
+  browser response-receipt marker for one admitted core Attempt.
+- [Diagnostic Retention API](diagnostic-retention-api.md): owner-ordered cleanup
+  command and role-scoped latest-result read contract.
 - [Photo Admission API](photo-admission-api.md): authenticated staff uploader,
   per-file responses, standard failures and UI behavior.
 - [Photo Processing API](photo-processing-api.md): authenticated per-Photo

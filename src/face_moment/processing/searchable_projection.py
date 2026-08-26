@@ -28,6 +28,7 @@ class SearchablePhotoProjection:
     status_changed_at: datetime
     searchable_at: datetime | None
     failure_reason: str | None
+    preview_object_key: str | None
     photo_is_active: bool
     is_current_serving_revision: bool
     has_complete_derivatives: bool
@@ -45,33 +46,38 @@ class SearchableProjectionRepository:
         self,
         *,
         photo_id: uuid.UUID,
-        pipeline_revision_id: uuid.UUID,
+        pipeline_revision_id: uuid.UUID | None,
+        spa_id: uuid.UUID | None = None,
     ) -> SearchablePhotoProjection | None:
         """Return one exact owner-backed eligibility projection, if state exists."""
 
         return self._resolve(
             photo_id=photo_id,
             pipeline_revision_id=pipeline_revision_id,
+            spa_id=spa_id,
         )
 
     def resolve_for_photo(
         self,
         *,
         photo_id: uuid.UUID,
-        pipeline_revision_id: uuid.UUID,
+        pipeline_revision_id: uuid.UUID | None,
+        spa_id: uuid.UUID | None = None,
     ) -> SearchablePhotoProjection | None:
         """Return the exact admission-selected processing projection for a Photo."""
 
         return self._resolve(
             photo_id=photo_id,
             pipeline_revision_id=pipeline_revision_id,
+            spa_id=spa_id,
         )
 
     def _resolve(
         self,
         *,
         photo_id: uuid.UUID,
-        pipeline_revision_id: uuid.UUID,
+        pipeline_revision_id: uuid.UUID | None,
+        spa_id: uuid.UUID | None,
     ) -> SearchablePhotoProjection | None:
         """Read owner facts and derive the completed searchable truth."""
 
@@ -82,6 +88,15 @@ class SearchableProjectionRepository:
                 == PhotoPipelineState.pipeline_revision_id,
             )
         )
+        revision_scope = (
+            PhotoPipelineState.pipeline_revision_id == pipeline_revision_id
+            if pipeline_revision_id is not None
+            else PhotoPipelineState.pipeline_revision_id
+            == Photo.admission_pipeline_revision_id
+        )
+        scope = [PhotoPipelineState.photo_id == photo_id, revision_scope]
+        if spa_id is not None:
+            scope.append(Photo.spa_id == spa_id)
         statement = (
             select(
                 PhotoPipelineState.photo_id,
@@ -104,10 +119,7 @@ class SearchableProjectionRepository:
                 PipelineRevision,
                 PipelineRevision.id == PhotoPipelineState.pipeline_revision_id,
             )
-            .where(
-                PhotoPipelineState.photo_id == photo_id,
-                PhotoPipelineState.pipeline_revision_id == pipeline_revision_id,
-            )
+            .where(*scope)
         )
         row = self._session.execute(statement).one_or_none()
         if row is None:
@@ -148,6 +160,7 @@ class SearchableProjectionRepository:
             status_changed_at=status_changed_at,
             searchable_at=searchable_at,
             failure_reason=failure_reason,
+            preview_object_key=preview_object_key,
             photo_is_active=photo_is_active,
             is_current_serving_revision=is_current_serving_revision,
             has_complete_derivatives=has_complete_derivatives,
@@ -160,11 +173,18 @@ def read_photo_processing_projection(
     session: Session,
     *,
     photo_id: uuid.UUID,
-    pipeline_revision_id: uuid.UUID,
+    pipeline_revision_id: uuid.UUID | None = None,
+    spa_id: uuid.UUID | None = None,
 ) -> SearchablePhotoProjection | None:
-    """Public processing read boundary for one inventory-owned staff outcome."""
+    """Public processing read boundary for owner-backed Photo projections.
+
+    The optional admission-lineage and SPA scope are resolved inside the
+    processing-owned projection so accepted consumers do not query provider
+    tables to discover the revision or visibility scope themselves.
+    """
 
     return SearchableProjectionRepository(session).resolve_for_photo(
         photo_id=photo_id,
         pipeline_revision_id=pipeline_revision_id,
+        spa_id=spa_id,
     )

@@ -1,0 +1,114 @@
+{
+  "id": "TASK-085-T2-FT-007-W3",
+  "title": "Attach realtime evidence without blocking participant flow",
+  "status": "planned",
+  "wave": "W3",
+  "feature": "FT-007",
+  "reqs": [
+    "REQ-DIAG-001",
+    "REQ-DIAG-002",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-073-T3-FT-004-W3",
+    "TASK-074-T3-FT-004-W1",
+    "TASK-084-T2-FT-007-W2"
+  ],
+  "touched_files": [
+    "src/face_moment/diagnostics/evidence.py",
+    "src/face_moment/promo/realtime_orchestration.py",
+    "src/face_moment/promo/client_timing.py",
+    "src/face_moment/promo/display_outcome.py",
+    "src/face_moment/entrypoints/realtime.py",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/diagnostics/test_realtime_evidence.py",
+    "tests/promo/test_realtime_attempt_integration.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Realtime diagnostic evidence tests",
+      "command": "docker compose run --rm backend python -m pytest tests/diagnostics/test_realtime_evidence.py tests/promo/test_realtime_attempt_integration.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-007.md",
+    ".memory-bank/domains/diagnostic-evidence.md",
+    ".memory-bank/domains/promo-attempt.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/tasks/plans/IMPL-FT-007.md"
+  ],
+  "evidence_required": [
+    "FT-007-AC-002 RED: the current realtime path produces search observations and Promo truth but has no diagnostics provider call, persisted reproducibility bundle or explicit complete/partial/absent projection; GREEN: promo calls diagnostics best-effort for result, zero-proposal, busy, deadline and technical-failure paths, preserving applicable release/pipeline/values, selected and repeated detections, candidate pools, teasers, complete union/N, camera/config, response and display/QR events, while forced provider/finalization failure leaves the identical participant outcome and an explicit incomplete gap; decisive comparison: same disposable Attempt/session response and owner rows with healthy, partial, absent and failing writers; artifact: focused realtime/evidence integration under .tasks/TASK-085-T2-FT-007-W3/.",
+    "FT-007-AC-003 RED_NOT_APPLICABLE: the accepted claim makes capture-media persistence optional and the current pilot captures no selfie, so manufacturing missing media storage as RED would falsify scope; alternative proof: representative evidence/auth inventory and source/runtime scans show that image content alone creates no developer-only rule, no capture object/cache/per-crop log/selfie is required or created, and any existing non-media protected fields retain their separate boundary; artifact: bundle inventory and scope scan under .tasks/TASK-085-T2-FT-007-W3/."
+  ],
+  "purpose": "Complete the promo consumer integration that records reproducible diagnostics-owned search/result evidence while proving evidence collection cannot affect the participant outcome.",
+  "success_outcome": "Every exercised admitted path retains the same core participant truth with complete evidence when all applicable events arrive or an explicit partial/absent gap when they do not, without requiring capture-media or selfie persistence.",
+  "anti_goals": [
+    "Do not change search selection, thresholds, teaser assembly, N, result/session publication or display semantics.",
+    "Do not add Attempts UI, structured-log search, annotations, Calibration or an automatic replay runner.",
+    "Do not introduce mandatory capture-media storage, per-crop logs, embeddings, a reliable evidence outbox or cross-owner writes."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production Attempts/media/credentials and operator/default diagnostic records",
+      "Processing selection/search algorithms, Promo result/session/display truth and serving settings",
+      "FT-008 investigation UI, FT-009 log records, FT-010 annotations and FT-011 Calibration"
+    ],
+    "stop_conditions": [
+      "Evidence attachment cannot remain a best-effort promo-to-diagnostics application call.",
+      "Failure isolation would require rollback/retry of a valid core Attempt or participant result.",
+      "Required evidence would force embeddings, credentials, personalized session payloads, mandatory media or a selfie record.",
+      "Stateful integration cannot be exercised with disposable owner-scoped rows and safe cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-007.md#FT-007-AC-002",
+    ".memory-bank/features/FT-007.md#FT-007-AC-003",
+    ".protocols/FT-007/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-007.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/diagnostic-evidence.md#evidence-bundle-version-1",
+    ".memory-bank/domains/diagnostic-evidence.md#completeness-and-safe-writes",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/contracts/boundary-map.md#diagnostic-evidence-and-access",
+    ".memory-bank/domains/promo-attempt.md#client-response-timing",
+    ".memory-bank/domains/promo-attempt.md#display-outcome",
+    ".memory-bank/states/lifecycle-map.md#core-attempt-and-diagnostic-evidence",
+    ".memory-bank/testing/client-realtime.md#data-policy-checks"
+  ],
+  "constraints": [
+    "Primary evidence owner is diagnostics; promo passes immutable core/search/result/display observations only through the accepted application boundary and never writes the evidence table directly.",
+    "Reuse completed processing observation and promo result types; do not widen provider ownership or duplicate search/result decisions in an HTTP handler.",
+    "Treat writer absence, partial write, validation failure and finalization failure as non-throwing diagnostic outcomes with explicit gaps; rely on the TASK-084 provider boundary for its separately owned privacy validation.",
+    "Use unique disposable Attempts/sessions/evidence rows with controlled clocks and writer failure injection, observable owner state, safe rerun and cleanup limited to fixtures."
+  ],
+  "invariants": [
+    "Core Attempt, result/session and display truth are identical with a healthy, absent or failing evidence writer.",
+    "A complete bundle contains only applicable actual observations; missing detail remains incomplete and is never fabricated.",
+    "Diagnostics owns evidence writes and promo owns core/result writes; neither bypasses the accepted edge.",
+    "No mandatory capture media, selfie, embeddings, credentials, authentication state, commercial original or personalized session data enters evidence."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-007.md#FT-007-AC-002",
+    ".memory-bank/features/FT-007.md#FT-007-AC-003",
+    "Result, zero-proposal, busy, deadline and technical-failure integrations compare core/result/session state and participant response across healthy, partial, absent and failing diagnostics writers while inspecting exact bundle/gap content.",
+    "Candidate fixtures reconcile selected/repeated detections, matches, teaser IDs and complete union/N to the existing processing/promo outputs without adopting their dependency claims.",
+    "Data-policy inventory proves no required capture object/cache/per-crop log/selfie and excludes embeddings, credentials, auth/session payloads, commercial originals and request bodies without re-owning TASK-084's provider privacy claim."
+  ]
+}

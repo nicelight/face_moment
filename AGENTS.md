@@ -117,6 +117,7 @@ when they are satisfied.
 ## Communication
 
 - Always answer this user in Russian, while preserving stable English technical terms and established expressions when they are conventional in software engineering, product, or workflow contexts.
+- Write every report to the user in plain language and with enough context: what was being done, what happened, why, and what to do next. Do not substitute internal terms and statuses for explanations; keep the report concise unless the user asks for details.
 
 ## Preferred context routing
 - Start with `.memory-bank/architecture/*` and `.memory-bank/guides/*` for concept priming.

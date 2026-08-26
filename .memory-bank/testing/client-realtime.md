@@ -76,8 +76,11 @@ source_of_truth:
 - The diagnostic UI shows client-local ready-series processing start,
   request-send start and response receipt for a correlated admitted Attempt.
 - Retention proof applies 30 days to technical logs, 90 days to ordinary
-  Attempts/evidence including persisted capture-derived media, and preserves
-  only the curated promoted subset until explicit deletion.
+  Attempts/evidence including persisted capture-derived media, deletes an old
+  Attempt even when no evidence row exists, and preserves only the curated
+  promoted subset until explicit deletion. It also proves overlapping cleanup
+  cannot replace the active latest result and that the pilot-host timer invokes
+  only the accepted command daily.
 
 ## Client State And Recovery Proof
 
@@ -226,7 +229,9 @@ source_of_truth:
   contains image content. No such mechanism is required.
 - Credentials, authentication state, infrastructure access, commercial Photo
   media, personalized session data, participant names/annotations and
-  administrative actions retain their existing protection.
+  administrative actions retain their existing protection. Ordinary evidence
+  rejects participant names/annotations; only the separately authorized curated
+  promotion seam may admit them.
 
 ## Exclusions
 

@@ -1,0 +1,107 @@
+{
+  "id": "TASK-084-T2-FT-007-W2",
+  "title": "Persist the versioned diagnostic evidence provider",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-007",
+  "reqs": [
+    "REQ-DIAG-002",
+    "REQ-DATA-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-083-T3-FT-007-W1"
+  ],
+  "touched_files": [
+    "migrations/versions/0016_diagnostic_evidence.py",
+    "src/face_moment/diagnostics/__init__.py",
+    "src/face_moment/diagnostics/evidence.py",
+    "tests/diagnostics/test_evidence_persistence.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Diagnostic evidence persistence tests",
+      "command": "docker compose run --rm backend python -m pytest tests/diagnostics/test_evidence_persistence.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-007.md",
+    ".memory-bank/domains/diagnostic-evidence.md",
+    ".memory-bank/domains/promo-attempt.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/tasks/plans/IMPL-FT-007.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/domains/diagnostic-evidence.md#postgresql-shape-and-owner-boundary RED: the accepted diagnostics code root, evidence table and repository boundary are absent, so no versioned partial/finalized bundle or promoted subset can persist independently of the core Attempt; GREEN: the next linear migration and diagnostics repository persist one bounded version-1 bundle per logical Attempt, enforce complete/incomplete gap rules, deterministic issue tags, immutable ordinary expiry and a separately retained curated promoted subset without a cross-owner cascade; decisive comparison: disposable upgrade/downgrade/re-upgrade, valid/invalid/duplicate transition matrix and database-restart reads; artifact: focused migration/repository evidence under .tasks/TASK-084-T2-FT-007-W2/.",
+    "FT-007-AC-007 RED: no diagnostics provider exists to reject participant names/annotations from ordinary evidence or isolate their later authorized promoted-subset path; GREEN: ordinary writes containing either protected field fail without stored ordinary mutation or caller exception, while only the separately authorized curated promotion boundary accepts those fields without retaining the whole bundle; decisive comparison: disposable ordinary-versus-promoted provider writes and exact owner state before/after each accepted/rejected transition; artifact: focused provider privacy evidence under .tasks/TASK-084-T2-FT-007-W2/."
+  ],
+  "purpose": "Create the diagnostics-owned persistence and application boundary that later realtime, investigation, annotation and Calibration work can consume without writing promo state.",
+  "success_outcome": "A bounded versioned evidence bundle can be written idempotently, remain explicitly partial or finalize complete, preserve only a curated promoted subset across ordinary expiry and survive restart with owner isolation.",
+  "anti_goals": [
+    "Do not integrate the realtime consumer, add HTTP/UI routes, annotations, Log Explorer or Calibration behavior.",
+    "Do not require capture-media storage, per-crop logging, a selfie record, embeddings or a second datastore.",
+    "Do not add an empty row for every Attempt, a foreign delete cascade, cleanup history or a generic event framework."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Promo Attempt/result/session writes and foreign capability tables",
+      "Production PostgreSQL/MinIO, participant media and operator/default evidence",
+      "FT-008 role-scoped investigation, FT-009 logs, FT-010 annotations and FT-011 Calibration execution"
+    ],
+    "stop_conditions": [
+      "The evidence owner cannot persist without a cross-owner write or delete cascade.",
+      "A sufficient bundle would require mandatory capture media, embeddings, credentials or personalized session data.",
+      "The migration cannot follow TASK-083's actual revision as one linear stream.",
+      "Repository proof cannot use a disposable database with safe cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-007.md#FT-007-AC-007",
+    ".memory-bank/domains/diagnostic-evidence.md#postgresql-shape-and-owner-boundary",
+    ".protocols/FT-007/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-007.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/diagnostic-evidence.md#postgresql-shape-and-owner-boundary",
+    ".memory-bank/domains/diagnostic-evidence.md#evidence-bundle-version-1",
+    ".memory-bank/domains/diagnostic-evidence.md#completeness-and-safe-writes",
+    ".memory-bank/domains/diagnostic-evidence.md#promoted-subset",
+    ".memory-bank/contracts/boundary-map.md#diagnostic-evidence-and-access",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/states/lifecycle-map.md#diagnostic-and-calibration-retention"
+  ],
+  "constraints": [
+    "Primary owner and code root are diagnostics under src/face_moment/diagnostics/; its public application boundary returns non-throwing write outcomes to promo consumers.",
+    "Use one logical attempt_id without an ownership-crossing delete cascade and create no mandatory empty anchor for absent evidence.",
+    "Bound and validate JSON version, finite numeric values, issue tags and partial/final state; reject embeddings, credentials, auth/session payloads, commercial originals and participant names/annotations from ordinary evidence.",
+    "Use a disposable database with unique records, known initial state, restart read, safe rerun and owned cleanup; resolve the actual direct Alembic predecessor dynamically."
+  ],
+  "invariants": [
+    "Diagnostics is the only writer of diagnostic_evidence and never mutates core Attempt/result/session state.",
+    "Absent evidence is derived incomplete without an empty row; a partial row has an explicit gap and expired ordinary content cannot be restored.",
+    "Ordinary evidence contains no participant name or annotation; only the separately authorized promoted-subset boundary may accept those curated fields.",
+    "Promotion retains only the curated subset and never extends the entire ordinary bundle or Promo screenshot.",
+    "The table introduces no mandatory capture-media, selfie, log or replay storage."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-007.md#FT-007-AC-007",
+    ".memory-bank/domains/diagnostic-evidence.md#postgresql-shape-and-owner-boundary",
+    "Disposable migration/repository fixtures prove exact fields/constraints, one logical row, partial-to-complete finalization, invalid-write rejection, restart persistence, expiry irreversibility and promoted-subset preservation.",
+    "An ordinary-versus-promoted matrix rejects participant names/annotations in ordinary_manifest while admitting only the authorized curated fields through promoted_subset without retaining the whole ordinary bundle.",
+    "Ownership/schema scans prove one Base/Alembic stream, no cross-owner cascade/direct promo write and no mandatory capture-media/selfie/embedding/credential/session payload."
+  ]
+}

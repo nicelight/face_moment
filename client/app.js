@@ -18,6 +18,7 @@ import { createAttemptOutcomeController } from "./attempt-outcome.js";
 import { submitRealtimeAttempt } from "./realtime-attempt.js";
 import { createAttemptTimingRecorder } from "./attempt-timing.js";
 import { createCommunicationNoticeController } from "./communication-notice.js";
+import { createPromoDisplayController } from "./promo-display.js";
 
 const view = document.querySelector("#client-view");
 const communicationNoticeController = createCommunicationNoticeController({
@@ -28,6 +29,7 @@ let cameraController;
 let sensorClient;
 let triggerController;
 let attemptOutcomeController;
+let promoDisplayController;
 const jpegQualityController = createJpegQualityController({
   onChange: updateQualityConfiguration,
 });
@@ -57,6 +59,7 @@ function currentView() {
 
 function render() {
   if (!view) return;
+  if (promoDisplayController?.isVisible) return;
   const name = currentView();
   const content = views[name];
   view.replaceChildren();
@@ -355,6 +358,32 @@ window.addEventListener("face-moment:attempt-transport-failure", (event) => {
     captureId: event.detail?.captureId,
   });
 });
+
+window.addEventListener("face-moment:attempt-outcome", (event) => {
+  const detail = event.detail;
+  if (detail?.outcome !== "result") return;
+  void promoDisplayController?.showResult({
+    attemptId: detail.attemptId,
+    result: detail.result,
+  });
+});
+
+function returnToAdvertisingAfterPromoFailure(detail) {
+  if (detail?.handled !== true || detail?.stale === true) return;
+  const released = attemptOutcomeController?.releaseResult(detail.attemptId);
+  if (!released) return;
+  window.dispatchEvent(
+    new CustomEvent("face-moment:attempt-finished", {
+      detail: {
+        attemptId: detail.attemptId,
+        success: false,
+        reason: detail.reason ?? "promo_render_failure",
+      },
+    }),
+  );
+  if (currentView() !== "advertising") window.location.hash = "#advertising";
+  else render();
+}
 
 function mountTriggerConfiguration(card) {
   const panel = document.createElement("div");
@@ -740,6 +769,19 @@ attemptOutcomeController = createAttemptOutcomeController({
     window.dispatchEvent(
       new CustomEvent("face-moment:attempt-outcome", { detail }),
     );
+  },
+});
+promoDisplayController = createPromoDisplayController({
+  container: view,
+  onComplete: (detail) => {
+    document.body.dataset.promoState = "complete";
+    window.dispatchEvent(
+      new CustomEvent("face-moment:promo-rendered", { detail }),
+    );
+  },
+  onFailure: (detail) => {
+    document.body.dataset.promoState = "advertising";
+    returnToAdvertisingAfterPromoFailure(detail);
   },
 });
 triggerController = createReferenceCaptureController({

@@ -1,0 +1,123 @@
+{
+  "id": "TASK-083-T3-FT-007-W1",
+  "title": "Persist authenticated client response timing on the core Attempt",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-007",
+  "reqs": [
+    "REQ-DIAG-001",
+    "REQ-PERF-001",
+    "REQ-REL-001",
+    "REQ-SEC-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-066-T2-FT-003-W5",
+    "TASK-077-T3-FT-005-W2",
+    "TASK-080-T3-FT-006-W1"
+  ],
+  "touched_files": [
+    "migrations/versions/0015_promo_attempt_client_timing.py",
+    "client/app.js",
+    "client/attempt-timing.js",
+    "client/diagnostic-timing.js",
+    "src/face_moment/promo/attempt.py",
+    "src/face_moment/promo/client_timing.py",
+    "src/face_moment/entrypoints/realtime.py",
+    "tests/client/test_client_diagnostic_timing.mjs",
+    "tests/promo/test_client_diagnostic_timing.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Client diagnostic timing API tests",
+      "command": "docker compose run --rm backend python -m pytest tests/promo/test_client_diagnostic_timing.py",
+      "required": true
+    },
+    {
+      "name": "Client timing sender tests",
+      "command": "node --test tests/client/test_client_diagnostic_timing.mjs",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-007.md",
+    ".memory-bank/contracts/client-diagnostic-api.md",
+    ".memory-bank/domains/promo-attempt.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/tasks/plans/IMPL-FT-007.md"
+  ],
+  "evidence_required": [
+    "FT-007-AC-001 RED: the client records response receipt locally but the core Attempt has no response_received_ms column or authenticated report boundary, so a server-visible timeline cannot distinguish the browser receipt from server response time; GREEN: the next linear migration, promo repository and exact authenticated endpoint store the first ordered browser monotonic response marker for result, zero-proposal, busy, deadline and admitted technical-failure Attempts, derive bounded issue/gap tags, preserve an equal repeat and reject a conflicting/foreign report without changing outcome/session/display truth; decisive comparison: controlled client clock, scoped HTTP response and disposable persisted Attempt before/after first, equal, conflicting and missing reports; artifact: migration/API/client evidence under .tasks/TASK-083-T3-FT-007-W1/.",
+    "FT-007-AC-005 RED_NOT_APPLICABLE: the accepted offline claim is already true before this task, and inducing a missing core Attempt after admission or adding a durable pre-admission outbox merely to obtain RED would falsify the accepted behavior; alternative proof: preserve the current pre-admission no-row and post-admission retained-outcome behavior, then prove the new best-effort timing report neither creates an Attempt nor becomes a participant-flow prerequisite; decisive comparison: controlled disconnect before and after admission plus server row count/outcome and client event trace; artifact: focused offline/timing integration evidence under .tasks/TASK-083-T3-FT-007-W1/."
+  ],
+  "purpose": "Complete the promo-owned core Attempt timeline with the browser response-receipt marker while preserving best-effort offline semantics and the accepted display-client security boundary.",
+  "success_outcome": "Every exercised admitted outcome retains one core Attempt with an ordered client response marker when reported and an explicit gap when absent, while pre-admission offline delivery may leave no row and no timing-report failure changes participant truth.",
+  "anti_goals": [
+    "Do not add a reliable client outbox, replay queue, replacement Attempt, distributed tracing or client/server clock subtraction.",
+    "Do not write diagnostics-owned evidence, implement the Attempts UI or change result/session/display state.",
+    "Do not rotate credentials, log timing bodies/tokens or add a second authentication mechanism."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production display-client credentials, operator/default Attempts and unredacted request evidence",
+      "Diagnostics evidence tables, retention deletion, FT-008 investigation UI and FT-009 logs",
+      "FT-005 display transition semantics and FT-006 browser-access state beyond consuming their completed migration/result"
+    ],
+    "stop_conditions": [
+      "The response marker cannot remain a promo-owned first-write transition on the existing core Attempt.",
+      "A correct report would require a reliable queue, client/server wall-clock subtraction or a new public identity scheme.",
+      "The migration cannot follow the actual direct Alembic predecessor without rewriting another task's revision.",
+      "Security probes cannot use disposable scoped display clients and Attempts with safe cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-007.md#FT-007-AC-001",
+    ".memory-bank/features/FT-007.md#FT-007-AC-005",
+    ".protocols/FT-007/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-007.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/client-diagnostic-api.md#request-version-1",
+    ".memory-bank/contracts/client-diagnostic-api.md#idempotency-and-response",
+    ".memory-bank/domains/promo-attempt.md#client-response-timing",
+    ".memory-bank/domains/promo-attempt.md#core-timeline-projection",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/contracts/boundary-map.md#authentication-and-data-specific-delivery",
+    ".memory-bank/states/lifecycle-map.md#core-attempt-and-diagnostic-evidence",
+    ".memory-bank/testing/client-realtime.md#required-proof"
+  ],
+  "constraints": [
+    "Primary state owner is promo; the realtime handler authenticates and serializes but never writes the core table outside the repository.",
+    "Use the current display-client token hash to derive spa_id, return the same non-disclosing unknown/foreign result, rate-limit the route and emit no-store responses.",
+    "Use one client monotonic origin and require response_received_ms >= request_started_ms; never synthesize the marker from server time.",
+    "Use uniquely identified task-owned display clients and Attempts with known initial state, controlled clocks, safe rerun, decisive state reads and cleanup limited to those fixtures.",
+    "Resolve the migration's actual direct predecessor at execution; verify only this revision's upgrade/downgrade/re-upgrade and data preservation, not a mutable exact head."
+  ],
+  "invariants": [
+    "Only promo mutates the core Attempt; diagnostics and the HTTP adapter never write it directly.",
+    "The first valid response marker is immutable, equal repeat is idempotent and conflict/foreign/invalid input changes nothing.",
+    "Missing best-effort timing stays an explicit gap and never changes the terminal participant outcome.",
+    "Credentials, request bodies and protected identifiers never enter logs or retained task artifacts."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-007.md#FT-007-AC-001",
+    ".memory-bank/features/FT-007.md#FT-007-AC-005",
+    "Controlled-clock migration/repository/API/client fixtures prove ordered timing for result, zero-proposal, busy, deadline and admitted technical failure, first/equal/conflicting behavior and explicit missing-report gaps.",
+    "Disconnect fixtures compare pre-admission no-row behavior with post-admission retained core outcome and prove the timing sender adds no upsert, retry queue or participant-flow dependency.",
+    "T3 scope/redaction checks use only disposable principals/rows, prove token-derived spa isolation, 401/404/409/422/429 behavior, no-store responses and complete fixture cleanup."
+  ]
+}

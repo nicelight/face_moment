@@ -1,7 +1,7 @@
 ---
 description: Canonical accepted module/change-unit dependency graph and boundary contracts for the Face Moment pilot.
 status: active
-last_updated: 2026-08-22
+last_updated: 2026-08-25
 source_of_truth:
   - .memory-bank/contracts/boundary-map.md
 ---
@@ -211,7 +211,9 @@ defined by [Realtime Reference Search](../domains/realtime-search.md). The exact
 transport, idempotency and outcome surface is the
 [Realtime Attempt API](realtime-attempt-api.md); core Attempt, result assembly
 and result-session persistence are owned by
-[Promo Attempt](../domains/promo-attempt.md).
+[Promo Attempt](../domains/promo-attempt.md). Best-effort browser response
+timing uses the [Client Diagnostic API](client-diagnostic-api.md), while the
+detailed write target is [Diagnostic Evidence](../domains/diagnostic-evidence.md).
 
 ### Diagnostic evidence and access
 
@@ -265,13 +267,18 @@ The reproducible oracle is owned by
 
 ### Retention cleanup
 
-`promo` owns the project-wide latest cleanup result and calls `diagnostics` to
-expire diagnostic-owned data and report which promo-owned Attempts are eligible
-for deletion. Each module deletes only its own rows/objects. Exact cutoffs and
-promoted-subset retention are owned by the
+`promo` owns the project-wide latest cleanup result, selects its own expired
+Attempt candidates and calls `diagnostics` to expire diagnostic-owned data for
+those UUIDs. Diagnostics confirms both converged evidence and the explicit
+no-row case before promo deletion. Each module deletes only its own
+rows/objects. Exact cutoffs and promoted-subset retention are owned by the
 [lifecycle map](../states/lifecycle-map.md#diagnostic-and-calibration-retention).
-Failure remains observable and rerun is safe. No cleanup history, generic jobs
-lifecycle or cross-owner cascade is introduced.
+Failure remains observable, a project-scoped advisory lock rejects overlapping
+runs without overwriting the active result, and rerun is safe. No cleanup
+history, generic jobs lifecycle or cross-owner cascade is introduced. Exact
+command ordering, external daily activation and the staff latest-result surface
+are owned by the
+[Diagnostic Retention API](diagnostic-retention-api.md).
 
 ### Photo Inventory Operations
 
@@ -336,6 +343,10 @@ These are external/runtime interfaces, not project-module graph edges:
 - `SpaPromoClient` submits one synchronous bounded multipart request to
   realtime. Exact serialization, validation, idempotency and outcomes are in
   the [Realtime Attempt API](realtime-attempt-api.md).
+- After that response, `SpaPromoClient` may report the browser-local receipt
+  marker best-effort through the exact authenticated
+  [Client Diagnostic API](client-diagnostic-api.md); report failure changes no
+  participant outcome and creates no replacement Attempt.
 - Display and QR continuation cross the HTTPS application boundary. Their
   success, expiry and missing-media states are owned by the
   [lifecycle map](../states/lifecycle-map.md#promo-qr-and-browser-session);

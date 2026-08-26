@@ -7,6 +7,8 @@ status: active
 - [Display Client Access](display-client-access.md): SpaPromoClient identity,
   Admin-visible current token, manual kiosk handoff, authentication hash and
   lifecycle.
+- [Diagnostic Evidence](diagnostic-evidence.md): versioned best-effort evidence,
+  completeness gaps, promoted subset and diagnostics-owned retention.
 - [Promo Attempt](promo-attempt.md): core Attempt persistence, immutable
   serving snapshot, result assembly/session, display and shared QR browser
   access transitions.

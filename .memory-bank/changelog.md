@@ -4,6 +4,20 @@ status: active
 ---
 # Changelog
 
+## [2026-08-25] FT-007 — approved task decomposition
+- Reconciled the fresh task-plan `APPROVE` for FT-007 with Global Backbone
+  Planning Revision `4`; schema validation covered all 86 indexed records, the
+  DAG remained acyclic, Foundation closure remained intact and every
+  `FT-007-AC-001..007` retained exactly one owner.
+- Recorded `ARCHITECTURE_REVIEW: not_required` and the final five-card boundary:
+  authenticated core timing, diagnostics evidence provider/privacy, realtime
+  evidence integration, owner-ordered retention/latest result and production
+  daily timer activation.
+- Closed planning decomposition without promotion or lifecycle mutation:
+  FT-007, EP-003, mapped requirements and `TASK-083..087` remain `planned`.
+  Manual flow now routes to `/mb-doctor`; scheduler/autopilot flow routes to
+  `/mb-doctor --strict`.
+
 ## [2026-08-22] Wave W4 — FT-004 result-session boundary reconciled
 - Reconciled the scheduler-owned `done` closure for
   `TASK-072-T3-FT-004-W4` with fresh independent verification PASS and T3

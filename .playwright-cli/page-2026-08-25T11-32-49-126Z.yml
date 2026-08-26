@@ -1,0 +1,119 @@
+- generic [active] [ref=e1]:
+  - heading "Directory listing for /" [level=1] [ref=e2]
+  - separator [ref=e3]
+  - list [ref=e4]:
+    - listitem [ref=e5]:
+      - link ".agents/" [ref=e6] [cursor=pointer]:
+        - /url: .agents/
+    - listitem [ref=e7]:
+      - link ".claude/" [ref=e8] [cursor=pointer]:
+        - /url: .claude/
+    - listitem [ref=e9]:
+      - link ".dockerignore" [ref=e10] [cursor=pointer]:
+        - /url: .dockerignore
+    - listitem [ref=e11]:
+      - link ".git/" [ref=e12] [cursor=pointer]:
+        - /url: .git/
+    - listitem [ref=e13]:
+      - link ".gitignore" [ref=e14] [cursor=pointer]:
+        - /url: .gitignore
+    - listitem [ref=e15]:
+      - link ".memory-bank/" [ref=e16] [cursor=pointer]:
+        - /url: .memory-bank/
+    - listitem [ref=e17]:
+      - link ".mypy_cache/" [ref=e18] [cursor=pointer]:
+        - /url: .mypy_cache/
+    - listitem [ref=e19]:
+      - link ".playwright-cli/" [ref=e20] [cursor=pointer]:
+        - /url: .playwright-cli/
+    - listitem [ref=e21]:
+      - link ".protocols/" [ref=e22] [cursor=pointer]:
+        - /url: .protocols/
+    - listitem [ref=e23]:
+      - link ".pytest_cache/" [ref=e24] [cursor=pointer]:
+        - /url: .pytest_cache/
+    - listitem [ref=e25]:
+      - link ".tasks/" [ref=e26] [cursor=pointer]:
+        - /url: .tasks/
+    - listitem [ref=e27]:
+      - link "AGENTS.md" [ref=e28] [cursor=pointer]:
+        - /url: AGENTS.md
+    - listitem [ref=e29]:
+      - link "alembic.ini" [ref=e30] [cursor=pointer]:
+        - /url: alembic.ini
+    - listitem [ref=e31]:
+      - link "CAMERA_OPTIONS.md" [ref=e32] [cursor=pointer]:
+        - /url: CAMERA_OPTIONS.md
+    - listitem [ref=e33]:
+      - link "CLAUDE.md@" [ref=e34] [cursor=pointer]:
+        - /url: CLAUDE.md
+    - listitem [ref=e35]:
+      - link "client/" [ref=e36] [cursor=pointer]:
+        - /url: client/
+    - listitem [ref=e37]:
+      - link "compose.yaml" [ref=e38] [cursor=pointer]:
+        - /url: compose.yaml
+    - listitem [ref=e39]:
+      - link "deploy/" [ref=e40] [cursor=pointer]:
+        - /url: deploy/
+    - listitem [ref=e41]:
+      - link "Dockerfile" [ref=e42] [cursor=pointer]:
+        - /url: Dockerfile
+    - listitem [ref=e43]:
+      - link "GEMINI.md@" [ref=e44] [cursor=pointer]:
+        - /url: GEMINI.md
+    - listitem [ref=e45]:
+      - link "IDEA_APP.md" [ref=e46] [cursor=pointer]:
+        - /url: IDEA_APP.md
+    - listitem [ref=e47]:
+      - link "IDEA_CLIENT.md" [ref=e48] [cursor=pointer]:
+        - /url: IDEA_CLIENT.md
+    - listitem [ref=e49]:
+      - link "IDEA_DEBUG.md" [ref=e50] [cursor=pointer]:
+        - /url: IDEA_DEBUG.md
+    - listitem [ref=e51]:
+      - link "IDEA_INGEST.md" [ref=e52] [cursor=pointer]:
+        - /url: IDEA_INGEST.md
+    - listitem [ref=e53]:
+      - link "IDEA_OS.md" [ref=e54] [cursor=pointer]:
+        - /url: IDEA_OS.md
+    - listitem [ref=e55]:
+      - link "mermaids/" [ref=e56] [cursor=pointer]:
+        - /url: mermaids/
+    - listitem [ref=e57]:
+      - link "migrations/" [ref=e58] [cursor=pointer]:
+        - /url: migrations/
+    - listitem [ref=e59]:
+      - link "models/" [ref=e60] [cursor=pointer]:
+        - /url: models/
+    - listitem [ref=e61]:
+      - link "notes_face_moment.md" [ref=e62] [cursor=pointer]:
+        - /url: notes_face_moment.md
+    - listitem [ref=e63]:
+      - link "opencv5_Migration.md" [ref=e64] [cursor=pointer]:
+        - /url: opencv5_Migration.md
+    - listitem [ref=e65]:
+      - link "PAPERCUTS/" [ref=e66] [cursor=pointer]:
+        - /url: PAPERCUTS/
+    - listitem [ref=e67]:
+      - link "PROBLEM_OF_TASKS.md" [ref=e68] [cursor=pointer]:
+        - /url: PROBLEM_OF_TASKS.md
+    - listitem [ref=e69]:
+      - link "pyproject.toml" [ref=e70] [cursor=pointer]:
+        - /url: pyproject.toml
+    - listitem [ref=e71]:
+      - link "scripts/" [ref=e72] [cursor=pointer]:
+        - /url: scripts/
+    - listitem [ref=e73]:
+      - link "src/" [ref=e74] [cursor=pointer]:
+        - /url: src/
+    - listitem [ref=e75]:
+      - link "test-results/" [ref=e76] [cursor=pointer]:
+        - /url: test-results/
+    - listitem [ref=e77]:
+      - link "tests/" [ref=e78] [cursor=pointer]:
+        - /url: tests/
+    - listitem [ref=e79]:
+      - link "Untitled.jpeg" [ref=e80] [cursor=pointer]:
+        - /url: Untitled.jpeg
+  - separator [ref=e81]

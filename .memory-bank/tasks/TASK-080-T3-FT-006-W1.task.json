@@ -1,7 +1,7 @@
 {
   "id": "TASK-080-T3-FT-006-W1",
   "title": "Persist the session-wide QR browser-access state",
-  "status": "planned",
+  "status": "ready",
   "wave": "W1",
   "feature": "FT-006",
   "reqs": [

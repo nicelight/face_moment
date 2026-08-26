@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from face_moment.entrypoints.common import create_role_app, run
 from face_moment.inventory.http import register_ingest_target_routes
 from face_moment.platform.auth.http import register_staff_session_routes
+from face_moment.promo.http import register_promo_display_routes
 from face_moment.serving_control.http import (
     register_active_search_date_routes,
     register_display_client_admin_routes,
@@ -39,6 +40,7 @@ def create_app() -> FastAPI:
     register_ingest_target_routes(app)
     register_display_client_admin_routes(app)
     register_active_search_date_routes(app)
+    register_promo_display_routes(app)
     app.mount("/client", StaticFiles(directory=CLIENT_ROOT), name="promo-client-assets")
 
     @app.get("/", include_in_schema=False)

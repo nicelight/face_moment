@@ -1,7 +1,7 @@
 ---
 description: Promo-owned core Attempt, realtime result assembly, result-session persistence and shared QR browser-access specification.
 status: active
-last_updated: 2026-08-24
+last_updated: 2026-08-25
 source_of_truth:
   - .memory-bank/domains/promo-attempt.md
 ---
@@ -29,7 +29,8 @@ table with:
 | `trigger_source` | `sensor \| test`. |
 | `client_release`, `detector_id`, `model_version`, `jpeg_quality`, `camera_device_id` | Immutable admitted client/proposal context. |
 | `reference_series_ready_at` | Client wall-clock correlation timestamp. |
-| `local_detection_completed_ms`, `request_started_ms` | Non-negative client monotonic offsets. |
+| `local_detection_completed_ms`, `request_started_ms` | Non-negative client monotonic offsets admitted with the request. |
+| `response_received_ms` | Nullable non-negative client monotonic offset reported best-effort after the synchronous response; it is never synthesized from server time. |
 | `proposal_count` | Integer `0..20`. |
 | `settings_revision`, `visit_date`, `pipeline_revision_id`, `pipeline_code`, `query_source`, `release_id` | Immutable serving snapshot copied before inference; `query_source` is `reference`. |
 | `threshold`, `quality_settings`, `calibration_id` | Immutable applied search inputs; `calibration_id` is nullable. |
@@ -77,6 +78,43 @@ shared operator/default database is downgraded as test setup.
 The core table does not require crop/media persistence, detailed evidence or a
 reliable client-offline outbox. If later diagnostic work stores capture-derived
 media, `diagnostics` owns that storage and retention.
+
+## Client Response Timing
+
+The exact [Client Diagnostic API](../contracts/client-diagnostic-api.md) is the
+only client-to-server write for `response_received_ms`. `promo` authenticates
+the display-client principal, resolves `(spa_id, client_attempt_id)` and stores
+the first valid marker through its repository. Equal repeat is idempotent;
+foreign, conflicting, non-terminal or out-of-order reports change nothing.
+
+The marker belongs to the same browser monotonic origin as the admitted ready,
+local-detection and request-start offsets. Server response time is not a
+substitute. A missing best-effort report is projected as an explicit gap and
+does not change the core outcome, create a new Attempt or trigger a retry
+queue.
+
+## Core Timeline Projection
+
+The promo read projection exposes:
+
+- client offsets `0` for ready-series start, then admitted
+  `local_detection_completed_ms`, `request_started_ms` and nullable
+  `response_received_ms`;
+- server `created_at`, `slot_decided_at`, `search_started_at`,
+  `search_finished_at` and terminal processing/outcome;
+- display receipt/effective state and nullable
+  `qr_fully_visible_elapsed_ms`.
+
+It never subtracts client wall time from server time. Nullable stages carry a
+machine gap rather than a fabricated timestamp. Base `issue_tags` are unique
+lowercase machine values derived only from actual core truth:
+`no_proposals`, `busy`, `deadline`, `unacceptable_query`,
+`insufficient_results`, `interrupted`, `internal_failure`,
+`response_receipt_missing`, `display_failed`, `display_unconfirmed` and
+`latency_over_10s`. The latency tag is present only when a confirmed
+`qr_fully_visible_elapsed_ms >= 10000`; no server duration substitutes for it.
+The diagnostics read projection may add `evidence_incomplete` without writing
+the core row.
 
 ## Singleton Runtime Orchestration
 
@@ -241,6 +279,25 @@ and atomic result publication already fixes the positive display window. FT-005
 therefore reuses those columns and adds no schema migration or historical
 backfill. Existing session/ticket/result fields remain unchanged.
 
+## Ordinary Attempt Retention
+
+The exact [Diagnostic Retention API](../contracts/diagnostic-retention-api.md)
+owns one latest cleanup result. Promo selects its own core Attempts whose
+`created_at` is strictly before the fixed 90-day UTC cutoff, passes those UUIDs
+to diagnostics and deletes them only after diagnostics confirms its portion
+inaccessible or confirms that no evidence row exists. Owner-local result
+sessions may be deleted with their expired Attempt; no Photo, processing,
+serving-control or diagnostics row is cascaded.
+
+`face_moment.retention_cleanup_latest` is one promo-owned singleton result, not
+a history or generic jobs table. It records the latest run identity, fixed
+cutoffs, `running|succeeded|failed|interrupted`, timestamps, confirmed owner
+counts and a bounded sanitized error. A project-scoped PostgreSQL advisory lock
+rejects a concurrent invocation without overwriting its active result; after
+the lock becomes available, any orphaned `running` result becomes `interrupted`
+before a fresh safe rerun. Ordinary cleanup never removes a diagnostics-owned
+promoted subset.
+
 ## Edge Cases And Errors
 
 - Failure to obtain a complete serving snapshot prevents inference and produces
@@ -294,3 +351,9 @@ backfill. Existing session/ticket/result fields remain unchanged.
 - Schema/repository proof confirms that the existing Attempt columns support
   timely terminal reports and derived `unconfirmed` without a stored terminal
   rewrite or historical backfill.
+- Client timing proof confirms first-write/equal-repeat idempotency, monotonic
+  ordering and explicit missing-report gaps with no reliable outbox or
+  diagnostics direct write.
+- Retention proof confirms diagnostics-before-promo owner order, the strict
+  90-day cutoff, promoted-subset preservation, interruption/failure visibility,
+  safe rerun and one latest result without a history table.

@@ -1,7 +1,7 @@
 ---
 description: Implementation plan for truthful Promo presentation, display outcome and visible-QR acceptance in FT-005.
 status: active
-last_updated: 2026-08-24
+last_updated: 2026-08-26
 ---
 # IMPL-FT-005 — Promo Presentation And Display Outcome
 
@@ -51,6 +51,25 @@ MinIO/presigned path, media cache, replacement selection, acknowledgement
 outbox, scheduler, retry queue, settings framework, second client origin or QR
 service. No behavior JSON is needed because the exact contract fixtures and
 five stable ACs remove material ambiguity.
+
+## Development-Stage Checkpoint (Non-Closure)
+
+- For the current scoped recovery, the accepted intermediate outcome is the
+  independently verified Attempt 2 provider-edge repair: zero direct provider
+  queries, no forbidden provider imports and authenticated SPA scope. Evidence
+  is retained in
+  `.tasks/TASK-076-T3-FT-005-W1/attempt-2-verifier-evidence.md` and
+  `.tasks/TASK-076-T3-FT-005-W1/attempt-2-provider-edge-green.md`.
+- This checkpoint records a bounded development-stage result only. It does
+  not close `FT-005-AC-001` or `FT-005-AC-005`, does not change their REQ/AC
+  targets, and does not change task identity, tier, wave, dependencies or
+  lifecycle.
+- QR proof, distinct real four-photo/no-watermark proof and the authorized
+  representative-phone scan are unavailable and are not required for this
+  intermediate checkpoint because real photos are not available before the
+  ingest/processing pipeline is complete. They remain final closure
+  obligations; a synthetic shared-JPEG fixture is not proof and cannot replace
+  them.
 
 ## Architecture And Ownership
 

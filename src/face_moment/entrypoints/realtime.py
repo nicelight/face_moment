@@ -33,6 +33,7 @@ from face_moment.processing import (
 )
 from face_moment.processing.reference_query import ReferenceOccurrence
 from face_moment.promo import (
+    derive_media_ref,
     PromoAttemptRepository,
     PromoAttemptNotFoundError,
     PromoSessionRepository,
@@ -283,7 +284,9 @@ def _response_for_attempt(
                 "schema_version": 1,
                 "attempt_id": attempt_id,
                 "outcome": "result",
-                "result": _result_response(result),
+                "result": _result_response(
+                    result, qr_ticket_secret=qr_ticket_secret
+                ),
             },
         )
     if outcome is None:
@@ -305,13 +308,20 @@ def _response_for_attempt(
     )
 
 
-def _result_response(result: Any) -> dict[str, Any]:
+def _result_response(result: Any, *, qr_ticket_secret: bytes | str) -> dict[str, Any]:
     return {
         "session_id": str(result.session_id),
         "teasers": [
             {
                 "photo_id": str(photo_id),
-                "media_url": f"/api/promo/media/{photo_id}",
+                "media_url": (
+                    "/api/promo/media/"
+                    + derive_media_ref(
+                        result.session_id,
+                        photo_id,
+                        qr_ticket_secret=qr_ticket_secret,
+                    )
+                ),
             }
             for photo_id in result.teasers
         ],

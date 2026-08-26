@@ -97,6 +97,63 @@ h1 {
   border-color: #4e9f82;
 }
 
+.promo-card {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 3rem);
+  min-height: 0;
+  padding: clamp(1.25rem, 2vw, 2rem);
+  border-color: #d8b45a;
+  background: #111a2a;
+}
+
+.promo-card h2 {
+  max-width: none;
+  margin-bottom: 0;
+  color: #fff8df;
+  font-size: clamp(2rem, 3.5vw, 3.5rem);
+  line-height: 1.05;
+}
+
+.promo-teaser-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.75rem, 1.5vw, 1.5rem);
+  align-items: center;
+}
+
+.promo-teaser {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 2px solid #e6d39a;
+  border-radius: 0.75rem;
+  background: #f6f1e5;
+  object-fit: cover;
+}
+
+.promo-qr-panel {
+  display: grid;
+  place-items: center;
+  min-height: clamp(10rem, 18vw, 16rem);
+  border-radius: 1rem;
+  background: #ffffff;
+}
+
+.promo-qr {
+  display: block;
+  width: min(100%, 16rem);
+  height: auto;
+  max-height: 16rem;
+  padding: 0.5rem;
+  box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+  .promo-teaser-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .notice {
   margin-inline: auto;
   max-width: 68rem;

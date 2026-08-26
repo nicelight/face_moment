@@ -1,0 +1,114 @@
+{
+  "id": "TASK-086-T3-FT-007-W3",
+  "title": "Expire ordinary Attempt evidence and expose the latest cleanup result",
+  "status": "planned",
+  "wave": "W3",
+  "feature": "FT-007",
+  "reqs": [
+    "REQ-DIAG-002",
+    "REQ-DIAG-003",
+    "REQ-DATA-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-004-T3-FT-001-W2",
+    "TASK-084-T2-FT-007-W2"
+  ],
+  "touched_files": [
+    "migrations/versions/0017_retention_cleanup_latest.py",
+    "src/face_moment/diagnostics/retention.py",
+    "src/face_moment/promo/retention.py",
+    "src/face_moment/promo/http.py",
+    "src/face_moment/entrypoints/retention_cleanup.py",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/diagnostics/test_retention_cleanup.py",
+    "tests/diagnostics/test_retention_api.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Diagnostic retention command and API tests",
+      "command": "docker compose run --rm backend python -m pytest tests/diagnostics/test_retention_cleanup.py tests/diagnostics/test_retention_api.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-007.md",
+    ".memory-bank/contracts/diagnostic-retention-api.md",
+    ".memory-bank/domains/diagnostic-evidence.md",
+    ".memory-bank/domains/promo-attempt.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/tasks/plans/IMPL-FT-007.md"
+  ],
+  "evidence_required": [
+    "FT-007-AC-004 RED: ordinary core Attempts/evidence never expire, no promoted-subset preservation path or idempotent owner-ordered command exists, and authorized staff cannot observe a latest cleanup result; GREEN: the next linear migration, diagnostics expiry boundary and promo command apply strict controlled 90-day cutoffs, make owner data inaccessible before idempotent artifact deletion, confirm and delete an old core Attempt even when no diagnostic_evidence row exists, preserve only the curated promoted subset, reject an overlapping invocation without replacing the active latest result, record success/failure/interruption and confirmed counts in one latest-result row, safely rerun, and expose the exact no-store operator/developer page/API while denying photographer/unauthenticated access; decisive comparison: disposable ordinary/no-evidence/incomplete/promoted fixtures and private object prefix before/after success, injected failure, orphaned-running recovery, concurrent invocation, rerun and each staff role; artifact: migration/command/API/security evidence under .tasks/TASK-086-T3-FT-007-W3/."
+  ],
+  "purpose": "Implement destructive ordinary retention through the accepted owner order and make its latest applied cutoffs, counts and failure state observable without an internal scheduler or history subsystem.",
+  "success_outcome": "Ordinary Attempts/evidence older than the fixed cutoff become inaccessible and owner-cleaned, curated promoted data survives, failure/interruption stays truthful, rerun converges safely and authorized staff see exactly one sanitized latest result.",
+  "anti_goals": [
+    "Do not implement FT-009 log storage/search, FT-010 annotation behavior, FT-011 promotion UI/Calibration or FT-012 Photo purge.",
+    "Do not add cleanup history, a jobs table, internal scheduler, reliable queue, backup/restore or cross-owner cascade.",
+    "Do not mutate production credentials, run against operator/default data or expose raw object identities, participant data or tracebacks."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production PostgreSQL/MinIO, operator/default Attempts/evidence and production timer configuration",
+      "Photo, processing, serving-control, staff-access or diagnostics rows outside their named owner commands",
+      "FT-009 technical-log implementation and FT-010/FT-011 product behavior"
+    ],
+    "stop_conditions": [
+      "Cleanup cannot make owner data inaccessible and converge without a cross-owner write/cascade or generic jobs subsystem.",
+      "Promoted subset preservation cannot be proven without retaining the whole ordinary bundle, Promo screenshot or technical logs.",
+      "A failed/interrupted run cannot remain observable and safely rerunnable through one latest-result row.",
+      "Destructive/auth probes cannot be limited to disposable rows/objects with known state, safe rerun and complete cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-007.md#FT-007-AC-004",
+    ".protocols/FT-007/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-007.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/diagnostic-retention-api.md#idempotent-cleanup-command",
+    ".memory-bank/contracts/diagnostic-retention-api.md#latest-result-persistence",
+    ".memory-bank/contracts/diagnostic-retention-api.md#staff-read-contract",
+    ".memory-bank/domains/diagnostic-evidence.md#retention-cleanup-boundary",
+    ".memory-bank/domains/diagnostic-evidence.md#promoted-subset",
+    ".memory-bank/domains/promo-attempt.md#ordinary-attempt-retention",
+    ".memory-bank/contracts/boundary-map.md#retention-cleanup",
+    ".memory-bank/states/lifecycle-map.md#diagnostic-and-calibration-retention"
+  ],
+  "constraints": [
+    "Primary orchestration/latest-result owner is promo; diagnostics first expires only its own data and returns eligible Attempt IDs/counts, then promo deletes only its own confirmed rows.",
+    "Use fixed UTC 90-day ordinary cutoffs and expose the fixed technical-log cutoff without claiming FT-009 deletion implementation; no mutable operator cutoff or request-triggered cleanup is added.",
+    "Promo selects expired core Attempt UUIDs and diagnostics confirms each after owner-local convergence; a missing diagnostic_evidence row is an explicit no-op confirmation, never an exclusion from cleanup.",
+    "The command holds one project-scoped non-blocking PostgreSQL advisory lock, exits 2 without mutation when another run is active, and after lock acquisition marks an orphaned running result interrupted before a fresh run; production timer activation remains TASK-087 scope.",
+    "Use unique disposable Attempts/evidence/promoted subsets and private object prefix with controlled time, known initial state, injected failures, safe rerun, decisive owner reads and complete task-owned cleanup.",
+    "Resolve the actual direct Alembic predecessor and prove only this revision's round trip/data preservation; never downgrade a shared operator/default database."
+  ],
+  "invariants": [
+    "Each owner deletes only its own rows/objects and no database cascade crosses capability ownership.",
+    "Ordinary cleanup never deletes the curated promoted subset or restores already expired content on rerun.",
+    "Failure/interruption never fabricates success counts; overlap never replaces the active run identity or counts; one latest result remains observable and sanitized.",
+    "Staff reads do not start cleanup and reveal no raw object identity, participant payload, credential or traceback."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-007.md#FT-007-AC-004",
+    "Disposable controlled-time command fixtures prove strict cutoff inclusion/exclusion, diagnostics-before-promo order, ordinary/no-evidence/incomplete expiry, promoted preservation, idempotent missing-object handling, orphaned-running interruption, overlapping exit 2 with unchanged active result, injected owner failure and successful safe rerun with one latest-result row.",
+    "Migration and owner tracing prove one Base/Alembic stream, no cross-owner cascade/direct write, no cleanup history/jobs/internal scheduler and no mutation of Photo/processing/serving state.",
+    "Staff API/page fixtures prove never-run and available shapes, exact cutoffs/counts/outcome/error, operator/developer access, photographer/unauthenticated denial, no-store and sanitized evidence using only disposable principals/state."
+  ]
+}
