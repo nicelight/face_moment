@@ -1,6 +1,6 @@
 # Face Moment: сервер, ОС и display/kiosk
 
-Обновлено: 2026-08-12
+Обновлено: 2026-08-26
 
 ## 0. Статус документа
 
@@ -17,6 +17,12 @@ deployment topology являются target design.
 `.memory-bank/contracts/boundary-map.md` и
 `.memory-bank/states/lifecycle-map.md`; этот файл остаётся subordinate
 overview/discovery evidence по precedence из `.memory-bank/spec-backbone.md`.
+
+Точную целевую конфигурацию центрального сервера, VPS, публичной сетевой
+границы и server-to-VPS backhaul определяет
+[`SERVER/serverparams.md`](SERVER/serverparams.md). При расхождении описаний
+инфраструктуры этот файл следует привести к `SERVER/serverparams.md`, а не
+сохранять параллельный вариант topology.
 
 Первый pilot — one-СПА smoke test с тестировщиками. Топология на 10–15 СПА
 является target capacity после pilot, а
@@ -289,33 +295,30 @@ restart: unless-stopped
 
 Центральный сервер и remote `SpaPromoClient` выходят в интернет через независимые
 4G-подключения и могут находиться за CGNAT без публичного IPv4. Публичный вход
-предоставляет небольшой stateless VPS в РФ с белым IP:
+предоставляет stateless VPS на AlmaLinux с белым IPv4:
 
 ~~~text
 SpaPromoClient и телефон участника
--> публичный HTTPS: HTTP/3, при недоступном UDP автоматический fallback на HTTP/2
+-> публичный HTTPS TCP/443
 -> Caddy на VPS: TLS termination, request limits и rate/concurrency limits
--> локально доступный frps
--> постоянный reverse tunnel, инициированный frpc с центрального сервера через 4G
--> локальный HTTPS entry point/backend центрального сервера
+-> постоянный IKEv2/IPsec backhaul через strongSwan
+-> центральный HTTPS entry point/backend
 ~~~
 
-Для server-to-VPS tunnel стартовым кандидатом является frp over QUIC. Перед
-pilot он сравнивается на реальных SIM и у выбранного оператора с frp over
-TCP+TLS; используется измеримо более быстрый и стабильный вариант. frp не даёт
-автоматический fallback между этими transport-ами, поэтому второй вариант
-остаётся заранее проверенной операционной конфигурацией, а не параллельным
-tunnel.
+Центральный Kubuntu-сервер сам инициирует IKEv2-сеанс к VPS. При CGNAT IPsec
+работает через NAT-T на UDP/4500, поэтому центральному серверу не нужен белый
+IPv4 или port forwarding. Обычные Windows-клиенты и телефоны участников в VPN
+не входят: их рабочий путь остаётся обычным публичным HTTPS к Caddy на VPS.
 
 Стартовая конфигурация:
 
 - host firewall везде использует default deny для входящих соединений;
-- VPS принимает TCP/UDP 443 для публичного HTTPS/HTTP3, TCP 22 для key-only SSH
-  и отдельный выбранный transport port frps; QUIC frps не делит UDP 443 с Caddy;
+- VPS принимает TCP 443 для публичного HTTPS, UDP 500/4500 для IKEv2/IPsec и
+  ограниченный TCP 22 для key-only SSH;
 - центральный сервер не принимает входящие соединения из интернета и только сам
-  устанавливает reverse tunnel через 4G;
-- frps proxy endpoint и dashboard не публикуются напрямую и доступны Caddy или
-  администратору только локально;
+  устанавливает IKEv2/IPsec tunnel через внешний канал;
+- tunnel peer addresses резервируются как `10.77.0.1` для VPS и `10.77.0.2`
+  для Kubuntu и проверяются на отсутствие пересечений перед вводом;
 - PostgreSQL, MinIO и внутренние порты контейнеров не публикуются наружу и
   доступны только через internal Docker network;
 - backend API, `RealtimeFaceService`, previews и QR continuation доступны через
@@ -328,22 +331,26 @@ tunnel.
   `X-Forwarded-For` из реального client IP и применяет public rate/concurrency
   limits до tunnel; центральный entry point доверяет этим headers только от
   tunnel peer;
-- TLS frpc -> frps обязан проверять сертификат и имя frps через доверенный CA;
-  tunnel аутентифицируется отдельным сильным secret;
+- IKEv2 peer authentication и secrets/certificates не используются никакими
+  application-сервисами и хранятся только в host-level strongSwan configuration;
+- tunnel автоматически поднимается после загрузки и восстанавливается после
+  временного разрыва внешнего соединения;
 - `spa_client_token` передаётся в authorization header, хранится на сервере в
   виде hash и не попадает в URL, proxy logs или application logs;
 - diagnostic route отделён от Promo/QR routes;
 - diagnostic objects имеют обязательный 90-day lifecycle;
 - Docker daemon/API не публикуется наружу.
 
-Сохраняются Kubuntu, Chromium и autologin пользователя `display`. Административные
-операции выполняются только пользователем `facemoment`. В MVP не добавляются
-другие Unix users, mTLS, VLAN, сложный RBAC или headless-топология.
+Сохраняются Kubuntu, Chromium и autologin пользователя `display`.
+Административные операции выполняются пользователем `facemoment`. Прямой SSH к
+Kubuntu из интернета запрещён; отдельный административный IKEv2 path может быть
+добавлен после проверки основного backhaul. В MVP не добавляются другие Unix
+users, mTLS, VLAN, сложный RBAC или headless-топология.
 
-**Почему принято:** outbound reverse tunnel работает за мобильным CGNAT, а
-stateless VPS даёт браузерам обычный публичный HTTPS origin без VPN-клиента.
-Топология добавляет только неизбежный public relay и сохраняет существующий
-request/response contract.
+**Почему принято:** исходящий IKEv2/IPsec backhaul работает через NAT-T за
+CGNAT, а stateless VPS даёт браузерам обычный публичный HTTPS origin без
+VPN-клиента. Топология сосредотачивает VPN в одном Linux-to-Linux соединении и
+сохраняет существующий request/response contract.
 
 ---
 
@@ -613,9 +620,9 @@ qr_fully_visible_at
 11. Постоянный локальный видеопоток и автоматическая sensor-triggered
     reference-серия для участников pilot.
 12. Простой `spa_client_token -> spa_id` mapping.
-13. Публичный HTTPS/HTTP3 на VPS, key-only SSH и отдельный защищённый frps
-    transport port; центральный сервер не принимает internet ingress, а
-    PostgreSQL, MinIO и Docker API закрыты.
+13. Публичный HTTPS на VPS, постоянный IKEv2/IPsec backhaul через strongSwan и
+    ограниченный key-only SSH к VPS; центральный сервер не принимает прямой
+    internet ingress, а PostgreSQL, MinIO и Docker API закрыты.
 14. Best-effort group search без tracking и гарантии полного покрытия.
 15. Chromium на весь экран, реклама между результатами, четыре low-quality
     preview без watermark и QR continuation.
@@ -725,21 +732,21 @@ HDMI-мониторе, но не должно останавливать Docker-
 search. Это принято для pilot, но требует явного UX, ручной annotation и не даёт
 права обещать полное покрытие группы.
 
-### 11.7 Нестабильность 4G и tunnel transport
+### 11.7 Нестабильность внешнего канала и IPsec
 
 Скорость и packet loss зависят от оператора, SIM/APN, времени суток и маршрута
-до VPS; QUIC не считается автоматически быстрее TCP+TLS. На точных pilot
-подключениях нужно измерить оба transport-а в часы нагрузки и выполнить
-существующую проверку минимум 19 успешных попыток из 20 за `<10 s` с реальными
-размерами reference-серий.
+до VPS. На pilot-подключении нужно измерить RTT, packet loss, throughput,
+Path MTU, восстановление IKEv2 после обрыва и полный HTTPS upload через VPS.
+После этого выполняется существующая проверка минимум 19 успешных попыток из 20
+за `<10 s` с реальными размерами reference-серий.
 
 ### 11.8 VPS как доверенная граница и единая точка входа
 
 VPS видит расшифрованный HTTPS traffic и при отказе разрывает новые запросы и
 активные QR continuation sessions. На нём нельзя хранить application state,
-media или очередь запросов. Обязательны проверка identity frps, закрытый прямой
-доступ к proxy endpoint, log redaction, body/rate/concurrency limits до tunnel
-и заранее проверенное переключение tunnel между QUIC и TCP+TLS.
+media или очередь запросов. Обязательны проверка IKEv2 peer identity, закрытый
+прямой доступ к внутреннему upstream, log redaction, body/rate/concurrency
+limits до tunnel и проверенное автоматическое восстановление IPsec.
 
 ---
 
@@ -764,9 +771,9 @@ MinIO/S3-compatible storage
 +
 синхронный HTTPS request/response с простым spa_client_token
 +
-public Caddy на stateless VPS -> frp reverse tunnel -> central server через 4G
+public Caddy на stateless AlmaLinux VPS -> IKEv2/IPsec -> central server за CGNAT
 +
-HTTP/3 с browser fallback на HTTP/2; tunnel transport выбирается измерением
+обычные Windows-клиенты и телефоны используют HTTPS без VPN
 +
 automatic sensor capture + best-effort group search
 +

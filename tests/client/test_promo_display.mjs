@@ -80,6 +80,12 @@ test("rejects partial, duplicate and foreign result shapes", () => {
     () => validatePromoResult(foreign, { origin: ORIGIN }),
     /promo_media_url_origin_invalid/,
   );
+  const emptyTicket = result();
+  emptyTicket.qr_url = `${ORIGIN}/q?ticket=`;
+  assert.throws(
+    () => validatePromoResult(emptyTicket, { origin: ORIGIN }),
+    /promo_qr_url_path_invalid/,
+  );
 });
 
 test("local QR matrix is high-contrast and uses a target-sized supported version", () => {

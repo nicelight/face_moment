@@ -42,8 +42,10 @@ Require and resolve:
 For a product task whose feature is not `FT-000`, also require a positive Global
 Backbone `Planning Revision` and the latest feature-specific
 `/review-tasks-plan` `APPROVE` report with exact standalone
-`REVIEWED_PLANNING_REVISION: <N>` equal to it. FT-000 keeps its dedicated
-Foundation gate and does not use product task-plan review.
+`REVIEWED_PLANNING_REVISION: <N>` equal to it. An explicit top-level operator
+instruction to approve and continue replaces this review for the selected task.
+FT-000 keeps its dedicated Foundation gate and does not use product task-plan
+review.
 
 Use task `purpose`, `success_outcome`, `anti_goals`, `source_artifacts`,
 `normative_inputs`, `constraints`, `invariants`, `verification_targets`,

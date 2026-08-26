@@ -1,7 +1,7 @@
 ---
 description: Canonical verification contract for client proposal submission, one-clock Promo latency and related diagnostics.
 status: active
-last_updated: 2026-08-24
+last_updated: 2026-08-26
 source_of_truth:
   - .memory-bank/testing/client-realtime.md
 ---
@@ -22,6 +22,36 @@ source_of_truth:
   exchange, shared browser access, protected phone reads and expiry redirects.
 - [Display and central restart recovery](../runbooks/display-and-central-restart.md):
   operator procedure, limits and success checks.
+
+## Verification phases
+
+This contract separates implementation closure from post-deployment pilot
+validation.
+
+- Development-closure evidence uses deterministic, isolated, disposable
+  fixtures and project-native API, browser, state and architecture checks. For
+  Promo/QR behavior, local proof must use four distinct issued disposable
+  media references, four rendered slots, logical `1920x1080` rendering and
+  programmatic QR decoding. Real media-byte distinctness and no-watermark
+  content are pilot observations, not local development gates.
+- The absence of a deployed server, target 43-inch screen, production
+  camera/sensor, representative phones, real participant-photo corpus or an
+  authorized controlled evaluator is not a development-closure blocker. Those
+  are external post-deployment pilot prerequisites and their evidence remains
+  deferred until that environment exists.
+- Tasks titled `Production acceptance:` own external pilot observations. They
+  remain planned until their deployment and authorization prerequisites exist
+  and are excluded from the development scheduler's promotion, selection,
+  unfinished/deadlock and success gates.
+- Deferred pilot evidence must be recorded with its owner and resume condition;
+  deferral must never be reported as a live-pilot PASS. A shared disposable
+  placeholder may support the local rendering flow when the four issued
+  references remain distinct, but it is not proof of four distinct real teasers
+  or real no-watermark media.
+- Functional implementation defects and accepted architecture/security
+  violations remain development blockers regardless of phase. In particular,
+  direct provider-table/API bypass cannot be reclassified as deferred pilot
+  evidence.
 
 ## Required Proof
 
@@ -126,12 +156,13 @@ source_of_truth:
   stable attempt IDs and manually reviewed participant/detection ground truth.
   It retains a correctness row for all four teasers and every union member in
   each attempt; missing group-member coverage alone remains a pass.
-- The final joint `19/20` feature verdict joins those same attempt IDs with the
+- The final post-deployment pilot verdict joins those same attempt IDs with the
   physical one-clock fully-visible/scannable QR evidence owned by FT-005. The
-  FT-004 task may close after its server-owned correctness implementation and
-  evidence pass, but FT-004 feature completion MUST NOT claim the joint verdict
-  until that cross-feature evidence exists. This avoids a task dependency cycle
-  without weakening the accepted shared-attempt criterion.
+  FT-004 implementation task may close after its server-owned correctness
+  implementation and deterministic evidence pass; neither FT-004 nor FT-005
+  may claim that the live joint pilot verdict passed until the external
+  evidence exists. This avoids a task dependency cycle without making the
+  unavailable pilot environment a development implementation gate.
 - A concurrency fixture holds the one inference slot, proves an admitted
   second Attempt returns `busy` before release with no waiter/inference call,
   and proves only a fresh later request can acquire the slot. Deadline and
@@ -179,12 +210,14 @@ source_of_truth:
   session invalidation; failure starts no success cooldown. The display-expiry
   evidence row is joinable to FT-006 continuation evidence, which owns the
   actual phone read and final independent-session-lifetime verdict.
-- The controlled 20-attempt run reuses the stable FT-004 `attempt_id` set. An
-  authorized pilot evaluator records, for every attempt, the server-correctness
-  row, one-clock `qr_fully_visible_elapsed_ms`, `<10_000 ms` comparison,
-  complete target-screen render, programmatic QR decode and representative-real-
-  phone scan. The final joint result requires at least 19 of the same 20 rows
-  to pass every conjunct; timeout/no-match rows remain failures.
+- The controlled 20-attempt run is post-deployment pilot validation and reuses
+  the stable FT-004 `attempt_id` set. An authorized pilot evaluator records,
+  for every attempt, the server-correctness row, one-clock
+  `qr_fully_visible_elapsed_ms`, `<10_000 ms` comparison, complete target-screen
+  render, programmatic QR decode and representative-real-phone scan. The final
+  joint result requires at least 19 of the same 20 rows to pass every conjunct;
+  timeout/no-match rows remain failures. Its missing screen, phone, corpus or
+  evaluator is deferred evidence, not a blocker for implementation tasks.
 
 ## Phone Continuation And Expiry Proof
 
@@ -215,12 +248,13 @@ source_of_truth:
   cookies remain non-disclosing, all personalized responses are `no-store` and
   `no-referrer`, rate limiting returns `429`, the purchase target cannot be
   request-overridden and PostgreSQL/MinIO/internal ports remain private.
-- The feature-completion physical join scans the QR captured for the exact
+- The post-deployment pilot physical join scans the QR captured for the exact
   issued session in display-expiry evidence after the screen has returned to
   advertising. A representative phone must read that same still-active session
   and its expected content, closing the actual-phone conjunct without rerunning
   search, changing display status or claiming implementation of the target
-  purchase page.
+  purchase page. Development closure uses deterministic browser/API session
+  fixtures for this contract and does not require the physical phone.
 
 ## Data-policy Checks
 

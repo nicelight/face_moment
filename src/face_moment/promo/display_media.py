@@ -8,6 +8,7 @@ import hmac
 from collections.abc import Iterable
 import uuid
 
+from botocore.exceptions import ClientError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -42,7 +43,7 @@ def resolve_teaser_media(
     qr_ticket_secret: bytes | str,
     object_store: PrivateObjectStore,
 ) -> bytes:
-    """Read one issued, active, ready preview through the promo boundary."""
+    """Read one retained preview referenced by an issued Promo session."""
 
     if not _valid_media_ref(media_ref):
         raise PromoMediaNotFoundError(media_ref)
@@ -72,7 +73,7 @@ def resolve_teaser_media(
         photo_id=matched_photo_id,
         spa_id=spa_id,
     )
-    if projection is None or not projection.searchable:
+    if projection is None:
         raise PromoMediaNotFoundError(media_ref)
     preview_key = projection.preview_object_key
     if not isinstance(preview_key, str) or not preview_key:
@@ -80,8 +81,11 @@ def resolve_teaser_media(
 
     try:
         body = object_store.read(key=preview_key)
-    except Exception as error:
-        raise PromoMediaNotFoundError(media_ref) from error
+    except ClientError as error:
+        error_code = error.response.get("Error", {}).get("Code")
+        if error_code == "NoSuchKey":
+            raise PromoMediaNotFoundError(media_ref) from error
+        raise
     if not body:
         raise PromoMediaNotFoundError(media_ref)
     return body
@@ -91,6 +95,7 @@ def _valid_media_ref(value: str) -> bool:
     return (
         isinstance(value, str)
         and len(value) == 43
+        and value.isascii()
         and all(character.isalnum() or character in "-_" for character in value)
     )
 

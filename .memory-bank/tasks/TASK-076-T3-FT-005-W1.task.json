@@ -1,7 +1,7 @@
 {
   "id": "TASK-076-T3-FT-005-W1",
   "title": "Present complete authenticated Promo with safe advertising fallback",
-  "status": "in_progress",
+  "status": "done",
   "wave": "W1",
   "feature": "FT-005",
   "reqs": [
@@ -80,6 +80,137 @@
         ".tasks/TASK-076-T3-FT-005-W1/red-claim-005.md"
       ],
       "resume_route": "Keep the task open. After an authorized representative-real-phone scan and distinct four-issued-preview/no-watermark evidence are recorded, run a fresh /verify for TASK-076-T3-FT-005-W1; no lifecycle transition is made by this verification."
+    },
+    {
+      "stage": "verify",
+      "attempt": 3,
+      "verdict": "FAIL",
+      "completed_at": "2026-08-26T22:08:13+05:00",
+      "image": "face-moment:dev@sha256:631435122a373ff4244c928d187c453356430f411a428b306a4cb3be4e4edb66",
+      "summary": "The reconciled development-stage evidence timing correctly removes the former physical-phone/real-media blocker, and fresh checks passed the complete logical-target Promo, four distinct issued references, QR decode, broad fallback set, authenticated provider edge and all required gates. Fresh focused probes still observed two task-scoped implementation violations: an empty QR ticket enters final Promo, and a technical object-store outage is misclassified as 404 instead of 5xx. Lifecycle remains in_progress.",
+      "protocol": ".protocols/TASK-076-T3-FT-005-W1/verification.md",
+      "report": ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-evidence.md",
+      "evidence": [
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-browser.mjs",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-fixture-server.py",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-browser.png",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-qr.png",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-candidate-probe.mjs",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-object-store-failure.py",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-playwright-transcript.md",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-evidence.md",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-2-verifier-provider-edge.py",
+        ".tasks/TASK-076-T3-FT-005-W1/red-claim-001.md",
+        ".tasks/TASK-076-T3-FT-005-W1/red-claim-005.md"
+      ],
+      "resume_route": "Keep the task in_progress. Route the fixed-semantics invalid-QR and technical object-store error-classification defects to the owning executor, then run a fresh execution retry and fresh /verify for TASK-076-T3-FT-005-W1; no lifecycle transition is made by this verification."
+    },
+    {
+      "stage": "verify",
+      "attempt": 4,
+      "verdict": "FAIL",
+      "completed_at": "2026-08-26T22:47:14+05:00",
+      "image": "face-moment:dev@sha256:59cad8f19cf1e2cc9c2ca40436b9317a71c2811e50e87311b47c0a922afbfa70",
+      "summary": "Fresh re-verification independently confirmed both Attempt 3 corrections: an empty QR ticket now stays in advertising and a generic technical object-store outage returns HTTP 500; client 5/5, Promo API 4 passed, mypy, MB lint and diff checks passed. Fresh endpoint probes still observed two fixed-semantics Promo API violations: NoSuchBucket with HTTP 404 is misclassified as participant-facing 404 instead of technical 5xx, and a non-ASCII 43-character media reference reaches compare_digest and returns 500 instead of the safe not-found/validation path. Lifecycle remains in_progress.",
+      "protocol": ".protocols/TASK-076-T3-FT-005-W1/verification.md",
+      "report": ".tasks/TASK-076-T3-FT-005-W1/attempt-4-verifier-evidence.md",
+      "evidence": [
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-retry-red.md",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-retry-green.md",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-4-verifier-client-edge.mjs",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-4-verifier-api-edge.py",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-4-verifier-playwright-transcript.md",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-4-verifier-evidence.md",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-candidate-probe.mjs",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-object-store-failure.py"
+      ],
+      "resume_route": "Keep the task in_progress. Route the fixed-semantics NoSuchBucket/technical ClientError classification and non-ASCII media-reference validation defects to the owning executor, add focused regressions, then run a fresh execution retry and fresh /verify for TASK-076-T3-FT-005-W1; no lifecycle transition is made by this verification."
+    },
+    {
+      "stage": "verify",
+      "attempt": 5,
+      "verdict": "PASS",
+      "completed_at": "2026-08-26T23:29:56+05:00",
+      "image": "face-moment:dev@sha256:72cce9d3daf7e2deefab542c539e14f3e77240b620ac17210f22f44470cc46c7",
+      "summary": "Fresh re-verification independently confirmed both Attempt 4 corrections at the registered endpoint: NoSuchBucket and other technical storage failures return HTTP 500, while non-ASCII opaque media references safely return 404 and NoSuchKey remains the owned missing-object path. Fresh Playwright at logical 1920x1080 proved the complete four-distinct-reference Promo, programmatic QR decode and all task-owned advertising fallback branches; client 5/5, Promo API 4 passed, mypy, MB lint, syntax and diff checks passed. Lifecycle remains in_progress.",
+      "protocol": ".protocols/TASK-076-T3-FT-005-W1/verification.md",
+      "report": ".tasks/TASK-076-T3-FT-005-W1/attempt-5-verifier-evidence.md",
+      "evidence": [
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-4-retry-red.md",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-4-retry-green.md",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-4-verifier-api-edge.py",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-5-verifier-browser.png",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-5-verifier-qr.png",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-5-verifier-playwright-transcript.md",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-5-verifier-evidence.md",
+        ".tasks/TASK-076-T3-FT-005-W1/red-claim-001.md",
+        ".tasks/TASK-076-T3-FT-005-W1/red-claim-005.md"
+      ],
+      "resume_route": "Keep the task in_progress. Run fresh /red-verify TASK-076-T3-FT-005-W1; after semantic-pass, the explicit scheduler or lifecycle owner may decide closure. No lifecycle transition is made by this verification."
+    },
+    {
+      "stage": "red-verify",
+      "attempt": 1,
+      "verdict": "semantic-fail",
+      "completed_at": "2026-08-26T23:42:32+05:00",
+      "summary": "Fresh adversarial review found two material accepted-contract breaks: ordinary Photo soft delete makes an already issued teaser unavailable because the resolver reuses current search eligibility, and Promo media error JSON lacks the required no-store response policy. TASK-076 remains in_progress for a bounded correction and fresh functional/semantic gates.",
+      "protocol": ".protocols/TASK-076-T3-FT-005-W1/red-verification.md",
+      "report": ".tasks/TASK-076-T3-FT-005-W1/TASK-076-T3-FT-005-W1-S-RED-VERIFY-final-report-docs-01.md",
+      "evidence": [
+        ".protocols/TASK-076-T3-FT-005-W1/verification.md",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-5-verifier-evidence.md",
+        ".memory-bank/states/lifecycle-map.md",
+        ".memory-bank/domains/promo-attempt.md"
+      ],
+      "resume_route": "Keep TASK-076 in_progress. Run /exe TASK-076-T3-FT-005-W1 to preserve soft-deleted issued media and add no-store to media error JSON, then repeat fresh /verify and /red-verify before closure."
+    },
+    {
+      "stage": "verify",
+      "attempt": 6,
+      "verdict": "PASS",
+      "completed_at": "2026-08-27T00:08:35+05:00",
+      "image": "face-moment:dev@sha256:884d7583996ea88986f51c743c949abc05125cf2d550af05cb6ea554bbf2682c",
+      "summary": "Fresh re-verification confirmed the two Attempt 5 corrections on the packaged image: an issued retained preview remains available after ordinary soft delete, and successful plus standard error media outcomes are no-store with correct 401/404/429/500 classification. Fresh Playwright at 1920x1080 passed the complete four-reference Promo, QR decode and task-owned fallback branches; client 5/5, API 5 passed, mypy, MB lint and diff checks passed. No new blocker was admitted under the durable scoped operator narrowing. Lifecycle remains in_progress pending T3 red verification.",
+      "protocol": ".protocols/TASK-076-T3-FT-005-W1/verification.md",
+      "report": ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-evidence.md",
+      "evidence": [
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-5-retry-red.md",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-5-retry-green.md",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-api-lifecycle.py",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-browser.png",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-qr.png",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-playwright-transcript.md",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-evidence.md"
+      ],
+      "resume_route": "Keep TASK-076 in_progress. Run fresh /red-verify TASK-076-T3-FT-005-W1; after semantic-pass, the explicit lifecycle owner may close the task."
+    },
+    {
+      "stage": "red-verify",
+      "attempt": 2,
+      "verdict": "semantic-pass",
+      "completed_at": "2026-08-27T00:15:01+05:00",
+      "summary": "Fresh adversarial review after functional Attempt 6 PASS found no admitted material break in issued-media soft-delete continuity, hard-purge behavior, object-store error classification, authenticated no-store delivery, complete/fallback participant outcome, provider ownership or hard scope.",
+      "protocol": ".protocols/TASK-076-T3-FT-005-W1/red-verification.md",
+      "report": ".tasks/TASK-076-T3-FT-005-W1/TASK-076-T3-FT-005-W1-S-RED-VERIFY-final-report-docs-01.md",
+      "evidence": [
+        ".protocols/TASK-076-T3-FT-005-W1/verification.md",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-evidence.md",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-playwright-transcript.md"
+      ],
+      "resume_route": "The explicit lifecycle owner may close TASK-076; do not promote dependents or run wave-boundary /mb-sync from red verification."
+    },
+    {
+      "stage": "closure",
+      "attempt": 2,
+      "verdict": "done",
+      "completed_at": "2026-08-27T00:15:01+05:00",
+      "summary": "The explicit manual lifecycle owner closed TASK-076 after fresh functional Attempt 6 PASS and required T3 semantic-pass. The closure adds no optional fixes, does not promote dependents and does not perform wave-boundary Memory Bank synchronization.",
+      "evidence": [
+        ".protocols/TASK-076-T3-FT-005-W1/verification.md",
+        ".protocols/TASK-076-T3-FT-005-W1/red-verification.md",
+        ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-evidence.md",
+        ".tasks/TASK-076-T3-FT-005-W1/TASK-076-T3-FT-005-W1-S-RED-VERIFY-final-report-docs-01.md"
+      ]
     }
   ],
   "docs": [
@@ -90,7 +221,7 @@
     ".memory-bank/tasks/plans/IMPL-FT-005.md"
   ],
   "evidence_required": [
-    "FT-005-AC-001 RED: the current result branch has no authenticated teaser endpoint or complete four-teaser Promo/QR renderer; GREEN: one exact v1 result renders four unique decoded low-quality no-watermark teasers, the accepted copy and a fully visible locally generated high-contrast QR at logical 1920x1080, with programmatic decode and one representative-phone scan; decisive comparison: fixture identities, target-layout assertions and scan result; artifact: automated receipts plus target-screen/phone evidence under .tasks/TASK-076-T3-FT-005-W1/.",
+    "FT-005-AC-001 RED: the current result branch has no authenticated teaser endpoint or complete four-teaser Promo/QR renderer; GREEN: one exact v1 result renders four decoded teaser slots tied to four distinct issued disposable references, the accepted copy and a fully visible locally generated high-contrast QR at logical 1920x1080, with programmatic decode; decisive comparison: issued reference identities and target-layout assertions. Real media-byte distinctness, no-watermark content and representative-phone scanning are deferred to post-deployment acceptance; artifact: automated receipts plus logical-target browser evidence under .tasks/TASK-076-T3-FT-005-W1/.",
     "FT-005-AC-005 RED: the current result state cannot reject partial media/QR/render failure as one integrated Promo outcome; GREEN: partial, stale, fewer-than-four, camera, network, processing, missing/undecodable media and optional-asset fixtures all leave or return the client to usable advertising, emit no final Promo/Chime or success cooldown, and preserve the accepted replaceable communication notice; decisive comparison: client state/event/timer trace for every named branch; artifact: redacted browser and focused-test evidence under .tasks/TASK-076-T3-FT-005-W1/."
   ],
   "purpose": "Complete the participant-visible success/failure branch by resolving exactly the issued authenticated teasers and rendering final Promo only when the full result is valid.",
@@ -135,9 +266,9 @@
     "Cross only the accepted promo to inventory/processing Participant Promo projections; providers retain all Photo, visibility, derivative and processing writes.",
     "Authenticate the display Bearer principal, derive spa_id from its stored hash and return no-store media without raw storage identity.",
     "Use unique task-owned display client, Photo/session/Attempt rows and private object keys with known initial state, safe rerun identifiers, observable outcome and owned cleanup.",
-    "Use playwright cli for the agent-run real-browser proof: load the central-origin SpaPromoClient at logical 1920x1080, drive complete and incomplete result fixtures, retain the CLI transcript and target-screen screenshots/video/trace under .tasks/TASK-076-T3-FT-005-W1/, and join the authorized representative-phone scan observation without exposing its QR ticket.",
+    "Use playwright cli for the agent-run development-closure browser proof: load the central-origin SpaPromoClient at logical 1920x1080, drive complete and incomplete result fixtures with four distinct issued disposable references (a shared disposable placeholder byte is allowed for the local rendering flow), and retain the CLI transcript and logical-target screenshots/video/trace under .tasks/TASK-076-T3-FT-005-W1/. The authorized representative-phone scan belongs to post-deployment acceptance and is not a stop condition while the pilot environment is unavailable.",
     "Keep the QR implementation local, release-owned and minimal; do not add an external service or a second general client framework.",
-    "The independently verified Attempt 2 provider-edge result (zero direct provider queries, no forbidden provider imports and authenticated SPA scope) is a supporting development-stage checkpoint only; it does not waive the final QR, distinct real four-photo/no-watermark or representative-phone closure evidence, and the shared-JPEG fixture is not proof."
+    "The independently verified Attempt 2 provider-edge result (zero direct provider queries, no forbidden provider imports and authenticated SPA scope) is supporting development-stage evidence; development closure still requires four distinct issued references and programmatic QR decode. Real-photo, physical-phone, target-hardware and media-byte/no-watermark evidence is deferred to post-deployment acceptance; a shared disposable placeholder is not proof of those pilot properties."
   ],
   "invariants": [
     "Final Promo requires exactly four unique decoded issued teasers, exact truthful copy and one fully visible high-contrast QR.",
@@ -148,7 +279,7 @@
   "verification_targets": [
     ".memory-bank/features/FT-005.md#FT-005-AC-001",
     ".memory-bank/features/FT-005.md#FT-005-AC-005",
-    "Playwright CLI loads the real central-origin client at logical 1920x1080, renders the exact complete fixture, rejects each incomplete/failure fixture, and retains transcript plus target-screen screenshots/video/trace for the AC-001/AC-005 verdict.",
-    "Task-owned API/browser evidence proves authenticated issued-media scope, four decoded previews, local QR decode and representative-phone scan, safe advertising fallback, promo ownership and zero foreign writes without adopting provider-task proof. The Attempt 2 provider-edge result is mapped only as supporting checkpoint evidence; it does not substitute for distinct real-media/no-watermark or representative-phone closure proof."
+    "Playwright CLI loads the central-origin client at logical 1920x1080, renders the exact complete fixture, rejects each incomplete/failure fixture, and retains transcript plus logical-target screenshots/video/trace for the AC-001/AC-005 verdict.",
+    "Task-owned API/browser evidence proves authenticated issued-media scope, four decoded previews tied to four distinct issued disposable references, programmatic local QR decode, safe advertising fallback, promo ownership and zero foreign writes without adopting provider-task proof. Representative-phone, target-screen, real-media-byte and no-watermark pilot evidence is deferred to post-deployment acceptance and is not required for this implementation task's closure."
   ]
 }

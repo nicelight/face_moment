@@ -76,7 +76,8 @@ export function validatePromoResult(result, { origin = defaultOrigin() } = {}) {
   });
 
   const qrUrl = sameOriginUrl(payload.qr_url, origin, "promo_qr_url");
-  if (qrUrl.pathname !== "/q" || !qrUrl.searchParams.has("ticket")) {
+  const qrTicket = qrUrl.searchParams.get("ticket");
+  if (qrUrl.pathname !== "/q" || !qrTicket?.trim()) {
     throw new TypeError("promo_qr_url_path_invalid");
   }
   return Object.freeze({

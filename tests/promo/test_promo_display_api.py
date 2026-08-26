@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import uuid
 
 import pytest
+from botocore.exceptions import ClientError
 from fastapi import HTTPException
 from fastapi.routing import APIRoute
 from starlette.requests import Request
@@ -15,6 +16,7 @@ from face_moment.promo import display_media
 from face_moment.promo import http as promo_http
 from face_moment.serving_control.display_client_auth import (
     DisplayClientPrincipal,
+    DisplayClientRateLimitError,
     InvalidDisplayClientCredentials,
 )
 
@@ -107,6 +109,15 @@ def test_media_reference_is_opaque_and_authorized_projection_reads_private_previ
     with pytest.raises(PromoMediaNotFoundError):
         resolve_teaser_media(
             _DatabaseSession(row, "private/task076/preview.jpg"),
+            spa_id=spa_id,
+            media_ref="é" * 43,
+            qr_ticket_secret=SECRET,
+            object_store=store,  # type: ignore[arg-type]
+        )
+
+    with pytest.raises(PromoMediaNotFoundError):
+        resolve_teaser_media(
+            _DatabaseSession(row, "private/task076/preview.jpg"),
             spa_id=uuid.uuid4(),
             media_ref=derive_media_ref(
                 uuid.uuid4(), photo_id, qr_ticket_secret=SECRET
@@ -135,6 +146,105 @@ def test_missing_projection_or_object_is_404_owned_failure(
             media_ref=media_ref,
             qr_ticket_secret=SECRET,
             object_store=_ObjectStore(),  # type: ignore[arg-type]
+        )
+
+
+def test_issued_media_survives_soft_delete_while_preview_exists(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session_id = uuid.uuid4()
+    photo_id = uuid.uuid4()
+    spa_id = uuid.uuid4()
+    row = SimpleNamespace(id=session_id, spa_id=spa_id, teaser_photo_ids=[photo_id])
+    media_ref = derive_media_ref(session_id, photo_id, qr_ticket_secret=SECRET)
+    store = _ObjectStore()
+    monkeypatch.setattr(
+        display_media,
+        "read_photo_processing_projection",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            searchable=False,
+            photo_is_active=False,
+            preview_object_key="private/task076/soft-deleted-preview.jpg",
+        ),
+    )
+
+    assert resolve_teaser_media(
+        _DatabaseSession(row, "private/task076/soft-deleted-preview.jpg"),
+        spa_id=spa_id,
+        media_ref=media_ref,
+        qr_ticket_secret=SECRET,
+        object_store=store,  # type: ignore[arg-type]
+    ) == b"jpeg-preview"
+    assert store.keys == ["private/task076/soft-deleted-preview.jpg"]
+
+
+def test_object_store_not_found_is_404_but_technical_failure_propagates(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session_id = uuid.uuid4()
+    photo_id = uuid.uuid4()
+    spa_id = uuid.uuid4()
+    row = SimpleNamespace(id=session_id, spa_id=spa_id, teaser_photo_ids=[photo_id])
+    media_ref = derive_media_ref(session_id, photo_id, qr_ticket_secret=SECRET)
+    monkeypatch.setattr(
+        display_media,
+        "read_photo_processing_projection",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            searchable=True,
+            preview_object_key="private/task076/missing.jpg",
+        ),
+    )
+
+    class MissingStore:
+        def read(self, *, key: str) -> bytes:
+            raise ClientError(
+                {
+                    "Error": {"Code": "NoSuchKey", "Message": "missing"},
+                    "ResponseMetadata": {"HTTPStatusCode": 404},
+                },
+                "GetObject",
+            )
+
+    with pytest.raises(PromoMediaNotFoundError):
+        resolve_teaser_media(
+            _DatabaseSession(row, "private/task076/missing.jpg"),
+            spa_id=spa_id,
+            media_ref=media_ref,
+            qr_ticket_secret=SECRET,
+            object_store=MissingStore(),  # type: ignore[arg-type]
+        )
+
+    class MissingBucketStore:
+        def read(self, *, key: str) -> bytes:
+            raise ClientError(
+                {
+                    "Error": {"Code": "NoSuchBucket", "Message": "missing bucket"},
+                    "ResponseMetadata": {"HTTPStatusCode": 404},
+                },
+                "GetObject",
+            )
+
+    with pytest.raises(ClientError) as missing_bucket:
+        resolve_teaser_media(
+            _DatabaseSession(row, "private/task076/missing.jpg"),
+            spa_id=spa_id,
+            media_ref=media_ref,
+            qr_ticket_secret=SECRET,
+            object_store=MissingBucketStore(),  # type: ignore[arg-type]
+        )
+    assert missing_bucket.value.response["Error"]["Code"] == "NoSuchBucket"
+
+    class FailingStore:
+        def read(self, *, key: str) -> bytes:
+            raise RuntimeError("synthetic object-store outage")
+
+    with pytest.raises(RuntimeError, match="synthetic object-store outage"):
+        resolve_teaser_media(
+            _DatabaseSession(row, "private/task076/missing.jpg"),
+            spa_id=spa_id,
+            media_ref=media_ref,
+            qr_ticket_secret=SECRET,
+            object_store=FailingStore(),  # type: ignore[arg-type]
         )
 
 
@@ -180,3 +290,33 @@ def test_backend_registers_exact_media_route_with_auth_no_store_and_standard_fai
     with pytest.raises(HTTPException) as error:
         route.endpoint(_request("/api/promo/media/" + "r" * 43), "r" * 43)
     assert error.value.status_code == 401
+    assert error.value.headers == {"Cache-Control": "no-store"}
+
+    monkeypatch.setattr(
+        promo_http,
+        "authenticate_display_client",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(DisplayClientRateLimitError()),
+    )
+    with pytest.raises(HTTPException) as error:
+        route.endpoint(_request("/api/promo/media/" + "r" * 43), "r" * 43)
+    assert error.value.status_code == 429
+    assert error.value.headers == {"Cache-Control": "no-store"}
+
+    monkeypatch.setattr(
+        promo_http,
+        "authenticate_display_client",
+        lambda *_args, **_kwargs: DisplayClientPrincipal(uuid.uuid4(), uuid.uuid4()),
+    )
+    for resolver_error, expected_status in (
+        (PromoMediaNotFoundError("missing"), 404),
+        (RuntimeError("technical failure"), 500),
+    ):
+        monkeypatch.setattr(
+            promo_http,
+            "resolve_teaser_media",
+            lambda *_args, _error=resolver_error, **_kwargs: (_ for _ in ()).throw(_error),
+        )
+        with pytest.raises(HTTPException) as error:
+            route.endpoint(_request("/api/promo/media/" + "r" * 43), "r" * 43)
+        assert error.value.status_code == expected_status
+        assert error.value.headers == {"Cache-Control": "no-store"}

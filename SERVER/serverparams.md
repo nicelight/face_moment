@@ -2,18 +2,38 @@
 
 Последнее обновление: 2026-08-26
 
-Этот файл фиксирует только параметры, подтверждённые командами на тестовом
-сервере. Параметры сети и свободные ресурсы являются снимком состояния и могут
-измениться.
+Этот файл содержит два типа сведений:
+
+1. фактически подтверждённые параметры центрального тестового сервера Face Moment;
+2. утверждённую целевую сетевую инфраструктуру с публичным VPS.
+
+Параметры центрального сервера, сети и свободных ресурсов являются снимком
+состояния и могут измениться. Параметры VPS, которые ещё не измерены на реально
+выделенной машине, явно отмечены как планируемые и не считаются фактически
+подтверждёнными.
 
 ## Назначение
 
-- Роль машины: центральный тестовый CPU-only сервер Face Moment.
-- Этап: первоначальная подготовка к one-СПА pilot.
-- Способ текущего удалённого доступа: RustDesk.
-- VPN и SSH-доступ через VPN: отложены до отдельного этапа.
+- Центральная машина: CPU-only сервер Face Moment для one-СПА pilot.
+- Центральная машина находится за CGNAT и не должна принимать прямые входящие
+  соединения из интернета.
+- Публичная точка входа проекта: отдельный VPS с белым IPv4.
+- VPS и центральный Kubuntu-сервер связываются постоянным
+  `IKEv2/IPsec`-туннелем через `strongSwan`.
+- Центральный сервер сам инициирует туннель наружу; прохождение CGNAT выполняется
+  через IPsec NAT-T.
+- Обычные Windows-клиенты Face Moment **не подключаются к VPN**. Они работают
+  через обычный HTTPS к публичному VPS.
+- VPS принимает публичный HTTPS через Caddy и проксирует разрешённый трафик к
+  центральному серверу через IPsec.
+- PostgreSQL, MinIO, Docker API, служебные порты и SSH центрального сервера
+  публично не публикуются.
+- Текущий резервный удалённый доступ к центральной машине: RustDesk.
+- Отдельный административный IKEv2-доступ для операторов/разработчиков может
+  быть добавлен позднее, но не является частью рабочего клиентского пути
+  Face Moment.
 
-## ОС и платформа
+## ОС и платформа центрального сервера
 
 | Параметр | Значение |
 |---|---|
@@ -26,11 +46,8 @@
 | Firmware date | `2025-08-01` |
 | System locale | `ru_RU.UTF-8` |
 | Раскладки X11 | `us,ru`, переключение `Alt+Shift` |
-| Часовой пояс | `Asia/Novosibirsk` (`UTC+07:00`) — соответствие физическому расположению ещё нужно подтвердить |
+| Часовой пояс | `Asia/Novosibirsk` (`UTC+07:00`), соответствует физическому расположению сервера |
 | Синхронизация времени | NTP active, system clock synchronized, RTC в UTC |
-
-После package update ОС не требует перезагрузки. `systemctl --failed` не
-показывает failed units.
 
 ## Процессор
 
@@ -55,16 +72,13 @@
 
 ## Оперативная память
 
-| Параметр | Значение на момент проверки |
+| Параметр | Значение |
 |---|---|
 | RAM всего | 15 GiB |
-| RAM используется | 3.9 GiB |
-| RAM доступно | 11 GiB |
-| Swap | 511 MiB, не использовался |
+| Swap | 4 GiB, файл `/swapfile` |
 
 15 GiB достаточно для первоначального ограниченного теста, но это меньше
-ориентира 64 GiB из серверной концепции. Размер swap требует отдельного решения
-после проверки диска и реального потребления памяти.
+ориентира 64 GiB из серверной концепции.
 
 ## Накопитель
 
@@ -108,7 +122,7 @@ NVMe model: `SBSSD256-STE14-M2P3`, firmware `APF1M3R1`, NVMe 1.3. Проверк
 ACPI temperature `0 °C` и ошибки чтения NVMe `temp2_min/temp2_max` выглядят как
 некорректные или неподдерживаемые sensor fields, а не как реальные измерения.
 
-## Сеть
+## Сеть центрального сервера
 
 | Интерфейс | Состояние | Адрес |
 |---|---|---|
@@ -118,12 +132,240 @@ ACPI temperature `0 °C` и ошибки чтения NVMe `temp2_min/temp2_max`
 
 - Default route: `192.168.3.1` через Wi-Fi `wlp4s0`.
 - Текущий IPv4 получен по DHCP и не считается постоянным адресом сервера.
+- Центральный сервер находится за NAT/CGNAT; белый IPv4 ему не требуется.
 - UFW установлен, но неактивен.
 - Для эксплуатации предпочтителен проводной Ethernet; переключение сети пока
   не выполнялось.
-- Входящие соединения из интернета для центрального сервера не планируются.
+- Прямые входящие соединения из интернета для центрального сервера не
+  планируются.
+- После развёртывания VPN центральный сервер должен сам поддерживать постоянный
+  исходящий IKEv2/IPsec-сеанс с VPS.
 
-## Пользователи и доступ
+## Целевая внешняя инфраструктура: публичный VPS
+
+Этот раздел фиксирует **утверждённую архитектуру**, а не измеренные аппаратные
+параметры ещё не развёрнутой VPS-машины.
+
+### Роль VPS
+
+VPS является единственной публично адресуемой инфраструктурной машиной
+Face Moment и выполняет четыре функции:
+
+1. публичная HTTPS-точка входа;
+2. reverse proxy до центрального сервера;
+3. IKEv2/IPsec-концентратор для постоянного backhaul до Kubuntu-сервера за
+   CGNAT;
+4. контролируемая административная точка доступа к внутренней инфраструктуре.
+
+VPS не должен хранить основную базу фотографий, PostgreSQL или MinIO и не
+является вычислительным сервером распознавания лиц.
+
+### Планируемая платформа VPS
+
+| Параметр | Решение |
+|---|---|
+| ОС | AlmaLinux |
+| Сетевой адрес | статический публичный IPv4 / «белый IP» |
+| VPN implementation | `strongSwan` |
+| VPN protocol | `IKEv2/IPsec` |
+| NAT traversal | IPsec NAT-T |
+| Публичный reverse proxy | `Caddy` |
+| Host firewall | `nftables` |
+| Публичный HTTPS | TCP `443` |
+| IKE | UDP `500` |
+| IPsec NAT-T | UDP `4500` |
+| SSH VPS | разрешён только для администрирования, с ограничением firewall и key-based auth |
+| Docker на VPS | не требуется для базовой схемы |
+
+Точный релиз AlmaLinux, CPU, RAM, диск, провайдер, датацентр и публичный IP
+должны быть внесены после фактического создания VPS.
+
+### VPN/backhaul
+
+Основной постоянный туннель:
+
+```text
+VPS / AlmaLinux / public IPv4
+        │
+        │ IKEv2/IPsec
+        │ NAT-T UDP/4500
+        │
+        ▼
+Internet / CGNAT
+        │
+        ▼
+Kubuntu central server
+```
+
+Ключевые свойства:
+
+- инициатором соединения является центральный Kubuntu-сервер;
+- VPS имеет стабильный публичный IP и принимает IKEv2;
+- CGNAT на стороне центрального сервера не требует port forwarding;
+- при наличии NAT полезный IPsec-трафик инкапсулируется в UDP/4500;
+- `strongSwan` работает на обеих Linux-машинах;
+- основной data plane IPsec обрабатывается ядром Linux;
+- tunnel должен автоматически подниматься после перезагрузки и
+  восстанавливаться после временного разрыва мобильного/ISP-соединения;
+- NAT keepalive и DPD должны быть настроены так, чтобы быстро обнаруживать
+  потерю внешнего соединения и восстанавливать tunnel;
+- MTU/MSS должны быть проверены на реальном канале, чтобы исключить black-hole
+  и зависание крупных HTTPS multipart upload.
+
+Планируемая служебная адресация туннеля:
+
+```text
+VPS:             10.77.0.1
+Kubuntu server:  10.77.0.2
+```
+
+Адреса являются архитектурным резервом и должны быть проверены на отсутствие
+пересечения с реальными LAN/Docker-подсетями перед вводом в эксплуатацию.
+
+### Публичный HTTPS path
+
+Обычные Windows-клиенты Face Moment не используют VPN:
+
+```text
+Windows / Chromium
+        │
+        │ HTTPS :443
+        ▼
+Public VPS / Caddy
+        │
+        │ private route over IPsec
+        ▼
+Kubuntu / Face Moment
+```
+
+Caddy:
+
+- завершает публичный TLS;
+- обслуживает публичный HTTPS-origin Face Moment;
+- проксирует только необходимые HTTP endpoints через IPsec к центральному
+  серверу;
+- должен передавать request body потоково, без обязательной полной буферизации
+  multipart-upload на VPS;
+- не предоставляет клиентам прямой доступ к PostgreSQL, MinIO, Docker API или
+  внутренним process ports;
+- может отдавать `502/503`, если центральный сервер или IPsec-backhaul
+  недоступен.
+
+Публичный домен и точные upstream-порты будут зафиксированы после развёртывания.
+
+### Почему Windows-клиенты не входят в VPN
+
+Рабочий клиентский путь Face Moment намеренно оставлен обычным HTTPS:
+
+- мобильные роутеры и CGNAT видят стандартный TCP/443;
+- не требуется устанавливать и обслуживать VPN-профиль на каждом Windows
+  клиенте;
+- изменение внешнего IP мобильного роутера не требует перестройки
+  client-side IKEv2-сеанса;
+- локальный Chromium продолжает напрямую обращаться к локальному
+  `ESP32.local`;
+- QR/телефонный public flow использует ту же публичную HTTPS-границу;
+- сложность VPN сосредоточена в одном постоянном Linux↔Linux backhaul.
+
+### Локальная сеть SpaPromoClient
+
+Локальный sensor path не проходит через VPS:
+
+```text
+ESP32.local
+     ▲
+     │ LAN
+     │
+Windows / Chromium
+     │
+     └──── HTTPS → VPS → IPsec → Kubuntu
+```
+
+Таким образом, VPN не должен менять `.local`/mDNS-маршрутизацию и не должен
+перехватывать локальный трафик SpaPromoClient.
+
+### Публично разрешённые и запрещённые сервисы
+
+Базовая политика:
+
+| Сервис | Доступ из интернета |
+|---|---|
+| Face Moment HTTPS | Да, через Caddy |
+| IKEv2/IPsec | Да, UDP 500/4500 |
+| SSH VPS | Ограниченный административный доступ |
+| SSH Kubuntu | Нет напрямую |
+| PostgreSQL | Нет |
+| MinIO API/console | Нет |
+| Docker API/socket | Нет |
+| Backend internal ports | Нет напрямую |
+| RealtimeFaceService internal port | Нет напрямую |
+
+Административный доступ к центральному серверу в будущем может идти либо через
+отдельный IKEv2 road-warrior профиль на VPS, либо через другой строго
+контролируемый management path. Это не должно менять публичную архитектуру
+Face Moment.
+
+### Потоки данных Face Moment
+
+#### Realtime SpaPromo
+
+```text
+Camera
+  │
+  ▼
+Windows / Chromium
+  │ local BlazeFace + JPEG crops
+  │ HTTPS multipart, максимум 20 MiB
+  ▼
+VPS / Caddy
+  │
+  │ IPsec backhaul
+  ▼
+Kubuntu / RealtimeFaceService
+  │
+  ▼
+result / teasers / QR data
+  │
+  └──────────── обратно по тому же пути
+```
+
+#### Загрузка фотографий фотографом
+
+```text
+Photographer browser
+        │
+        │ HTTPS
+        ▼
+VPS / Caddy
+        │
+        │ IPsec
+        ▼
+Kubuntu / backend
+        ├── PostgreSQL
+        └── private MinIO
+```
+
+Каждый JPEG принимается приложением независимо. Устойчивость больших загрузок
+должна проверяться на реальном мобильном канале; VPN не заменяет корректную
+обработку сетевых ошибок самим HTTP/client flow.
+
+### Ответственность VPS и центрального сервера
+
+| Функция | VPS | Kubuntu |
+|---|---:|---:|
+| Публичный IPv4 | Да | Нет |
+| Публичный TLS endpoint | Да | Нет |
+| Caddy reverse proxy | Да | Нет |
+| IKEv2 responder / VPN hub | Да | Нет |
+| IKEv2 initiator за CGNAT | Нет | Да |
+| Face Moment backend | Нет | Да |
+| RealtimeFaceService | Нет | Да |
+| BackgroundPhotoWorker | Нет | Да |
+| PostgreSQL + pgvector | Нет | Да |
+| MinIO | Нет | Да |
+| CPU face inference | Нет | Да |
+
+## Пользователи и доступ центрального сервера
 
 ### `face`
 
@@ -146,9 +388,16 @@ ACPI temperature `0 °C` и ошибки чтения NVMe `temp2_min/temp2_max`
 
 ### `display`
 
-- Ещё не создан.
-- В дальнейшем должен быть непривилегированным пользователем KDE/Chromium без
-  `sudo`, SSH и группы `docker`.
+- UID/GID: `1002/1002`.
+- Группы: `display`, `users`.
+- Домашний каталог: `/home/display`, mode `750`.
+- Пароль заблокирован.
+- Не входит в `sudo` и `docker`.
+- Не имеет доступа к `/opt/face-moment/.env`.
+- Kiosk profile: `/home/display/.config/face-moment/kiosk-profile`, mode `700`,
+  владелец `display`.
+- Конечное назначение: SDDM autologin и запуск sandboxed Chromium через
+  `spa-promo-client.service`.
 
 ## Docker
 
@@ -158,44 +407,81 @@ ACPI temperature `0 °C` и ошибки чтения NVMe `temp2_min/temp2_max`
 | Docker Compose | `v5.5.0` |
 | `docker.service` | active, enabled |
 | Docker group | GID `975` |
+| Default logging driver | `local`, `max-size=10m`, `max-file=5` |
 | Проверка контейнера | `docker run --rm hello-world` успешно выполнена от `facemoment` |
 
-Установлен Docker Engine, а не Docker Desktop. Постоянный Compose stack проекта
-ещё не развёрнут.
+Установлен Docker Engine, а не Docker Desktop.
+
+## Размещение Face Moment
+
+| Параметр | Значение |
+|---|---|
+| Compose project / deployment slug | `face-moment` |
+| Checkout | `/opt/face-moment` |
+| Владелец checkout | `facemoment:facemoment` |
+| Mode checkout | `750` |
+| Environment file | `/opt/face-moment/.env` |
+| Mode environment file | `600` |
+| Model assets | `/opt/face-moment/models/` |
+| Mode model directory | `750` |
+| Python package / PostgreSQL schema | `face_moment` |
+| Edge HTTPS port | `8443` |
+
+PostgreSQL, MinIO и модели являются внутренними ресурсами центрального сервера.
+Секреты хранятся в `.env` и не включаются в этот файл.
+
+## Системные настройки центрального сервера
+
+| Настройка | Конфигурация |
+|---|---|
+| Sleep | `sleep.target` masked |
+| Suspend | `suspend.target` masked |
+| Hibernate | `hibernate.target` masked |
+| Hybrid sleep | `hybrid-sleep.target` masked |
+| Закрытие крышки | Игнорируется при любом типе питания и в docked mode |
+| System idle action | `ignore` |
+| Persistent journal limit | `SystemMaxUse=512M` |
+| Runtime journal limit | `RuntimeMaxUse=128M` |
+| SSD trim | `fstrim.timer` enabled |
+| Автоматические security updates | `unattended-upgrades` enabled |
+| Автоперезагрузка после обновлений | Отключена |
 
 ## Удалённый доступ и host-службы
 
 | Компонент | Состояние |
 |---|---|
 | RustDesk system service | active, enabled |
+| RustDesk restart policy | `Restart=always`, `RestartSec=5s` |
 | RustDesk GUI/session | работает в графической сессии пользователя `face` |
-| AnyDesk | active, enabled; в журнале текущей загрузки есть stack trace одного процесса, использование ещё нужно уточнить |
-| OpenSSH server (`sshd`) | не установлен или отсутствует в `PATH` |
-| Chromium | не установлен или отсутствует в `PATH` |
+| AnyDesk | active, enabled |
 | Git | `/usr/bin/git` |
 | `smartctl` | `/usr/sbin/smartctl` |
 | `sensors` | `/usr/bin/sensors` |
 
-До проверки восстановления RustDesk после logout/reboot запрещено удалять или
-переименовывать `face`, менять SDDM autologin и выполнять удалённую перезагрузку
-без резервного способа доступа.
+До проверки административного SSH через приватный management path сохраняются
+пользователь `face`, его временный SDDM autologin и RustDesk fallback.
 
-## Наблюдения журнала текущей загрузки
+После развёртывания VPS/IPsec следует отдельно проверить административный SSH
+через приватный management path и только после этого рассматривать изменение
+текущего RustDesk fallback.
 
-- `systemctl --failed`: `0 loaded units listed`.
-- В kernel journal массово повторяется корректируемый PCIe Physical Layer
-  `RxErr` для root port `0000:00:1d.6`. Downstream device `0000:04:00.0` —
-  Intel Dual Band Wireless-AC 7265 `[8086:095a]`, использующий driver `iwlwifi`.
-  Загружена firmware `29.9ef079ed.0 7265D-29.ucode`. Это текущий рабочий
-  Wi-Fi-интерфейс сервера. NVMe находится на другой ветке PCIe и по SMART
-  исправен.
-- Chrony синхронизирован с `ntp-nts-1.ps6.canonical.com`, stratum 3, leap status
-  `Normal`, system offset около 8 ms. Четыре остальных NTS source сейчас
-  недоступны; прежние certificate failures не блокируют текущую синхронизацию.
-- В журнале присутствует stack trace `/usr/bin/anydesk`. RustDesk при этом
-  остаётся active/enabled, AnyDesk также active/enabled, а failed systemd units
-  отсутствуют.
-- Во время диагностики произошла незапланированная перезагрузка. После неё
-  машина автоматически вернулась в графическую сессию `face`, а удалённый
-  доступ восстановился. Причина и штатность завершения предыдущей загрузки ещё
-  не определены; read-only `ethtool -i` не считается доказанной причиной.
+## Что нужно подтвердить после развёртывания VPS
+
+После создания VPS этот файл следует дополнить фактическими данными:
+
+- версия AlmaLinux и kernel;
+- публичный IPv4 и hostname VPS;
+- провайдер и географический регион;
+- CPU, RAM, диск и сетевой лимит VPS;
+- версии `strongSwan` и `Caddy`;
+- фактические tunnel IP;
+- время автоматического восстановления IPsec после обрыва;
+- `iperf3` throughput через IPsec в обе стороны;
+- RTT и packet loss;
+- проверенный Path MTU;
+- безопасное значение MSS clamp, если оно потребуется;
+- скорость HTTPS upload через полный путь
+  `Windows → VPS → IPsec → Kubuntu`;
+- поведение при смене внешнего IP/переподключении мобильного роутера;
+- автоматический startup после reboot обеих машин;
+- firewall rules и отсутствие публичного доступа к внутренним сервисам.

@@ -42,7 +42,8 @@ Global Backbone Planning Revision remains `4`. Foundation final gate
 In scope are same-origin authenticated teaser delivery, strict complete-result
 rendering, local QR generation, exact Promo copy, safe advertising fallback,
 post-render acknowledgement, independent result-display/cooldown configuration
-and the controlled physical visible-QR verdict.
+and deterministic implementation proof. The controlled physical visible-QR
+verdict is post-deployment production acceptance, not an implementation gate.
 
 FT-004 retains search, assembly, result-session publication and server-
 correctness ownership. FT-006 owns ticket exchange, phone session/media reads
@@ -64,12 +65,14 @@ five stable ACs remove material ambiguity.
   not close `FT-005-AC-001` or `FT-005-AC-005`, does not change their REQ/AC
   targets, and does not change task identity, tier, wave, dependencies or
   lifecycle.
-- QR proof, distinct real four-photo/no-watermark proof and the authorized
-  representative-phone scan are unavailable and are not required for this
-  intermediate checkpoint because real photos are not available before the
-  ingest/processing pipeline is complete. They remain final closure
-  obligations; a synthetic shared-JPEG fixture is not proof and cannot replace
-  them.
+- QR physical-scan, distinct real four-photo/no-watermark and representative-
+  phone evidence are unavailable and are not required for development closure
+  because real photos are not available before the ingest/processing pipeline
+  is complete. They remain post-deployment pilot obligations; development
+  closure requires four distinct issued disposable references and programmatic
+  QR decoding. A shared disposable placeholder is acceptable for the local
+  rendering flow but is not proof of distinct real media or no-watermark
+  content.
 
 ## Architecture And Ownership
 
@@ -146,13 +149,14 @@ unchanged. No Alembic revision is expected.
 - Media fixtures prove exactly the four issued low-quality no-watermark JPEGs,
   and unknown/foreign/hard-purged/undecodable cases with no replacement,
   partial Promo or `N` mutation.
-- `TASK-076` uses `playwright cli` to load the real central-origin client at
-  logical 1920x1080 and prove exact copy, four unique teasers, high-contrast
-  local QR, complete-result gating, advertising fallback, replaceable
-  communication notice, optional-asset silence and no failure cooldown. It
-  retains the CLI transcript plus target-screen screenshots/video/trace under
-  its task directory; one authorized representative-phone scan closes AC-001
-  UAT without retaining the ticket.
+- `TASK-076` uses `playwright cli` to load the central-origin client at logical
+  1920x1080 and prove exact copy, four unique disposable teaser fixtures,
+  high-contrast local QR with programmatic decode, complete-result gating,
+  advertising fallback, replaceable communication notice, optional-asset
+  silence and no failure cooldown. It retains the CLI transcript plus logical-
+  target screenshots/video/trace under its task directory. The authorized
+  representative-phone scan is deferred to post-deployment acceptance without
+  retaining the ticket.
 - Display-state fixtures use unique disposable Attempt/session rows with known
   pending state, safe duplicate/conflict/late reruns, observable stored/effective
   results and task-owned cleanup. They prove no session/ticket/expiry/teaser/
@@ -186,9 +190,11 @@ unchanged. No Alembic revision is expected.
 
 ## Definition Of Done
 
-All four indexed cards satisfy their exact claims and tier obligations; every
+All implementation cards satisfy their exact claims and tier obligations;
+`TASK-079` remains the separate planned `Production acceptance:` card until
+deployment, corpus and evaluator prerequisites exist; every
 `FT-005-AC-001..005` is owned exactly once; every task retains the completed
 Foundation gate transitively; task-relevant modules, edges and exact contracts
 match the accepted Boundary Map; feature design remains complete; and fresh
-`/review-tasks-plan FT-005` can evaluate the queue at Planning Revision `4`
-without implementation guesses.
+planning review can evaluate the queue at Planning Revision `4` without
+implementation guesses.

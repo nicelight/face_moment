@@ -26,7 +26,7 @@ teaser delivery, explicit activity and strict expiry isolation.
 - [Lifecycle Map](../../states/lifecycle-map.md): independent display, first-
   open and browser-idle lifetimes and hard-purge continuity.
 - [Client Realtime Verification](../../testing/client-realtime.md): phone
-  continuation, isolation, public-boundary and physical-join proof.
+  continuation, isolation, public-boundary and deferred physical-pilot proof.
 
 Global Backbone Planning Revision remains `4`. Foundation final gate
 `TASK-002-T2-FT-000-W0` is `done`; every FT-006 task retains it directly or
@@ -37,8 +37,9 @@ transitively.
 In scope are the session-wide browser-access columns and repository rules,
 public QR exchange, phone shell and protected session/media/activity reads,
 local expiry cleanup, ordered hard-purged-media skip, public-route rate
-limiting, purchase CTA navigation, real-browser/physical-phone continuation
-proof, and final HTTPS/private-topology/external-CTA acceptance.
+limiting, purchase CTA navigation and deterministic real-browser continuation
+proof. Physical-phone continuation and final HTTPS/private-topology/external-
+CTA observations are post-deployment acceptance.
 
 FT-004 retains result-session issuance and immutable result truth. FT-005
 retains display rendering, display acknowledgement, display/cooldown timers
@@ -70,7 +71,7 @@ read-only production/UAT decision with no application ownership.
 | Task | Tier | Wave | Direct prerequisites | Exact owned claim | Outcome |
 |---|---|---|---|---|---|
 | `TASK-080-T3-FT-006-W1` | T3 | W1 | Foundation gate and FT-004 result-session seam | `promo-attempt.md#shared-browser-access-persistence` | One durable session-wide QR browser-access state with atomic first-open, repeated-scan/activity updates and irreversible derived idle expiry. |
-| `TASK-081-T3-FT-006-W2` | T3 | W2 | `TASK-080`, FT-004 session and FT-005 preview/display-expiry seams | `FT-006-AC-001..004` | Same-session multi-phone continuation, configured public-route limiting, protected media/activity, browser isolation and physical join. |
+| `TASK-081-T3-FT-006-W2` | T3 | W2 | `TASK-080`, FT-004 session and FT-005 preview/display-expiry seams | `FT-006-AC-001..004` | Same-session multi-phone continuation, configured public-route limiting, protected media/activity and deterministic browser isolation; physical join is deferred. |
 | `TASK-082-T3-FT-006-W3` | T3 | W3 | `TASK-081` | `FT-006-AC-005` | Final deployed HTTPS/private-topology and external-CTA acceptance. |
 
 The state task is independently proved through migration/repository and
@@ -115,9 +116,11 @@ discretion when ownership, public boundary and proof path stay unchanged.
   every phone route, plus request-overridable purchase targets.
 - TASK-081 uses `playwright cli` on the central origin to retain the
   `/q -> /phone` cookie/read/activity/expiry flow, rendered-state clearing,
-  `location.replace`, URL/referrer/cache isolation and post-expiry rejection.
-  It also consumes the FT-005 display-expiry evidence row, scans that exact QR
-  on an authorized representative phone and compares the same session content.
+  `location.replace`, URL/referrer/cache isolation and post-expiry rejection
+  with deterministic disposable session/API fixtures. It consumes the
+  FT-005 display-expiry contract for the local join; scanning that exact QR on
+  an authorized representative phone is deferred to post-deployment acceptance
+  and compares the same session content when the pilot environment exists.
 - Final UAT inspects only the deployed HTTPS/private-service topology and the
   configured external CTA target without implementing the target page or
   repeating same-session/expiry proof.
@@ -145,8 +148,10 @@ discretion when ownership, public boundary and proof path stay unchanged.
 
 ## Definition of done
 
-All three indexed cards satisfy their exact claims and T3 evidence obligations;
-every `FT-006-AC-001..005` is owned exactly once; task-relevant modules,
-edges and canonical headings match the Boundary Map; every task retains the
-Foundation dependency; and fresh `/review-tasks-plan FT-006` can approve the
-queue at Planning Revision `4` without implementation guesses.
+The implementation cards satisfy their exact claims and T3 evidence
+obligations; `TASK-082` remains the separate planned `Production acceptance:`
+card until the deployed edge and evaluator exist; every `FT-006-AC-001..005` is
+owned exactly once; task-relevant modules, edges and canonical headings match
+the Boundary Map; every task retains the Foundation dependency; and fresh
+planning review can approve the queue at Planning Revision `4` without
+implementation guesses.

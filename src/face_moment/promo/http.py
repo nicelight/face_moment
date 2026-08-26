@@ -29,6 +29,9 @@ from face_moment.serving_control.display_client_auth import (
 )
 
 
+_NO_STORE_HEADERS = {"Cache-Control": "no-store"}
+
+
 def register_promo_display_routes(app: FastAPI) -> None:
     """Register only transport concerns; promo owns media resolution."""
 
@@ -44,9 +47,15 @@ def register_promo_display_routes(app: FastAPI) -> None:
                     rate_limiter=_display_rate_limiter(app, settings),
                 )
             except DisplayClientRateLimitError as error:
-                raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS) from error
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
             except InvalidDisplayClientCredentials as error:
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from error
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
 
             try:
                 body = resolve_teaser_media(
@@ -63,9 +72,15 @@ def register_promo_display_routes(app: FastAPI) -> None:
                     ),
                 )
             except PromoMediaNotFoundError as error:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from error
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
             except Exception as error:
-                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR) from error
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
 
         response = Response(content=body, media_type="image/jpeg")
         response.headers["Cache-Control"] = "no-store"

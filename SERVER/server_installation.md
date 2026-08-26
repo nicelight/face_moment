@@ -2,33 +2,39 @@
 
 Последнее обновление: 2026-08-26
 
-Подробные характеристики машины находятся в
-[serverparams.md](serverparams.md). Этот файл содержит только важные выполненные
-шаги, подтверждённый результат и findings, которые нужно учитывать дальше.
+Подробные параметры машины находятся в [serverparams.md](serverparams.md).
+Здесь фиксируются только ключевые этапы и важные findings.
 
-## 2026-08-26
+## Ключевые этапы
 
-| Шаг | Подтверждено | Findings и важные нюансы |
+| Этап | Статус | Findings |
 |---|---|---|
-| Установлена Kubuntu 26.04.1 LTS с KDE Plasma | ОС загружается, locale `ru_RU.UTF-8`, NTP активен | `hostnamectl` называет базовую ОС Ubuntu; часовой пояс `Asia/Novosibirsk` ещё нужно сверить с физическим расположением |
-| Проверен удалённый доступ | RustDesk и AnyDesk active/enabled | RustDesk GUI связан с сессией `face`; в журнале есть stack trace AnyDesk; `face` и autologin пока нельзя безопасно менять |
-| Установлен Docker Engine | Engine `29.7.2`, Compose `v5.5.0`, Docker active/enabled; `hello-world` пройден | Bootstrap-user `face` не входит в `docker`; доступ без `sudo` проверен только для `facemoment` |
-| Создан административный пользователь `facemoment` | UID 1001, группы `sudo` и `docker`; пароль и `sudo` проверены | Это будущий административный пользователь; `display` ещё не создан |
-| Выполнен package update | Перезагрузка не требуется; failed systemd units отсутствуют | На текущем этапе reboot не нужен |
-| Проверен CPU microcode | Установлена актуальная доступная версия `3.20260210.1ubuntu2` | В `lscpu` сохраняется `Gather data sampling: Vulnerable`, несмотря на актуальный пакет |
-| Проверена синхронизация времени | Chrony синхронизирован, stratum 3, leap status `Normal` | Работает один NTS source; четыре резервных недоступны, ранее журналировалcя expired certificate chain |
-| Проверен системный NVMe | SMART `PASSED`, износ 0%, media/data errors и error-log entries отсутствуют | За 5 power cycles записано 3 unsafe shutdown; это нужно отслеживать |
-| Проверены температуры | CPU 52–58 °C, PCH 69 °C, NVMe около 38 °C | Критического перегрева нет; часть ACPI/NVMe sensor fields возвращает явно некорректные или неподдерживаемые значения |
-| Проверен kernel error journal | Массовый корректируемый PCIe Physical Layer `RxErr` на `00:1d.6` | Downstream device — текущая Wi-Fi-карта Intel Wireless-AC 7265 с driver `iwlwifi`; NVMe находится на другой PCIe-ветке |
-| Проверена firmware Wi-Fi | Загружена `29.9ef079ed.0 7265D-29.ucode` | Карта использует firmware семейства Intel 7265D; оценка AER ещё не завершена |
-| Зафиксирована незапланированная перезагрузка | Сессия `facemoment` завершилась; после загрузки восстановились `face` и удалённый доступ | Причина reboot пока неизвестна; факт восстановления RustDesk после reboot подтверждён практически |
-| Проверены host-компоненты | Git установлен; `sshd` и Chromium отсутствуют; UFW неактивен | VPN-технология не выбрана; SSH, firewall и display-настройка ещё не выполнялись |
+| Kubuntu 26.04.1 LTS и KDE Plasma | выполнено | Система загружается; `Asia/Novosibirsk` соответствует физическому расположению |
+| RustDesk | выполнено | После контрольной перезагрузки autologin и удалённый доступ восстановились; service policy `Restart=always` |
+| Docker Engine и Compose | выполнено | Docker `29.7.2`, Compose `v5.5.0`; `hello-world` прошёл от `facemoment` |
+| Административный пользователь | выполнено | `facemoment` имеет `sudo` и `docker`; доступ к Docker socket проверен |
+| Проверка ОС и накопителя | выполнено | Failed units нет; NVMe SMART `PASSED`, ошибок носителя нет |
+| Проверка сети и PCIe | частично выполнено | Текущая сеть — Wi-Fi Intel Wireless-AC 7265; массовый корректируемый PCIe `RxErr` остаётся наблюдаемым finding |
+| Git checkout проекта | выполнено | Код размещён в `/opt/face-moment`; используется remote `main` |
+| Compose configuration | выполнено | `docker compose config --quiet` прошёл без вывода |
+| Сборка application image | выполнено | `docker compose build` завершился успешно |
+| Ограничение system journal | выполнено | Persistent journal ограничен `512M`, runtime journal — `128M` |
+| Непривилегированный пользователь `display` | выполнено | UID 1002, home mode `750`, группы `display` и `users`; доступа к `sudo` и Docker нет |
+| Базовое server power management | выполнено | Sleep, suspend, hibernate и hybrid-sleep masked |
+| Laptop 24/7 policy | выполнено | Закрытие крышки и system idle не останавливают сервер; конфигурация пережила контрольный reboot |
+| Swap | выполнено | `/swapfile` увеличен с `512M` до `4G` |
+| Автоматическое обслуживание | выполнено | `fstrim.timer` и `unattended-upgrades` enabled |
+| Update reboot policy | выполнено | Автоматическая перезагрузка после package updates отключена |
+| Изоляция display profile | выполнено | Profile mode `700`; пользователь `display` не читает deployment `.env` |
+| Docker logging | выполнено | Default driver `local`; ротация `10m × 5` на контейнер |
+| Временный Wi-Fi uplink | выполнено | Autoconnect без ограничения retries; постоянный MAC; power saving отключён |
+| Временный recovery autologin | выполнено | SDDM автоматически запускает Plasma пользователя `face` при boot и после session exit |
+| IPsec software stack | подготовлено | Установлены modern strongSwan `charon-systemd` и `swanctl`; tunnel configuration ещё не создавалась |
 
-## Открытый finding
+## Текущее состояние
 
-Единственный незавершённый аппаратный вопрос первоначальной проверки — поток
-корректируемых PCIe AER от PCIe-линии текущей Wi-Fi-карты Intel Wireless-AC
-7265. Ошибки исправляются аппаратно, но их высокая частота может засорять kernel
-log, создавать лишнюю нагрузку и указывать на нестабильность карты или PCIe
-link. Дополнительно требуется установить причину незапланированного reboot.
-Удалённо отключать Wi-Fi нельзя, так как это текущая сеть сервера.
+- VPN tunnel и SSH ещё не настроены; strongSwan установлен без connections.
+- Chromium и autologin пользователя `display` не настраивались.
+- Постоянные контейнеры проекта ещё не запускались.
+- `.env` создан, проверен и имеет mode `600`.
+- Модели ещё не размещались.
