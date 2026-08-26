@@ -1,0 +1,704 @@
+{
+  "commitHash": "8d0e8f86a63dbbd88a888c7d5bb8d9a6874dbe2f",
+  "commitDate": "2026-08-14T13:20:32+05:00",
+  "commitMessage": "updated DevRails and FT-002 some specs",
+  "commitAuthor": "Sergio",
+  "stats": {
+    "totalFiles": 104,
+    "totalSymbols": 1404,
+    "totalEdges": 33,
+    "languages": {
+      "python": 94,
+      "javascript": 10
+    }
+  },
+  "files": [
+    {
+      "path": "migrations/env.py",
+      "symbols": 5,
+      "connections": 0
+    },
+    {
+      "path": "migrations/versions/0001_empty_foundation.py",
+      "symbols": 6,
+      "connections": 0
+    },
+    {
+      "path": "migrations/versions/0002_staff_users.py",
+      "symbols": 6,
+      "connections": 0
+    },
+    {
+      "path": "migrations/versions/0003_pipeline_revisions.py",
+      "symbols": 6,
+      "connections": 0
+    },
+    {
+      "path": "migrations/versions/0004_staff_sessions.py",
+      "symbols": 6,
+      "connections": 0
+    },
+    {
+      "path": "migrations/versions/0005_serving_ingest_targets.py",
+      "symbols": 6,
+      "connections": 0
+    },
+    {
+      "path": "migrations/versions/0006_photo_identity_persistence.py",
+      "symbols": 6,
+      "connections": 0
+    },
+    {
+      "path": "migrations/versions/0007_photo_pipeline_pending.py",
+      "symbols": 6,
+      "connections": 0
+    },
+    {
+      "path": "migrations/versions/0008_processing_persistence.py",
+      "symbols": 12,
+      "connections": 0
+    },
+    {
+      "path": "migrations/versions/0009_photo_admission_lineage.py",
+      "symbols": 7,
+      "connections": 0
+    },
+    {
+      "path": "scripts/mb-doctor/acceptance-trace.mjs",
+      "symbols": 99,
+      "connections": 18
+    },
+    {
+      "path": "scripts/mb-doctor/cli-reporting.mjs",
+      "symbols": 16,
+      "connections": 3
+    },
+    {
+      "path": "scripts/mb-doctor/foundation-backbone.mjs",
+      "symbols": 88,
+      "connections": 7
+    },
+    {
+      "path": "scripts/mb-doctor/preflight.mjs",
+      "symbols": 12,
+      "connections": 4
+    },
+    {
+      "path": "scripts/mb-doctor/readers.mjs",
+      "symbols": 19,
+      "connections": 49
+    },
+    {
+      "path": "scripts/mb-doctor/task-readiness.mjs",
+      "symbols": 139,
+      "connections": 16
+    },
+    {
+      "path": "scripts/mb-doctor/terminal-compat.mjs",
+      "symbols": 65,
+      "connections": 8
+    },
+    {
+      "path": "scripts/mb-doctor.mjs",
+      "symbols": 7,
+      "connections": 9
+    },
+    {
+      "path": "scripts/mb-lint.mjs",
+      "symbols": 199,
+      "connections": 0
+    },
+    {
+      "path": "scripts/runtime-storage-probe.py",
+      "symbols": 5,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/__init__.py",
+      "symbols": 1,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/entrypoints/backend.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/entrypoints/background_worker.py",
+      "symbols": 5,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/entrypoints/common.py",
+      "symbols": 5,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/entrypoints/migrate.py",
+      "symbols": 1,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/entrypoints/model_consumers.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/entrypoints/realtime.py",
+      "symbols": 4,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/infrastructure/capacity.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/infrastructure/database.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/infrastructure/object_store.py",
+      "symbols": 9,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/infrastructure/readiness.py",
+      "symbols": 1,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/infrastructure/settings.py",
+      "symbols": 8,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/inventory/__init__.py",
+      "symbols": 1,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/inventory/admission.py",
+      "symbols": 11,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/inventory/candidate_staging.py",
+      "symbols": 11,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/inventory/http.py",
+      "symbols": 13,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/inventory/ingest_targets.py",
+      "symbols": 5,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/inventory/photo_persistence.py",
+      "symbols": 4,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/inventory/photo_processing_status.py",
+      "symbols": 7,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/inventory/photo_upload.py",
+      "symbols": 9,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/inventory/processing_health.py",
+      "symbols": 10,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/inventory/validation.py",
+      "symbols": 21,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/platform/auth/cli.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/platform/auth/http.py",
+      "symbols": 10,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/platform/auth/principals.py",
+      "symbols": 16,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/platform/auth/sessions.py",
+      "symbols": 22,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/__init__.py",
+      "symbols": 1,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/buffalo_adapter.py",
+      "symbols": 22,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/derivatives.py",
+      "symbols": 17,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/face_engine.py",
+      "symbols": 9,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/health_projection.py",
+      "symbols": 9,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/ingest_slo.py",
+      "symbols": 8,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/initial_pending.py",
+      "symbols": 5,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/model_admission.py",
+      "symbols": 11,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/persistence.py",
+      "symbols": 4,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/photo_orchestration.py",
+      "symbols": 11,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/revisions.py",
+      "symbols": 10,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/searchable_projection.py",
+      "symbols": 8,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/sface_adapter.py",
+      "symbols": 24,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/terminal_publication.py",
+      "symbols": 17,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/worker_claims.py",
+      "symbols": 15,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/worker_recovery.py",
+      "symbols": 6,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/worker_runtime.py",
+      "symbols": 6,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/serving_control/__init__.py",
+      "symbols": 1,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/serving_control/ingest_target.py",
+      "symbols": 19,
+      "connections": 0
+    },
+    {
+      "path": "tests/infrastructure/test_minio_capacity.py",
+      "symbols": 5,
+      "connections": 0
+    },
+    {
+      "path": "tests/infrastructure/test_postgresql_capacity.py",
+      "symbols": 5,
+      "connections": 0
+    },
+    {
+      "path": "tests/inventory/test_admission_lineage.py",
+      "symbols": 14,
+      "connections": 1
+    },
+    {
+      "path": "tests/inventory/test_atomic_admission.py",
+      "symbols": 6,
+      "connections": 1
+    },
+    {
+      "path": "tests/inventory/test_candidate_staging.py",
+      "symbols": 1,
+      "connections": 0
+    },
+    {
+      "path": "tests/inventory/test_crash_recovery.py",
+      "symbols": 6,
+      "connections": 1
+    },
+    {
+      "path": "tests/inventory/test_duplicate_admission.py",
+      "symbols": 7,
+      "connections": 1
+    },
+    {
+      "path": "tests/inventory/test_ingest_targets_api.py",
+      "symbols": 7,
+      "connections": 1
+    },
+    {
+      "path": "tests/inventory/test_jpeg_validation.py",
+      "symbols": 13,
+      "connections": 0
+    },
+    {
+      "path": "tests/inventory/test_photo_persistence.py",
+      "symbols": 2,
+      "connections": 1
+    },
+    {
+      "path": "tests/inventory/test_photo_processing_api.py",
+      "symbols": 19,
+      "connections": 1
+    },
+    {
+      "path": "tests/inventory/test_photo_processing_ui.py",
+      "symbols": 1,
+      "connections": 0
+    },
+    {
+      "path": "tests/inventory/test_photo_upload_api.py",
+      "symbols": 10,
+      "connections": 1
+    },
+    {
+      "path": "tests/inventory/test_photo_upload_ui.py",
+      "symbols": 7,
+      "connections": 0
+    },
+    {
+      "path": "tests/inventory/test_processing_health_api.py",
+      "symbols": 15,
+      "connections": 1
+    },
+    {
+      "path": "tests/inventory/test_processing_health_ui.py",
+      "symbols": 7,
+      "connections": 0
+    },
+    {
+      "path": "tests/pipeline_compatibility.py",
+      "symbols": 1,
+      "connections": 19
+    },
+    {
+      "path": "tests/processing/test_background_worker_runtime.py",
+      "symbols": 10,
+      "connections": 1
+    },
+    {
+      "path": "tests/processing/test_buffalo_adapter.py",
+      "symbols": 13,
+      "connections": 0
+    },
+    {
+      "path": "tests/processing/test_derivatives.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "tests/processing/test_ingest_slo.py",
+      "symbols": 8,
+      "connections": 1
+    },
+    {
+      "path": "tests/processing/test_initial_pending.py",
+      "symbols": 3,
+      "connections": 1
+    },
+    {
+      "path": "tests/processing/test_model_asset_admission.py",
+      "symbols": 24,
+      "connections": 0
+    },
+    {
+      "path": "tests/processing/test_photo_orchestration.py",
+      "symbols": 15,
+      "connections": 2
+    },
+    {
+      "path": "tests/processing/test_processing_health_projection.py",
+      "symbols": 8,
+      "connections": 1
+    },
+    {
+      "path": "tests/processing/test_processing_persistence.py",
+      "symbols": 6,
+      "connections": 0
+    },
+    {
+      "path": "tests/processing/test_revision_eligibility.py",
+      "symbols": 2,
+      "connections": 1
+    },
+    {
+      "path": "tests/processing/test_searchable_projection.py",
+      "symbols": 6,
+      "connections": 1
+    },
+    {
+      "path": "tests/processing/test_sface_adapter.py",
+      "symbols": 15,
+      "connections": 0
+    },
+    {
+      "path": "tests/processing/test_shared_worker.py",
+      "symbols": 6,
+      "connections": 2
+    },
+    {
+      "path": "tests/processing/test_terminal_publication.py",
+      "symbols": 16,
+      "connections": 1
+    },
+    {
+      "path": "tests/processing/test_worker_claims.py",
+      "symbols": 3,
+      "connections": 1
+    },
+    {
+      "path": "tests/processing/test_worker_recovery.py",
+      "symbols": 3,
+      "connections": 1
+    },
+    {
+      "path": "tests/serving_control/test_ingest_target.py",
+      "symbols": 2,
+      "connections": 1
+    },
+    {
+      "path": "tests/staff_access/test_credential_lifecycle.py",
+      "symbols": 15,
+      "connections": 0
+    },
+    {
+      "path": "tests/staff_access/test_principals.py",
+      "symbols": 1,
+      "connections": 0
+    },
+    {
+      "path": "tests/staff_access/test_sessions.py",
+      "symbols": 9,
+      "connections": 0
+    },
+    {
+      "path": "tests/test_foundation.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "scripts/mb-doctor/task-readiness.test.mjs",
+      "symbols": 0,
+      "connections": 0
+    }
+  ],
+  "edges": [
+    {
+      "source": "scripts/mb-doctor/acceptance-trace.mjs",
+      "target": "scripts/mb-doctor/readers.mjs",
+      "weight": 17
+    },
+    {
+      "source": "scripts/mb-doctor/foundation-backbone.mjs",
+      "target": "scripts/mb-doctor/readers.mjs",
+      "weight": 6
+    },
+    {
+      "source": "scripts/mb-doctor/preflight.mjs",
+      "target": "scripts/mb-doctor/readers.mjs",
+      "weight": 3
+    },
+    {
+      "source": "scripts/mb-doctor/readers.mjs",
+      "target": "scripts/mb-doctor/task-readiness.mjs",
+      "weight": 15
+    },
+    {
+      "source": "scripts/mb-doctor/readers.mjs",
+      "target": "scripts/mb-doctor/terminal-compat.mjs",
+      "weight": 7
+    },
+    {
+      "source": "scripts/mb-doctor.mjs",
+      "target": "scripts/mb-doctor/cli-reporting.mjs",
+      "weight": 3
+    },
+    {
+      "source": "scripts/mb-doctor.mjs",
+      "target": "scripts/mb-doctor/readers.mjs",
+      "weight": 1
+    },
+    {
+      "source": "scripts/mb-doctor.mjs",
+      "target": "scripts/mb-doctor/preflight.mjs",
+      "weight": 1
+    },
+    {
+      "source": "scripts/mb-doctor.mjs",
+      "target": "scripts/mb-doctor/foundation-backbone.mjs",
+      "weight": 1
+    },
+    {
+      "source": "scripts/mb-doctor.mjs",
+      "target": "scripts/mb-doctor/task-readiness.mjs",
+      "weight": 1
+    },
+    {
+      "source": "scripts/mb-doctor.mjs",
+      "target": "scripts/mb-doctor/acceptance-trace.mjs",
+      "weight": 1
+    },
+    {
+      "source": "scripts/mb-doctor.mjs",
+      "target": "scripts/mb-doctor/terminal-compat.mjs",
+      "weight": 1
+    },
+    {
+      "source": "tests/inventory/test_admission_lineage.py",
+      "target": "tests/pipeline_compatibility.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/inventory/test_atomic_admission.py",
+      "target": "tests/pipeline_compatibility.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/inventory/test_crash_recovery.py",
+      "target": "tests/pipeline_compatibility.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/inventory/test_duplicate_admission.py",
+      "target": "tests/pipeline_compatibility.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/inventory/test_ingest_targets_api.py",
+      "target": "tests/pipeline_compatibility.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/inventory/test_photo_persistence.py",
+      "target": "tests/pipeline_compatibility.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/inventory/test_photo_processing_api.py",
+      "target": "tests/pipeline_compatibility.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/inventory/test_photo_upload_api.py",
+      "target": "tests/pipeline_compatibility.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/inventory/test_processing_health_api.py",
+      "target": "tests/pipeline_compatibility.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/processing/test_background_worker_runtime.py",
+      "target": "tests/processing/test_photo_orchestration.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/pipeline_compatibility.py",
+      "target": "tests/processing/test_ingest_slo.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/pipeline_compatibility.py",
+      "target": "tests/processing/test_initial_pending.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/pipeline_compatibility.py",
+      "target": "tests/processing/test_processing_health_projection.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/pipeline_compatibility.py",
+      "target": "tests/processing/test_revision_eligibility.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/pipeline_compatibility.py",
+      "target": "tests/processing/test_searchable_projection.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/pipeline_compatibility.py",
+      "target": "tests/processing/test_shared_worker.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/processing/test_photo_orchestration.py",
+      "target": "tests/processing/test_shared_worker.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/pipeline_compatibility.py",
+      "target": "tests/processing/test_terminal_publication.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/pipeline_compatibility.py",
+      "target": "tests/processing/test_worker_claims.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/pipeline_compatibility.py",
+      "target": "tests/processing/test_worker_recovery.py",
+      "weight": 1
+    },
+    {
+      "source": "tests/pipeline_compatibility.py",
+      "target": "tests/serving_control/test_ingest_target.py",
+      "weight": 1
+    }
+  ]
+}

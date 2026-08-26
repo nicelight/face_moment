@@ -1,6 +1,6 @@
 {
   "id": "TASK-065-T3-FT-003-W1",
-  "title": "Keep internal service ports private",
+  "title": "Production acceptance: keep internal service ports private",
   "status": "planned",
   "wave": "W1",
   "feature": "FT-003",

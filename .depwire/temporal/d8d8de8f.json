@@ -1,0 +1,27 @@
+{
+  "commitHash": "d8d8de8fa09245a2b5392815759ced26d5f78672",
+  "commitDate": "2026-07-20T15:53:05+05:00",
+  "commitMessage": "add runtime architecture diagram",
+  "commitAuthor": "Sergio",
+  "stats": {
+    "totalFiles": 2,
+    "totalSymbols": 448,
+    "totalEdges": 0,
+    "languages": {
+      "javascript": 2
+    }
+  },
+  "files": [
+    {
+      "path": "scripts/mb-doctor.mjs",
+      "symbols": 274,
+      "connections": 0
+    },
+    {
+      "path": "scripts/mb-lint.mjs",
+      "symbols": 174,
+      "connections": 0
+    }
+  ],
+  "edges": []
+}

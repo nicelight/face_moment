@@ -93,8 +93,10 @@ validation.
   OPTIONS handling, Bearer redaction and continuous one-request-at-a-time
   10-second HTTP long-polling to the fixed mDNS `.local` name.
 - Detector delivery proof covers BlazeFace Full-range in its browser runtime
-  with a separate release-versioned model asset and no TensorFlow.js, second ML
-  runtime, parallel YuNet implementation or generic detector abstraction.
+  with a separate release-versioned model asset, one discarded startup warm-up
+  inference and reuse of that detector for later reference series, with no
+  TensorFlow.js, second ML runtime, parallel YuNet implementation or generic
+  detector abstraction.
 - Camera proof shows that input above the site-configured maximum is downscaled
   before ring-buffer/detector work without turning the exact site value into a
   design/tasking gate.

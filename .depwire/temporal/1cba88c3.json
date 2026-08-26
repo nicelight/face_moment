@@ -1,0 +1,204 @@
+{
+  "commitHash": "1cba88c30d06dd036fbc9b92c05c56e8da8d00c9",
+  "commitDate": "2026-08-06T17:49:13+05:00",
+  "commitMessage": "фиксы дкомпозиции",
+  "commitAuthor": "Sergio",
+  "stats": {
+    "totalFiles": 25,
+    "totalSymbols": 695,
+    "totalEdges": 12,
+    "languages": {
+      "python": 16,
+      "javascript": 9
+    }
+  },
+  "files": [
+    {
+      "path": "migrations/env.py",
+      "symbols": 4,
+      "connections": 0
+    },
+    {
+      "path": "migrations/versions/0001_empty_foundation.py",
+      "symbols": 6,
+      "connections": 0
+    },
+    {
+      "path": "scripts/mb-doctor/acceptance-trace.mjs",
+      "symbols": 99,
+      "connections": 18
+    },
+    {
+      "path": "scripts/mb-doctor/cli-reporting.mjs",
+      "symbols": 16,
+      "connections": 3
+    },
+    {
+      "path": "scripts/mb-doctor/foundation-backbone.mjs",
+      "symbols": 88,
+      "connections": 7
+    },
+    {
+      "path": "scripts/mb-doctor/preflight.mjs",
+      "symbols": 12,
+      "connections": 4
+    },
+    {
+      "path": "scripts/mb-doctor/readers.mjs",
+      "symbols": 19,
+      "connections": 49
+    },
+    {
+      "path": "scripts/mb-doctor/task-readiness.mjs",
+      "symbols": 139,
+      "connections": 16
+    },
+    {
+      "path": "scripts/mb-doctor/terminal-compat.mjs",
+      "symbols": 65,
+      "connections": 8
+    },
+    {
+      "path": "scripts/mb-doctor.mjs",
+      "symbols": 7,
+      "connections": 9
+    },
+    {
+      "path": "scripts/mb-lint.mjs",
+      "symbols": 199,
+      "connections": 0
+    },
+    {
+      "path": "scripts/runtime-storage-probe.py",
+      "symbols": 5,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/__init__.py",
+      "symbols": 1,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/entrypoints/backend.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/entrypoints/background_worker.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/entrypoints/common.py",
+      "symbols": 4,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/entrypoints/migrate.py",
+      "symbols": 1,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/entrypoints/realtime.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/infrastructure/database.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/infrastructure/object_store.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/infrastructure/readiness.py",
+      "symbols": 1,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/infrastructure/settings.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/__init__.py",
+      "symbols": 1,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/face_engine.py",
+      "symbols": 7,
+      "connections": 0
+    },
+    {
+      "path": "tests/test_foundation.py",
+      "symbols": 3,
+      "connections": 0
+    }
+  ],
+  "edges": [
+    {
+      "source": "scripts/mb-doctor/acceptance-trace.mjs",
+      "target": "scripts/mb-doctor/readers.mjs",
+      "weight": 17
+    },
+    {
+      "source": "scripts/mb-doctor/foundation-backbone.mjs",
+      "target": "scripts/mb-doctor/readers.mjs",
+      "weight": 6
+    },
+    {
+      "source": "scripts/mb-doctor/preflight.mjs",
+      "target": "scripts/mb-doctor/readers.mjs",
+      "weight": 3
+    },
+    {
+      "source": "scripts/mb-doctor/readers.mjs",
+      "target": "scripts/mb-doctor/task-readiness.mjs",
+      "weight": 15
+    },
+    {
+      "source": "scripts/mb-doctor/readers.mjs",
+      "target": "scripts/mb-doctor/terminal-compat.mjs",
+      "weight": 7
+    },
+    {
+      "source": "scripts/mb-doctor.mjs",
+      "target": "scripts/mb-doctor/cli-reporting.mjs",
+      "weight": 3
+    },
+    {
+      "source": "scripts/mb-doctor.mjs",
+      "target": "scripts/mb-doctor/readers.mjs",
+      "weight": 1
+    },
+    {
+      "source": "scripts/mb-doctor.mjs",
+      "target": "scripts/mb-doctor/preflight.mjs",
+      "weight": 1
+    },
+    {
+      "source": "scripts/mb-doctor.mjs",
+      "target": "scripts/mb-doctor/foundation-backbone.mjs",
+      "weight": 1
+    },
+    {
+      "source": "scripts/mb-doctor.mjs",
+      "target": "scripts/mb-doctor/task-readiness.mjs",
+      "weight": 1
+    },
+    {
+      "source": "scripts/mb-doctor.mjs",
+      "target": "scripts/mb-doctor/acceptance-trace.mjs",
+      "weight": 1
+    },
+    {
+      "source": "scripts/mb-doctor.mjs",
+      "target": "scripts/mb-doctor/terminal-compat.mjs",
+      "weight": 1
+    }
+  ]
+}

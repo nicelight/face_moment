@@ -1,0 +1,108 @@
+{
+  "commitHash": "9f5b3532e3aaf95bd3d2ca54fbcdb04553dc4263",
+  "commitDate": "2026-07-24T23:45:31+05:00",
+  "commitMessage": "FULL Foundation TASKs successfully done!",
+  "commitAuthor": "Sergio",
+  "stats": {
+    "totalFiles": 18,
+    "totalSymbols": 499,
+    "totalEdges": 0,
+    "languages": {
+      "python": 16,
+      "javascript": 2
+    }
+  },
+  "files": [
+    {
+      "path": "migrations/env.py",
+      "symbols": 4,
+      "connections": 0
+    },
+    {
+      "path": "migrations/versions/0001_empty_foundation.py",
+      "symbols": 6,
+      "connections": 0
+    },
+    {
+      "path": "scripts/mb-doctor.mjs",
+      "symbols": 274,
+      "connections": 0
+    },
+    {
+      "path": "scripts/mb-lint.mjs",
+      "symbols": 174,
+      "connections": 0
+    },
+    {
+      "path": "scripts/runtime-storage-probe.py",
+      "symbols": 5,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/__init__.py",
+      "symbols": 1,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/entrypoints/backend.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/entrypoints/background_worker.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/entrypoints/common.py",
+      "symbols": 4,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/entrypoints/migrate.py",
+      "symbols": 1,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/entrypoints/realtime.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/infrastructure/database.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/infrastructure/object_store.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/infrastructure/readiness.py",
+      "symbols": 1,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/infrastructure/settings.py",
+      "symbols": 3,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/__init__.py",
+      "symbols": 1,
+      "connections": 0
+    },
+    {
+      "path": "src/face_moment/processing/face_engine.py",
+      "symbols": 7,
+      "connections": 0
+    },
+    {
+      "path": "tests/test_foundation.py",
+      "symbols": 3,
+      "connections": 0
+    }
+  ],
+  "edges": []
+}

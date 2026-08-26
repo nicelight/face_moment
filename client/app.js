@@ -7,7 +7,10 @@ import {
   readDisplayClientToken,
   saveDisplayClientToken,
 } from "./display-client-config.js";
-import { detectReferenceSeries } from "./blazeface.js";
+import {
+  createBlazeFaceDetector,
+  detectReferenceSeries,
+} from "./blazeface.js";
 import { createCameraController } from "./camera.js";
 import { createReferenceCaptureController } from "./trigger-series.js";
 import {
@@ -25,6 +28,7 @@ const communicationNoticeController = createCommunicationNoticeController({
   element: document.querySelector("#communication-notice"),
 });
 let detectorFailureMessage = false;
+let detectorPromise;
 let cameraController;
 let sensorClient;
 let triggerController;
@@ -654,6 +658,30 @@ function renderDetectorFailure() {
   }
 }
 
+async function createAndWarmBlazeFaceDetector() {
+  const detector = await createBlazeFaceDetector();
+  try {
+    const warmupImage = document.createElement("canvas");
+    warmupImage.width = 64;
+    warmupImage.height = 64;
+    await detector.detect(warmupImage);
+    return detector;
+  } catch (error) {
+    detector.close();
+    throw error;
+  }
+}
+
+function getBlazeFaceDetector() {
+  detectorPromise ??= createAndWarmBlazeFaceDetector().catch((error) => {
+    detectorPromise = undefined;
+    throw error;
+  });
+  return detectorPromise;
+}
+
+void getBlazeFaceDetector().catch(renderDetectorFailure);
+
 function copyCameraFrame(captured) {
   const source = captured?.frame ?? captured?.image;
   if (!source || typeof document === "undefined") return captured;
@@ -726,7 +754,10 @@ window.addEventListener("face-moment:attempt-finished", (event) => {
 
 window.addEventListener("face-moment:reference-series-ready", async (event) => {
   try {
-    const proposals = await detectReferenceSeries(event.detail?.frames);
+    const detector = await getBlazeFaceDetector();
+    const proposals = await detectReferenceSeries(event.detail?.frames, {
+      detector,
+    });
     document.body.dataset.detectorState = "ready";
     window.dispatchEvent(
       new CustomEvent("face-moment:proposals-ready", {

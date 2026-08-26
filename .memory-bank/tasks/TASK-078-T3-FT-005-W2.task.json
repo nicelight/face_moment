@@ -1,7 +1,7 @@
 {
   "id": "TASK-078-T3-FT-005-W2",
   "title": "Apply independent display and success-cooldown lifetimes",
-  "status": "planned",
+  "status": "ready",
   "wave": "W2",
   "feature": "FT-005",
   "reqs": [

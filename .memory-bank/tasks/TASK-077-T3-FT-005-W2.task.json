@@ -1,7 +1,7 @@
 {
   "id": "TASK-077-T3-FT-005-W2",
   "title": "Record the authenticated post-render display outcome",
-  "status": "planned",
+  "status": "ready",
   "wave": "W2",
   "feature": "FT-005",
   "reqs": [

@@ -1,0 +1,27 @@
+{
+  "commitHash": "7ad9c691afe4a90507528c6f4da2914a191db700",
+  "commitDate": "2026-07-10T10:04:25+05:00",
+  "commitMessage": "Initial project documentation",
+  "commitAuthor": "Sergio",
+  "stats": {
+    "totalFiles": 2,
+    "totalSymbols": 467,
+    "totalEdges": 0,
+    "languages": {
+      "javascript": 2
+    }
+  },
+  "files": [
+    {
+      "path": "scripts/mb-doctor.mjs",
+      "symbols": 270,
+      "connections": 0
+    },
+    {
+      "path": "scripts/mb-lint.mjs",
+      "symbols": 197,
+      "connections": 0
+    }
+  ],
+  "edges": []
+}

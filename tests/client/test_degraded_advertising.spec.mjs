@@ -14,6 +14,12 @@ const SENSOR_CONFIG = JSON.stringify({
   sensorId: "sensor-fixture",
   secret: "fixture-sensor-secret",
 });
+const DETECTOR_ASSETS = [
+  "vision_bundle.mjs",
+  "vision_wasm_internal.js",
+  "vision_wasm_internal.wasm",
+  "blaze_face_full_range.tflite",
+];
 
 function contentType(filePath) {
   if (filePath.endsWith(".js") || filePath.endsWith(".mjs")) return "text/javascript";
@@ -99,6 +105,54 @@ async function closeClient(client) {
   await rm(client.profilePath, { recursive: true, force: true });
 }
 
+test("FT-003-AC-004 BlazeFace is warmed once during page startup", async () => {
+  const client = await launchClient();
+  try {
+    await client.page.goto(`${ORIGIN}/#advertising`);
+    await expect
+      .poll(() =>
+        DETECTOR_ASSETS.every((asset) =>
+          client.requestedPaths.some((path) => path.endsWith(asset)),
+        ),
+      )
+      .toBe(true);
+
+    const runEmptySeries = (attemptId) =>
+      client.page.evaluate(
+        (id) =>
+          new Promise((resolve) => {
+            window.addEventListener("face-moment:proposals-ready", resolve, {
+              once: true,
+            });
+            window.dispatchEvent(
+              new CustomEvent("face-moment:reference-series-ready", {
+                detail: { attemptId: id, trigger_source: "test", frames: [] },
+              }),
+            );
+          }),
+        attemptId,
+      );
+
+    await runEmptySeries("startup-warmup-one");
+    const firstAssetRequestCount = client.requestedPaths.filter((path) =>
+      DETECTOR_ASSETS.some((asset) => path.endsWith(asset)),
+    ).length;
+
+    await runEmptySeries("startup-warmup-two");
+    const secondAssetRequestCount = client.requestedPaths.filter((path) =>
+      DETECTOR_ASSETS.some((asset) => path.endsWith(asset)),
+    ).length;
+
+    expect(secondAssetRequestCount).toBe(firstAssetRequestCount);
+    await expect(client.page.locator("body")).toHaveAttribute(
+      "data-detector-state",
+      "ready",
+    );
+  } finally {
+    await closeClient(client);
+  }
+});
+
 test("FT-003-AC-008 missing camera keeps the loaded client in advertising", async () => {
   const client = await launchClient();
   try {
@@ -139,6 +193,17 @@ test("FT-003-AC-008 BlazeFace load failure returns to retryable advertising", as
   const client = await launchClient({ failModel: true });
   try {
     await client.page.goto(`${ORIGIN}/#advertising`);
+    await expect
+      .poll(() =>
+        DETECTOR_ASSETS.every((asset) =>
+          client.requestedPaths.some((path) => path.endsWith(asset)),
+        ),
+      )
+      .toBe(true);
+    await expect(client.page.locator("body")).toHaveAttribute(
+      "data-detector-state",
+      "recoverable-error",
+    );
     await client.page.evaluate(() => {
       document.body.dataset.triggerState = "searching";
       window.dispatchEvent(
