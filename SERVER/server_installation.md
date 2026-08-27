@@ -1,6 +1,6 @@
 # Журнал установки тестового сервера Face Moment
 
-Последнее обновление: 2026-08-26
+Последнее обновление: 2026-08-27
 
 Подробные параметры машины находятся в [serverparams.md](serverparams.md).
 Здесь фиксируются только ключевые этапы и важные findings.
@@ -30,10 +30,15 @@
 | Временный Wi-Fi uplink | выполнено | Autoconnect без ограничения retries; постоянный MAC; power saving отключён |
 | Временный recovery autologin | выполнено | SDDM автоматически запускает Plasma пользователя `face` при boot и после session exit |
 | IPsec software stack | подготовлено | Установлены modern strongSwan `charon-systemd` и `swanctl`; tunnel configuration ещё не создавалась |
+| Базовая подготовка VPS | выполнено | VPS обновлён до AlmaLinux 9.8; UTC, SELinux Enforcing и `firewalld`; публичный `cockpit` закрыт; SSH key и password authentication проверены после reboot |
+| IPsec responder на VPS | выполнено | `strongSwan 6.0.6`, XFRM `ipsec0` `10.77.0.1/30`, UDP 500/4500 и ESP; сертификатная конфигурация загружена без ошибок |
 
 ## Текущее состояние
 
-- VPN tunnel и SSH ещё не настроены; strongSwan установлен без connections.
+- VPS-сторона IPsec настроена; центральная сторона и установленный tunnel ещё
+  не настроены.
+- Административный SSH центрального сервера через приватный management path
+  ещё не настроен.
 - Chromium и autologin пользователя `display` не настраивались.
 - Постоянные контейнеры проекта ещё не запускались.
 - `.env` создан, проверен и имеет mode `600`.

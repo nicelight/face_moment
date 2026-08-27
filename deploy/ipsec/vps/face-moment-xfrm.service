@@ -1,0 +1,17 @@
+[Unit]
+Description=Face Moment IPsec XFRM interface
+Wants=network-online.target
+After=network-online.target
+Before=strongswan.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=-/usr/sbin/ip link delete ipsec0
+ExecStart=/usr/sbin/ip link add ipsec0 type xfrm if_id 42
+ExecStart=/usr/sbin/ip address add 10.77.0.1/30 dev ipsec0
+ExecStart=/usr/sbin/ip link set dev ipsec0 mtu 1400 up
+ExecStop=-/usr/sbin/ip link delete ipsec0
+
+[Install]
+WantedBy=multi-user.target

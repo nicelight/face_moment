@@ -4,7 +4,7 @@ from collections.abc import Callable, Mapping
 from datetime import date, datetime, timezone
 import json
 import math
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 import uuid
 
 from sqlalchemy import (
@@ -390,6 +390,50 @@ class PromoAttemptRepository:
             display_expires_at=display_expires_at,
             qr_issued_at=qr_issued_at,
         )
+
+    def record_display_outcome(
+        self,
+        attempt: PromoAttempt,
+        *,
+        status: Literal["confirmed", "failed"],
+        qr_fully_visible_elapsed_ms: int | None = None,
+        now: datetime | None = None,
+    ) -> PromoAttempt:
+        """Atomically record the first timely terminal display report."""
+
+        if status not in {"confirmed", "failed"}:
+            raise ValueError("display status must be confirmed or failed")
+        if status == "failed" and qr_fully_visible_elapsed_ms is not None:
+            raise ValueError("failed display reports cannot contain QR elapsed time")
+        if status == "confirmed" and (
+            not isinstance(qr_fully_visible_elapsed_ms, int)
+            or isinstance(qr_fully_visible_elapsed_ms, bool)
+            or qr_fully_visible_elapsed_ms < 0
+            or qr_fully_visible_elapsed_ms > 2_147_483_647
+        ):
+            raise ValueError("confirmed display reports require a valid QR elapsed time")
+        timestamp = _utc(now)
+        result = self._session.execute(
+            update(PromoAttempt)
+            .where(
+                PromoAttempt.id == attempt.id,
+                PromoAttempt.display_status == "pending",
+                PromoAttempt.display_expires_at.is_not(None),
+                PromoAttempt.display_expires_at > timestamp,
+            )
+            .values(
+                display_status=status,
+                display_reported_at=timestamp,
+                qr_fully_visible_elapsed_ms=qr_fully_visible_elapsed_ms,
+                updated_at=timestamp,
+            )
+        )
+        if result.rowcount != 1:
+            self._session.refresh(attempt)
+            raise ValueError("display report is late or already terminal")
+        self._session.flush()
+        self._session.refresh(attempt)
+        return attempt
 
     def interrupt_stale(
         self, *, now: datetime | None = None

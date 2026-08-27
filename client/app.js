@@ -34,6 +34,9 @@ let sensorClient;
 let triggerController;
 let attemptOutcomeController;
 let promoDisplayController;
+let successfulCooldownAttemptId = null;
+const attemptTimingSnapshots = new Map();
+const displayConfigSnapshots = new Map();
 const jpegQualityController = createJpegQualityController({
   onChange: updateQualityConfiguration,
 });
@@ -247,6 +250,12 @@ function showCommunicationNotice(detail) {
   communicationNoticeController.show();
 }
 
+function discardDisplayConfiguration(attemptId) {
+  const pending = displayConfigSnapshots.get(attemptId);
+  displayConfigSnapshots.delete(attemptId);
+  void Promise.resolve(pending).catch(() => {});
+}
+
 function newRealtimeAttemptId() {
   const attemptId = globalThis.crypto?.randomUUID?.();
   if (typeof attemptId !== "string" || !attemptId) {
@@ -330,6 +339,10 @@ window.addEventListener("face-moment:attempt-request-start", (event) => {
       attemptId: event.detail?.attemptId,
       captureId: event.detail?.captureId,
     });
+    const configuration = promoDisplayController?.loadDisplayConfiguration?.();
+    if (configuration) {
+      displayConfigSnapshots.set(event.detail?.attemptId, configuration);
+    }
   } catch {
     document.body.dataset.attemptState =
       attemptOutcomeController?.state ?? "advertising";
@@ -337,6 +350,9 @@ window.addEventListener("face-moment:attempt-request-start", (event) => {
 });
 
 window.addEventListener("face-moment:attempt-response", (event) => {
+  if (event.detail?.attemptId && event.detail?.timing) {
+    attemptTimingSnapshots.set(event.detail.attemptId, event.detail.timing);
+  }
   const pending = attemptOutcomeController?.handleResponse(
     event.detail?.attemptId,
     event.detail?.response,
@@ -353,6 +369,8 @@ window.addEventListener("face-moment:attempt-response", (event) => {
 });
 
 window.addEventListener("face-moment:attempt-transport-failure", (event) => {
+  attemptTimingSnapshots.delete(event.detail?.attemptId);
+  discardDisplayConfiguration(event.detail?.attemptId);
   const result = attemptOutcomeController?.handleTransportFailure(
     event.detail?.attemptId,
   );
@@ -365,11 +383,28 @@ window.addEventListener("face-moment:attempt-transport-failure", (event) => {
 
 window.addEventListener("face-moment:attempt-outcome", (event) => {
   const detail = event.detail;
-  if (detail?.outcome !== "result") return;
-  void promoDisplayController?.showResult({
-    attemptId: detail.attemptId,
-    result: detail.result,
-  });
+  const timing = attemptTimingSnapshots.get(detail?.attemptId);
+  attemptTimingSnapshots.delete(detail?.attemptId);
+  const configuration = displayConfigSnapshots.get(detail?.attemptId);
+  displayConfigSnapshots.delete(detail?.attemptId);
+  if (detail?.outcome !== "result") {
+    void Promise.resolve(configuration).catch(() => {});
+    return;
+  }
+  void Promise.resolve(configuration)
+    .then((displayConfig) => promoDisplayController?.showResult({
+      attemptId: detail.attemptId,
+      result: detail.result,
+      timing,
+      displayConfig,
+    }))
+    .catch(() => {
+      void promoDisplayController?.showResult({
+        attemptId: detail.attemptId,
+        result: detail.result,
+        timing,
+      });
+    });
 });
 
 function returnToAdvertisingAfterPromoFailure(detail) {
@@ -385,6 +420,29 @@ function returnToAdvertisingAfterPromoFailure(detail) {
       },
     }),
   );
+  if (currentView() !== "advertising") window.location.hash = "#advertising";
+  else render();
+}
+
+function returnToAdvertisingAfterDisplayExpiry(detail) {
+  if (detail?.handled !== true || detail?.stale === true) return;
+  const released = attemptOutcomeController?.releaseResult(detail.attemptId);
+  if (!released) return;
+  if (
+    successfulCooldownAttemptId === null ||
+    successfulCooldownAttemptId !== detail.attemptId
+  ) {
+    window.dispatchEvent(
+      new CustomEvent("face-moment:attempt-finished", {
+        detail: {
+          attemptId: detail.attemptId,
+          success: false,
+          reason: detail.reason ?? "display_expired",
+        },
+      }),
+    );
+  }
+  document.body.dataset.promoState = "advertising";
   if (currentView() !== "advertising") window.location.hash = "#advertising";
   else render();
 }
@@ -714,6 +772,10 @@ window.addEventListener("face-moment:sensor-passage", (event) => {
 
 window.addEventListener("face-moment:trigger-request", (event) => {
   const source = event.detail?.trigger_source;
+  if (promoDisplayController?.isVisible) {
+    updateTriggerStatus("busy", "Срабатывание проигнорировано: Promo ещё отображается.");
+    return;
+  }
   const result = triggerController?.acceptTrigger(source, event.detail) ?? {
     accepted: false,
     reason: "client_unavailable",
@@ -731,13 +793,18 @@ window.addEventListener("face-moment:trigger-request", (event) => {
 });
 
 window.addEventListener("face-moment:attempt-finished", (event) => {
-  triggerController?.finishAttempt({
+  const detail = event.detail;
+  const finished = triggerController?.finishAttempt({
     success: event.detail?.success === true,
     cooldownMs: event.detail?.cooldownMs ?? 0,
   });
+  if (detail?.success === true && finished && detail.attemptId !== undefined) {
+    successfulCooldownAttemptId = detail.attemptId;
+  }
 });
 
 window.addEventListener("face-moment:attempt-start", (event) => {
+  successfulCooldownAttemptId = null;
   const snapshot = jpegQualityController.startAttempt(event.detail?.attemptId);
   document.body.dataset.activeAttemptJpegQuality = String(snapshot.jpegQuality);
   window.dispatchEvent(
@@ -804,16 +871,27 @@ attemptOutcomeController = createAttemptOutcomeController({
 });
 promoDisplayController = createPromoDisplayController({
   container: view,
+  requireDisplayConfig: true,
   onComplete: (detail) => {
     document.body.dataset.promoState = "complete";
     window.dispatchEvent(
       new CustomEvent("face-moment:promo-rendered", { detail }),
+    );
+    window.dispatchEvent(
+      new CustomEvent("face-moment:attempt-finished", {
+        detail: {
+          attemptId: detail.attemptId,
+          success: true,
+          cooldownMs: detail.successCooldownMs,
+        },
+      }),
     );
   },
   onFailure: (detail) => {
     document.body.dataset.promoState = "advertising";
     returnToAdvertisingAfterPromoFailure(detail);
   },
+  onExpired: returnToAdvertisingAfterDisplayExpiry,
 });
 triggerController = createReferenceCaptureController({
   captureFrame: () => {

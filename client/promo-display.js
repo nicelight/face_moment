@@ -2,6 +2,9 @@ import { getDisplayRequestHeaders } from "./display-client-config.js";
 
 const PROMO_COPY = "Ваши фотографии найдены — откройте по QR-коду";
 const MEDIA_PATH_PREFIX = "/api/promo/media/";
+const DISPLAY_CONFIG_PATH = "/api/promo/display/config";
+const DISPLAY_PATH_PREFIX = "/api/promo/sessions/";
+const DISPLAY_ACK_TIMEOUT_MS = 5_000;
 const QR_VERSION = Object.freeze({
   4: Object.freeze({ dimension: 33, dataCodewords: 64, blocks: 2, blockData: 32, ecCodewords: 18, alignment: [6, 26] }),
   5: Object.freeze({ dimension: 37, dataCodewords: 86, blocks: 2, blockData: 43, ecCodewords: 24, alignment: [6, 30] }),
@@ -86,6 +89,33 @@ export function validatePromoResult(result, { origin = defaultOrigin() } = {}) {
     n: payload.n,
     qr_url: qrUrl.href,
     qr_first_open_expires_at: payload.qr_first_open_expires_at,
+  });
+}
+
+export function validateDisplayConfiguration(configuration) {
+  if (
+    !configuration ||
+    typeof configuration !== "object" ||
+    Array.isArray(configuration)
+  ) {
+    throw new TypeError("promo_display_configuration_invalid");
+  }
+  const fields = Object.keys(configuration).sort().join(",");
+  if (fields !== "result_display_ms,schema_version,success_cooldown_ms") {
+    throw new TypeError("promo_display_configuration_fields_invalid");
+  }
+  if (!Number.isSafeInteger(configuration.schema_version) || configuration.schema_version !== 1) {
+    throw new TypeError("promo_display_configuration_schema_invalid");
+  }
+  for (const name of ["result_display_ms", "success_cooldown_ms"]) {
+    if (!Number.isSafeInteger(configuration[name]) || configuration[name] <= 0) {
+      throw new TypeError(`promo_${name}_invalid`);
+    }
+  }
+  return Object.freeze({
+    schema_version: 1,
+    result_display_ms: configuration.result_display_ms,
+    success_cooldown_ms: configuration.success_cooldown_ms,
   });
 }
 
@@ -399,6 +429,11 @@ export class PromoDisplayController {
     urlApi = globalThis.URL,
     onComplete = () => {},
     onFailure = () => {},
+    onExpired = () => {},
+    clock = () => globalThis.performance?.now?.(),
+    setTimeoutImpl = (callback, delay) => globalThis.setTimeout(callback, delay),
+    clearTimeoutImpl = (timer) => globalThis.clearTimeout(timer),
+    requireDisplayConfig = false,
     origin = defaultOrigin(),
   } = {}) {
     if (!container || typeof container.replaceChildren !== "function") {
@@ -413,17 +448,112 @@ export class PromoDisplayController {
     this.urlApi = urlApi;
     this.onComplete = onComplete;
     this.onFailure = onFailure;
+    this.onExpired = onExpired;
+    this.clock = clock;
+    this.setTimeoutImpl = setTimeoutImpl;
+    this.clearTimeoutImpl = clearTimeoutImpl;
+    this.requireDisplayConfig = requireDisplayConfig;
     this.origin = origin;
     this.generation = 0;
     this.isVisible = false;
+    this.displayExpiryTimer = null;
   }
 
-  async showResult({ attemptId, result }) {
+  async loadDisplayConfiguration() {
+    const response = await this.fetchImpl(DISPLAY_CONFIG_PATH, {
+      headers: getDisplayRequestHeaders(),
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    if (response?.status !== 200 || !response?.ok || typeof response.json !== "function") {
+      throw new Error("promo_display_configuration_unavailable");
+    }
+    return validateDisplayConfiguration(await response.json());
+  }
+
+  clearDisplayExpiryTimer() {
+    if (this.displayExpiryTimer !== null) {
+      this.clearTimeoutImpl(this.displayExpiryTimer);
+      this.displayExpiryTimer = null;
+    }
+  }
+
+  scheduleDisplayExpiry(attemptId, durationMs) {
+    this.clearDisplayExpiryTimer();
+    const generation = this.generation;
+    this.displayExpiryTimer = this.setTimeoutImpl(() => {
+      this.displayExpiryTimer = null;
+      if (generation !== this.generation || !this.isVisible) return;
+      this.generation += 1;
+      this.isVisible = false;
+      this.container.replaceChildren();
+      this.onExpired(Object.freeze({
+        handled: true,
+        stale: false,
+        attemptId,
+        state: "advertising",
+        reason: "display_expired",
+        resultDisplayMs: durationMs,
+      }));
+    }, durationMs);
+  }
+
+  async reportDisplay({ sessionId, status, qrFullyVisibleElapsedMs }) {
+    const path = `${DISPLAY_PATH_PREFIX}${encodeURIComponent(sessionId)}/display`;
+    const body = status === "confirmed"
+      ? {
+          schema_version: 1,
+          status,
+          qr_fully_visible_elapsed_ms: qrFullyVisibleElapsedMs,
+        }
+      : { schema_version: 1, status };
+    const abortController = new AbortController();
+    const timeout = globalThis.setTimeout(
+      () => abortController.abort(),
+      DISPLAY_ACK_TIMEOUT_MS,
+    );
+    try {
+      const response = await this.fetchImpl(path, {
+        method: "PUT",
+        headers: getDisplayRequestHeaders({ "Content-Type": "application/json" }),
+        credentials: "same-origin",
+        cache: "no-store",
+        signal: abortController.signal,
+        body: JSON.stringify(body),
+      });
+      if (!response?.ok) throw new Error("promo_display_acknowledgement_failed");
+      return { status: response.status };
+    } finally {
+      globalThis.clearTimeout(timeout);
+    }
+  }
+
+  qrFullyVisibleElapsedMs(timing) {
+    const ready = Number(timing?.referenceSeriesReadyMonotonicMs);
+    if (!Number.isFinite(ready) || ready < 0 || typeof this.clock !== "function") {
+      return null;
+    }
+    const current = Number(this.clock());
+    const elapsed = Math.round(current - ready);
+    if (!Number.isFinite(current) || elapsed < 0) {
+      throw new Error("promo_qr_elapsed_invalid");
+    }
+    return elapsed;
+  }
+
+  async showResult({ attemptId, result, timing, displayConfig }) {
     const generation = ++this.generation;
+    this.clearDisplayExpiryTimer();
     this.isVisible = false;
     let normalized;
     try {
       normalized = validatePromoResult(result, { origin: this.origin });
+      const configuration = displayConfig === undefined
+        ? null
+        : validateDisplayConfiguration(displayConfig);
+      if (this.requireDisplayConfig && configuration === null) {
+        throw new Error("promo_display_configuration_missing");
+      }
       const images = await Promise.all(
         normalized.teasers.map((teaser) => loadPreview({
           teaser,
@@ -456,6 +586,40 @@ export class PromoDisplayController {
       if (bounds && (bounds.width <= 0 || bounds.height <= 0)) {
         throw new Error("promo_qr_not_visible");
       }
+      if (configuration !== null) {
+        this.scheduleDisplayExpiry(attemptId, configuration.result_display_ms);
+      }
+      const qrFullyVisibleElapsedMs = this.qrFullyVisibleElapsedMs(timing);
+      let acknowledgement = { sent: false, reason: "timing_unavailable" };
+      if (qrFullyVisibleElapsedMs !== null) {
+        try {
+          await this.reportDisplay({
+            sessionId: normalized.session_id,
+            status: "confirmed",
+            qrFullyVisibleElapsedMs,
+          });
+          if (generation !== this.generation) return { stale: true, attemptId };
+          acknowledgement = { sent: true, status: 200 };
+        } catch {
+          if (generation !== this.generation) return { stale: true, attemptId };
+          acknowledgement = { sent: false, reason: "acknowledgement_failed" };
+          const detail = Object.freeze({
+            handled: true,
+            stale: false,
+            attemptId,
+            state: "advertising",
+            retryEligible: true,
+            reason: "acknowledgement_failure",
+            teaserCount: images.length,
+            qrFullyVisible: true,
+            qrFullyVisibleElapsedMs,
+            acknowledgement,
+          });
+          this.isVisible = false;
+          this.onFailure(detail);
+          return detail;
+        }
+      }
       const detail = Object.freeze({
         handled: true,
         stale: false,
@@ -463,6 +627,14 @@ export class PromoDisplayController {
         state: "result",
         teaserCount: images.length,
         qrFullyVisible: true,
+        qrFullyVisibleElapsedMs,
+        acknowledgement,
+        ...(configuration === null
+          ? {}
+          : {
+              resultDisplayMs: configuration.result_display_ms,
+              successCooldownMs: configuration.success_cooldown_ms,
+            }),
       });
       this.onComplete(detail);
       return detail;
@@ -474,7 +646,23 @@ export class PromoDisplayController {
           ? "media_decode_failure"
           : error?.message === "promo_media_fetch_failed"
             ? "media_failure"
+            : error?.message?.startsWith("promo_display_configuration")
+              ? "configuration_failure"
             : "invalid_result";
+      let acknowledgement = { sent: false, reason: "not_server_result" };
+      if (normalized) {
+        try {
+          await this.reportDisplay({
+            sessionId: normalized.session_id,
+            status: "failed",
+          });
+          if (generation !== this.generation) return { stale: true, attemptId };
+          acknowledgement = { sent: true, status: 200 };
+        } catch {
+          if (generation !== this.generation) return { stale: true, attemptId };
+          acknowledgement = { sent: false, reason: "acknowledgement_failed" };
+        }
+      }
       const detail = Object.freeze({
         handled: true,
         stale: false,
@@ -482,6 +670,7 @@ export class PromoDisplayController {
         state: "advertising",
         retryEligible: true,
         reason,
+        acknowledgement,
       });
       this.isVisible = false;
       this.onFailure(detail);

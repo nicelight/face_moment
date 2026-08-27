@@ -122,7 +122,11 @@ def _run_realtime_lifecycle(
 
     async def enter_and_exit() -> None:
         async with realtime._realtime_lifecycle(  # noqa: SLF001
-            SimpleNamespace(), state
+            SimpleNamespace(
+                realtime_result_display_ms=15_000,
+                realtime_success_cooldown_ms=30_000,
+            ),
+            state,
         ):
             assert state["ready"] is False
 

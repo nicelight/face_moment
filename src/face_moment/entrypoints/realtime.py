@@ -21,7 +21,6 @@ from face_moment.infrastructure.settings import (
     DEFAULT_REALTIME_DEADLINE_MS,
     DEFAULT_REALTIME_RATE_LIMIT,
     DEFAULT_REALTIME_RATE_WINDOW_SECONDS,
-    DEFAULT_REALTIME_RESULT_DISPLAY_MS,
     DEFAULT_PROMO_QR_TICKET_SECRET,
     Settings,
 )
@@ -33,6 +32,7 @@ from face_moment.processing import (
 )
 from face_moment.processing.reference_query import ReferenceOccurrence
 from face_moment.promo import (
+    read_display_configuration,
     derive_media_ref,
     PromoAttemptRepository,
     PromoAttemptNotFoundError,
@@ -63,6 +63,7 @@ from face_moment.serving_control.realtime_context import (
 async def _realtime_lifecycle(
     settings: Settings, state: dict[str, Any]
 ) -> AsyncIterator[None]:
+    display_configuration = read_display_configuration(settings)
     binding = bind_model_consumer(settings)
     state["session_factory"] = binding.session_factory
     state["model_adapter"] = binding.adapter
@@ -71,9 +72,8 @@ async def _realtime_lifecycle(
     state["realtime_deadline_ms"] = getattr(
         settings, "realtime_deadline_ms", DEFAULT_REALTIME_DEADLINE_MS
     )
-    state["realtime_result_display_ms"] = getattr(
-        settings, "realtime_result_display_ms", DEFAULT_REALTIME_RESULT_DISPLAY_MS
-    )
+    state["realtime_result_display_ms"] = display_configuration.result_display_ms
+    state["realtime_success_cooldown_ms"] = display_configuration.success_cooldown_ms
     state["qr_ticket_secret"] = getattr(
         settings, "promo_qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
     )
@@ -106,6 +106,7 @@ async def _realtime_lifecycle(
         state.pop("admitted_pipeline_revision_id", None)
         state.pop("realtime_deadline_ms", None)
         state.pop("realtime_result_display_ms", None)
+        state.pop("realtime_success_cooldown_ms", None)
         state.pop("qr_ticket_secret", None)
         state.pop("display_client_rate_limiter", None)
         binding.close()
@@ -227,9 +228,7 @@ def create_app() -> FastAPI:
                         qr_ticket_secret=state.get(
                             "qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
                         ),
-                        result_display_ms=state.get(
-                            "realtime_result_display_ms", DEFAULT_REALTIME_RESULT_DISPLAY_MS
-                        ),
+                        result_display_ms=state["realtime_result_display_ms"],
                     )
             database_session.commit()
             return _response_for_attempt(
