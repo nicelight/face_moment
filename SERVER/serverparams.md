@@ -1,6 +1,6 @@
 # Параметры тестового сервера Face Moment
 
-Последнее обновление: 2026-08-27
+Последнее обновление: 2026-08-28
 
 Этот файл содержит два типа сведений:
 
@@ -18,20 +18,21 @@
 - Центральная машина находится за CGNAT и не должна принимать прямые входящие
   соединения из интернета.
 - Публичная точка входа проекта: отдельный VPS с белым IPv4.
-- VPS и центральный Kubuntu-сервер связываются постоянным
-  `IKEv2/IPsec`-туннелем через `strongSwan`.
-- Центральный сервер сам инициирует туннель наружу; прохождение CGNAT выполняется
-  через IPsec NAT-T.
+- VPS и центральный Kubuntu-сервер связываются постоянным reverse tunnel через
+  `FRP` (`frpc` → `frps`) поверх WSS/TLS/TCP `443`.
+- Центральный сервер сам устанавливает только исходящее WSS-соединение, поэтому
+  CGNAT и смена публичного адреса мобильного оператора не требуют входящего port
+  forwarding.
 - Обычные Windows-клиенты Face Moment **не подключаются к VPN**. Они работают
   через обычный HTTPS к публичному VPS.
 - VPS принимает публичный HTTPS через Caddy и проксирует разрешённый трафик к
-  центральному серверу через IPsec.
+  центральному серверу через FRP reverse tunnel.
 - PostgreSQL, MinIO, Docker API, служебные порты и SSH центрального сервера
   публично не публикуются.
 - Текущий резервный удалённый доступ к центральной машине: RustDesk.
-- Отдельный административный IKEv2-доступ для операторов/разработчиков может
-  быть добавлен позднее, но не является частью рабочего клиентского пути
-  Face Moment.
+- Отдельный административный доступ для операторов/разработчиков должен
+  использовать независимый строго контролируемый management path и не является
+  частью рабочего клиентского пути Face Moment.
 
 ## ОС и платформа центрального сервера
 
@@ -138,8 +139,9 @@ ACPI temperature `0 °C` и ошибки чтения NVMe `temp2_min/temp2_max`
   не выполнялось.
 - Прямые входящие соединения из интернета для центрального сервера не
   планируются.
-- После развёртывания VPN центральный сервер должен сам поддерживать постоянный
-  исходящий IKEv2/IPsec-сеанс с VPS.
+- После развёртывания FRP центральный сервер должен сам поддерживать постоянное
+  исходящее WSS/TLS-соединение с VPS и автоматически переподключаться после
+  смены мобильной сети, внешнего IP или кратковременного обрыва связи.
 
 ## Целевая внешняя инфраструктура: публичный VPS
 
@@ -153,8 +155,7 @@ Face Moment и выполняет четыре функции:
 
 1. публичная HTTPS-точка входа;
 2. reverse proxy до центрального сервера;
-3. IKEv2/IPsec-концентратор для постоянного backhaul до Kubuntu-сервера за
-   CGNAT;
+3. FRP endpoint для постоянного reverse tunnel до Kubuntu-сервера за CGNAT;
 4. контролируемая административная точка доступа к внутренней инфраструктуре.
 
 VPS не должен хранить основную базу фотографий, PostgreSQL или MinIO и не
@@ -164,7 +165,7 @@ VPS не должен хранить основную базу фотограф�
 
 | Параметр | Значение |
 |---|---|
-| Hostname | `almalinux9` |
+| Hostname | `igornskprod-alma9` |
 | ОС | AlmaLinux 9.8 (Olive Jaguar) |
 | Kernel | `Linux 5.14.0-687.41.1.el9_8.x86_64` |
 | Виртуализация | VMware |
@@ -175,66 +176,92 @@ VPS не должен хранить основную базу фотограф�
 | Сетевой адрес | статический публичный IPv4 `46.8.200.99` |
 | Часовой пояс | `UTC`, NTP synchronized |
 | SELinux | Enforcing |
-| VPN implementation | `strongSwan 6.0.6`, `charon-systemd` + `swanctl` |
-| VPN protocol | `IKEv2/IPsec` |
-| NAT traversal | IPsec NAT-T |
-| Tunnel interface | XFRM `ipsec0`, VPS `10.77.0.1/30`, MTU `1400` |
-| Tunnel status | VPS responder готов; соединение с Kubuntu ещё не установлено |
-| Публичный reverse proxy | `Caddy`, ещё не установлен |
+| Целевой tunnel implementation | `FRP 0.70.1`: `frps` и `frpc` установлены, active/enabled; WSS login Kubuntu → VPS подтверждён |
+| Целевой tunnel transport | WSS/TLS поверх TCP `443` через Caddy |
+| Tunnel direction | исходящее соединение Kubuntu → VPS |
+| Отклонённый tunnel | `strongSwan 6.0.6` / IKEv2/IPsec; заблокирован DPI на фактическом канале |
+| Legacy XFRM interface | `ipsec0` удалён на VPS и центральной машине |
+| Публичный reverse proxy | `Caddy 2.11.4` active/enabled; сертификат Let's Encrypt для `face-time.moment-studio.ru` получен и проверен |
 | Host firewall | `firewalld` с nftables backend |
 | Публичный HTTPS | TCP `443` |
-| IKE | UDP `500` |
-| IPsec NAT-T | UDP `4500` |
+| Legacy IPsec firewall ports | На VPS UDP `500`, `4500`, `55000` и ESP закрыты |
 | SSH VPS | `root`, key-based и password authentication; локальный alias `ssh igornskprod` |
 | Docker на VPS | не требуется для базовой схемы |
 
 Провайдер, датацентр и сетевой лимит VPS пока не зафиксированы.
 
-### VPN/backhaul
+### FRP WSS backhaul
 
-Основной постоянный туннель:
+Целевая схема использует FRP как прикладной reverse tunnel, а не как
+полносетевой VPN. `frpc` на центральном Kubuntu-сервере устанавливает исходящее
+WSS/TLS-соединение к `frps` на VPS. Внешний transport использует TCP `443` и
+проходит через Caddy на VPS.
 
 ```text
-VPS / AlmaLinux / public IPv4
+Kubuntu / frpc
         │
-        │ IKEv2/IPsec
-        │ NAT-T UDP/4500
+        │ outbound WSS/TLS :443
+        │ FRP heartbeat + reconnect
+        ▼
+Internet / mobile ISP / CGNAT
         │
         ▼
-Internet / CGNAT
+VPS / Caddy / public IPv4
         │
+        │ loopback WebSocket upstream
         ▼
-Kubuntu central server
+VPS / frps
 ```
 
 Ключевые свойства:
 
-- инициатором соединения является центральный Kubuntu-сервер;
-- VPS имеет стабильный публичный IP и принимает IKEv2;
-- CGNAT на стороне центрального сервера не требует port forwarding;
-- при наличии NAT полезный IPsec-трафик инкапсулируется в UDP/4500;
-- `strongSwan` работает на обеих Linux-машинах;
-- основной data plane IPsec обрабатывается ядром Linux;
-- tunnel должен автоматически подниматься после перезагрузки и
-  восстанавливаться после временного разрыва мобильного/ISP-соединения;
-- NAT keepalive и DPD должны быть настроены так, чтобы быстро обнаруживать
-  потерю внешнего соединения и восстанавливать tunnel;
-- MTU/MSS должны быть проверены на реальном канале, чтобы исключить black-hole
-  и зависание крупных HTTPS multipart upload.
+- входящие соединения на мобильном роутере и Kubuntu не требуются;
+- изменение публичного IP центрального сервера восстанавливается новым
+  исходящим соединением `frpc`;
+- FRP использует `transport.protocol = "wss"` и явное TLS server-name
+  verification;
+- `frps` слушает только loopback-интерфейс и доступен снаружи исключительно
+  через Caddy/TCP `443`;
+- публичный hostname `face-time.moment-studio.ru` направлен на VPS;
+- актуальный FRP WSS handshake использует фиксированный path `/~!frp`; Caddy
+  направляет только этот path в `frps`, а остальные запросы того же hostname —
+  в Face Moment;
+- FRP authentication secret хранится в отдельных mode `600` файлах, доступных
+  только соответствующим service accounts, и не включается в этот документ
+  или git;
+- `frps` слушает control WebSocket только на `127.0.0.1:7000` и разрешает
+  единственный reverse endpoint `127.0.0.1:18443`, ведущий к центральному
+  Caddy `127.0.0.1:8443`;
+- `frpc` и `frps` запускаются systemd от отдельных непривилегированных service
+  accounts, стартуют после сети и автоматически перезапускаются после отказа;
+- heartbeat, reconnect и поведение долгого WSS-сеанса должны быть проверены на
+  том же мобильном операторе, который будет использоваться в эксплуатации;
+- использование WSS/TLS уменьшает различимость от обычного TCP/443 traffic, но
+  не считается гарантированным обходом DPI.
 
-Служебная адресация туннеля:
+FRP dashboard не включён. Ни один FRP control, dashboard или reverse endpoint
+не слушает публичный интерфейс VPS.
 
-```text
-VPS:             10.77.0.1
-Kubuntu server:  10.77.0.2
-```
+### Отклонённый IKEv2/IPsec backhaul
 
-Адреса являются архитектурным резервом и должны быть проверены на отсутствие
-пересечения с реальными LAN/Docker-подсетями перед вводом в эксплуатацию.
+IKEv2/IPsec-туннель от центрального сервера заблокирован DPI российского
+оператора связи. Проверка показала, что обычные UDP-датаграммы с публичного
+адреса центрального сервера доходят до VPS, но корректные пакеты
+`IKE_SA_INIT` не появляются даже на сетевом интерфейсе VPS. Результат не
+изменился при использовании UDP `500`, `4500` и нестандартного `55000`, включая
+случайный исходящий порт клиента.
+
+Схема `strongSwan`/XFRM признана непригодной для фактического канала и не
+является fallback. На VPS и центральной машине `strongswan.service` и
+`face-moment-xfrm.service` остановлены и отключены, а `ipsec0` удалён. На VPS
+UDP `500`, `4500`, `55000` и ESP закрыты в firewalld; на центральной машине
+IPsec UDP-listeners отсутствуют. Конфиги, ключи и пакеты пока сохранены для
+обратимого восстановления, но не участвуют в runtime.
 
 ### Публичный HTTPS path
 
-Обычные Windows-клиенты Face Moment не используют VPN:
+Обычные Windows-клиенты Face Moment не устанавливают tunnel и работают через
+стандартный HTTPS:
 
 ```text
 Windows / Chromium
@@ -243,39 +270,53 @@ Windows / Chromium
         ▼
 Public VPS / Caddy
         │
-        │ private route over IPsec
+        │ loopback FRP reverse endpoint
         ▼
-Kubuntu / Face Moment
+VPS / frps
+        │
+        │ existing outbound WSS tunnel
+        ▼
+Kubuntu / frpc
+        │
+        ▼
+Kubuntu / Caddy :8443 / Face Moment
 ```
 
-Caddy:
+Caddy на VPS:
 
 - завершает публичный TLS;
 - обслуживает публичный HTTPS-origin Face Moment;
-- проксирует только необходимые HTTP endpoints через IPsec к центральному
-  серверу;
-- должен передавать request body потоково, без обязательной полной буферизации
+- принимает WSS-соединение `frpc` на path `/~!frp` публичного hostname и
+  передаёт его локальному `frps`;
+- проксирует публичные HTTP endpoints только на loopback FRP reverse endpoint;
+- передаёт request body потоково, без обязательной полной буферизации
   multipart-upload на VPS;
-- не предоставляет клиентам прямой доступ к PostgreSQL, MinIO, Docker API или
-  внутренним process ports;
-- может отдавать `502/503`, если центральный сервер или IPsec-backhaul
-  недоступен.
+- не предоставляет клиентам прямой доступ к PostgreSQL, MinIO, Docker API,
+  `frps` control port или внутренним process ports;
+- может отдавать `502/503`, если центральный сервер или FRP backhaul недоступен.
 
-Публичный домен и точные upstream-порты будут зафиксированы после развёртывания.
+Публичный application/tunnel hostname: `face-time.moment-studio.ru`.
+Loopback-порты: `frps` control `127.0.0.1:7000`, application reverse endpoint
+`127.0.0.1:18443`.
 
-### Почему Windows-клиенты не входят в VPN
+Публичный TLS endpoint уже отвечает с доверенным сертификатом. До подключения
+центрального application Caddy запросы к приложению получают `502`: WSS login
+`frpc` уже успешен, но health check `127.0.0.1:8443` пока возвращает
+`connection refused`, поэтому application reverse endpoint ещё не активирован.
+
+### Почему Windows-клиенты не входят в tunnel
 
 Рабочий клиентский путь Face Moment намеренно оставлен обычным HTTPS:
 
 - мобильные роутеры и CGNAT видят стандартный TCP/443;
-- не требуется устанавливать и обслуживать VPN-профиль на каждом Windows
+- не требуется устанавливать и обслуживать VPN/FRP-клиент на каждом Windows
   клиенте;
-- изменение внешнего IP мобильного роутера не требует перестройки
-  client-side IKEv2-сеанса;
+- изменение внешнего IP клиентского мобильного роутера не влияет на серверный
+  FRP-сеанс Kubuntu↔VPS;
 - локальный Chromium продолжает напрямую обращаться к локальному
   `ESP32.local`;
 - QR/телефонный public flow использует ту же публичную HTTPS-границу;
-- сложность VPN сосредоточена в одном постоянном Linux↔Linux backhaul.
+- сложность tunnel сосредоточена в одном постоянном Linux↔Linux backhaul.
 
 ### Локальная сеть SpaPromoClient
 
@@ -288,11 +329,11 @@ ESP32.local
      │
 Windows / Chromium
      │
-     └──── HTTPS → VPS → IPsec → Kubuntu
+     └──── HTTPS → VPS → FRP WSS backhaul → Kubuntu
 ```
 
-Таким образом, VPN не должен менять `.local`/mDNS-маршрутизацию и не должен
-перехватывать локальный трафик SpaPromoClient.
+Таким образом, FRP не меняет `.local`/mDNS-маршрутизацию и не перехватывает
+локальный трафик SpaPromoClient.
 
 ### Публично разрешённые и запрещённые сервисы
 
@@ -301,7 +342,9 @@ Windows / Chromium
 | Сервис | Доступ из интернета |
 |---|---|
 | Face Moment HTTPS | Да, через Caddy |
-| IKEv2/IPsec | Да, UDP 500/4500 |
+| FRP WSS endpoint | Да, только через Caddy/TCP 443 на tunnel hostname |
+| `frps` control port | Нет, только loopback VPS |
+| Legacy IKEv2/IPsec | Нет в целевой схеме; временные UDP-порты подлежат закрытию |
 | SSH VPS | Ограниченный административный доступ |
 | SSH Kubuntu | Нет напрямую |
 | PostgreSQL | Нет |
@@ -310,10 +353,9 @@ Windows / Chromium
 | Backend internal ports | Нет напрямую |
 | RealtimeFaceService internal port | Нет напрямую |
 
-Административный доступ к центральному серверу в будущем может идти либо через
-отдельный IKEv2 road-warrior профиль на VPS, либо через другой строго
-контролируемый management path. Это не должно менять публичную архитектуру
-Face Moment.
+Административный доступ к центральному серверу должен использовать отдельный
+строго контролируемый management path. Публикация SSH Kubuntu через рабочий FRP
+endpoint не входит в целевую клиентскую архитектуру Face Moment.
 
 ### Потоки данных Face Moment
 
@@ -329,7 +371,7 @@ Windows / Chromium
   ▼
 VPS / Caddy
   │
-  │ IPsec backhaul
+  │ FRP WSS backhaul
   ▼
 Kubuntu / RealtimeFaceService
   │
@@ -348,7 +390,7 @@ Photographer browser
         ▼
 VPS / Caddy
         │
-        │ IPsec
+        │ FRP WSS backhaul
         ▼
 Kubuntu / backend
         ├── PostgreSQL
@@ -356,7 +398,7 @@ Kubuntu / backend
 ```
 
 Каждый JPEG принимается приложением независимо. Устойчивость больших загрузок
-должна проверяться на реальном мобильном канале; VPN не заменяет корректную
+должна проверяться на реальном мобильном канале; tunnel не заменяет корректную
 обработку сетевых ошибок самим HTTP/client flow.
 
 ### Ответственность VPS и центрального сервера
@@ -365,9 +407,10 @@ Kubuntu / backend
 |---|---:|---:|
 | Публичный IPv4 | Да | Нет |
 | Публичный TLS endpoint | Да | Нет |
-| Caddy reverse proxy | Да | Нет |
-| IKEv2 responder / VPN hub | Да | Нет |
-| IKEv2 initiator за CGNAT | Нет | Да |
+| Public Caddy reverse proxy | Да | Нет |
+| Internal Caddy application edge | Нет | Да |
+| FRP server `frps` | Да | Нет |
+| FRP client `frpc` за CGNAT | Нет | Да |
 | Face Moment backend | Нет | Да |
 | RealtimeFaceService | Нет | Да |
 | BackgroundPhotoWorker | Нет | Да |
@@ -471,8 +514,8 @@ PostgreSQL, MinIO и модели являются внутренними рес
 До проверки административного SSH через приватный management path сохраняются
 пользователь `face`, его временный SDDM autologin и RustDesk fallback.
 
-После развёртывания VPS/IPsec следует отдельно проверить административный SSH
-через приватный management path и только после этого рассматривать изменение
+После развёртывания VPS/FRP следует отдельно проверить административный доступ
+через независимый management path и только после этого рассматривать изменение
 текущего RustDesk fallback.
 
 ## Что ещё нужно подтвердить для интеграции VPS
@@ -481,14 +524,14 @@ PostgreSQL, MinIO и модели являются внутренними рес
 
 - провайдер и географический регион;
 - сетевой лимит VPS;
-- версия `Caddy`;
-- время автоматического восстановления IPsec после обрыва;
-- `iperf3` throughput через IPsec в обе стороны;
+- время автоматического восстановления FRP после обрыва;
+- устойчивость WSS-сеанса при смене внешнего IP и мобильной сети;
+- throughput через полный HTTPS→FRP path;
 - RTT и packet loss;
-- проверенный Path MTU;
-- безопасное значение MSS clamp, если оно потребуется;
 - скорость HTTPS upload через полный путь
-  `Windows → VPS → IPsec → Kubuntu`;
+  `Windows → VPS → FRP WSS → Kubuntu`;
 - поведение при смене внешнего IP/переподключении мобильного роутера;
 - автоматический startup после reboot обеих машин;
-- firewall rules и отсутствие публичного доступа к внутренним сервисам.
+- firewall rules и отсутствие публичного доступа к внутренним сервисам;
+- окончательное удаление сохранённых strongSwan-конфигов, ключей и пакетов
+  после подтверждения стабильной FRP WSS-связи.

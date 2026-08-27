@@ -1,7 +1,7 @@
 {
   "id": "TASK-076-T3-FT-005-W1",
   "title": "Present complete authenticated Promo with safe advertising fallback",
-  "status": "done",
+  "status": "done_for_prod",
   "wave": "W1",
   "feature": "FT-005",
   "reqs": [
@@ -210,6 +210,19 @@
         ".protocols/TASK-076-T3-FT-005-W1/red-verification.md",
         ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-evidence.md",
         ".tasks/TASK-076-T3-FT-005-W1/TASK-076-T3-FT-005-W1-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    },
+    {
+      "stage": "lifecycle-reconciliation",
+      "verdict": "done_for_prod",
+      "completed_at": "2026-08-28T01:16:41+05:00",
+      "summary": "The explicit manual lifecycle owner migrated the historical done closure to done_for_prod under the current lifecycle: development verification PASS and T3 semantic-pass remain valid, while real-media, no-watermark, target-screen and representative-phone observations remain deferred to post-deployment acceptance. No production verdict is claimed.",
+      "evidence": [
+        ".memory-bank/workflows/autonomy-policy.md",
+        ".memory-bank/testing/client-realtime.md",
+        ".protocols/TASK-076-T3-FT-005-W1/verification.md",
+        ".protocols/TASK-076-T3-FT-005-W1/red-verification.md",
+        ".memory-bank/tasks/TASK-079-T3-FT-005-W3.task.json"
       ]
     }
   ],

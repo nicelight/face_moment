@@ -118,8 +118,9 @@ filenames remain executor discretion. No hard write boundary is inferred.
   completed row; retain the CLI transcript, screenshots and trace in the
   TASK-017 artifact directory.
 - Tier-routed `/verify` applies to every task; each T3 task additionally needs
-  per-task `/red-verify`. Feature completion later requires feature-level
-  `/red-verify --feature FT-001`.
+  per-task `/red-verify`. Feature completion is determined by the accepted task
+  records and feature completion boundary; no separate feature-level verdict is
+  used.
 
 ## Constitution Constraints And Invariants
 

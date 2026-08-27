@@ -7,7 +7,9 @@ from face_moment.promo.attempt import (
 )
 from face_moment.promo.result_assembly import ResultAssembly, assemble_result
 from face_moment.promo.session import (
+    BROWSER_IDLE_TTL,
     FIRST_OPEN_TTL,
+    PromoBrowserAccessExpiredError,
     PromoSession,
     PromoSessionNotFoundError,
     PromoSessionRepository,
@@ -52,6 +54,8 @@ __all__ = [
     "RealtimeProcessingOutcome",
     "execute_realtime_attempt",
     "FIRST_OPEN_TTL",
+    "BROWSER_IDLE_TTL",
+    "PromoBrowserAccessExpiredError",
     "PromoSession",
     "PromoSessionNotFoundError",
     "PromoSessionRepository",

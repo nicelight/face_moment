@@ -1,0 +1,31 @@
+serverAddr = "{{ .Envs.FACE_MOMENT_PUBLIC_HOST }}"
+serverPort = 443
+user = "central-face"
+loginFailExit = false
+
+auth.method = "token"
+auth.additionalScopes = ["HeartBeats", "NewWorkConns"]
+auth.tokenSource.type = "file"
+auth.tokenSource.file.path = "/etc/frp/client_token"
+
+transport.protocol = "wss"
+transport.tls.enable = true
+transport.tls.disableCustomTLSFirstByte = true
+transport.tls.serverName = "{{ .Envs.FACE_MOMENT_PUBLIC_HOST }}"
+transport.poolCount = 1
+
+log.to = "console"
+log.level = "info"
+log.disablePrintColor = true
+
+[[proxies]]
+name = "central-face-caddy"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 8443
+remotePort = 18443
+
+healthCheck.type = "tcp"
+healthCheck.intervalSeconds = 10
+healthCheck.timeoutSeconds = 3
+healthCheck.maxFailed = 3

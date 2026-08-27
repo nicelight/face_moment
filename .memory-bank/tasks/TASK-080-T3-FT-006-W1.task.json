@@ -1,7 +1,7 @@
 {
   "id": "TASK-080-T3-FT-006-W1",
   "title": "Persist the session-wide QR browser-access state",
-  "status": "ready",
+  "status": "in_progress",
   "wave": "W1",
   "feature": "FT-006",
   "reqs": [
@@ -38,7 +38,17 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "NEEDS-CLARIFICATION",
+      "completed_at": "2026-08-28T01:56:19+05:00",
+      "summary": "Fresh independent functional, typecheck, lint and cleanup checks passed, but the required canonical persistence evidence is incomplete: the isolated suite opens new SQLAlchemy sessions without restarting PostgreSQL and re-reading the committed browser-access row.",
+      "protocol": ".protocols/TASK-080-T3-FT-006-W1/verification.md",
+      "report": ".tasks/TASK-080-T3-FT-006-W1/TASK-080-T3-FT-006-W1-S-VERIFY-final-report-docs-01.md"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-006.md",
     ".memory-bank/contracts/qr-continuation-api.md",

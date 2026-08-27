@@ -1,7 +1,7 @@
 {
   "id": "TASK-046-T3-FT-003-W2",
   "title": "Integrate central-origin Chromium with the ESP32 long-poll",
-  "status": "done",
+  "status": "done_for_prod",
   "wave": "W2",
   "feature": "FT-003",
   "reqs": ["REQ-CAP-001", "REQ-SEC-001", "REQ-SEC-002"],
@@ -58,6 +58,18 @@
       "evidence": [
         ".tasks/TASK-046-T3-FT-003-W2/TASK-046-T3-FT-003-W2-S-VERIFY-final-report-docs-03.md",
         ".tasks/TASK-046-T3-FT-003-W2/TASK-046-T3-FT-003-W2-S-RED-VERIFY-final-report-docs-02.md"
+      ]
+    },
+    {
+      "stage": "lifecycle-reconciliation",
+      "verdict": "done_for_prod",
+      "completed_at": "2026-08-28T01:16:41+05:00",
+      "summary": "The explicit manual lifecycle owner migrated the historical done closure to done_for_prod under the current lifecycle: development verification PASS and T3 semantic-pass remain valid, while the card still records deferred real-kiosk hardware/runtime acceptance. No production verdict is claimed.",
+      "evidence": [
+        ".memory-bank/workflows/autonomy-policy.md",
+        ".memory-bank/testing/client-realtime.md",
+        ".protocols/TASK-046-T3-FT-003-W2/verification.md",
+        ".protocols/TASK-046-T3-FT-003-W2/red-verification.md"
       ]
     }
   ],

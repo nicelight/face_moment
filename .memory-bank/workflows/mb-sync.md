@@ -34,8 +34,7 @@ status: active
 - После значимых рефакторингов или архитектурных изменений.
 - Перед `/review-feat-plan` или `/review-tasks-plan` (чтобы reviewer видел
   актуальное состояние нужной поверхности).
-- На wave/feature boundary, после T2 feature-level red-verify completion и
-  after any T3 closures in that wave.
+- На wave/feature boundary, after task closures in that wave.
 - Перед handoff to another agent when they need fresh durable Memory Bank state.
 - При ощущении drift между кодом и документацией.
 

@@ -1,0 +1,18 @@
+bindAddr = "127.0.0.1"
+bindPort = 7000
+proxyBindAddr = "127.0.0.1"
+
+allowPorts = [
+  { single = 18443 },
+]
+
+auth.method = "token"
+auth.additionalScopes = ["HeartBeats", "NewWorkConns"]
+auth.tokenSource.type = "file"
+auth.tokenSource.file.path = "/etc/frp/server_token"
+
+transport.maxPoolCount = 1
+
+log.to = "console"
+log.level = "info"
+log.disablePrintColor = true

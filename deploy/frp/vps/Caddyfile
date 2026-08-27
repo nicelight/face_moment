@@ -1,0 +1,18 @@
+{$FACE_MOMENT_PUBLIC_HOST} {
+	@frp path /~!frp
+
+	handle @frp {
+		reverse_proxy 127.0.0.1:7000
+	}
+
+	handle {
+		reverse_proxy https://127.0.0.1:18443 {
+			header_up Host localhost:8443
+
+			transport http {
+				tls_server_name localhost
+				tls_insecure_skip_verify
+			}
+		}
+	}
+}

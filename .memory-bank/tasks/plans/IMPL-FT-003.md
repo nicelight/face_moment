@@ -156,8 +156,9 @@ scope.
 - No task implements or must prove offline-metadata retention, expiry, replay or
   delivery.
 - Tier-routed `/verify` applies to every task; each T3 additionally requires
-  per-task `/red-verify`. Feature completion later requires
-  `/red-verify --feature FT-003`.
+  per-task `/red-verify`. FT-003 completion is determined by its accepted task
+  records and the feature completion boundary; no separate feature-level
+  verification stage exists.
 
 ## Constitution Constraints And Invariants
 

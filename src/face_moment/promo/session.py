@@ -32,6 +32,7 @@ from face_moment.promo.attempt import PromoAttempt
 from face_moment.promo.result_assembly import ResultAssembly
 
 FIRST_OPEN_TTL = timedelta(minutes=30)
+BROWSER_IDLE_TTL = timedelta(minutes=60)
 _TICKET_BYTES = 32
 FailureHook = Callable[[str], None]
 
@@ -60,6 +61,13 @@ class PromoSession(Base):
             "qr_ticket_hash_sha256",
             name="uq_promo_sessions_qr_ticket_hash_sha256",
         ),
+        CheckConstraint(
+            "((browser_first_opened_at IS NULL AND browser_last_seen_at IS NULL) "
+            "OR (browser_first_opened_at IS NOT NULL "
+            "AND browser_last_seen_at IS NOT NULL "
+            "AND browser_last_seen_at >= browser_first_opened_at))",
+            name="ck_promo_sessions_browser_access_timestamp_pair",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -84,9 +92,23 @@ class PromoSession(Base):
     qr_first_open_expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
+    browser_first_opened_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    browser_last_seen_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+    @property
+    def browser_idle_expires_at(self) -> datetime | None:
+        """Return the derived idle deadline without persisting expiry state."""
+
+        if self.browser_last_seen_at is None:
+            return None
+        return _utc(self.browser_last_seen_at) + BROWSER_IDLE_TTL
 
 
 @dataclass(frozen=True, slots=True)
@@ -109,6 +131,12 @@ class ResultSessionResponse:
 
 
 class PromoSessionNotFoundError(LookupError):
+    pass
+
+
+class PromoBrowserAccessExpiredError(PromoSessionNotFoundError):
+    """Raised when a known session cannot be opened or remains active."""
+
     pass
 
 
@@ -212,6 +240,69 @@ class PromoSessionRepository:
             raise PromoSessionNotFoundError(str(attempt_id))
         return result
 
+    def open_browser_access(
+        self,
+        ticket: str,
+        *,
+        now: datetime | None = None,
+    ) -> PromoSession:
+        """Atomically admit or reuse the shared browser context for a scan.
+
+        The row lock serializes every phone's first/repeated scan. The caller
+        owns the surrounding transaction and must commit the flushed change.
+        """
+
+        timestamp = _utc(now)
+        session_row = self._get_by_ticket(ticket, for_update=True)
+        first_opened_at = session_row.browser_first_opened_at
+        last_seen_at = session_row.browser_last_seen_at
+        if first_opened_at is None and last_seen_at is None:
+            if timestamp >= _utc(session_row.qr_first_open_expires_at):
+                raise PromoBrowserAccessExpiredError("QR browser access is expired")
+            session_row.browser_first_opened_at = timestamp
+            session_row.browser_last_seen_at = timestamp
+        else:
+            if first_opened_at is None or last_seen_at is None:
+                raise ValueError("promo browser access timestamps violate their pair")
+            if timestamp >= _utc(session_row.qr_first_open_expires_at):
+                raise PromoBrowserAccessExpiredError("QR browser access is expired")
+            self._require_active(session_row, timestamp)
+            session_row.browser_last_seen_at = _later(last_seen_at, timestamp)
+        self._session.flush()
+        return session_row
+
+    def read_browser_access(
+        self,
+        ticket: str,
+        *,
+        now: datetime | None = None,
+    ) -> PromoSession:
+        """Passively validate an opened context without extending it."""
+
+        timestamp = _utc(now)
+        session_row = self._get_by_ticket(ticket)
+        self._require_active(session_row, timestamp)
+        return session_row
+
+    def record_browser_activity(
+        self,
+        ticket: str,
+        *,
+        now: datetime | None = None,
+    ) -> PromoSession:
+        """Atomically advance the one shared idle marker for explicit activity."""
+
+        timestamp = _utc(now)
+        session_row = self._get_by_ticket(ticket, for_update=True)
+        self._require_active(session_row, timestamp)
+        if session_row.browser_last_seen_at is None:
+            raise ValueError("promo browser access timestamps violate their pair")
+        session_row.browser_last_seen_at = _later(
+            session_row.browser_last_seen_at, timestamp
+        )
+        self._session.flush()
+        return session_row
+
     def response_for_attempt(self, attempt_id: uuid.UUID) -> ResultSessionResponse:
         session_row = self.get_for_attempt(attempt_id)
         ticket = derive_qr_ticket(
@@ -239,6 +330,30 @@ class PromoSessionRepository:
     def _inject_failure(self, point: str) -> None:
         if self._failure_hook is not None:
             self._failure_hook(point)
+
+    def _get_by_ticket(
+        self, ticket: str, *, for_update: bool = False
+    ) -> PromoSession:
+        statement = select(PromoSession).where(
+            PromoSession.qr_ticket_hash_sha256 == hash_qr_ticket(ticket)
+        )
+        if for_update:
+            statement = statement.with_for_update()
+        session_row = self._session.scalar(statement)
+        if session_row is None:
+            raise PromoSessionNotFoundError("QR ticket session not found")
+        return session_row
+
+    @staticmethod
+    def _require_active(session_row: PromoSession, timestamp: datetime) -> None:
+        if (
+            session_row.browser_first_opened_at is None
+            or session_row.browser_last_seen_at is None
+        ):
+            raise PromoBrowserAccessExpiredError("QR browser access is not open")
+        last_seen_at = _utc(session_row.browser_last_seen_at)
+        if timestamp >= last_seen_at + BROWSER_IDLE_TTL:
+            raise PromoBrowserAccessExpiredError("QR browser access is expired")
 
 
 def derive_qr_ticket(
@@ -294,3 +409,7 @@ def _utc(value: datetime | None) -> datetime:
     if value.tzinfo is None:
         raise ValueError("promo session timestamps must be timezone-aware")
     return value.astimezone(timezone.utc)
+
+
+def _later(left: datetime, right: datetime) -> datetime:
+    return _utc(left) if _utc(left) >= _utc(right) else _utc(right)

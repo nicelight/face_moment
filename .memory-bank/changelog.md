@@ -4,6 +4,40 @@ status: active
 ---
 # Changelog
 
+## [2026-08-28] Historical task lifecycle — done_for_prod reconciliation
+- Reclassified `TASK-046`, `TASK-052`, `TASK-054` and `TASK-076` from `done`
+  to `done_for_prod`: their development verification remains complete, while
+  their own records retain deferred pilot or post-deployment acceptance.
+- Preserved all pure `Production acceptance:` cards as `planned`; they remain
+  excluded from development scheduling until the authorized deployed
+  environment exists.
+- Preserved `TASK-075` as `blocked`: its historical record has no final
+  functional `PASS` or required T3 `semantic-pass`, so lifecycle migration
+  cannot manufacture those missing development gates.
+
+## [2026-08-28] VPS ingress — FRP WSS server foundation
+- Зафиксирована замена заблокированного IKEv2/IPsec backhaul на исходящий FRP
+  WSS/TLS transport через публичный Caddy/TCP 443.
+- На VPS установлен и запущен `frps 0.70.1` только на loopback; разрешён один
+  loopback application endpoint. Установлен `Caddy 2.11.4`, а его проверенная
+  конфигурация ожидает выбранный публичный DNS hostname и выпуск сертификата.
+- Подготовлены проверенные `frpc`/systemd-конфигурация и установочный пакет для
+  центральной Kubuntu-машины; реальная WSS-связь и отключение legacy IPsec на
+  центральной машине ещё не подтверждены.
+- На VPS остановлены и отключены legacy strongSwan/XFRM units, удалён `ipsec0`
+  и закрыты UDP 500/4500/55000 и ESP; конфиги и пакеты оставлены для обратимого
+  восстановления.
+- На центральной машине также остановлены и отключены strongSwan/XFRM units,
+  удалён `ipsec0`, подтверждено отсутствие IPsec UDP-listeners. Legacy IPsec
+  больше не участвует в runtime ни на одной стороне.
+- Публичный DNS `face-time.moment-studio.ru` направлен на VPS, Caddy запущен и
+  получил проверенный сертификат Let's Encrypt. Публичный application path
+  пока отвечает `502` из-за отсутствующего loopback reverse endpoint.
+- На центральной Kubuntu-машине установлен и запущен `frpc 0.70.1`; WSS login
+  через публичный Caddy/TCP 443 успешен на фактическом мобильном канале. Остался
+  application-layer blocker: локальный Caddy не слушает `127.0.0.1:8443`, из-за
+  чего FRP health check не активирует reverse endpoint.
+
 ## [2026-08-25] FT-007 — approved task decomposition
 - Reconciled the fresh task-plan `APPROVE` for FT-007 with Global Backbone
   Planning Revision `4`; schema validation covered all 86 indexed records, the

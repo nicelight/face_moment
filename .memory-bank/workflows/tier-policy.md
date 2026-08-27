@@ -159,11 +159,10 @@ sufficiency remain fresh-context review concerns.
 - `T2`: full protocol is required; compact-only protocol is invalid. Store any
   substantive artifacts under `.tasks/<TASK_ID>/`. Task closure requires
   applicable task/spec gates and `/verify` `VERDICT: PASS`; per-task
-  `/red-verify` is optional. After
-  every task for a product feature is implemented, feature completion requires
-  `/red-verify --feature FT-<ID>` with
-  `SEMANTIC_VERDICT: semantic-pass` recorded in the feature document. `FT-000`
-  does not use product feature-completion semantics. Full `/mb-sync` is due at
+  `/red-verify` is optional. Feature completion is determined by the accepted
+  task records and the feature completion boundary; no separate feature-level
+  semantic verification stage is required. `FT-000` does not use product
+  feature-completion semantics. Full `/mb-sync` is due at
   the wave/feature boundary, or earlier only for a current-wave dependency on
   reconciled RTM/index/spec/contract/changelog state or an explicit owner
   request.

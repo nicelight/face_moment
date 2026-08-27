@@ -46,7 +46,7 @@
       "stage": "closure",
       "verdict": "done",
       "completed_at": "2026-08-16T04:42:00+05:00",
-      "summary": "Scheduler closed TASK-042 after Attempt 3 functional PASS; two bounded verification failures were corrected within the task scope and feature-level semantic verification remains scheduled at the FT-003 boundary.",
+      "summary": "Scheduler closed TASK-042 after Attempt 3 functional PASS; two bounded verification failures were corrected within the task scope. FT-003 completion is governed by its accepted task records and completion boundary; no separate feature-level verification is scheduled.",
       "evidence": [
         ".tasks/TASK-042-T2-FT-003-W1/TASK-042-T2-FT-003-W1-S-EXECUTE-final-report-code-03.md",
         ".tasks/TASK-042-T2-FT-003-W1/TASK-042-T2-FT-003-W1-S-VERIFY-final-report-docs-03.md"

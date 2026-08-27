@@ -72,6 +72,8 @@ status: active
 - [.memory-bank/adrs/](adrs/): ADR решения.
 - [opencv5_Migration.md](../opencv5_Migration.md): операторский стратегический
   план перехода runtime на OpenCV 5.
+- [SERVER/serverparams.md](../SERVER/serverparams.md): фактические параметры
+  центрального Kubuntu-сервера и VPS, публичный HTTPS и FRP WSS backhaul.
 
 - [.memory-bank/domains/index.md](domains/index.md): subject-based domain
   models, storage, schemas, migrations and persistence rules.

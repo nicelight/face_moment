@@ -23,7 +23,6 @@ const FT_ID_RE = /^FT-[0-9]{3,}$/;
 const SDD_SPEC_DIRS = ['tech-specs', 'architecture', 'contracts', 'domains', 'states', 'adrs', 'testing', 'guides', 'runbooks'];
 const SDD_SPEC_PATH_RE = /(?:\.\/)?\.memory-bank\/(?:tech-specs|architecture|contracts|domains|states|adrs|testing|guides|runbooks)\/[^\s"'`]+/i;
 const ARCHITECTURE_CONTRACT_ADR_PATH_RE = /(?:\.\/)?\.memory-bank\/(?:architecture|contracts|adrs)\/[^\s"'`]+/i;
-const RED_VERIFY_PASS_RE = /^\s*SEMANTIC_VERDICT: semantic-pass\s*$/im;
 
 export function createTaskReadinessChecks(context) {
   const ROOT = context.root;
@@ -104,7 +103,6 @@ export function createTaskReadinessChecks(context) {
   
     checkFeatureAcceptanceTrace(orderedRecords);
     checkFailedTaskClosure(orderedRecords);
-    checkT2FeatureSemanticCompletion(orderedRecords);
     checkFailedDependentsBlocked(orderedRecords);
     checkQueueState(orderedRecords, records, invalidEntries);
     addLegacyTerminalCompatibilitySummary(orderedRecords);
@@ -482,47 +480,6 @@ export function createTaskReadinessChecks(context) {
     }
   }
   
-  function checkT2FeatureSemanticCompletion(records) {
-    if (!records.length) return;
-  
-    const groups = new Map();
-    for (const record of records) {
-      const featureId = typeof record.task.feature === 'string' ? record.task.feature.trim() : '';
-      if (!FT_ID_RE.test(featureId) || featureId === 'FT-000') continue;
-  
-      if (!groups.has(featureId)) {
-        groups.set(featureId, { featureId, records: [], hasT2: false });
-      }
-      const group = groups.get(featureId);
-      group.records.push(record);
-      if (record.task.tier === 'T2' && !isProductionAcceptanceTask(record)) group.hasT2 = true;
-    }
-  
-    const severity = options.strict ? 'error' : 'warning';
-    for (const group of groups.values()) {
-      if (!group.hasT2) continue;
-      const implementationRecords = group.records.filter((record) => !isProductionAcceptanceTask(record));
-      if (!implementationRecords.every((record) => DONE_STATUSES.has(record.task.status))) continue;
-  
-      const passFiles = featureSemanticPassFiles(group.featureId);
-      if (passFiles.length) continue;
-  
-      addFinding(
-        severity,
-        'FEATURE_RED_VERIFY_VERDICT_MISSING',
-        `${group.featureId}: completed T2 feature has no feature-doc semantic-pass verdict.`,
-        {
-          path: '.memory-bank/features/',
-          details: {
-            feature: group.featureId,
-            tasks: implementationRecords.map((record) => ({ id: record.id, path: record.rel, tier: record.task.tier })),
-          },
-          suggested_fix: `Run /red-verify --feature ${group.featureId} and record SEMANTIC_VERDICT: semantic-pass in the matching .memory-bank/features/${group.featureId}-*.md file.`,
-        }
-      );
-    }
-  }
-  
   function checkFailedDependentsBlocked(records) {
     const failedRecords = records.filter((record) => record.task.status === 'failed');
     if (!failedRecords.length) return;
@@ -744,18 +701,6 @@ export function createTaskReadinessChecks(context) {
   function featureFileMatches(file, featureId) {
     const base = basenameWithoutExtension(file);
     return base === featureId || base.startsWith(`${featureId}-`) || base.startsWith(`${featureId}_`);
-  }
-  
-  function featureSemanticPassFiles(featureId) {
-    return featureMarkdownFiles()
-      .filter((file) => featureFileMatches(file, featureId))
-      .filter((file) => {
-        try {
-          return RED_VERIFY_PASS_RE.test(readText(file));
-        } catch {
-          return false;
-        }
-      });
   }
   
   function getFeatureClarificationIndex() {

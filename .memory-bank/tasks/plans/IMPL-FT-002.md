@@ -224,8 +224,9 @@ head or hard task write boundary is inferred.
 - The two UI tasks use `playwright cli` and store transcripts, screenshots and
   traces under their task artifact directories.
 - Tier-routed `/verify` applies to every task; each T3 additionally requires
-  per-task `/red-verify`. Feature completion later requires
-  `/red-verify --feature FT-002`.
+  per-task `/red-verify`. Feature completion is determined by the accepted task
+  records and feature completion boundary; no separate feature-level verdict is
+  used.
 
 ## Constitution Constraints And Invariants
 
