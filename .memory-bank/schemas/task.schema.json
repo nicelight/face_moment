@@ -39,6 +39,7 @@
         "in_progress",
         "blocked",
         "done",
+        "done_for_prod",
         "failed"
       ]
     },
