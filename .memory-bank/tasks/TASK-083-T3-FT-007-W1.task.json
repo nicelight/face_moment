@@ -1,7 +1,7 @@
 {
   "id": "TASK-083-T3-FT-007-W1",
   "title": "Persist authenticated client response timing on the core Attempt",
-  "status": "planned",
+  "status": "done",
   "wave": "W1",
   "feature": "FT-007",
   "reqs": [
@@ -50,7 +50,82 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "FAIL",
+      "completed_at": "2026-08-28T03:27:13+05:00",
+      "summary": "Fresh direct migration, repository, ASGI security/status, client sender, concurrency/offline, typecheck and lint checks passed, but the real central HTTPS edge returned an empty Caddy 200 for the timing child path instead of proxying it to realtime; the browser marker therefore cannot be persisted through the accepted production path.",
+      "protocol": ".protocols/TASK-083-T3-FT-007-W1/verification.md",
+      "report": ".tasks/TASK-083-T3-FT-007-W1/TASK-083-T3-FT-007-W1-S-VERIFY-final-report-docs-01.md",
+      "evidence": [
+        ".tasks/TASK-083-T3-FT-007-W1/verify-edge-routing-evidence.md",
+        ".tasks/TASK-083-T3-FT-007-W1/verify-independent-probe.py"
+      ]
+    },
+    {
+      "stage": "verify",
+      "attempt": 2,
+      "verdict": "PASS",
+      "completed_at": "2026-08-28T03:56:15+05:00",
+      "image": "face-moment:dev@sha256:e48182f0687149696b0140237a9f44eacc5169e06aca4be8c39cc2731c79d59a",
+      "summary": "Fresh independent Attempt 2 verification rebuilt the current image, passed mypy, the 11-case migration/repository/API/security/offline suite, the controlled-clock client sender and Memory Bank lint, and reproduced first-write atomicity plus offline no-row/retained-outcome behavior in disposable state. The live central HTTPS timing child reached realtime as unauthenticated HTTP/2 401 with Cache-Control: no-store, server uvicorn and via Caddy; host/running task-source hashes matched and cleanup left no task database or one-off container. Executor evidence remained supporting-only.",
+      "protocol": ".protocols/TASK-083-T3-FT-007-W1/verification.md",
+      "report": ".tasks/TASK-083-T3-FT-007-W1/TASK-083-T3-FT-007-W1-S-VERIFY-final-report-docs-02.md",
+      "evidence": [
+        ".tasks/TASK-083-T3-FT-007-W1/attempt-2-verify-evidence.md",
+        ".tasks/TASK-083-T3-FT-007-W1/verify-independent-probe.py"
+      ]
+    },
+    {
+      "stage": "red-verify",
+      "attempt": 1,
+      "verdict": "semantic-fail",
+      "completed_at": "2026-08-28T04:14:24+05:00",
+      "summary": "Fresh adversarial T3 verification found that the core timeline marks an expired pending display as display_unconfirmed in issue_tags but returns the stored raw display_status pending instead of the required effective unconfirmed read projection; participant/session storage remains immutable and the defect is task-owned.",
+      "protocol": ".protocols/TASK-083-T3-FT-007-W1/red-verification.md",
+      "report": ".tasks/TASK-083-T3-FT-007-W1/TASK-083-T3-FT-007-W1-S-RED-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "verify",
+      "attempt": 3,
+      "verdict": "PASS",
+      "completed_at": "2026-08-28T04:39:12+05:00",
+      "image": "face-moment:dev@sha256:fcf199e00686eb88eae767d0c431355a23b3a7a725ba65a1dfeed8557c0e65c2",
+      "summary": "Fresh independent Attempt 3 verification rebuilt current source, passed every task gate, independently proved effective pending before expiry and unconfirmed exactly at/after expiry while persisted display/participant/session truth remained unchanged, reproduced atomic timing and offline behavior, and observed the live central HTTPS child as realtime 401 no-store with current route/edge hashes. Cleanup left no task database or one-off container; executor evidence remained supporting-only.",
+      "protocol": ".protocols/TASK-083-T3-FT-007-W1/verification.md",
+      "report": ".tasks/TASK-083-T3-FT-007-W1/TASK-083-T3-FT-007-W1-S-VERIFY-final-report-docs-03.md",
+      "evidence": [
+        ".tasks/TASK-083-T3-FT-007-W1/attempt-3-verify-evidence.md",
+        ".tasks/TASK-083-T3-FT-007-W1/verify-attempt-3-probe.py",
+        ".tasks/TASK-083-T3-FT-007-W1/verify-independent-probe.py"
+      ]
+    },
+    {
+      "stage": "red-verify",
+      "attempt": 2,
+      "verdict": "semantic-pass",
+      "completed_at": "2026-08-28T04:52:44+05:00",
+      "summary": "Fresh adversarial T3 verification found no material break after the final retry: effective display is pending before and unconfirmed exactly at/after expiry without persisted mutation; edge/auth/no-store, Promo-owned atomicity, offline behavior, immutable participant/session truth, security and cleanup all passed.",
+      "protocol": ".protocols/TASK-083-T3-FT-007-W1/red-verification.md",
+      "report": ".tasks/TASK-083-T3-FT-007-W1/TASK-083-T3-FT-007-W1-S-RED-VERIFY-final-report-docs-02.md"
+    },
+    {
+      "stage": "closure",
+      "attempt": 3,
+      "verdict": "done",
+      "completed_at": "2026-08-28T04:52:44+05:00",
+      "summary": "The autopilot scheduler closed TASK-083 after final-retry functional Attempt 3 PASS and Red Verify Attempt 2 semantic-pass. Historical Verify Attempt 1 FAIL and Red Verify Attempt 1 semantic-fail remain preserved; configured retries are exhausted.",
+      "evidence": [
+        ".tasks/TASK-083-T3-FT-007-W1/TASK-083-T3-FT-007-W1-S-EXECUTE-final-report-code-03.md",
+        ".tasks/TASK-083-T3-FT-007-W1/TASK-083-T3-FT-007-W1-S-VERIFY-final-report-docs-03.md",
+        ".tasks/TASK-083-T3-FT-007-W1/TASK-083-T3-FT-007-W1-S-RED-VERIFY-final-report-docs-02.md",
+        ".protocols/TASK-083-T3-FT-007-W1/verification.md",
+        ".protocols/TASK-083-T3-FT-007-W1/red-verification.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-007.md",
     ".memory-bank/contracts/client-diagnostic-api.md",

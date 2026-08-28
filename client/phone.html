@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <meta name="theme-color" content="#101827">
+    <title>Face Moment — ваши фотографии</title>
+    <link rel="stylesheet" href="/client/styles.css">
+  </head>
+  <body class="phone-page">
+    <main id="phone-session" class="phone-session" aria-live="polite" hidden>
+      <p class="eyebrow">Face Moment</p>
+      <h1 id="phone-spa"></h1>
+      <p id="phone-date" class="phone-date"></p>
+
+      <figure id="phone-teaser-frame" class="phone-teaser-frame" hidden>
+        <img id="phone-teaser" class="phone-teaser" alt="">
+      </figure>
+
+      <p class="phone-count">
+        Мы нашли фотографий: <strong id="phone-count"></strong>
+      </p>
+      <a
+        id="phone-purchase"
+        class="phone-purchase"
+        href="#"
+        rel="noreferrer"
+      >Перейти к покупке</a>
+    </main>
+
+    <p id="phone-loading" class="phone-loading" role="status">
+      Загружаем ваши фотографии…
+    </p>
+    <script type="module" src="/client/phone.js"></script>
+  </body>
+</html>

@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from ipaddress import ip_address
 import os
 from typing import Any, cast
+import uuid
 
 import cv2
 from fastapi import FastAPI, HTTPException, Request, status
@@ -32,11 +33,15 @@ from face_moment.processing import (
 )
 from face_moment.processing.reference_query import ReferenceOccurrence
 from face_moment.promo import (
+    ClientTimingConflictError,
+    InvalidClientTimingReportError,
     read_display_configuration,
     derive_media_ref,
+    parse_client_timing_report,
     PromoAttemptRepository,
     PromoAttemptNotFoundError,
     PromoSessionRepository,
+    record_client_response_timing,
     execute_realtime_attempt,
 )
 from face_moment.promo.realtime_admission import (
@@ -57,6 +62,9 @@ from face_moment.serving_control.realtime_context import (
     RealtimeReadinessClosedError,
     UnknownRealtimeContextSpaError,
 )
+
+
+_NO_STORE_HEADERS = {"Cache-Control": "no-store"}
 
 
 @asynccontextmanager
@@ -238,6 +246,91 @@ def create_app() -> FastAPI:
                     "qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
                 ),
             )
+
+    @app.post("/api/realtime/attempts/{attempt_id}/client-timing")
+    async def report_client_timing(request: Request, attempt_id: str) -> Response:
+        state = request.app.state.role_state
+        if not state.get("ready") or "session_factory" not in state:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                headers=_NO_STORE_HEADERS,
+            )
+        session_factory = state["session_factory"]
+        limiter = state["display_client_rate_limiter"]
+        with session_factory() as database_session:
+            try:
+                principal = authenticate_display_client(
+                    database_session,
+                    authorization=request.headers.get("authorization"),
+                    ip_address=_client_ip(request),
+                    rate_limiter=limiter,
+                )
+            except DisplayClientRateLimitError as error:
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+            except InvalidDisplayClientCredentials as error:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+
+            try:
+                client_attempt_id = uuid.UUID(attempt_id)
+                report = parse_client_timing_report(
+                    await request.body(), request.headers.get("content-type")
+                )
+            except (ValueError, InvalidClientTimingReportError) as error:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+
+            try:
+                attempt = record_client_response_timing(
+                    database_session,
+                    spa_id=principal.spa_id,
+                    client_attempt_id=client_attempt_id,
+                    report=report,
+                )
+                database_session.commit()
+                response_content = {
+                    "schema_version": 1,
+                    "attempt_id": str(attempt.client_attempt_id),
+                    "response_received_ms": attempt.response_received_ms,
+                }
+            except PromoAttemptNotFoundError as error:
+                database_session.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+            except ClientTimingConflictError as error:
+                database_session.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+            except InvalidClientTimingReportError as error:
+                database_session.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+            except Exception as error:
+                database_session.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+
+        response = JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=response_content,
+        )
+        response.headers.update(_NO_STORE_HEADERS)
+        return response
 
     return app
 

@@ -13,6 +13,9 @@ https://localhost:8443 {
 		expression `{http.request.header.Content-Length} != "" && int({http.request.header.Content-Length}) > 11534336`
 	}
 
+	@realtime_attempts path /api/realtime/attempts /api/realtime/attempts/*/client-timing
+	@phone_continuation path /q /phone /api/phone/*
+
 	route {
 		respond @inventory_photo_upload_without_length 413
 		respond @inventory_photo_upload_over_cap 413
@@ -32,12 +35,19 @@ https://localhost:8443 {
 			}
 		}
 
-		handle /api/realtime/attempts {
+		handle @realtime_attempts {
 			request_body {
 				max_size 20MiB
 			}
 			reverse_proxy realtime:8002 {
 				header_up X-Forwarded-For {remote_host}
+			}
+		}
+
+		handle @phone_continuation {
+			reverse_proxy backend:8000 {
+				header_up X-Forwarded-For {remote_host}
+				header_up X-Forwarded-Proto {http.request.scheme}
 			}
 		}
 

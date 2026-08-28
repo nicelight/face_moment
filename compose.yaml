@@ -23,6 +23,10 @@ x-application: &application
     REALTIME_RESULT_DISPLAY_MS: "${REALTIME_RESULT_DISPLAY_MS}"
     REALTIME_SUCCESS_COOLDOWN_MS: "${REALTIME_SUCCESS_COOLDOWN_MS}"
     PROMO_QR_TICKET_SECRET: "${PROMO_QR_TICKET_SECRET:-face-moment-development-only-qr-ticket}"
+    FACE_MOMENT_TRUSTED_PROXY_IP: "${FACE_MOMENT_TRUSTED_PROXY_IP:-172.29.81.254}"
+    PHONE_PUBLIC_RATE_LIMIT: "${PHONE_PUBLIC_RATE_LIMIT:-60}"
+    PHONE_PUBLIC_RATE_WINDOW_SECONDS: "${PHONE_PUBLIC_RATE_WINDOW_SECONDS:-60}"
+    PHONE_PURCHASE_URL: "${PHONE_PURCHASE_URL:-}"
     PHOTO_PREVIEW_MAXIMUM_EDGE: "${PHOTO_PREVIEW_MAXIMUM_EDGE:-1024}"
     PHOTO_PREVIEW_JPEG_QUALITY: "${PHOTO_PREVIEW_JPEG_QUALITY:-82}"
     PHOTO_THUMBNAIL_MAXIMUM_EDGE: "${PHOTO_THUMBNAIL_MAXIMUM_EDGE:-320}"
@@ -162,8 +166,9 @@ services:
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
     networks:
-      - private
-      - edge
+      private:
+        ipv4_address: "${FACE_MOMENT_TRUSTED_PROXY_IP:-172.29.81.254}"
+      edge:
     depends_on:
       backend:
         condition: service_healthy
@@ -173,6 +178,10 @@ services:
 networks:
   private:
     internal: true
+    ipam:
+      config:
+        - subnet: "${FACE_MOMENT_PRIVATE_SUBNET:-172.29.81.0/24}"
+          ip_range: "${FACE_MOMENT_PRIVATE_DYNAMIC_RANGE:-172.29.81.0/25}"
   edge:
 
 volumes:

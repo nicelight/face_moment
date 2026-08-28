@@ -4,6 +4,44 @@ status: active
 ---
 # Changelog
 
+- 2026-08-28: Documented the non-secret workstation SSH commands for the VPS
+  and central server; local credentials remain outside version control.
+
+- 2026-08-28: Recorded terminal `HALT_FAILURE_BUDGET` after the third
+  unsuccessful boundary for `TASK-081-T3-FT-006-W2`. Fresh Verify passed the
+  prior proxy/IPAM and malformed
+  purchase-target corrections but proved that a percent-encoded non-ASCII
+  unknown `media_ref` returns empty `500` instead of the required empty `404`.
+  The task-local handoff is
+  [TASK-081 non-ASCII media reference status defect](bugs/TASK-081-non-ascii-media-ref-status.md);
+  final Judge disposition is `REDIRECT`, TASK-081 remains `in_progress`, and
+  no fourth attempt is permitted in this run. FT-003, TASK-075 and all
+  `Production acceptance:` records remain unchanged and excluded.
+
+- 2026-08-28: Deployed and verified a VPS-loopback-only FRP SSH proxy for
+  central-server administration through OpenSSH `ProxyJump`; `ssh facecentral`
+  reaches `face@face-pc`, while no central SSH port is exposed on the VPS
+  public interface.
+
+## [2026-08-28] Wave W1 — FT-006/FT-007 technical foundations reconciled
+- Reconciled the scheduler-owned `done` closure for
+  [TASK-080-T3-FT-006-W1](tasks/TASK-080-T3-FT-006-W1.task.json) with fresh
+  functional Attempt 2 `PASS`, required T3 `semantic-pass` and durable
+  isolated-PostgreSQL restart evidence for the one shared QR browser-access
+  state.
+- Reconciled the scheduler-owned `done` closure for
+  [TASK-083-T3-FT-007-W1](tasks/TASK-083-T3-FT-007-W1.task.json) with final
+  functional Attempt 3 `PASS` and T3 Red Verify Attempt 2 `semantic-pass` for
+  authenticated best-effort client timing, effective display-expiry projection
+  and unchanged persisted participant/session truth.
+- Confirmed both records remain present in the authoritative task index and
+  their final closure evidence links resolve. Kept FT-006, FT-007, EP-002,
+  EP-003 and mapped RTM rows `planned` because later feature tasks and
+  acceptance criteria remain open.
+- Made no promotion, dependent unblock, feature/epic lifecycle, spec,
+  Planning Revision or scheduler-state change. FT-003, TASK-075 and every
+  `Production acceptance:` record remain outside this sync boundary.
+
 ## [2026-08-28] Historical task lifecycle — done_for_prod reconciliation
 - Reclassified `TASK-046`, `TASK-052`, `TASK-054` and `TASK-076` from `done`
   to `done_for_prod`: their development verification remains complete, while

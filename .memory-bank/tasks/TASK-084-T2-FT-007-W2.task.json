@@ -1,7 +1,7 @@
 {
   "id": "TASK-084-T2-FT-007-W2",
   "title": "Persist the versioned diagnostic evidence provider",
-  "status": "planned",
+  "status": "in_progress",
   "wave": "W2",
   "feature": "FT-007",
   "reqs": [

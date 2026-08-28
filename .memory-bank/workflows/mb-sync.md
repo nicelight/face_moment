@@ -34,7 +34,8 @@ status: active
 - После значимых рефакторингов или архитектурных изменений.
 - Перед `/review-feat-plan` или `/review-tasks-plan` (чтобы reviewer видел
   актуальное состояние нужной поверхности).
-- На wave/feature boundary, after task closures in that wave.
+- На wave/feature boundary, после T2 feature-level red-verify completion и
+  after any T3 closures in that wave.
 - Перед handoff to another agent when they need fresh durable Memory Bank state.
 - При ощущении drift между кодом и документацией.
 
@@ -54,8 +55,9 @@ status: active
 - `/mb-sync` owns only reconciliation and sync-local consistency validation:
   after its changes, it re-reads the links, indexes, RTM, lifecycle/spec state,
   and other reconciled surfaces it actually changed. It does not run full
-  `node scripts/mb-lint.mjs` or `/mb-doctor`.
-- `.memory-bank/templates/protocols/*` is framework-owned installer state.
+  `node .memory-bank/scripts/mb-lint.mjs` or `/mb-doctor`.
+- `.memory-bank/templates/protocols/*` and `.memory-bank/scripts/*` are
+  framework-owned installer state.
   Runtime `/mb-sync` must not edit those files or add a project router/index for
   that exact template leaf; filled `.protocols/<TASK_ID>/*` remains task-owned.
 - In scheduler flow, `/autonomous` or `/autopilot` is the sole owner of the
@@ -139,7 +141,7 @@ status: active
 
 ### 8) Caller-owned post-sync gates
 - [ ] In scheduler flow, `/autonomous` or `/autopilot` runs authoritative
-  `node scripts/mb-lint.mjs` and then `/mb-doctor --strict` after sync and
+  `node .memory-bank/scripts/mb-lint.mjs` and then `/mb-doctor --strict` after sync and
   before promotion or success; `/mb-sync` does not duplicate either gate.
 - [ ] In manual flow, the sync handoff names the explicit top-level
   caller/owner that runs applicable post-sync lint/doctor before its next

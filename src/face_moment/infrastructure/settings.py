@@ -7,6 +7,8 @@ DEFAULT_REALTIME_DEADLINE_MS = 3000
 DEFAULT_REALTIME_RATE_LIMIT = 60
 DEFAULT_REALTIME_RATE_WINDOW_SECONDS = 60
 DEFAULT_PROMO_QR_TICKET_SECRET = "face-moment-development-only-qr-ticket"
+DEFAULT_PHONE_PUBLIC_RATE_LIMIT = 60
+DEFAULT_PHONE_PUBLIC_RATE_WINDOW_SECONDS = 60
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,6 +62,9 @@ class Settings:
     realtime_result_display_ms: int | None = None
     realtime_success_cooldown_ms: int | None = None
     promo_qr_ticket_secret: str = DEFAULT_PROMO_QR_TICKET_SECRET
+    phone_public_rate_limit: int = DEFAULT_PHONE_PUBLIC_RATE_LIMIT
+    phone_public_rate_window_seconds: int = DEFAULT_PHONE_PUBLIC_RATE_WINDOW_SECONDS
+    phone_purchase_url: str | None = None
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -158,6 +163,14 @@ class Settings:
             promo_qr_ticket_secret=os.environ.get(
                 "PROMO_QR_TICKET_SECRET", DEFAULT_PROMO_QR_TICKET_SECRET
             ),
+            phone_public_rate_limit=_positive_int(
+                "PHONE_PUBLIC_RATE_LIMIT", str(DEFAULT_PHONE_PUBLIC_RATE_LIMIT)
+            ),
+            phone_public_rate_window_seconds=_positive_int(
+                "PHONE_PUBLIC_RATE_WINDOW_SECONDS",
+                str(DEFAULT_PHONE_PUBLIC_RATE_WINDOW_SECONDS),
+            ),
+            phone_purchase_url=_optional("PHONE_PURCHASE_URL"),
         )
 
 

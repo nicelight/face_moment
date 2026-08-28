@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
+from ipaddress import ip_address
+import os
 from typing import Any, AsyncContextManager
 
 from fastapi import FastAPI
@@ -53,4 +55,21 @@ def create_role_app(
 def run(app: FastAPI, port: int) -> None:
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=port,
+        access_log=False,
+        proxy_headers=True,
+        forwarded_allow_ips=_trusted_proxy_ip(),
+    )
+
+
+def _trusted_proxy_ip() -> str:
+    raw_value = os.environ.get("FACE_MOMENT_TRUSTED_PROXY_IP", "127.0.0.1")
+    try:
+        return str(ip_address(raw_value.strip()))
+    except ValueError as error:
+        raise RuntimeError(
+            "FACE_MOMENT_TRUSTED_PROXY_IP must be one exact IP address"
+        ) from error

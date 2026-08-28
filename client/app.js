@@ -20,6 +20,7 @@ import {
 import { createAttemptOutcomeController } from "./attempt-outcome.js";
 import { submitRealtimeAttempt } from "./realtime-attempt.js";
 import { createAttemptTimingRecorder } from "./attempt-timing.js";
+import { reportClientResponseTiming } from "./diagnostic-timing.js";
 import { createCommunicationNoticeController } from "./communication-notice.js";
 import { createPromoDisplayController } from "./promo-display.js";
 
@@ -286,25 +287,32 @@ async function submitReadyReferenceSeries(detail, proposals) {
 
     const qualitySnapshot = jpegQualityController.getActiveAttemptSnapshot();
     const cameraSnapshot = cameraController?.snapshot?.() ?? {};
+    const clientToken = readDisplayClientToken();
     const submitted = await submitRealtimeAttempt({
       attemptId,
       triggerSource: detail?.trigger_source,
       jpegQuality: qualitySnapshot?.jpegQuality,
       cameraDeviceId: cameraSnapshot.selectedDeviceId,
-      clientToken: readDisplayClientToken(),
+      clientToken,
       timing: timingRecorder.manifestTiming(),
       frames: detail?.frames,
       frameTimestampsMs: detail?.frame_timestamps_ms,
       proposals,
     });
     timingRecorder.recordResponseReceived();
+    const responseTiming = timingRecorder.snapshot();
+    void reportClientResponseTiming({
+      attemptId,
+      responseReceivedMs: responseTiming.responseReceivedMs,
+      clientToken,
+    }).catch(() => {});
     window.dispatchEvent(
       new CustomEvent("face-moment:attempt-response", {
         detail: {
           attemptId,
           captureId,
           response: submitted.response,
-          timing: timingRecorder.snapshot(),
+          timing: responseTiming,
         },
       }),
     );

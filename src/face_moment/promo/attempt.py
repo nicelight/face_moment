@@ -53,6 +53,11 @@ class PromoAttempt(Base):
             name="ck_promo_attempts_client_offsets_nonnegative",
         ),
         CheckConstraint(
+            "response_received_ms IS NULL "
+            "OR response_received_ms >= request_started_ms",
+            name="ck_promo_attempts_client_response_order",
+        ),
+        CheckConstraint(
             "proposal_count BETWEEN 0 AND 20",
             name="ck_promo_attempts_proposal_count_range",
         ),
@@ -116,6 +121,7 @@ class PromoAttempt(Base):
     )
     local_detection_completed_ms: Mapped[int] = mapped_column(Integer, nullable=False)
     request_started_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    response_received_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     proposal_count: Mapped[int] = mapped_column(Integer, nullable=False)
     settings_revision: Mapped[int] = mapped_column(Integer, nullable=False)
     visit_date: Mapped[date | None] = mapped_column(Date, nullable=True)
@@ -261,6 +267,58 @@ class PromoAttemptRepository:
         attempt = self._session.scalar(statement)
         if attempt is None:
             raise PromoAttemptNotFoundError(f"{spa_id}/{client_attempt_id}")
+        return attempt
+
+    def record_client_response_timing(
+        self,
+        attempt: PromoAttempt,
+        *,
+        response_received_ms: int,
+        now: datetime | None = None,
+    ) -> PromoAttempt:
+        """Atomically retain the first ordered browser response marker."""
+
+        if (
+            not isinstance(response_received_ms, int)
+            or isinstance(response_received_ms, bool)
+            or response_received_ms < attempt.request_started_ms
+            or response_received_ms > 2_147_483_647
+        ):
+            raise ValueError("response marker is outside the admitted client timeline")
+        if attempt.response_received_ms is not None:
+            if attempt.response_received_ms == response_received_ms:
+                return attempt
+            raise ValueError("response marker is already recorded")
+
+        timestamp = _utc(now)
+        result = self._session.execute(
+            update(PromoAttempt)
+            .where(
+                PromoAttempt.id == attempt.id,
+                PromoAttempt.processing_status.in_(
+                    (
+                        "result_issued",
+                        "no_success",
+                        "interrupted",
+                        "deadline",
+                        "internal_failure",
+                    )
+                ),
+                PromoAttempt.response_received_ms.is_(None),
+                PromoAttempt.request_started_ms <= response_received_ms,
+            )
+            .values(
+                response_received_ms=response_received_ms,
+                updated_at=timestamp,
+            )
+        )
+        if result.rowcount != 1:
+            self._session.refresh(attempt)
+            if attempt.response_received_ms == response_received_ms:
+                return attempt
+            raise ValueError("Attempt cannot accept the response marker")
+        self._session.flush()
+        self._session.refresh(attempt)
         return attempt
 
     def mark_no_proposals(

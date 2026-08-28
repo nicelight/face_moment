@@ -5,6 +5,15 @@ from face_moment.promo.attempt import (
     PromoAttemptNotFoundError,
     PromoAttemptRepository,
 )
+from face_moment.promo.client_timing import (
+    ClientTimingConflictError,
+    ClientTimingReport,
+    CoreTimelineProjection,
+    InvalidClientTimingReportError,
+    parse_client_timing_report,
+    project_core_timeline,
+    record_client_response_timing,
+)
 from face_moment.promo.result_assembly import ResultAssembly, assemble_result
 from face_moment.promo.session import (
     BROWSER_IDLE_TTL,
@@ -47,6 +56,13 @@ __all__ = [
     "PromoAttempt",
     "PromoAttemptNotFoundError",
     "PromoAttemptRepository",
+    "ClientTimingConflictError",
+    "ClientTimingReport",
+    "CoreTimelineProjection",
+    "InvalidClientTimingReportError",
+    "parse_client_timing_report",
+    "project_core_timeline",
+    "record_client_response_timing",
     "ResultAssembly",
     "assemble_result",
     "RealtimeOrchestrator",

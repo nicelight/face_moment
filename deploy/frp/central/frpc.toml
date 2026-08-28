@@ -29,3 +29,15 @@ healthCheck.type = "tcp"
 healthCheck.intervalSeconds = 10
 healthCheck.timeoutSeconds = 3
 healthCheck.maxFailed = 3
+
+[[proxies]]
+name = "central-face-ssh"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 22
+remotePort = 10022
+
+healthCheck.type = "tcp"
+healthCheck.intervalSeconds = 10
+healthCheck.timeoutSeconds = 3
+healthCheck.maxFailed = 3

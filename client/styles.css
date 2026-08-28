@@ -260,6 +260,74 @@ h1 {
   font-weight: 700;
 }
 
+.phone-page {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(216, 180, 90, 0.22), transparent 38%),
+    #101827;
+}
+
+.phone-session,
+.phone-loading {
+  width: min(100%, 34rem);
+  box-sizing: border-box;
+}
+
+.phone-session {
+  border: 1px solid #516886;
+  border-radius: 1.5rem;
+  padding: clamp(1.25rem, 6vw, 2.5rem);
+  background: rgba(17, 26, 42, 0.94);
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.28);
+}
+
+.phone-session h1 {
+  margin-bottom: 0.5rem;
+  font-size: clamp(2rem, 11vw, 3.75rem);
+}
+
+.phone-date,
+.phone-count,
+.phone-loading {
+  color: #c7d2e3;
+  font-size: 1.1rem;
+}
+
+.phone-teaser-frame {
+  margin: 1.5rem 0;
+}
+
+.phone-teaser {
+  display: block;
+  width: 100%;
+  max-height: 55vh;
+  border-radius: 1rem;
+  background: #f6f1e5;
+  object-fit: contain;
+}
+
+.phone-purchase {
+  display: inline-flex;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.75rem;
+  border-radius: 999px;
+  padding: 0.9rem 1.25rem;
+  color: #101827;
+  background: #d8b45a;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.phone-purchase:hover,
+.phone-purchase:focus-visible {
+  background: #f1d784;
+  outline: 3px solid #f3f6fb;
+  outline-offset: 3px;
+}
+
 .camera-panel select,
 .camera-panel button {
   border: 1px solid #7188a8;
