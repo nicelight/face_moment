@@ -1,7 +1,7 @@
 {
   "id": "TASK-084-T2-FT-007-W2",
   "title": "Persist the versioned diagnostic evidence provider",
-  "status": "in_progress",
+  "status": "done",
   "wave": "W2",
   "feature": "FT-007",
   "reqs": [
@@ -32,11 +32,65 @@
     },
     {
       "name": "Memory Bank architecture lint",
-      "command": "node scripts/mb-lint.mjs",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "FAIL",
+      "completed_at": "2026-08-28T21:30:34+05:00",
+      "summary": "Fresh independent verification reproduced two task-local FT-007-AC-007 privacy-boundary violations: promote_subset accepted and persisted an ordinary_manifest wrapper, and finalize accepted annotation on an already complete row before validating the supplied ordinary manifest. Migration shape, no-cross-owner-FK, partial-to-complete idempotency, reconnect read, current canonical lint, source-overlay mypy (74 files), focused PostgreSQL (3 passed), and git diff check passed. Task remains in_progress; no closure or promotion is permitted.",
+      "protocol": ".protocols/TASK-084-T2-FT-007-W2/verification.md",
+      "report": ".tasks/TASK-084-T2-FT-007-W2/TASK-084-T2-FT-007-W2-S-VERIFY-final-report-docs-01.md",
+      "artifacts": [
+        ".tasks/TASK-084-T2-FT-007-W2/verify-independent-probe.py",
+        ".tasks/TASK-084-T2-FT-007-W2/verify-boundary-regressions.py"
+      ]
+    },
+    {
+      "stage": "verify",
+      "attempt": 2,
+      "verdict": "FAIL",
+      "completed_at": "2026-08-28T21:53:32+05:00",
+      "summary": "Fresh independent verification confirmed the two Attempt 1 defects fixed but reproduced a remaining HIGH FT-007-AC-007 privacy-boundary violation: nested ordinary_manifest under curated reached and was persisted in promoted_subset. Canonical lint, source-overlay mypy (74 files), focused PostgreSQL (3 passed), both prior boundary probes, nested probe cleanup and diff check passed. Task remains in_progress; no closure or promotion is permitted.",
+      "protocol": ".protocols/TASK-084-T2-FT-007-W2/verification.md",
+      "report": ".tasks/TASK-084-T2-FT-007-W2/TASK-084-T2-FT-007-W2-S-VERIFY-final-report-docs-02.md",
+      "artifacts": [
+        ".tasks/TASK-084-T2-FT-007-W2/verify-nested-promotion.py",
+        ".tasks/TASK-084-T2-FT-007-W2/verify-independent-probe.py",
+        ".tasks/TASK-084-T2-FT-007-W2/verify-boundary-regressions.py"
+      ]
+    },
+    {
+      "stage": "verify",
+      "attempt": 3,
+      "verdict": "PASS",
+      "completed_at": "2026-08-28T22:15:22+05:00",
+      "summary": "Fresh independent verification found no task-scoped finding. Attempt 1 provider defects and Attempt 2 nested promotion bypass are fixed. Top-level and nested ordinary_manifest rejection, no promoted-state mutation, protected complete-row finalize rejection, authorized curated subset acceptance, migration/owner/idempotency/reconnect/expiry checks, canonical lint, source-overlay mypy (74 files), focused PostgreSQL (3 passed), cleanup and diff check all passed.",
+      "protocol": ".protocols/TASK-084-T2-FT-007-W2/verification.md",
+      "report": ".tasks/TASK-084-T2-FT-007-W2/TASK-084-T2-FT-007-W2-S-VERIFY-final-report-docs-03.md",
+      "artifacts": [
+        ".tasks/TASK-084-T2-FT-007-W2/verify-attempt-3-current.py",
+        ".tasks/TASK-084-T2-FT-007-W2/verify-nested-promotion.py",
+        ".tasks/TASK-084-T2-FT-007-W2/verify-independent-probe.py",
+        ".tasks/TASK-084-T2-FT-007-W2/verify-boundary-regressions.py"
+      ]
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "completed_at": "2026-08-28T22:17:00+05:00",
+      "summary": "Scheduler closed TASK-084 after fresh T2 Verify Attempt 3 PASS. Current canonical gates and independent privacy/persistence evidence pass; the prior external fresh-image build stall remains supporting infrastructure history and was not replayed. No red-verify is required for T2.",
+      "evidence": [
+        ".protocols/TASK-084-T2-FT-007-W2/verification.md",
+        ".tasks/TASK-084-T2-FT-007-W2/TASK-084-T2-FT-007-W2-S-VERIFY-final-report-docs-03.md",
+        ".tasks/TASK-084-T2-FT-007-W2/TASK-084-T2-FT-007-W2-S-EXECUTE-final-report-code-03.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-007.md",
     ".memory-bank/domains/diagnostic-evidence.md",

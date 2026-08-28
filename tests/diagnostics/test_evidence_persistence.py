@@ -225,16 +225,39 @@ def test_provider_rejects_ordinary_protected_fields_and_accepts_curated_promotio
         assert rejected.error_code == "invalid_or_conflicting_evidence"
         assert DiagnosticEvidenceRepository(session).get(ordinary_attempt_id) is None
 
+        oversized_detection_manifest = _manifest(ordinary_attempt_id)
+        oversized_detection_manifest["detections"] = [
+            {"occurrence_index": index} for index in range(6)
+        ]
+        oversized = provider.write(
+            attempt_id=ordinary_attempt_id,
+            ordinary_manifest=oversized_detection_manifest,
+            completeness="incomplete",
+            gap_reason="display_event_missing",
+        )
+        assert not oversized.accepted
+        assert oversized.error_code == "invalid_or_conflicting_evidence"
+        assert DiagnosticEvidenceRepository(session).get(ordinary_attempt_id) is None
+
     promoted_attempt_id = uuid.uuid4()
+    promoted_manifest = _manifest(promoted_attempt_id)
     with Session(disposable_evidence_engine) as session:
         provider = DiagnosticEvidenceProvider(session)
         created = provider.write(
             attempt_id=promoted_attempt_id,
-            ordinary_manifest=_manifest(promoted_attempt_id),
+            ordinary_manifest=promoted_manifest,
             completeness="incomplete",
             gap_reason="display_event_missing",
         )
         assert created.accepted
+        session.commit()
+
+    with Session(disposable_evidence_engine) as session:
+        finalized = DiagnosticEvidenceProvider(session).finalize(
+            attempt_id=promoted_attempt_id,
+            ordinary_manifest=promoted_manifest,
+        )
+        assert finalized.accepted
         session.commit()
 
     curated = {
@@ -247,6 +270,43 @@ def test_provider_rejects_ordinary_protected_fields_and_accepts_curated_promotio
     }
     with Session(disposable_evidence_engine) as session:
         provider = DiagnosticEvidenceProvider(session)
+        rejected_promotion = provider.promote_subset(
+            attempt_id=promoted_attempt_id,
+            promoted_subset={"schema_version": 1, "ordinary_manifest": {}},
+        )
+        assert not rejected_promotion.accepted
+        assert rejected_promotion.error_code == "invalid_or_conflicting_evidence"
+        rejected_nested_promotion = provider.promote_subset(
+            attempt_id=promoted_attempt_id,
+            promoted_subset={
+                "schema_version": 1,
+                "curated": {
+                    "details": [
+                        {"ordinary_manifest": {"result": {}}},
+                    ],
+                },
+            },
+        )
+        assert not rejected_nested_promotion.accepted
+        assert rejected_nested_promotion.error_code == "invalid_or_conflicting_evidence"
+        persisted_after_nested_rejection = DiagnosticEvidenceRepository(session).require(
+            promoted_attempt_id
+        )
+        assert persisted_after_nested_rejection.promoted_subset is None
+        rejected_complete_finalization = provider.finalize(
+            attempt_id=promoted_attempt_id,
+            ordinary_manifest={
+                **promoted_manifest,
+                "client": {"annotation": "must-not-be-stored"},
+            },
+        )
+        assert not rejected_complete_finalization.accepted
+        assert rejected_complete_finalization.error_code == "invalid_or_conflicting_evidence"
+        persisted_after_rejections = DiagnosticEvidenceRepository(session).require(
+            promoted_attempt_id
+        )
+        assert persisted_after_rejections.completeness == "complete"
+        assert persisted_after_rejections.ordinary_manifest == promoted_manifest
         promoted = provider.promote_subset(
             attempt_id=promoted_attempt_id,
             promoted_subset=curated,

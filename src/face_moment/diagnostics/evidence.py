@@ -72,12 +72,15 @@ _PROTECTED_ORDINARY_KEYS = frozenset(
         "selfie_artifact",
     }
 )
-_PROMOTED_FORBIDDEN_KEYS = _PROTECTED_ORDINARY_KEYS - {
-    "participant_name",
-    "participant_names",
-    "annotation",
-    "annotations",
-}
+_PROMOTED_FORBIDDEN_KEYS = (
+    _PROTECTED_ORDINARY_KEYS
+    - {
+        "participant_name",
+        "participant_names",
+        "annotation",
+        "annotations",
+    }
+) | {"ordinary_manifest"}
 _PROMOTED_FORBIDDEN_KEYS |= {
     "promo_screenshot",
     "screenshot",
@@ -86,7 +89,9 @@ _PROMOTED_FORBIDDEN_KEYS |= {
     "unselected_reference_series",
     "reference_series",
 }
-_PROMOTED_FORBIDDEN_BUNDLE_KEYS = _ORDINARY_TOP_LEVEL_KEYS - {"schema_version"}
+_PROMOTED_FORBIDDEN_BUNDLE_KEYS = (
+    _ORDINARY_TOP_LEVEL_KEYS - {"schema_version"}
+) | {"ordinary_manifest"}
 
 CompletenessLiteral = Literal["incomplete", "complete"]
 
@@ -314,16 +319,18 @@ class DiagnosticEvidenceRepository:
         )
         if evidence.ordinary_expired_at is not None:
             raise DiagnosticEvidenceError("ordinary evidence has expired")
-        if evidence.completeness == Completeness.COMPLETE.value:
-            return evidence
-        if evidence.ordinary_manifest is None and ordinary_manifest is None:
-            raise DiagnosticEvidenceError("complete evidence requires an ordinary manifest")
-
         normalized_manifest = (
             _validate_ordinary_manifest(ordinary_manifest)
             if ordinary_manifest is not None
-            else cast(dict[str, object], evidence.ordinary_manifest)
+            else None
         )
+        if evidence.completeness == Completeness.COMPLETE.value:
+            return evidence
+        if evidence.ordinary_manifest is None and normalized_manifest is None:
+            raise DiagnosticEvidenceError("complete evidence requires an ordinary manifest")
+
+        if normalized_manifest is None:
+            normalized_manifest = cast(dict[str, object], evidence.ordinary_manifest)
         merged_manifest = _merge_manifests(evidence.ordinary_manifest, normalized_manifest)
         evidence.ordinary_manifest = merged_manifest
         evidence.completeness = Completeness.COMPLETE.value
@@ -604,7 +611,9 @@ def _validate_promoted_subset(
 ) -> dict[str, object]:
     normalized = _normalise_json_object(promoted_subset, "promoted subset")
     _reject_keys(normalized, _PROMOTED_FORBIDDEN_KEYS, "promoted subset")
-    if set(normalized) & _PROMOTED_FORBIDDEN_BUNDLE_KEYS:
+    if any(
+        key.casefold() in _PROMOTED_FORBIDDEN_BUNDLE_KEYS for key in normalized
+    ):
         raise DiagnosticEvidenceError("promoted subset cannot retain the ordinary bundle")
     return normalized
 

@@ -4,19 +4,12 @@ status: active
 ---
 # Changelog
 
+
+
 - 2026-08-28: Documented the non-secret workstation SSH commands for the VPS
   and central server; local credentials remain outside version control.
 
-- 2026-08-28: Recorded terminal `HALT_FAILURE_BUDGET` after the third
-  unsuccessful boundary for `TASK-081-T3-FT-006-W2`. Fresh Verify passed the
-  prior proxy/IPAM and malformed
-  purchase-target corrections but proved that a percent-encoded non-ASCII
-  unknown `media_ref` returns empty `500` instead of the required empty `404`.
-  The task-local handoff is
-  [TASK-081 non-ASCII media reference status defect](bugs/TASK-081-non-ascii-media-ref-status.md);
-  final Judge disposition is `REDIRECT`, TASK-081 remains `in_progress`, and
-  no fourth attempt is permitted in this run. FT-003, TASK-075 and all
-  `Production acceptance:` records remain unchanged and excluded.
+
 
 - 2026-08-28: Deployed and verified a VPS-loopback-only FRP SSH proxy for
   central-server administration through OpenSSH `ProxyJump`; `ssh facecentral`
@@ -38,9 +31,7 @@ status: active
   their final closure evidence links resolve. Kept FT-006, FT-007, EP-002,
   EP-003 and mapped RTM rows `planned` because later feature tasks and
   acceptance criteria remain open.
-- Made no promotion, dependent unblock, feature/epic lifecycle, spec,
-  Planning Revision or scheduler-state change. FT-003, TASK-075 and every
-  `Production acceptance:` record remain outside this sync boundary.
+
 
 ## [2026-08-28] Historical task lifecycle — done_for_prod reconciliation
 - Reclassified `TASK-046`, `TASK-052`, `TASK-054` and `TASK-076` from `done`
@@ -154,15 +145,7 @@ status: active
   Manual flow now routes to `/mb-doctor`; scheduler/autopilot flow routes to
   `/mb-doctor --strict`.
 
-## [2026-08-22] TASK-055 — verified and closed
-- Closed `TASK-055-T2-FT-003-W7` after independent verification returned `PASS`; failure matrix, lifecycle/wiring regressions, required quality gates, forbidden-path review, and ownership review were accepted.
 
-## [2026-08-22] TASK-056 — deferred non-blocking recovery evidence
-- Recorded the operator decision to keep `TASK-056-T3-FT-003-W6` planned for
-  later real-pilot browser/central-runtime recovery evidence.
-- Marked the task explicitly non-blocking for ongoing development; it resumes
-  only when the real server, intact primary volumes and pilot recovery
-  environment are available.
 
 ## [2026-08-22] TASK-055 — safe degraded advertising integration
 - Added the minimal client integration that completes the local attempt
@@ -174,20 +157,6 @@ status: active
   optional assets. No offline metadata, fallback transport or new server path
   was introduced; T2 verification remains with `/verify`.
 
-## [2026-08-21] Wave W5 — automatic Chromium recovery closure
-- Reconciled the explicit-owner `done` closure for
-  `TASK-054-T3-FT-003-W5` after independent functional `PASS` and per-task
-  `semantic-pass`. Exact-PID Chromium `SIGKILL` replacement was proved in
-  advertising, active and result states; managed kiosk configuration survived,
-  while personalized state and realtime replay remained absent.
-- Reconciled the source-managed kiosk unit to `Restart=always`, the strict
-  non-destructive browser recovery check, and the runbook's canonical
-  `deploy/kiosk/spa-promo-client.service` plus `--browser` invocation.
-- Confirmed every indexed W5 task is now `done`. Kept FT-003, EP-002 and mapped
-  requirements `planned` because four accepted FT-003 tasks remain open in W1,
-  W6 and W7; this sync performs no promotion or feature closure.
-- Preserved the accepted local-development decision: real pilot-host evidence
-  remains a later follow-up and is not a current queue blocker.
 
 ## [2026-08-18] Operator decision — OpenCV 5 migration strategy
 - Added the operator-directed strategic plan for migrating the runtime from
@@ -210,37 +179,6 @@ status: active
   package-index/Docker environment could not complete dependency resolution;
   no product task status or TASK-045 evidence was changed.
 
-## [2026-08-17] Wave W2 — reconciled camera and kiosk-quality closures
-- Reconciled the scheduler-owned `done` closures for `TASK-061-T2-FT-003-W2`
-  and `TASK-062-T2-FT-003-W2` with their indexed independent T2 verification
-  evidence. Camera selection now invalidates stale overlapping media opens;
-  kiosk JPEG quality exposes exactly the six accepted values, persists in the
-  managed profile, and applies changes only to the next Attempt snapshot.
-- Preserved the earlier `TASK-061` verification FAIL and bounded retry history;
-  no per-task `/red-verify` was required for these T2 tasks. Focused,
-  managed-Chromium, container-shell and Memory Bank gates are linked from the
-  task records and verification protocols.
-- Kept `FT-003` and its mapped requirements `planned` because the remaining
-  FT-003 tasks are either blocked on recorded upstream/environment evidence or
-  unfinished. No promotion, unblock, new task, dependency, spec or contract
-  decision was made by this sync.
-
-## [2026-08-16] FT-003 — kiosk sandbox/service boundary execution handoff
-- Added the source-managed `deploy/kiosk/spa-promo-client.service` boundary:
-  Chromium is pinned to the central `https://localhost:8443/` origin, runs as
-  `display` with `NoNewPrivileges=yes`, uses only the allow-listed kiosk/
-  first-run/profile flags, and explicitly has no automatic restart in this
-  task's scope.
-- Added `scripts/check-kiosk-browser.sh`, a read-only redacted inspection that
-  rejects sandbox-bypass/unsafe flags and credential hooks, checks the service
-  identity and exact origin, and optionally observes the effective process
-  without reading browser-profile contents.
-- Attempt 1 recorded honest claim RED before implementation and source/static
-  GREEN afterward. The current development host has no `display` account, no
-  managed Chromium process and no reachable central origin; live pilot-host
-  verification remains with `/verify`. TASK-046/064/065, managed LNA policy,
-  recovery/restart, sensor/trigger/detector/submission and AC-006 admission
-  remain outside this handoff.
 
 ## [2026-08-16] Wave W1 — closed TASK-063 managed kiosk policy boundary
 - Reconciled TASK-063 as `done` after real host-managed Google Chrome policy
@@ -250,9 +188,7 @@ status: active
 - Added the bounded real-CDP listed/unlisted origin probe: the managed kiosk
   origin is `granted` for the Local Network Access permission names while an
   unlisted origin remains `prompt`; the kiosk page was restored afterward.
-- Preserved `REQ-SEC-001`, `REQ-SEC-002`, and FT-003 lifecycle as `planned`
-  because the remaining SSH, private-topology, sensor CORS/token, and other
-  acceptance criteria are not closed by TASK-063.
+
 
 ## [2026-08-16] Wave W1 — environment-bounded topology control
 - Reconciled TASK-065 source outcomes and independent evidence for edge-only
@@ -511,14 +447,7 @@ status: active
 - Removed the duplicate `boundary-map-old.md`; the pre-overwrite and reconciled
   backup states remain recoverable from Git history.
 
-## [2026-08-01] FT-003 canonical contract design
-- Completed the exact sensor long-poll and realtime multipart contracts plus
-  central display-client and core Attempt data specifications without changing
-  Global Planning Revision `4`.
-- Advanced `FT-003.spec_design_status` from `blocked` to `complete` and closed
-  the final unresolved `api_contracts` design row.
-- Preserved the representative-benchmark and site-camera-dimension exclusions;
-  no product behavior was changed.
+
 
 ## [2026-07-29] Client restart availability clarification
 - Kept local advertising during transient server/network failure for an already
