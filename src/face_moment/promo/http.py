@@ -8,9 +8,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 import uuid
 
-from fastapi import FastAPI, HTTPException, Request, Response, status
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
-from sqlalchemy import create_engine
+from fastapi import Cookie, FastAPI, HTTPException, Request, Response, status
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+import html
+import json
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from face_moment.infrastructure.object_store import PrivateObjectStore
@@ -38,6 +40,11 @@ from face_moment.promo.display_outcome import (
     PromoDisplaySessionNotFoundError,
     parse_display_report,
 )
+from face_moment.promo.realtime_evidence import (
+    attach_realtime_evidence_patch_in_session,
+)
+from face_moment.promo.attempt import PromoAttempt
+from face_moment.promo.retention import read_latest_retention_result
 from face_moment.promo.qr_continuation import (
     PHONE_COOKIE_NAME,
     PhoneContinuationConfigurationError,
@@ -46,13 +53,15 @@ from face_moment.promo.qr_continuation import (
     PhonePublicRateLimiter,
     validate_phone_purchase_url,
 )
-from face_moment.promo.session import PromoSessionNotFoundError
+from face_moment.promo.session import PromoSession, PromoSessionNotFoundError
 from face_moment.serving_control.display_client_auth import (
     DisplayClientRateLimiter,
     DisplayClientRateLimitError,
     InvalidDisplayClientCredentials,
     authenticate_display_client,
 )
+from face_moment.platform.auth.principals import StaffRole
+from face_moment.platform.auth.sessions import InvalidSessionError, get_current_principal
 
 
 _NO_STORE_HEADERS = {"Cache-Control": "no-store"}
@@ -115,6 +124,37 @@ def register_promo_display_routes(app: FastAPI) -> None:
         return response
 
     _register_promo_media_and_outcome_routes(app)
+
+
+def register_diagnostic_retention_routes(app: FastAPI) -> None:
+    """Register the read-only authorized latest-retention projection."""
+
+    @app.get("/api/diagnostics/retention")
+    def diagnostic_retention_api(
+        fm_staff_session: str | None = Cookie(default=None),
+    ) -> Response:
+        settings = Settings.from_env()
+        with _database_session(settings) as database_session:
+            _require_retention_staff(database_session, fm_staff_session)
+            payload = read_latest_retention_result(database_session)
+        response = JSONResponse(status_code=status.HTTP_200_OK, content=payload)
+        response.headers.update(_NO_STORE_HEADERS)
+        return response
+
+    @app.get("/staff/diagnostics-retention", response_class=HTMLResponse)
+    def diagnostic_retention_page(
+        fm_staff_session: str | None = Cookie(default=None),
+    ) -> Response:
+        settings = Settings.from_env()
+        with _database_session(settings) as database_session:
+            _require_retention_staff(database_session, fm_staff_session)
+            payload = read_latest_retention_result(database_session)
+        body = (
+            "<main><h1>Diagnostics retention</h1><pre>"
+            f"{html.escape(json.dumps(payload, indent=2, sort_keys=True))}"
+            "</pre></main>"
+        )
+        return HTMLResponse(status_code=status.HTTP_200_OK, content=body, headers=_NO_STORE_HEADERS)
 
 
 def register_phone_continuation_routes(app: FastAPI, *, client_root: Path) -> None:
@@ -359,6 +399,34 @@ def _register_promo_media_and_outcome_routes(app: FastAPI) -> None:
                     report=report,
                 )
                 database_session.commit()
+                attempt_id = database_session.scalar(
+                    select(PromoSession.attempt_id).where(
+                        PromoSession.id == outcome.session_id
+                    )
+                )
+                attempt = (
+                    None
+                    if attempt_id is None
+                    else database_session.get(PromoAttempt, attempt_id)
+                )
+                if attempt is not None:
+                    attach_realtime_evidence_patch_in_session(
+                        database_session,
+                        attempt=attempt,
+                        ordinary_manifest={
+                            "schema_version": 1,
+                            "display": {
+                                "status": outcome.status,
+                                "reported_at": (
+                                    None
+                                    if outcome.display_reported_at is None
+                                    else _utc_iso(outcome.display_reported_at)
+                                ),
+                                "qr_fully_visible_elapsed_ms": outcome.qr_fully_visible_elapsed_ms,
+                            },
+                        },
+                        issue_tags=("display_event_received",),
+                    )
             except PromoDisplaySessionNotFoundError as error:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -397,6 +465,21 @@ def _database_session(settings: Settings) -> Iterator[Session]:
             yield database_session
     finally:
         engine.dispose()
+
+
+def _require_retention_staff(session: Session, session_token: str | None) -> None:
+    try:
+        principal = get_current_principal(session, session_token=session_token)
+    except InvalidSessionError as error:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            headers=_NO_STORE_HEADERS,
+        ) from error
+    if principal.role not in {StaffRole.OPERATOR, StaffRole.DEVELOPER}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            headers=_NO_STORE_HEADERS,
+        )
 
 
 def _display_rate_limiter(app: FastAPI, settings: Settings) -> DisplayClientRateLimiter:
@@ -595,4 +678,8 @@ def _utc_iso(value: datetime) -> str:
     return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-__all__ = ["register_phone_continuation_routes", "register_promo_display_routes"]
+__all__ = [
+    "register_diagnostic_retention_routes",
+    "register_phone_continuation_routes",
+    "register_promo_display_routes",
+]

@@ -18,6 +18,7 @@ from face_moment.serving_control import display_client_access
 from face_moment.serving_control import realtime_context
 from face_moment.diagnostics import evidence as diagnostic_evidence
 from face_moment.promo import attempt as promo_attempt
+from face_moment.promo import retention as promo_retention
 
 _ = staff_principals
 _ = staff_sessions
@@ -30,6 +31,7 @@ _ = display_client_access
 _ = realtime_context
 _ = diagnostic_evidence
 _ = promo_attempt
+_ = promo_retention
 
 config = context.config
 if config.config_file_name is not None:

@@ -238,6 +238,7 @@ class DiagnosticEvidenceRepository:
         issue_tags: Sequence[str] | None = None,
         schema_version: int = CURRENT_SCHEMA_VERSION,
         now: datetime | None = None,
+        create_if_missing: bool = True,
     ) -> DiagnosticEvidence:
         """Create or idempotently merge one ordinary versioned evidence row."""
 
@@ -255,27 +256,28 @@ class DiagnosticEvidenceRepository:
         )
         timestamp = _utc(now)
 
-        inserted = postgresql_insert(DiagnosticEvidence).values(
-            id=uuid.uuid4(),
-            attempt_id=attempt_id,
-            schema_version=schema_version,
-            completeness=normalized_completeness,
-            gap_reason=normalized_gap,
-            issue_tags=normalized_tags,
-            ordinary_manifest=normalized_manifest,
-            created_at=timestamp,
-            updated_at=timestamp,
-            finalized_at=(
-                timestamp
-                if normalized_completeness == Completeness.COMPLETE.value
-                else None
-            ),
-        )
-        self._session.execute(
-            inserted.on_conflict_do_nothing(
-                index_elements=["attempt_id", "schema_version"]
+        if create_if_missing:
+            inserted = postgresql_insert(DiagnosticEvidence).values(
+                id=uuid.uuid4(),
+                attempt_id=attempt_id,
+                schema_version=schema_version,
+                completeness=normalized_completeness,
+                gap_reason=normalized_gap,
+                issue_tags=normalized_tags,
+                ordinary_manifest=normalized_manifest,
+                created_at=timestamp,
+                updated_at=timestamp,
+                finalized_at=(
+                    timestamp
+                    if normalized_completeness == Completeness.COMPLETE.value
+                    else None
+                ),
             )
-        )
+            self._session.execute(
+                inserted.on_conflict_do_nothing(
+                    index_elements=["attempt_id", "schema_version"]
+                )
+            )
         evidence = self.require(
             attempt_id, schema_version=schema_version, for_update=True
         )
@@ -383,7 +385,28 @@ class DiagnosticEvidenceRepository:
         now: datetime | None = None,
         schema_version: int = CURRENT_SCHEMA_VERSION,
     ) -> bool:
-        """Make ordinary content unreadable once, without deleting promotion."""
+        """Expire ordinary content and clear its manifest in one owner call."""
+
+        if not self.mark_ordinary_expired(
+            attempt_id=attempt_id,
+            now=now,
+            schema_version=schema_version,
+        ):
+            return False
+        self.clear_expired_ordinary(
+            attempt_id=attempt_id,
+            schema_version=schema_version,
+        )
+        return True
+
+    def mark_ordinary_expired(
+        self,
+        *,
+        attempt_id: uuid.UUID,
+        now: datetime | None = None,
+        schema_version: int = CURRENT_SCHEMA_VERSION,
+    ) -> bool:
+        """Make ordinary content inaccessible while retaining cleanup state."""
 
         _validate_attempt_id(attempt_id)
         _validate_schema_version(schema_version)
@@ -393,9 +416,33 @@ class DiagnosticEvidenceRepository:
         if evidence is None or evidence.ordinary_expired_at is not None:
             return False
         timestamp = _utc(now)
-        evidence.ordinary_manifest = None
         evidence.ordinary_expired_at = timestamp
         evidence.updated_at = timestamp
+        self._session.flush()
+        self._session.refresh(evidence)
+        return True
+
+    def clear_expired_ordinary(
+        self,
+        *,
+        attempt_id: uuid.UUID,
+        schema_version: int = CURRENT_SCHEMA_VERSION,
+    ) -> bool:
+        """Clear retained ordinary cleanup state after object deletion."""
+
+        _validate_attempt_id(attempt_id)
+        _validate_schema_version(schema_version)
+        evidence = self.get(
+            attempt_id, schema_version=schema_version, for_update=True
+        )
+        if (
+            evidence is None
+            or evidence.ordinary_expired_at is None
+            or evidence.ordinary_manifest is None
+        ):
+            return False
+        evidence.ordinary_manifest = None
+        evidence.updated_at = evidence.ordinary_expired_at
         self._session.flush()
         self._session.refresh(evidence)
         return True
@@ -430,6 +477,33 @@ class DiagnosticEvidenceProvider:
                 issue_tags=issue_tags,
                 schema_version=schema_version,
                 now=now,
+            ),
+        )
+
+    def patch(
+        self,
+        *,
+        attempt_id: uuid.UUID,
+        ordinary_manifest: Mapping[str, object],
+        gap_reason: str,
+        issue_tags: Sequence[str] | None = None,
+        schema_version: int = CURRENT_SCHEMA_VERSION,
+        now: datetime | None = None,
+    ) -> EvidenceWriteOutcome:
+        """Merge a later receipt without creating an anchor if the base is absent."""
+
+        return self._run(
+            "patch",
+            attempt_id,
+            lambda: self._repository.write_bundle(
+                attempt_id=attempt_id,
+                ordinary_manifest=ordinary_manifest,
+                completeness=Completeness.INCOMPLETE.value,
+                gap_reason=gap_reason,
+                issue_tags=issue_tags,
+                schema_version=schema_version,
+                now=now,
+                create_if_missing=False,
             ),
         )
 
@@ -674,9 +748,27 @@ def _merge_manifests(
     existing: dict[str, object] | None,
     incoming: dict[str, object],
 ) -> dict[str, object]:
-    merged = dict(existing or {})
-    merged.update(incoming)
+    merged: dict[str, object] = dict(existing or {})
+    for key, value in incoming.items():
+        prior = merged.get(key)
+        if isinstance(prior, dict) and isinstance(value, dict):
+            merged[key] = _merge_json_objects(prior, value)
+        else:
+            merged[key] = value
     return _validate_ordinary_manifest(merged)
+
+
+def _merge_json_objects(
+    existing: Mapping[str, object], incoming: Mapping[str, object]
+) -> dict[str, object]:
+    merged: dict[str, object] = dict(existing)
+    for key, value in incoming.items():
+        prior = merged.get(key)
+        if isinstance(prior, dict) and isinstance(value, dict):
+            merged[key] = _merge_json_objects(prior, value)
+        else:
+            merged[key] = value
+    return merged
 
 
 def _utc(value: datetime | None) -> datetime:

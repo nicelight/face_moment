@@ -4,6 +4,47 @@ status: active
 ---
 # Changelog
 
+## [2026-08-29] FT-007 feature boundary — semantic verification reconciled
+- Reconciled the already-authoritative FT-007 feature-level
+  `SEMANTIC_VERDICT: semantic-pass` with its final Red Verify report and
+  protocol for the completed W3 non-production boundary TASK-083…086.
+- Kept `REQ-DIAG-002` `verified` as already reconciled; the remaining affected
+  RTM rows stay `planned` where other feature obligations remain open.
+- Kept FT-007 and EP-003 at `lifecycle: planned`; TASK-087 and
+  `FT-007-AC-006` remain planned and explicitly excluded as production
+  acceptance. Existing feature, epic, root, task and implementation-plan
+  routers and canonical links already agree, so no router repair was needed.
+- Preserved TASK-086 `done`, TASK-075 `blocked`, FT-003 closed/ignored state,
+  unrelated working-tree dirt and named data/volumes. No task, promotion,
+  selection, production or scheduler decision was made by this sync.
+
+## [2026-08-29] Wave W3 — TASK-086 ordinary retention closure reconciled
+- Reconciled the scheduler-owned `done` closure for
+  [TASK-086-T3-FT-007-W3](tasks/TASK-086-T3-FT-007-W3.task.json) with fresh
+  functional Verify Attempt 3 `PASS`, required Red Verify Attempt 3
+  `semantic-pass`, and the recorded T3 closure evidence; the earlier semantic
+  failure remains historical.
+- Advanced only `REQ-DIAG-002` to `verified`, because its complete
+  `FT-007-AC-002..004` scope is now closed. Kept `REQ-DIAG-001`,
+  `REQ-DIAG-003`, `REQ-DATA-001`, `REQ-PERF-001`, `REQ-SEC-001` and
+  `REQ-ARCH-001` planned where other feature obligations remain open.
+- Kept FT-007 and EP-003 `planned` because W4 `TASK-087` still owns
+  `FT-007-AC-006`; no task status, promotion, dependent state or production
+  acceptance decision was made by this sync.
+- Restored the missing `IMPL-FT-007` entry in the implementation-plan router.
+
+## [2026-08-29] Wave W3 — FT-007 realtime evidence integration reconciled
+- Reconciled the scheduler-owned `done` closure for
+  [TASK-085-T2-FT-007-W3](tasks/TASK-085-T2-FT-007-W3.task.json) with fresh
+  independent Verify Attempt 1 `PASS` and the recorded T2 closure evidence.
+- Reconciled the best-effort realtime diagnostics attachment for result,
+  zero-proposal, busy, deadline and technical-failure outcomes, including
+  explicit incomplete evidence gaps and unchanged participant truth.
+- Confirmed the task remains indexed and kept FT-007, EP-003 and mapped RTM
+  rows `planned`: TASK-086 and TASK-087 still own later FT-007 acceptance
+  outcomes. No feature/epic closure or promotion decision was made by this
+  sync.
+
 
 
 - 2026-08-28: Documented the non-secret workstation SSH commands for the VPS

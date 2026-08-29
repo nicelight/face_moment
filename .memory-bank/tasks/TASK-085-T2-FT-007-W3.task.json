@@ -1,7 +1,7 @@
 {
   "id": "TASK-085-T2-FT-007-W3",
   "title": "Attach realtime evidence without blocking participant flow",
-  "status": "planned",
+  "status": "done",
   "wave": "W3",
   "feature": "FT-007",
   "reqs": [
@@ -38,11 +38,39 @@
     },
     {
       "name": "Memory Bank architecture lint",
-      "command": "node scripts/mb-lint.mjs",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "attempt": 1,
+      "verdict": "PASS",
+      "completed_at": "2026-08-29T01:06:28+05:00",
+      "summary": "Fresh independent T2 verification passed FT-007-AC-002/003, the disposable result/zero-proposal/busy/deadline/technical-failure and writer-isolation matrix, response/display finalization, no-selfie/protected-data scope, owner-boundary review, required mypy and Memory Bank lint gates, and cleanup. Task remains in_progress; no lifecycle transition was performed.",
+      "protocol": ".protocols/TASK-085-T2-FT-007-W3/verification.md",
+      "report": ".tasks/TASK-085-T2-FT-007-W3/TASK-085-T2-FT-007-W3-S-VERIFY-final-report-docs-01.md",
+      "evidence": [
+        ".tasks/TASK-085-T2-FT-007-W3/verify-independent-probe.py",
+        ".tasks/TASK-085-T2-FT-007-W3/TASK-085-T2-FT-007-W3-S-EXECUTE-red-transcript-02.md"
+      ]
+    },
+    {
+      "stage": "closure",
+      "attempt": 1,
+      "verdict": "done",
+      "completed_at": "2026-08-29T01:07:56+05:00",
+      "summary": "Scheduler closed TASK-085 after the same Attempt 1 executor READY_FOR_VERIFY handoff, the single Judge-authorized post-implementation backend build with current-tree/image SHA match, literal pytest/mypy/lint gates, and fresh independent Verify PASS. No T2 red-verify is required.",
+      "evidence": [
+        ".tasks/TASK-085-T2-FT-007-W3/TASK-085-T2-FT-007-W3-S-EXECUTE-final-report-code-01.md",
+        ".tasks/TASK-085-T2-FT-007-W3/TASK-085-T2-FT-007-W3-S-VERIFY-final-report-docs-01.md",
+        ".protocols/TASK-085-T2-FT-007-W3/progress.md",
+        ".protocols/TASK-085-T2-FT-007-W3/handoff.md",
+        ".protocols/TASK-085-T2-FT-007-W3/verification.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-007.md",
     ".memory-bank/domains/diagnostic-evidence.md",

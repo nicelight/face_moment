@@ -51,6 +51,16 @@ from face_moment.promo.display_config import (
     InvalidDisplayConfigurationError,
     read_display_configuration,
 )
+from face_moment.promo.retention import (
+    ORDINARY_RETENTION_DAYS,
+    TECHNICAL_LOG_RETENTION_DAYS,
+    PromoRetentionService,
+    RetentionCleanupLatest,
+    RetentionCleanupOutcome,
+    RetentionCleanupState,
+    read_latest_retention_result,
+    run_retention_cleanup,
+)
 
 __all__ = [
     "PromoAttempt",
@@ -91,4 +101,12 @@ __all__ = [
     "DisplayConfiguration",
     "InvalidDisplayConfigurationError",
     "read_display_configuration",
+    "ORDINARY_RETENTION_DAYS",
+    "TECHNICAL_LOG_RETENTION_DAYS",
+    "PromoRetentionService",
+    "RetentionCleanupLatest",
+    "RetentionCleanupOutcome",
+    "RetentionCleanupState",
+    "read_latest_retention_result",
+    "run_retention_cleanup",
 ]

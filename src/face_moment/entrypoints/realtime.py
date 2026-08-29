@@ -43,6 +43,12 @@ from face_moment.promo import (
     PromoSessionRepository,
     record_client_response_timing,
     execute_realtime_attempt,
+    RealtimeAttemptExecution,
+)
+from face_moment.promo.realtime_evidence import (
+    attach_realtime_evidence,
+    attach_realtime_evidence_patch,
+    project_realtime_evidence,
 )
 from face_moment.promo.realtime_admission import (
     RealtimeBodyTooLargeError,
@@ -211,12 +217,15 @@ def create_app() -> FastAPI:
                         "qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
                     ),
                 )
+            execution = None
             if payload.proposal_count == 0:
                 repository.mark_no_proposals(attempt)
+                execution = RealtimeAttemptExecution(outcome="no_proposals")
             else:
                 adapter = state.get("model_adapter")
                 if adapter is None or "object_store" not in state:
                     repository.mark_internal_failure(attempt)
+                    execution = RealtimeAttemptExecution(outcome="internal_failure")
                 else:
                     engine = cast(FaceEngine, adapter)
 
@@ -229,7 +238,7 @@ def create_app() -> FastAPI:
                             occurrences=_reference_occurrences(payload),
                         )
 
-                    execute_realtime_attempt(
+                    execution = execute_realtime_attempt(
                         repository=repository,
                         attempt=attempt,
                         search=process_search,
@@ -238,7 +247,25 @@ def create_app() -> FastAPI:
                         ),
                         result_display_ms=state["realtime_result_display_ms"],
                     )
+            assert execution is not None
+            # Attempt transitions use SQL UPDATE statements so the repository
+            # remains the only owner of core state. Reload the owner row before
+            # projecting diagnostics, otherwise the SQLAlchemy identity map can
+            # still contain the pre-terminal ``accepted`` snapshot.
+            database_session.refresh(attempt)
+            evidence_manifest, evidence_gap, evidence_tags = project_realtime_evidence(
+                attempt,
+                execution=execution,
+            )
+            evidence_attempt_id = attempt.id
             database_session.commit()
+            attach_realtime_evidence(
+                session_factory,
+                attempt_id=evidence_attempt_id,
+                ordinary_manifest=evidence_manifest,
+                gap_reason=evidence_gap,
+                issue_tags=evidence_tags,
+            )
             return _response_for_attempt(
                 attempt,
                 database_session=database_session,
@@ -300,6 +327,17 @@ def create_app() -> FastAPI:
                     "attempt_id": str(attempt.client_attempt_id),
                     "response_received_ms": attempt.response_received_ms,
                 }
+                attach_realtime_evidence_patch(
+                    session_factory,
+                    attempt=attempt,
+                    ordinary_manifest={
+                        "schema_version": 1,
+                        "client": {
+                            "response_received_ms": report.response_received_ms,
+                        },
+                    },
+                    issue_tags=("response_received",),
+                )
             except PromoAttemptNotFoundError as error:
                 database_session.rollback()
                 raise HTTPException(

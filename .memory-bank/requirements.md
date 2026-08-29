@@ -1,7 +1,7 @@
 ---
 description: Stable product requirements and REQ-to-epic-to-feature traceability for the one-СПА pilot.
 status: draft
-last_updated: 2026-08-24
+last_updated: 2026-08-29
 ---
 # Requirements
 
@@ -109,7 +109,7 @@ product scope; feature and task anti-goals only narrow their assigned work.
 | `REQ-UX-004` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md), [FT-005](features/FT-005.md) | `FT-003-AC-007..008`, `FT-003-AC-016`, `FT-005-AC-005`; PRD AC-14 | planned |
 | `REQ-PERF-001` | [EP-002](epics/EP-002.md), [EP-003](epics/EP-003.md) | [FT-003](features/FT-003.md), [FT-004](features/FT-004.md), [FT-005](features/FT-005.md), [FT-007](features/FT-007.md) | `FT-003-AC-010`, `FT-004-AC-004`, `FT-005-AC-002`, `FT-007-AC-001`; PRD AC-01..03/05/07 | planned |
 | `REQ-DIAG-001` | [EP-002](epics/EP-002.md), [EP-003](epics/EP-003.md) | [FT-003](features/FT-003.md), [FT-004](features/FT-004.md), [FT-007](features/FT-007.md), [FT-008](features/FT-008.md) | `FT-003-AC-006`, `FT-003-AC-008`, `FT-003-AC-015`, `FT-004-AC-007..008`, `FT-007-AC-001`, `FT-007-AC-005`, `FT-008-AC-001`; PRD AC-05/10/22 and NFR-REL-03 interruption evidence | planned |
-| `REQ-DIAG-002` | [EP-003](epics/EP-003.md) | [FT-007](features/FT-007.md) | `FT-007-AC-002..004`; PRD AC-05/10/13 | planned |
+| `REQ-DIAG-002` | [EP-003](epics/EP-003.md) | [FT-007](features/FT-007.md) | `FT-007-AC-002..004`; PRD AC-05/10/13 | verified |
 | `REQ-DIAG-003` | [EP-003](epics/EP-003.md) | [FT-007](features/FT-007.md), [FT-008](features/FT-008.md) | `FT-007-AC-004`, `FT-008-AC-001..005`; PRD AC-09/10 and the latest-retention-result role boundary | planned |
 | `REQ-LOG-001` | [EP-003](epics/EP-003.md) | [FT-009](features/FT-009.md) | `FT-009-AC-001..004`; PRD AC-10/13 | planned |
 | `REQ-ANN-001` | [EP-003](epics/EP-003.md) | [FT-010](features/FT-010.md) | `FT-010-AC-001..003`; PRD AC-11 | planned |

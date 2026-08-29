@@ -1,7 +1,7 @@
 ---
 description: Implementation plan for scoped realtime search and result assembly in FT-004.
 status: active
-last_updated: 2026-08-22
+last_updated: 2026-08-29
 ---
 # IMPL-FT-004 — Scoped Realtime Search And Result Assembly
 
@@ -83,7 +83,8 @@ read-only to processing; foreign mutable state is never written directly.
 | `TASK-072-T3-FT-004-W4` | T3 | W4 | `TASK-071-T2-FT-004-W3`, `TASK-043-T2-FT-003-W1` | Promo Attempt `Atomic result-session publication` | One durable session and atomic/idempotent result publication. |
 | `TASK-073-T3-FT-004-W3` | T3 | W3 | `TASK-070-T2-FT-004-W2`, `TASK-043-T2-FT-003-W1` | `FT-004-AC-007` | One non-blocking slot, typed busy, one deadline and fresh acquisition. |
 | `TASK-074-T3-FT-004-W1` | T3 | W1 | `TASK-043-T2-FT-003-W1` | `FT-004-AC-008` | Startup interruption of stale Attempts without inference replay or late result. |
-| `TASK-075-T3-FT-004-W5` | T3 | W5 | `TASK-045-T3-FT-003-W3`, `TASK-057-T3-FT-003-W2`, `TASK-060-T2-FT-003-W2`, `TASK-068-T3-FT-004-W1`, `TASK-072-T3-FT-004-W4`, `TASK-073-T3-FT-004-W3`, `TASK-074-T3-FT-004-W1` | `FT-004-AC-004..006` | Full authenticated route, typed outcomes, security and controlled server-correctness evidence. |
+| `TASK-075-T3-FT-004-W5` | T3 | W5 | `TASK-045-T3-FT-003-W3`, `TASK-057-T3-FT-003-W2`, `TASK-060-T2-FT-003-W2`, `TASK-068-T3-FT-004-W1`, `TASK-072-T3-FT-004-W4`, `TASK-073-T3-FT-004-W3`, `TASK-074-T3-FT-004-W1` | `FT-004-AC-005..006` | Full authenticated route, typed outcomes and security are development outcomes; TASK-075 becomes `done_for_prod` once those dev claims pass their T3 gates. |
+| `TASK-088-T3-FT-004-W6` | T3 | W6 | `TASK-075-T3-FT-004-W5` | `FT-004-AC-004` | Final production-only acceptance of the authorized same-twenty server-correctness corpus and 19/20 result. |
 
 `TASK-069` owns the native selection seam; `TASK-070` owns the feature-level
 processing integration delta and may exercise the completed seam without
@@ -113,7 +114,7 @@ exact-head requirement.
 ## Tests, Gates And UAT
 
 - Every task runs configured Python mypy, its focused pytest target and
-  `node scripts/mb-lint.mjs`.
+  `node .memory-bank/scripts/mb-lint.mjs`.
 - `TASK-068` uses task-owned staff/СПА state and `playwright cli` for the real
   same-origin operator flow, preserving screenshots/transcript under its task
   artifact directory.
@@ -123,11 +124,13 @@ exact-head requirement.
 - Promo fixtures cover repeated Photo matches, diversity ties, insufficient
   pools, atomic result publication, idempotent repeats, busy/no-waiter, deadline
   discard and startup interruption.
-- `TASK-075` sends direct requests through the real HTTPS edge when available,
-  proves token-derived scope/rate/redaction and retains the stable twenty-row
-  correctness corpus. Each row names all four teasers and every union member,
-  the manual reviewer role and pass/fail comparison. Missing group-member
-  coverage remains allowed.
+- `TASK-075` sends direct requests through the available development/test edge,
+  proves token-derived scope/rate/redaction and typed non-success behavior, and
+  does not run the production-only correctness corpus before deployment. After
+  deployment, the authorized acceptance run retains one stable twenty-row
+  corpus; each row names all four teasers and every union member, the manual
+  reviewer role and pass/fail comparison. Missing group-member coverage
+  remains allowed.
 - FT-004 closure does not claim the later FT-005 join of these Attempt IDs to
   fully-visible/scannable QR latency evidence.
 - All stateful probes use unique disposable PostgreSQL/application records,
@@ -151,9 +154,13 @@ exact-head requirement.
 
 ## Definition Of Done
 
-All eight indexed cards satisfy their exact claims and tier obligations; every
-`FT-004-AC-001..008` is owned exactly once; every task retains the completed
-Foundation gate directly or transitively; task-relevant modules and edges match
-the accepted Boundary Map; the feature remains `spec_design_status: complete`;
-and fresh `/review-tasks-plan FT-004` can evaluate the queue at Planning
-Revision `4` without implementation guesses.
+All eight implementation cards satisfy their development claims and tier
+obligations; `TASK-075` is `done_for_prod` after AC-005/AC-006 development
+verification and semantic review, while `TASK-088` remains the explicit planned
+production acceptance card for AC-004. Every `FT-004-AC-001..008` remains owned
+exactly once; every task retains the completed Foundation gate directly or
+transitively; task-relevant modules and edges match the accepted Boundary Map;
+the feature remains `spec_design_status: complete`; and fresh
+`/review-tasks-plan FT-004` can evaluate the queue at Planning Revision `4`
+without implementation guesses. FT-004 feature completion is not claimed until
+TASK-088 provides the production AC-004 evidence.

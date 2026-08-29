@@ -10,6 +10,12 @@ from face_moment.diagnostics.evidence import (
     DiagnosticEvidenceRepository,
     EvidenceWriteOutcome,
 )
+from face_moment.diagnostics.retention import (
+    DiagnosticRetentionProvider,
+    DiagnosticRetentionResult,
+    RetentionObjectStore,
+    expire_diagnostic_attempts,
+)
 
 __all__ = [
     "CURRENT_SCHEMA_VERSION",
@@ -20,4 +26,8 @@ __all__ = [
     "DiagnosticEvidenceProvider",
     "DiagnosticEvidenceRepository",
     "EvidenceWriteOutcome",
+    "DiagnosticRetentionProvider",
+    "DiagnosticRetentionResult",
+    "RetentionObjectStore",
+    "expire_diagnostic_attempts",
 ]

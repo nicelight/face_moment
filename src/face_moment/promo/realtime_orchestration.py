@@ -141,6 +141,7 @@ RealtimeAttemptOutcome = Literal[
     "result",
     "busy",
     "deadline",
+    "no_proposals",
     "unacceptable_query",
     "insufficient_results",
     "interrupted",
@@ -154,6 +155,8 @@ class RealtimeAttemptExecution:
 
     outcome: RealtimeAttemptOutcome
     session: ResultSessionResponse | None = None
+    search_result: RealtimeSearchResult | None = None
+    assembly: ResultAssembly | None = None
 
 
 def execute_realtime_attempt(
@@ -196,12 +199,16 @@ def execute_realtime_attempt(
     search_result = processing.value
     if _is_unacceptable_query(search_result):
         repository.mark_unacceptable_query(attempt, now=utc_now())
-        return RealtimeAttemptExecution(outcome="unacceptable_query")
+        return RealtimeAttemptExecution(
+            outcome="unacceptable_query", search_result=search_result
+        )
 
     assembly = assemble_result(search_result)
     if assembly.outcome != "result":
         repository.mark_insufficient_results(attempt, now=utc_now())
-        return RealtimeAttemptExecution(outcome="insufficient_results")
+        return RealtimeAttemptExecution(
+            outcome="insufficient_results", search_result=search_result
+        )
 
     issued_at = _utc(utc_now())
     try:
@@ -215,8 +222,15 @@ def execute_realtime_attempt(
         )
     except Exception:
         repository.mark_internal_failure(attempt, now=utc_now())
-        return RealtimeAttemptExecution(outcome="internal_failure")
-    return RealtimeAttemptExecution(outcome="result", session=session)
+        return RealtimeAttemptExecution(
+            outcome="internal_failure", search_result=search_result, assembly=assembly
+        )
+    return RealtimeAttemptExecution(
+        outcome="result",
+        session=session,
+        search_result=search_result,
+        assembly=assembly,
+    )
 
 
 def _is_unacceptable_query(search_result: RealtimeSearchResult) -> bool:
