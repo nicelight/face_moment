@@ -1,6 +1,6 @@
 {
   "id": "TASK-079-T3-FT-005-W3",
-  "title": "Production acceptance: prove the joint visible and scannable QR gate",
+  "title": "Production acceptance: prove the independent visible and scannable QR gate",
   "status": "planned",
   "wave": "W3",
   "feature": "FT-005",
@@ -10,7 +10,6 @@
     "REQ-ARCH-001"
   ],
   "depends_on": [
-    "TASK-075-T3-FT-004-W5",
     "TASK-076-T3-FT-005-W1",
     "TASK-077-T3-FT-005-W2",
     "TASK-078-T3-FT-005-W2"
@@ -27,7 +26,7 @@
     },
     {
       "name": "Memory Bank architecture lint",
-      "command": "node scripts/mb-lint.mjs",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
       "required": true
     }
   ],
@@ -39,12 +38,12 @@
     ".memory-bank/tasks/plans/IMPL-FT-005.md"
   ],
   "evidence_required": [
-    "FT-005-AC-002 RED_NOT_APPLICABLE: TASK-079 changes no application behavior and only evaluates the authorized production corpus, so inducing a pre-change behavior failure would falsify the accepted setup and absence of an evidence artifact says nothing about current behavior; alternative proof: evaluate every conjunct for all twenty authorized stable Attempt rows, preserve a pre-existing passing observation as GREEN when present, and require at least nineteen of those same rows to be correctness-valid, fully visible/scannable and below 10000 ms while timeout/no-match remain failures; decisive comparison: redacted twenty-row manifest and explicit 19/20 count; artifact: evaluator record, timing/scan receipts and redacted manifest under .tasks/TASK-079-T3-FT-005-W3/."
+    "FT-005-AC-002 RED_NOT_APPLICABLE: TASK-079 changes no application behavior and only evaluates the authorized production corpus, so inducing a pre-change behavior failure would falsify the accepted setup and absence of an evidence artifact says nothing about current behavior; alternative proof: evaluate the FT-005 QR/latency criteria for all twenty authorized stable Attempt rows, preserve a pre-existing passing observation as GREEN when present, and require at least nineteen of those same rows to be fully visible/scannable and below 10000 ms while timeout/no-match remain failures; do not apply a server-correctness filter or calculate a joint intersection/pass set; decisive comparison: redacted twenty-row QR/latency manifest and explicit independent 19/20 count; artifact: evaluator record, timing/scan receipts and redacted manifest under .tasks/TASK-079-T3-FT-005-W3/."
   ],
-  "purpose": "Make the final production-only decision on the shared controlled twenty-Attempt visible/scannable QR performance target after all implementation outcomes are complete.",
-  "success_outcome": "At least nineteen of the same twenty authorized controlled Attempts pass server correctness, complete target-screen rendering, one-clock under-10-second visibility, programmatic QR decode and representative-phone scanning.",
+  "purpose": "Make the final production-only decision on the independent same-twenty visible/scannable QR performance target after all FT-005 implementation outcomes are complete.",
+  "success_outcome": "At least nineteen of the same twenty controlled Attempts pass FT-005's complete target-screen rendering, one-clock under-10-second visibility, programmatic QR decode and representative-phone scanning.",
   "anti_goals": [
-    "Do not implement or repair application behavior, configuration, deployment or upstream FT-004 claims in this task.",
+    "Do not implement or repair application behavior, configuration, deployment or FT-004 server-correctness claims in this task.",
     "Do not synthesize, replace, down-sample or exclude rows from the authorized twenty-Attempt corpus.",
     "Do not claim FT-006 phone-session continuation, production rollout or recovery after primary loss."
   ],
@@ -55,7 +54,7 @@
       "Operator/default database, session or media mutation beyond the authorized controlled run"
     ],
     "stop_conditions": [
-      "TASK-075 is not done or the authorized twenty stable Attempt IDs and evaluator ground truth are unavailable.",
+      "The authorized twenty stable Attempt IDs or the FT-005 production evaluator are unavailable.",
       "The configured pilot screen/camera/client or representative phone set is unavailable or materially differs from the accepted controlled setup.",
       "A passing result would require excluding timeout/no-match, changing the denominator, fabricating a scan or combining different Attempt sets.",
       "The probe would require new production authority, unsafe secret handling or unapproved participant data retention."
@@ -63,7 +62,6 @@
   },
   "source_artifacts": [
     ".memory-bank/features/FT-005.md#FT-005-AC-002",
-    ".memory-bank/tasks/TASK-075-T3-FT-004-W5.task.json",
     ".protocols/FT-005/plan.md",
     ".memory-bank/tasks/plans/IMPL-FT-005.md"
   ],
@@ -75,7 +73,7 @@
     ".memory-bank/states/lifecycle-map.md#automatic-attempt-and-display"
   ],
   "constraints": [
-    "Use exactly the same twenty stable attempt_id values and authorized FT-004 evaluator rows; dependency proof remains with TASK-075 and is joined, not inherited.",
+    "Use exactly the same twenty stable attempt_id values as the controlled production corpus; record only FT-005 QR/latency observations and do not consume FT-004 correctness evidence.",
     "Run on the accepted 43-inch landscape logical 1920x1080 client setup with an authorized pilot evaluator and representative real phones.",
     "Measure from reference_series_ready_at through full QR visibility on one client monotonic clock; never subtract client and server wall clocks.",
     "Retain only redacted task-owned artifacts and record evaluator role, criterion, conditions, observed values and decisive per-row pass/fail comparison.",
@@ -83,13 +81,13 @@
   ],
   "invariants": [
     "All twenty rows remain in the denominator and timeout/no-match are failures.",
-    "A row passes only when every server-correctness, render, timing, decode and representative-phone conjunct passes.",
+    "A row passes only when every FT-005 render, timing, decode and representative-phone conjunct passes; server correctness is evaluated separately by FT-004.",
     "At least nineteen of the same twenty rows must pass; evidence from another corpus cannot substitute.",
     "No production/application mutation may turn a failing acceptance run into a pass inside this task."
   ],
   "verification_targets": [
     ".memory-bank/features/FT-005.md#FT-005-AC-002",
-    "Record the authorized redacted same-twenty manifest, one-clock values, target-screen result, programmatic decode, representative-phone scan and explicit joint 19/20 count.",
-    "Independently confirm no row exclusion, cross-clock subtraction, fabricated evaluator result, secret disclosure or task-external state mutation."
+    "Record the authorized redacted same-twenty manifest, one-clock values, target-screen result, programmatic decode, representative-phone scan and explicit independent 19/20 QR/latency count.",
+    "Independently confirm no row exclusion, cross-clock subtraction, server-correctness filter, joint intersection/pass set, fabricated evaluator result, secret disclosure or task-external state mutation."
   ]
 }

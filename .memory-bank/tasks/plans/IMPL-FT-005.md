@@ -1,7 +1,7 @@
 ---
 description: Implementation plan for truthful Promo presentation, display outcome and visible-QR acceptance in FT-005.
 status: active
-last_updated: 2026-08-26
+last_updated: 2026-08-29
 ---
 # IMPL-FT-005 — Promo Presentation And Display Outcome
 
@@ -103,7 +103,7 @@ that accepted boundary without diagnostic code changes.
 | `TASK-076-T3-FT-005-W1` | T3 | W1 | completed derivative, client-shell/outcome/fallback, display-auth and result-session seams | `FT-005-AC-001`, `FT-005-AC-005` | Complete authenticated four-teaser Promo/QR or safe advertising with no partial success/cooldown. |
 | `TASK-077-T3-FT-005-W2` | T3 | W2 | `TASK-076`, completed one-clock markers | `FT-005-AC-003` | End-to-end authenticated post-render report and durable effective display status using existing columns. |
 | `TASK-078-T3-FT-005-W2` | T3 | W2 | `TASK-076` | `FT-005-AC-004` | Independent positive display/cooldown config and local expiry without QR-session invalidation. |
-| `TASK-079-T3-FT-005-W3` | T3 | W3 | all FT-005 implementation tasks and `TASK-075` | `FT-005-AC-002` | Final same-twenty target-screen, one-clock and representative-phone `19/20` verdict. |
+| `TASK-079-T3-FT-005-W3` | T3 | W3 | all FT-005 implementation tasks | `FT-005-AC-002` | Final same-twenty target-screen, one-clock and representative-phone independent QR/latency `19/20` verdict. |
 
 Authenticated media and render/fallback remain one outcome because a missing or
 undecodable teaser must prevent the same participant-visible Promo. Client
@@ -113,10 +113,13 @@ because the two independent positive values jointly define presentation and
 trigger availability. Production-only checks remain one final task with no
 dependents.
 
-`TASK-075` is not an implementation prerequisite: FT-005 builds against the
-accepted v1 response and completed durable session seams without adopting
-upstream claims. It is a prerequisite only for `TASK-079`, where the same
-stable Attempt IDs and authorized evaluator record are indispensable.
+FT-004 separately owns the server-result correctness gate. FT-005 builds
+against the accepted v1 response and completed durable session seams without
+adopting upstream claims. The production evaluator uses the same 20 Attempt
+identities as the controlled corpus, but FT-005 reports only its independent
+QR/latency count: it does not filter on correctness, calculate a joint
+intersection or joint pass set, consume FT-004 correctness evidence, or depend
+on `TASK-075-T3-FT-004-W5`.
 
 ## Advisory Expected Change Surface
 
@@ -143,7 +146,7 @@ unchanged. No Alembic revision is expected.
 ## Tests, Gates And UAT
 
 - Every implementation task runs configured Python mypy, focused pytest and
-  Node client tests plus `node scripts/mb-lint.mjs`.
+  Node client tests plus `node .memory-bank/scripts/mb-lint.mjs`.
 - Authenticated API fixtures cover exact JSON, Bearer scope, token-derived СПА,
   `no-store`, rate limiting, redaction and `401|404|409|422|429|503|5xx` paths.
 - Media fixtures prove exactly the four issued low-quality no-watermark JPEGs,
@@ -164,14 +167,16 @@ unchanged. No Alembic revision is expected.
 - Timer fixtures independently vary the two config values, return local display
   to advertising and emit no session invalidation. Evidence remains joinable to
   FT-006 without claiming a phone read.
-- Production acceptance reuses the authorized FT-004 twenty stable Attempt IDs
-  and records every conjunct: server-correctness row, target-screen render,
-  one-clock `<10_000 ms`, programmatic QR decode and representative-phone scan.
-  Timeout/no-match rows remain failures; at least nineteen of the same twenty
-  must pass all conjuncts. Claim-level RED is not applicable because this task
-  changes no behavior and must not induce failure in the authorized setup; the
-  full same-twenty evaluation is its alternative proof and preserves an already
-  passing observation as GREEN when present.
+- Production acceptance uses the same twenty controlled Attempt IDs and
+  records only the FT-005 observations: target-screen render, one-clock
+  `<10_000 ms`, programmatic QR decode and representative-phone scan.
+  Timeout/no-match rows remain QR-gate failures; at least nineteen of the
+  twenty must pass the independent QR/latency gate. FT-004's server-result
+  correctness count is separate and is neither a prerequisite nor a filter,
+  intersection or joint pass condition for this task. Claim-level RED is not
+  applicable because this task changes no behavior and must not induce failure
+  in the authorized setup; the full same-twenty evaluation is its alternative
+  proof and preserves an already passing observation as GREEN when present.
 
 ## Constitution Constraints And Invariants
 

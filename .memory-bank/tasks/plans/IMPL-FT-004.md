@@ -46,8 +46,8 @@ operations, exact scoped pgvector search, pHash ranking observations, result
 assembly, Promo session persistence, singleton/deadline/restart behavior and
 the complete authenticated realtime response path.
 
-FT-005 owns display rendering, acknowledgement, cooldown and the joint QR
-latency verdict. FT-006 owns QR browser access and phone continuation. FT-007
+FT-005 owns display rendering, acknowledgement, cooldown and the independent
+QR/latency verdict. FT-006 owns QR browser access and phone continuation. FT-007
 owns detailed diagnostic evidence. This plan adds no client-side selection,
 tracking, clustering, ANN, cache, waiter queue, replay, model fallback, generic
 configuration platform, custom error framework or production deployment work.
@@ -83,8 +83,7 @@ read-only to processing; foreign mutable state is never written directly.
 | `TASK-072-T3-FT-004-W4` | T3 | W4 | `TASK-071-T2-FT-004-W3`, `TASK-043-T2-FT-003-W1` | Promo Attempt `Atomic result-session publication` | One durable session and atomic/idempotent result publication. |
 | `TASK-073-T3-FT-004-W3` | T3 | W3 | `TASK-070-T2-FT-004-W2`, `TASK-043-T2-FT-003-W1` | `FT-004-AC-007` | One non-blocking slot, typed busy, one deadline and fresh acquisition. |
 | `TASK-074-T3-FT-004-W1` | T3 | W1 | `TASK-043-T2-FT-003-W1` | `FT-004-AC-008` | Startup interruption of stale Attempts without inference replay or late result. |
-| `TASK-075-T3-FT-004-W5` | T3 | W5 | `TASK-045-T3-FT-003-W3`, `TASK-057-T3-FT-003-W2`, `TASK-060-T2-FT-003-W2`, `TASK-068-T3-FT-004-W1`, `TASK-072-T3-FT-004-W4`, `TASK-073-T3-FT-004-W3`, `TASK-074-T3-FT-004-W1` | `FT-004-AC-005..006` | Full authenticated route, typed outcomes and security are development outcomes; TASK-075 becomes `done_for_prod` once those dev claims pass their T3 gates. |
-| `TASK-088-T3-FT-004-W6` | T3 | W6 | `TASK-075-T3-FT-004-W5` | `FT-004-AC-004` | Final production-only acceptance of the authorized same-twenty server-correctness corpus and 19/20 result. |
+| `TASK-075-T3-FT-004-W5` | T3 | W5 | `TASK-045-T3-FT-003-W3`, `TASK-057-T3-FT-003-W2`, `TASK-060-T2-FT-003-W2`, `TASK-068-T3-FT-004-W1`, `TASK-072-T3-FT-004-W4`, `TASK-073-T3-FT-004-W3`, `TASK-074-T3-FT-004-W1` | `FT-004-AC-004..006` | Full authenticated route, typed outcomes and security are development outcomes; AC-004 is a deferred production-only server-correctness acceptance owned by this task. |
 
 `TASK-069` owns the native selection seam; `TASK-070` owns the feature-level
 processing integration delta and may exercise the completed seam without
@@ -127,12 +126,14 @@ exact-head requirement.
 - `TASK-075` sends direct requests through the available development/test edge,
   proves token-derived scope/rate/redaction and typed non-success behavior, and
   does not run the production-only correctness corpus before deployment. After
-  deployment, the authorized acceptance run retains one stable twenty-row
-  corpus; each row names all four teasers and every union member, the manual
-  reviewer role and pass/fail comparison. Missing group-member coverage
-  remains allowed.
-- FT-004 closure does not claim the later FT-005 join of these Attempt IDs to
-  fully-visible/scannable QR latency evidence.
+  deployment, the same authorized twenty-row corpus records FT-004's server-
+  correctness result; each row names all four teasers and every union member,
+  the manual reviewer role and pass/fail comparison. Missing group-member
+  coverage remains allowed.
+- FT-004 closure does not claim FT-005's separate fully-visible/scannable QR
+  latency count. The two production counts may use the same attempt IDs but
+  FT-004 applies no correctness-valid filter, joint intersection or joint
+  pass-set calculation, and no cross-feature dependency is required.
 - All stateful probes use unique disposable PostgreSQL/application records,
   are safe to rerun, expose the decisive stored/result state and remove only
   their own fixtures. No shared operator/default database is downgraded.
@@ -156,11 +157,12 @@ exact-head requirement.
 
 All eight implementation cards satisfy their development claims and tier
 obligations; `TASK-075` is `done_for_prod` after AC-005/AC-006 development
-verification and semantic review, while `TASK-088` remains the explicit planned
-production acceptance card for AC-004. Every `FT-004-AC-001..008` remains owned
-exactly once; every task retains the completed Foundation gate directly or
-transitively; task-relevant modules and edges match the accepted Boundary Map;
-the feature remains `spec_design_status: complete`; and fresh
-`/review-tasks-plan FT-004` can evaluate the queue at Planning Revision `4`
-without implementation guesses. FT-004 feature completion is not claimed until
-TASK-088 provides the production AC-004 evidence.
+verification and semantic review, while its AC-004 production server-
+correctness evidence remains deferred until deployment. Every
+`FT-004-AC-001..008` remains owned exactly once; every task retains the
+completed Foundation gate directly or transitively; task-relevant modules and
+edges match the accepted Boundary Map; the feature remains
+`spec_design_status: complete`; and fresh `/review-tasks-plan FT-004` can
+evaluate the queue at Planning Revision `4` without implementation guesses.
+FT-004 feature completion is not claimed until the production AC-004 evidence
+exists.

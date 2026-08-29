@@ -4,7 +4,7 @@ status: draft
 type: prd
 clarification_status: complete
 constitution_checked: true
-last_updated: 2026-08-05
+last_updated: 2026-08-29
 ---
 # PRD
 
@@ -20,6 +20,15 @@ beyond the resolved behavior, constraints and acceptance criteria below.
 
 Clarification is complete. Resolved operator decisions are incorporated into
 the FR, NFR and acceptance criteria below rather than repeated as a dated log.
+
+### 2026-08-29 — Independent production performance gates
+
+The operator accepted two independent gates over the same 20-attempt
+production corpus: at least 19 attempts must pass the server-correctness gate,
+and at least 19 attempts must pass the visible/scannable-QR-under-10-seconds
+gate. The counts are reported separately; a joint intersection is not required.
+QR/latency evidence remains FT-005-owned and server correctness remains
+FT-004-owned.
 
 ## Product Summary
 
@@ -534,7 +543,8 @@ pilot actor or blocker.
   `busy` and ingest-to-searchable diagnosis. Additional percentile cuts are
   optional until justified.
 - **NFR-PERF-05** — At least 19 of the same 20 controlled attempts MUST satisfy
-  both the latency/QR gate and the full-session correctness gate. A foreign
+  the full-session server-correctness gate. This count is independent of
+  NFR-PERF-01's QR/latency count; no joint intersection is required. A foreign
   teaser or any unrelated `photo_id` included in `N` makes that attempt fail the
   correctness gate, without turning missed group-member coverage into a failure.
 
@@ -894,16 +904,17 @@ payment/fiscal providers, external observability stores and message brokers.
 
 ### Product and performance outcomes
 
-- **AC-01** — At least 19 of 20 controlled attempts both produce four unique
-  teasers and a fully visible, scannable QR in `<10_000 ms` from
-  `reference_series_ready_at` under NFR-PERF-01 and satisfy the correctness rule
-  in AC-03.
+- **AC-01** — At least 19 of 20 controlled attempts produce four unique teasers
+  and a fully visible, scannable QR in `<10_000 ms` from
+  `reference_series_ready_at` under NFR-PERF-01. This is the QR/latency gate;
+  server correctness is evaluated separately in AC-03.
 - **AC-02** — No-match or timeout without a completed QR counts as a failed
   attempt.
-- **AC-03** — For every attempt counted among the 19 joint AC-01 successes, all
-  four teasers and every unique `photo_id` in `session_result_photo_ids` are
-  manually confirmed as containing at least one pilot participant represented
-  by a processed selected detection. Any unrelated included photograph fails
+- **AC-03** — In at least 19 of the same 20 controlled attempts, all four
+  teasers and every unique `photo_id` in `session_result_photo_ids` are manually
+  confirmed as containing at least one pilot participant represented by a
+  processed selected detection. This is independent of the QR/latency result in
+  AC-01; no joint pass set is required. Any unrelated included photograph fails
   that attempt; failure to cover every unique person in a group does not.
 - **AC-04** — Every completed phone continuation shows the correct СПА,
   authoritative `visit_date`, an available teaser belonging to that same

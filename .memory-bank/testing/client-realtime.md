@@ -1,7 +1,7 @@
 ---
 description: Canonical verification contract for client proposal submission, one-clock Promo latency and related diagnostics.
 status: active
-last_updated: 2026-08-26
+last_updated: 2026-08-29
 source_of_truth:
   - .memory-bank/testing/client-realtime.md
 ---
@@ -136,7 +136,7 @@ validation.
   evidence. The proof must not claim offline reload or recovery after sole-
   primary loss.
 
-## Reference Search And Joint Correctness Proof
+## Reference Search And Independent Production Gates
 
 - Realtime startup with deterministic read-only model fixtures proves that only
   the committed selected validated revision is loaded and warmed. Missing,
@@ -154,17 +154,15 @@ validation.
   complete unique `session_result_photo_ids` union. The artifact reconciles
   `N` to the union and distinguishes weak-match, repeated-Photo, partial-ready
   inventory and fewer-than-four outcomes.
-- The FT-004 implementation task runs a controlled 20-attempt corpus with
+- The FT-004 production acceptance runs a controlled 20-attempt corpus with
   stable attempt IDs and manually reviewed participant/detection ground truth.
-  It retains a correctness row for all four teasers and every union member in
-  each attempt; missing group-member coverage alone remains a pass.
-- The final post-deployment pilot verdict joins those same attempt IDs with the
-  physical one-clock fully-visible/scannable QR evidence owned by FT-005. The
-  FT-004 implementation task may close after its server-owned correctness
-  implementation and deterministic evidence pass; neither FT-004 nor FT-005
-  may claim that the live joint pilot verdict passed until the external
-  evidence exists. This avoids a task dependency cycle without making the
-  unavailable pilot environment a development implementation gate.
+  It retains a server-correctness row for all four teasers and every union member
+  in each attempt; missing group-member coverage alone remains a pass.
+- FT-005 independently evaluates the visible/scannable QR and one-clock
+  latency gate for the same 20 attempt IDs. The two 19/20 counts are reported
+  separately; no joint intersection or correctness-valid filter is required.
+  This keeps the unavailable pilot environment out of development closure while
+  preserving one simple production corpus for both independent measurements.
 - A concurrency fixture holds the one inference slot, proves an admitted
   second Attempt returns `busy` before release with no waiter/inference call,
   and proves only a fresh later request can acquire the slot. Deadline and
@@ -196,9 +194,9 @@ validation.
   presigned participant URLs, replacement selection or partial Promo.
 - Client integration proof covers camera/stale/fresh retry, advertising and
   communication-notice behavior, managed restart, typed result/non-success,
-  server-correctness rows, the display boundary, result-aware rendering, local
-  QR, post-render acknowledgement, independent display/cooldown timers and
-  optional-asset/non-success integration.
+  the display boundary, result-aware rendering, local QR, post-render
+  acknowledgement, independent display/cooldown timers and optional-asset/
+  non-success integration. FT-004 separately owns server-result correctness.
 - Complete and malformed/incomplete result fixtures at the logical 1920x1080
   target prove exactly four unique decoded teasers, exact truthful copy, a
   fully visible high-contrast locally generated QR and no partial/stale Promo.
@@ -212,14 +210,14 @@ validation.
   session invalidation; failure starts no success cooldown. The display-expiry
   evidence row is joinable to FT-006 continuation evidence, which owns the
   actual phone read and final independent-session-lifetime verdict.
-- The controlled 20-attempt run is post-deployment pilot validation and reuses
-  the stable FT-004 `attempt_id` set. An authorized pilot evaluator records,
-  for every attempt, the server-correctness row, one-clock
-  `qr_fully_visible_elapsed_ms`, `<10_000 ms` comparison, complete target-screen
-  render, programmatic QR decode and representative-real-phone scan. The final
-  joint result requires at least 19 of the same 20 rows to pass every conjunct;
-  timeout/no-match rows remain failures. Its missing screen, phone, corpus or
-  evaluator is deferred evidence, not a blocker for implementation tasks.
+- The controlled 20-attempt run is post-deployment pilot validation. An
+  authorized evaluator records, for every attempt, the server-correctness row
+  owned by FT-004 and the one-clock `qr_fully_visible_elapsed_ms`,
+  `<10_000 ms` comparison, complete target-screen render, programmatic QR decode
+  and representative-real-phone scan owned by FT-005. Report the server and
+  QR/latency counts independently; timeout/no-match rows remain QR-gate
+  failures. Missing screen, phone, corpus or evaluator evidence is deferred,
+  not a blocker for implementation tasks.
 
 ## Phone Continuation And Expiry Proof
 

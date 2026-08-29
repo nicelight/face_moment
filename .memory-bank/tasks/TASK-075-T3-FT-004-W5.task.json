@@ -1,10 +1,10 @@
 {
   "id": "TASK-075-T3-FT-004-W5",
   "title": "Complete the authenticated realtime result boundary",
-  "status": "in_progress",
+  "status": "done_for_prod",
   "wave": "W5",
   "feature": "FT-004",
-  "reqs": ["REQ-SRCH-003", "REQ-CAP-003", "REQ-DIAG-001", "REQ-SEC-001", "REQ-ARCH-001"],
+  "reqs": ["REQ-SRCH-003", "REQ-CAP-003", "REQ-PERF-001", "REQ-REL-001", "REQ-DIAG-001", "REQ-SEC-001", "REQ-ARCH-001"],
   "depends_on": [
     "TASK-045-T3-FT-003-W3",
     "TASK-057-T3-FT-003-W2",
@@ -55,6 +55,20 @@
       ],
       "resume_route": "For the deferred production acceptance, after deployment an authorized owner provides a redacted manifest with 20 stable attempt_id values, evaluator role/criterion, ground truth for all four teasers and every complete-union photo_id, processed-selected-detection membership, per-Attempt verdict and server-correctness count >= 19/20; then run the production acceptance evidence route. This historical entry does not block the narrowed development closure.",
       "judge": "gpt-5.6-sol:xhigh"
+    },
+    {
+      "stage": "lifecycle-reconciliation",
+      "verdict": "done_for_prod",
+      "completed_at": "2026-08-29T14:57:49+05:00",
+      "summary": "Explicit owner-accepted closure: the existing independent evidence for FT-004-AC-005 and FT-004-AC-006 is accepted as sufficient for development closure. The former AC-004 blocker is superseded; FT-004-AC-004 remains a production-only residual risk under this task. Historical verification/closure verdicts are preserved; no AC-004 production PASS was created and no evidence was rechecked.",
+      "evidence": [
+        ".memory-bank/workflows/autonomy-policy.md",
+        ".memory-bank/testing/client-realtime.md",
+        ".protocols/TASK-075-T3-FT-004-W5/verification.md",
+        ".tasks/TASK-075-T3-FT-004-W5/gate-results.md",
+        ".tasks/TASK-075-T3-FT-004-W5/security-evidence.md",
+        ".tasks/TASK-075-T3-FT-004-W5/verify_boundary_probe.py"
+      ]
     }
   ],
   "docs": [
@@ -65,16 +79,17 @@
     ".memory-bank/tasks/plans/IMPL-FT-004.md"
   ],
   "evidence_required": [
+    "FT-004-AC-004 RED_NOT_APPLICABLE: the accepted gate is production-only and the authorized same-20 corpus/evaluator are unavailable in development; a synthetic pre-change RED would falsify the accepted setup. Alternative proof: after deployment, manually inspect all four teasers and every photo_id in N for participant membership represented by a processed selected detection, record one pass/fail row for each of the same 20 attempts and require at least 19 passing rows. Incomplete group-member coverage alone is not failure; retain the redacted evaluator record under .tasks/TASK-075-T3-FT-004-W5/. The count is independent of FT-005 QR/latency evidence.",
     "FT-004-AC-005 RED: the current integrated result route lacks final proof of the completed display-Bearer hash authentication and deterministic test rate limiter; GREEN: preserve and re-prove through the final result route token-derived SPA only, rejection of absent/foreign/body override, configured per-token/IP 429 behavior and zero token/header/digest material in persisted/searchable logs; decisive comparison: public requests, owner rows and redacted log scan; artifact: security evidence under .tasks/TASK-075-T3-FT-004-W5/.",
     "FT-004-AC-006 RED: nonzero insufficient/partial/repeated-Photo cases cannot reach typed domain outcomes and missing context has no completed operational evidence check; GREEN: missing date returns pre-admission 503 with bounded token-free evidence, partial current ready inventory is searched without a group gate, fewer than four returns insufficient_results with no session, repeated Photo contributes once to N, and every exact result/non-success response follows response version 1; decisive comparison: response/Attempt/session/evidence rows for each fixture; artifact: boundary integration evidence under .tasks/TASK-075-T3-FT-004-W5/."
   ],
-  "purpose": "Complete the development-side authenticated realtime result boundary behind the exact public endpoint and prove the token-bound security and typed non-success behavior. The separate joint correctness acceptance is owned by the final production card.",
-  "success_outcome": "The development route returns a full result or exact typed non-success for bounded requests, preserves token-bound scope and idempotency, and satisfies AC-005/AC-006 without moving business rules into transport wiring; this task is eligible for done_for_prod after its development gates, while AC-004 is handled only by the final production acceptance task.",
+  "purpose": "Complete the authenticated realtime result boundary behind the exact public endpoint, prove the token-bound security and typed non-success behavior, and retain ownership of the deferred production server-correctness acceptance.",
+  "success_outcome": "The development route returns a full result or exact typed non-success for bounded requests, preserves token-bound scope and idempotency, and satisfies AC-005/AC-006 without moving business rules into transport wiring. After independent verification, the task is eligible for done_for_prod; AC-004 remains a production-only server-correctness acceptance within this task and is not claimed before deployment.",
   "anti_goals": [
     "Do not reimplement or re-own dependency claims for authentication, context, selection, search, assembly, persistence, slot or recovery.",
     "Do not implement FT-005 rendering/acknowledgement/cooldown, FT-006 phone continuation or FT-007 detailed evidence.",
-    "Do not claim the final joint QR/under-10-second verdict or add production deployment actions.",
-    "Do not implement or verify FT-004-AC-004 in this development task; its production-only acceptance belongs to TASK-088."
+    "Do not claim the FT-005 QR/under-10-second verdict or add production deployment actions.",
+    "Do not replace the authorized production AC-004 corpus/evaluator with local or synthetic evidence."
   ],
   "runtime_context": {
     "forbidden_scope": [
@@ -85,11 +100,12 @@
     "stop_conditions": [
       "The public route would need business orchestration in the FastAPI handler or a generic helper.",
       "A complete outcome cannot be formed through the accepted Boundary Map edges and canonical response contract.",
-      "The development route would require a new product target, public contract or ownership decision beyond FT-004-AC-005..006.",
-      "The implementation would need to change the production-only AC-004 evaluator or denominator; route that work to TASK-088 instead of changing this card."
+      "The development route would require a new product target, public contract or ownership decision beyond FT-004-AC-004..006.",
+      "The production AC-004 run would require changing the authorized evaluator, denominator or QR/latency criterion; stop and route that decision to the owning product/feature artifacts."
     ]
   },
   "source_artifacts": [
+    ".memory-bank/features/FT-004.md#FT-004-AC-004",
     ".memory-bank/features/FT-004.md#FT-004-AC-005",
     ".memory-bank/features/FT-004.md#FT-004-AC-006",
     ".protocols/FT-004/plan.md",
@@ -106,18 +122,19 @@
   "constraints": [
     "Keep the FastAPI entrypoint to authentication, validation, adapter binding, transaction/lifecycle wiring and response serialization; promo owns the use case.",
     "Use explicit deterministic per-token/IP limits in tests and deployment-configured positive runtime values; never queue rate-limited requests.",
-    "Use task-owned display client, serving context, Photo/face/Attempt/session/corpus fixtures with known initial state, safe rerun identifiers, observable final rows and cleanup limited to those fixtures.",
-    "Development closure proves AC-005/AC-006 with disposable fixtures. The production-only AC-004 corpus and manual pilot evaluator are owned by TASK-088; this card does not collect or retain that production evidence."
+    "Use task-owned display client, serving context, Photo/face/Attempt/session fixtures with known initial state, safe rerun identifiers, observable final rows and cleanup limited to those fixtures; the production corpus is authorized and retained only in redacted form.",
+    "Development closure proves AC-005/AC-006 with disposable fixtures. AC-004 is a deferred production-only server-correctness acceptance over the same stable 20-attempt corpus; no QR/latency evidence is required for this claim."
   ],
   "invariants": [
     "Transport rejection creates no core Attempt; every admitted request creates exactly one and terminal repeats run no second inference.",
     "The body cannot override token-derived SPA and token/header/digest material never enters logs.",
     "No-success, deadline, busy, interrupted or internal failure publishes a result session.",
-    "This card does not claim the AC-004 production denominator/evaluator decision or the later FT-005 QR/latency proof."
+    "The local development evidence does not substitute for AC-004 production evidence; its same-20 count is independent of FT-005, uses no correctness-valid filter or joint pass set, and requires no cross-feature dependency."
   ],
   "verification_targets": [
     ".memory-bank/contracts/realtime-attempt-api.md#verification-targets",
     ".memory-bank/testing/client-realtime.md#reference-search-and-joint-correctness-proof",
+    "FT-004-AC-004 production acceptance records one server-correctness row for each of the same 20 stable attempts and requires at least 19 passing rows independently of FT-005's QR/latency count; no correctness-valid filter or joint pass set is used.",
     "FT-004-AC-005 public-boundary fixtures prove hashed token scope, override rejection, 429 behavior and log redaction through result and non-success branches.",
     "FT-004-AC-006 integration fixtures prove missing-date, partial-ready, insufficient-result and repeated-Photo outcomes with exact Attempt/session effects."
   ]

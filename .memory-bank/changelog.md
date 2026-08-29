@@ -4,6 +4,18 @@ status: active
 ---
 # Changelog
 
+## [2026-08-29] TASK-075 — explicit owner-accepted closure
+- Accepted the existing independent AC-005/AC-006 evidence as sufficient for
+  development closure and reconciled `TASK-075-T3-FT-004-W5` to
+  `done_for_prod`.
+- Superseded the historical AC-004 blocker by explicit owner decision;
+  `FT-004-AC-004` remains a production-only residual risk under TASK-075. No
+  production PASS was created and no verification was rerun.
+- Preserved all historical verification and closure verdicts unchanged.
+- Preserved FT-004, EP-002 and mapped RTM requirements as `planned`; feature
+  completion and production acceptance remain open. Existing task index and
+  canonical links remain unchanged.
+
 ## [2026-08-29] FT-007 feature boundary — semantic verification reconciled
 - Reconciled the already-authoritative FT-007 feature-level
   `SEMANTIC_VERDICT: semantic-pass` with its final Red Verify report and
