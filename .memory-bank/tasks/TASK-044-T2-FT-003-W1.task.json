@@ -4,45 +4,51 @@
   "status": "done",
   "wave": "W1",
   "feature": "FT-003",
-  "reqs": ["REQ-ARCH-001", "REQ-REL-001"],
-  "depends_on": ["TASK-002-T2-FT-000-W0"],
-  "touched_files": ["client/", "src/face_moment/entrypoints/backend.py", "deploy/Caddyfile", "tests/client/"],
+  "reqs": [
+    "REQ-ARCH-001",
+    "REQ-REL-001"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0"
+  ],
+  "touched_files": [
+    "client/",
+    "src/face_moment/entrypoints/backend.py",
+    "deploy/Caddyfile",
+    "tests/client/"
+  ],
   "tier": "T2",
   "gates": [
-    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
-    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
   ],
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-16T05:13:00+05:00",
-      "summary": "Fresh Focus A passed shell/browser/topology behavior, but Focus B found the clean console-script image could resolve backend from site-packages and miss the copied /app/client path; debug confirmed the bounded packaged-runtime finding.",
-      "protocol": ".protocols/TASK-044-T2-FT-003-W1/verification.md",
-      "report": ".tasks/TASK-044-T2-FT-003-W1/TASK-044-T2-FT-003-W1-S-DEBUG-final-report-docs-01.md"
-    },
-    {
-      "stage": "verify",
-      "attempt": 2,
       "verdict": "PASS",
-      "completed_at": "2026-08-16T05:30:00+05:00",
-      "summary": "Two fresh independent reviewers passed the corrected clean-image runtime path, real HTTPS browser load/reload/navigation, same-origin network, zero console errors, topology and owner/scope checks; focused tests and static gates remained clean.",
-      "protocol": ".protocols/TASK-044-T2-FT-003-W1/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-044-T2-FT-003-W1/TASK-044-T2-FT-003-W1-S-VERIFY-final-report-docs-02.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-16T05:30:00+05:00",
-      "summary": "Scheduler closed TASK-044 after Attempt 2 functional PASS; the Attempt 1 packaged-runtime finding was corrected within the task boundary.",
-      "evidence": [
-        ".tasks/TASK-044-T2-FT-003-W1/TASK-044-T2-FT-003-W1-S-EXECUTE-final-report-code-02.md",
-        ".tasks/TASK-044-T2-FT-003-W1/TASK-044-T2-FT-003-W1-S-VERIFY-final-report-docs-02.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
-  "docs": [".memory-bank/contracts/boundary-map.md", ".memory-bank/features/FT-003.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "docs": [
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/features/FT-003.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
   "evidence_required": [
     "boundary-map.md#central-origin-client-delivery RED: no loadable SpaPromoClient bundle or central-origin route exists; GREEN: the backend and existing HTTPS edge serve plain static ES-module assets whose shell reaches usable local advertising and configuration/debug navigation from the real central origin, while a topology scan finds no second origin, local server, bridge, WebSocket or new runtime role; decisive comparison: Playwright load/reload transcript plus route/topology inventory; artifact: transcript and scan under .tasks/TASK-044-T2-FT-003-W1/."
   ],
@@ -65,8 +71,17 @@
       "Real-browser proof cannot load the deployed central-origin route."
     ]
   },
-  "source_artifacts": [".memory-bank/contracts/boundary-map.md#central-origin-client-delivery", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
-  "normative_inputs": [".memory-bank/contracts/boundary-map.md#central-origin-client-delivery", ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries", ".memory-bank/architecture/system-architecture.md", ".memory-bank/testing/index.md"],
+  "source_artifacts": [
+    ".memory-bank/contracts/boundary-map.md#central-origin-client-delivery",
+    ".protocols/FT-003/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/boundary-map.md#central-origin-client-delivery",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries",
+    ".memory-bank/architecture/system-architecture.md",
+    ".memory-bank/testing/index.md"
+  ],
   "constraints": [
     "Use plain static ES modules served by the existing backend/edge and load the proof through the real HTTPS origin.",
     "The shell exposes only local advertising and configuration/debug navigation; behavior slices attach later.",

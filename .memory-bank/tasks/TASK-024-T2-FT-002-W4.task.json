@@ -40,10 +40,13 @@
     {
       "stage": "verify",
       "verdict": "PASS",
-      "completed_at": "2026-08-13T01:25:09+05:00",
-      "summary": "Fresh independent T2 verification on the exact current image passed mypy, the four-case UUID PostgreSQL/MinIO orchestration probe and Memory Bank lint. Both exact-revision ready paths, no_faces, deterministic derivatives, terminal publication and owner-bounded failure routing passed; architecture inspection found no duplicated policy, loop, scheduler, retry selector, durable orchestration state or foreign write. Cleanup left zero task rows/objects/active processing/one-off residue and restored the idle runtime baseline. Executor receipts remained supporting-only.",
-      "protocol": ".protocols/TASK-024-T2-FT-002-W4/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-024-T2-FT-002-W4/TASK-024-T2-FT-002-W4-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

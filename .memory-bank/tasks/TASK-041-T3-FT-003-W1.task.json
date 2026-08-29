@@ -4,56 +4,56 @@
   "status": "done",
   "wave": "W1",
   "feature": "FT-003",
-  "reqs": ["REQ-SEC-001"],
-  "depends_on": ["TASK-002-T2-FT-000-W0"],
-  "touched_files": ["src/face_moment/serving_control/", "migrations/versions/", "tests/serving_control/"],
+  "reqs": [
+    "REQ-SEC-001"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0"
+  ],
+  "touched_files": [
+    "src/face_moment/serving_control/",
+    "migrations/versions/",
+    "tests/serving_control/"
+  ],
   "tier": "T3",
   "gates": [
-    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
-    {"name": "Display credential persistence tests", "command": "docker compose run --rm backend python -m pytest tests/serving_control/test_display_client_access.py", "required": true},
-    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Display credential persistence tests",
+      "command": "docker compose run --rm backend python -m pytest tests/serving_control/test_display_client_access.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
   ],
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-16T04:12:00+05:00",
-      "summary": "Fresh independent T3 verification passed repository behavior and static gates but found the migration round-trip test downgraded the shared database instead of a task-owned disposable database.",
-      "protocol": ".protocols/TASK-041-T3-FT-003-W1/verification.md",
-      "report": ".tasks/TASK-041-T3-FT-003-W1/TASK-041-T3-FT-003-W1-S-VERIFY-final-report-docs-01.md"
-    },
-    {
-      "stage": "verify",
-      "attempt": 2,
       "verdict": "PASS",
-      "completed_at": "2026-08-16T03:57:31+05:00",
-      "summary": "Fresh reviewer evidence passed owner-boundary, token/digest consistency and non-leakage, migration metadata registration, forbidden-surface sweep, and disposable PostgreSQL proof; T3 red-verify was then completed separately.",
-      "protocol": ".protocols/TASK-041-T3-FT-003-W1/verification.md",
-      "report": ".tasks/TASK-041-T3-FT-003-W1/TASK-041-T3-FT-003-W1-S-VERIFY-final-report-docs-02.md"
-    },
-    {
-      "stage": "red-verify",
-      "attempt": 2,
-      "verdict": "semantic-pass",
-      "completed_at": "2026-08-16T04:07:41+05:00",
-      "summary": "Fresh adversarial semantic verification passed hostile migration rollback/collision, restart, reset-after-deactivation, cleanup, owner-boundary, token non-leakage and forbidden-scope checks with no material finding or operator question.",
-      "protocol": ".protocols/TASK-041-T3-FT-003-W1/red-verification.md",
-      "report": ".tasks/TASK-041-T3-FT-003-W1/TASK-041-T3-FT-003-W1-S-RED-VERIFY-final-report-docs-01.md"
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
+      "report": ".tasks/TASK-041-T3-FT-003-W1/TASK-041-T3-FT-003-W1-S-VERIFY-final-report-docs-02.md",
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-041-T3-FT-003-W1/TASK-041-T3-FT-003-W1-S-RED-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-16T04:07:41+05:00",
-      "summary": "Scheduler closed TASK-041 after Attempt 2 functional PASS and required T3 semantic-pass; Attempt 1's shared-database test-isolation defect was corrected within the bounded retry.",
-      "evidence": [
-        ".tasks/TASK-041-T3-FT-003-W1/TASK-041-T3-FT-003-W1-S-EXECUTE-final-report-code-02.md",
-        ".tasks/TASK-041-T3-FT-003-W1/TASK-041-T3-FT-003-W1-S-VERIFY-final-report-docs-02.md",
-        ".tasks/TASK-041-T3-FT-003-W1/TASK-041-T3-FT-003-W1-S-RED-VERIFY-final-report-docs-01.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
-  "docs": [".memory-bank/domains/display-client-access.md", ".memory-bank/contracts/boundary-map.md", ".memory-bank/features/FT-003.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "docs": [
+    ".memory-bank/domains/display-client-access.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/features/FT-003.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
   "evidence_required": [
     "display-client-access.md#postgresql-shape + #lifecycle-and-recovery RED: no owner table/lifecycle exists; GREEN: one linear migration and serving_control commands create a named kiosk with a current retrievable token_value and matching unique SHA-256 digest, preserve both plus active state across database restart, atomically replace both on reset, invalidate the old token, and make repeat deactivation safe; decisive comparison: upgrade/downgrade/re-upgrade, provision/reset/deactivate and mismatch-prevention fixtures inspect persisted rows while command output contains kiosk identity/lifecycle only; artifact: focused pytest and migration output under .tasks/TASK-041-T3-FT-003-W1/."
   ],
@@ -76,8 +76,18 @@
       "Lifecycle output cannot avoid disclosing the token."
     ]
   },
-  "source_artifacts": [".memory-bank/domains/display-client-access.md#postgresql-shape", ".memory-bank/domains/display-client-access.md#lifecycle-and-recovery", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
-  "normative_inputs": [".memory-bank/domains/display-client-access.md#postgresql-shape", ".memory-bank/domains/display-client-access.md#lifecycle-and-recovery", ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract", ".memory-bank/architecture/system-architecture.md"],
+  "source_artifacts": [
+    ".memory-bank/domains/display-client-access.md#postgresql-shape",
+    ".memory-bank/domains/display-client-access.md#lifecycle-and-recovery",
+    ".protocols/FT-003/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/display-client-access.md#postgresql-shape",
+    ".memory-bank/domains/display-client-access.md#lifecycle-and-recovery",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/architecture/system-architecture.md"
+  ],
   "constraints": [
     "Use face_moment, the shared SQLAlchemy Base/MetaData and the current linear Alembic head.",
     "Generate at least 32 random bytes before URL-safe encoding and persist token_value plus its matching digest atomically.",

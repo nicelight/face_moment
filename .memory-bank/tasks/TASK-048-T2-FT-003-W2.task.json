@@ -4,35 +4,42 @@
   "status": "done",
   "wave": "W2",
   "feature": "FT-003",
-  "reqs": ["REQ-CAP-002"],
-  "depends_on": ["TASK-044-T2-FT-003-W1"],
-  "touched_files": ["client/", "tests/client/"],
+  "reqs": [
+    "REQ-CAP-002"
+  ],
+  "depends_on": [
+    "TASK-044-T2-FT-003-W1"
+  ],
+  "touched_files": [
+    "client/",
+    "tests/client/"
+  ],
   "tier": "T2",
   "gates": [
-    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
   ],
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
       "verdict": "PASS",
-      "completed_at": "2026-08-16T14:28:56+05:00",
-      "summary": "Fresh independent T2 verification passed FT-003-AC-005: real Chromium over the central HTTPS origin proved exact centered 1.2x geometry, edge clamping without shift/padding, fractional source coordinates with deterministic round-to-nearest output dimensions, proportional 512px downscale, no-upscale, sRGB JPEG output without EXIF, and all six caller quality inputs. Static scope checks found no trigger/ring/multipart/server/quality-persistence leakage; lifecycle remains in_progress.",
-      "protocol": ".protocols/TASK-048-T2-FT-003-W2/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-048-T2-FT-003-W2/TASK-048-T2-FT-003-W2-S-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-16T14:30:49+05:00",
-      "summary": "TASK-048 T2 closure is authorized by fresh /verify PASS; implementation and all task-owned gates are complete. No per-task /red-verify is required for T2.",
-      "evidence": [
-        ".protocols/TASK-048-T2-FT-003-W2/verification.md",
-        ".tasks/TASK-048-T2-FT-003-W2/TASK-048-T2-FT-003-W2-S-VERIFY-final-report-docs-01.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
-  "docs": [".memory-bank/features/FT-003.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "docs": [
+    ".memory-bank/features/FT-003.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
   "evidence_required": [
     "FT-003-AC-005 RED: occurrence transformation is absent; GREEN: every fixture bbox produces a clipped centered square of side 1.2 x max(width,height), is never aligned/upscaled, is proportionally reduced only when its long side exceeds 512, and encodes as sRGB JPEG without EXIF/source metadata; decisive comparison: edge, fractional, below/above-512 and metadata fixtures compare decoded dimensions/pixels and metadata; artifact: Playwright transcript and decoded output under .tasks/TASK-048-T2-FT-003-W2/."
   ],
@@ -44,12 +51,39 @@
     "Do not introduce a graphics/ML runtime beyond browser primitives."
   ],
   "runtime_context": {
-    "forbidden_scope": ["Quality configuration owned by TASK-062-T2-FT-003-W2", "Detector traversal owned by TASK-047-T2-FT-003-W2", "Multipart request owned by TASK-052-T2-FT-003-W4"],
-    "stop_conditions": ["Exact geometry/metadata behavior cannot be proved from browser output.", "Encoding requires a new ML/graphics runtime."]
+    "forbidden_scope": [
+      "Quality configuration owned by TASK-062-T2-FT-003-W2",
+      "Detector traversal owned by TASK-047-T2-FT-003-W2",
+      "Multipart request owned by TASK-052-T2-FT-003-W4"
+    ],
+    "stop_conditions": [
+      "Exact geometry/metadata behavior cannot be proved from browser output.",
+      "Encoding requires a new ML/graphics runtime."
+    ]
   },
-  "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-005", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
-  "normative_inputs": [".memory-bank/features/FT-003.md#ft-003-ac-005--crop-and-jpeg-contract", ".memory-bank/testing/client-realtime.md#required-proof", ".memory-bank/testing/index.md"],
-  "constraints": ["Use browser-native image operations in real Chromium over deterministic fixtures.", "Accept the selected quality as an input supplied by TASK-062 without implementing or persisting it.", "Use disposable artifacts and retain proof under the task directory."],
-  "invariants": ["Geometry is clipped centered-square 1.2x with no alignment or upscale.", "Long side is at most 512 and JPEG is sRGB without source metadata.", "Quality selection/persistence is not this task's claim."],
-  "verification_targets": [".memory-bank/testing/client-realtime.md#required-proof", "FT-003-AC-005 boundary geometry, resizing and metadata fixtures.", "Integration seam accepts each allowed quality input without proving UI persistence."]
+  "source_artifacts": [
+    ".memory-bank/features/FT-003.md#FT-003-AC-005",
+    ".protocols/FT-003/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-003.md#ft-003-ac-005--crop-and-jpeg-contract",
+    ".memory-bank/testing/client-realtime.md#required-proof",
+    ".memory-bank/testing/index.md"
+  ],
+  "constraints": [
+    "Use browser-native image operations in real Chromium over deterministic fixtures.",
+    "Accept the selected quality as an input supplied by TASK-062 without implementing or persisting it.",
+    "Use disposable artifacts and retain proof under the task directory."
+  ],
+  "invariants": [
+    "Geometry is clipped centered-square 1.2x with no alignment or upscale.",
+    "Long side is at most 512 and JPEG is sRGB without source metadata.",
+    "Quality selection/persistence is not this task's claim."
+  ],
+  "verification_targets": [
+    ".memory-bank/testing/client-realtime.md#required-proof",
+    "FT-003-AC-005 boundary geometry, resizing and metadata fixtures.",
+    "Integration seam accepts each allowed quality input without proving UI persistence."
+  ]
 }

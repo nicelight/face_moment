@@ -40,14 +40,14 @@
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
       "verdict": "PASS",
-      "completed_at": "2026-08-14T07:19:49+05:00",
-      "image": "face-moment:task-031@sha256:e9e51cbe9c66833d4fac0ce0d89778581f181638544cfc6f53874b4c2e28a9df",
-      "summary": "Fresh independent T2 exact-image verification passed packaged mypy, focused UI pytest, full API contract pytest, mb-lint and an isolated Playwright CLI browser/API/DB matrix. Five accepted rows independently rendered pending, processing and the complete terminal/compatibility truth; A+B under B serving stayed scalar admission A and not searchable; duplicate/reject caused zero polls; auth/safe errors and protected-fact redaction passed; cleanup left zero task runtime, storage or browser residue.",
-      "protocol": ".protocols/TASK-031-T2-FT-002-W6/verification.md",
-      "report": ".tasks/TASK-031-T2-FT-002-W6/TASK-031-T2-FT-002-W6-S-VERIFY-final-report-docs-01.md",
-      "browser_evidence": ".tasks/TASK-031-T2-FT-002-W6/verification/playwright-cli-transcript.md"
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
+      "report": ".tasks/TASK-031-T2-FT-002-W6/TASK-031-T2-FT-002-W6-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

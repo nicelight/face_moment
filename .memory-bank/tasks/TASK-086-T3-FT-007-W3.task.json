@@ -45,71 +45,16 @@
   "verify": [
     {
       "stage": "verify",
-      "verdict": "FAIL",
-      "completed_at": "2026-08-29T02:23:47+05:00",
-      "summary": "Fresh verifier-owned disposable convergence probe found that a first object-delete failure clears ordinary_manifest, then a safe rerun reports succeeded and deletes the core Attempt without retrying the still-present private artifact (private_artifacts_deleted=0; one delete call; one key remains).",
-      "protocol": ".protocols/TASK-086-T3-FT-007-W3/verification.md",
-      "report": ".tasks/TASK-086-T3-FT-007-W3/TASK-086-T3-FT-007-W3-S-VERIFY-final-report-docs-01.md",
-      "artifacts": [
-        ".tasks/TASK-086-T3-FT-007-W3/verify-reviewer-convergence-20260829.py"
-      ]
-    },
-    {
-      "stage": "verify",
       "verdict": "PASS",
-      "completed_at": "2026-08-29T03:02:27+05:00",
-      "summary": "Fresh Attempt 2 verifier-owned disposable two-key convergence probe passed: injected second-delete failure kept ordinary evidence inaccessible with full retry manifest and preserved the core Attempt; safe rerun retried the already-absent and remaining keys, cleared the manifest, and deleted the core Attempt only after diagnostics convergence.",
-      "protocol": ".protocols/TASK-086-T3-FT-007-W3/verification.md",
-      "report": ".tasks/TASK-086-T3-FT-007-W3/TASK-086-T3-FT-007-W3-S-VERIFY-final-report-docs-02.md",
-      "artifacts": [
-        ".tasks/TASK-086-T3-FT-007-W3/verify-attempt-2-owner-convergence-20260829.py"
-      ]
-    },
-    {
-      "stage": "verify",
-      "verdict": "PASS",
-      "completed_at": "2026-08-29T03:33:56+05:00",
-      "summary": "Fresh Attempt 3 verifier-owned disposable combined probe passed: promoted media key was never deleted, the first non-promoted delete succeeded, the second failed once and both non-promoted keys converged on rerun, ordinary evidence was inaccessible before deletion, Promo state was deleted after diagnostics convergence, and latest/cutoff/no-evidence/incomplete boundaries remained correct.",
-      "protocol": ".protocols/TASK-086-T3-FT-007-W3/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-086-T3-FT-007-W3/TASK-086-T3-FT-007-W3-S-VERIFY-final-report-docs-03.md",
-      "artifacts": [
-        ".tasks/TASK-086-T3-FT-007-W3/verify-attempt-3-promoted-owner-boundary-20260829.py"
-      ]
-    },
-    {
-      "stage": "red-verify",
-      "attempt": 2,
-      "verdict": "semantic-fail",
-      "completed_at": "2026-08-29T03:17:51+05:00",
-      "summary": "Fresh independent T3 red-verification found that diagnostics-owned retention deletes a private artifact referenced by the curated promoted_subset, leaving only a dangling descriptor and violating promoted-subset preservation/data-loss contract.",
-      "protocol": ".protocols/TASK-086-T3-FT-007-W3/red-verification.md",
-      "report": ".tasks/TASK-086-T3-FT-007-W3/TASK-086-T3-FT-007-W3-S-RED-VERIFY-final-report-docs-01.md",
-      "resume_route": "Keep TASK-086 in_progress. Apply the Judge-authorized bounded Attempt 3 correction only to diagnostics-owned deletion selection so promoted media survives while non-promoted artifacts converge through failure/rerun; then run fresh /verify and fresh /red-verify. No closure before functional PASS and semantic-pass."
-    },
-    {
-      "stage": "red-verify",
-      "attempt": 3,
-      "verdict": "semantic-pass",
-      "completed_at": "2026-08-29T03:42:27+05:00",
-      "summary": "Fresh independent Attempt 3 semantic review found no admitted material finding: the prior promoted-media deletion path is closed, non-promoted failure/rerun remains convergent, ordinary evidence is inaccessible before deletion, owner order and strict/latest boundaries remain intact, and overlap does not replace the latest result.",
-      "protocol": ".protocols/TASK-086-T3-FT-007-W3/red-verification.md",
-      "report": ".tasks/TASK-086-T3-FT-007-W3/TASK-086-T3-FT-007-W3-S-RED-VERIFY-final-report-docs-02.md",
-      "resume_route": "Keep TASK-086 lifecycle unchanged; the lifecycle owner may apply the existing T3 closure gate after all required functional obligations, with no closure or promotion performed by this verifier."
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-086-T3-FT-007-W3/TASK-086-T3-FT-007-W3-S-RED-VERIFY-final-report-docs-02.md"
     },
     {
       "stage": "closure",
-      "attempt": 1,
       "verdict": "done",
-      "completed_at": "2026-08-29T03:45:48+05:00",
-      "summary": "Scheduler-owned T3 closure after Attempt 3 functional Verify PASS and explicit fresh semantic-pass; Attempt 2 semantic-fail remains historical. No Attempt 4 or replay was opened.",
-      "evidence": [
-        ".tasks/TASK-086-T3-FT-007-W3/TASK-086-T3-FT-007-W3-S-VERIFY-final-report-docs-03.md",
-        ".tasks/TASK-086-T3-FT-007-W3/TASK-086-T3-FT-007-W3-S-RED-VERIFY-final-report-docs-02.md",
-        ".protocols/TASK-086-T3-FT-007-W3/verification.md",
-        ".protocols/TASK-086-T3-FT-007-W3/red-verification.md"
-      ],
-      "feature_level_closure": false,
-      "judge": "01a047f4-50ad-75a3-8ecd-9d18385d7674"
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

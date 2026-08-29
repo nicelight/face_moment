@@ -37,11 +37,19 @@
     }
   ],
   "verify": [
-    "TASK-036 /verify PASS on 2026-08-14: exact-image packaged gates, embedded Caddy delivery, independent Playwright CLI operator/developer/photographer flows, failure-to-recovery polling, empty-SLO null rendering, five-case PostgreSQL/MinIO provider/API/DOM reconciliation, protected-data scans, private topology and zero cleanup all passed. Evidence: .protocols/TASK-036-T3-FT-002-W7/verification.md and .tasks/TASK-036-T3-FT-002-W7/TASK-036-T3-FT-002-W7-S-VERIFY-final-report-docs-01.md. Status remains in_progress pending required per-task red-verify; scheduler owns lifecycle.",
-    "TASK-036 /red-verify semantic-fail on 2026-08-14: retained Playwright network artifacts redact cookie names/header forms but preserve raw JSON cookie values, violating the task-scoped requirement that authentication state be absent from trace. Evidence: .protocols/TASK-036-T3-FT-002-W7/red-verification.md and .tasks/TASK-036-T3-FT-002-W7/TASK-036-T3-FT-002-W7-S-RED-VERIFY-final-report-docs-01.md. Attempt 1 counts unsuccessful once; two retries remain. Status and lifecycle remain scheduler-owned in_progress.",
-    "TASK-036 Attempt 2 /verify PASS on 2026-08-14: independent structural inspection found zero raw authentication-state values across all three retained network artifacts, 404 redacted values, zero malformed/header findings, preserved 4/66/133 request-response snapshots and stable hashes across two isolated-copy sanitizer passes. The relevant product/Caddy/test files remain byte-identical to exact image a25852790b6fd0d22b6db743dcee860c9bb4ff88c0ffedd9dda5aca3798f5ee7, so prior exact-image UI evidence remains applicable. Evidence: .protocols/TASK-036-T3-FT-002-W7/verification.md and .tasks/TASK-036-T3-FT-002-W7/TASK-036-T3-FT-002-W7-S-VERIFY-final-report-docs-02.md. No lifecycle/queue change; fresh red-verify remains required.",
-    "TASK-036 Attempt 2 /red-verify semantic-pass on 2026-08-14: a verifier-owned scan of all 472 task artifacts found zero raw authentication-cookie names, values, header forms or Authorization tokens, 404 structurally redacted pairs and zero malformed records; all 4/66/133 network snapshots and 3/55/124 processing-health bodies remained usable. An isolated mixed-cookie probe independently proved selective sanitization, unrelated-evidence preservation and byte-stable idempotence. Evidence: .protocols/TASK-036-T3-FT-002-W7/red-verification.md and .tasks/TASK-036-T3-FT-002-W7/TASK-036-T3-FT-002-W7-S-RED-VERIFY-final-report-docs-02.md. Attempt 2 adds no unsuccessful attempt; cumulative count remains the single Attempt 1 semantic failure. Status remains scheduler-owned in_progress; T3 gates are satisfied and scheduler may close.",
-    "TASK-036 manual /verify re-verification PASS on 2026-08-14: strict-doctor claim-linked evidence for FT-002-AC-006 reconciled from the retained Attempt 1 RED/GREEN, Attempt 2 retry RED/correction GREEN, and existing Attempt 2 verification/red-verification artifacts; fresh read-only scan confirmed 3 network artifacts, zero malformed/raw authentication-state values and UAT access/recovery/empty-SLO/refresh/independent-storage/privacy/topology/cleanup evidence. Status remains done; no lifecycle, implementation, spec or scheduler change. Evidence: .protocols/TASK-036-T3-FT-002-W7/progress.md, .protocols/TASK-036-T3-FT-002-W7/verification.md."
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
+      "report": ".tasks/TASK-036-T3-FT-002-W7/TASK-036-T3-FT-002-W7-S-VERIFY-final-report-docs-02.md",
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-036-T3-FT-002-W7/TASK-036-T3-FT-002-W7-S-RED-VERIFY-final-report-docs-02.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Compacted final lifecycle closure: current task status is done."
+    }
   ],
   "docs": [
     ".memory-bank/features/FT-002.md",

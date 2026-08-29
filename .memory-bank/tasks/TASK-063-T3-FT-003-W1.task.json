@@ -4,101 +4,96 @@
   "status": "done",
   "wave": "W1",
   "feature": "FT-003",
-  "reqs": ["REQ-SEC-001", "REQ-SEC-002"],
-  "depends_on": ["TASK-002-T2-FT-000-W0"],
-  "touched_files": ["deploy/chromium/policies/managed/", "scripts/check-kiosk-lna.sh"],
+  "reqs": [
+    "REQ-SEC-001",
+    "REQ-SEC-002"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0"
+  ],
+  "touched_files": [
+    "deploy/chromium/policies/managed/",
+    "scripts/check-kiosk-lna.sh"
+  ],
   "tier": "T3",
-  "gates": [{"name": "Managed LNA policy inspection", "command": "bash scripts/check-kiosk-lna.sh", "required": true}, {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}],
+  "gates": [
+    {
+      "name": "Managed LNA policy inspection",
+      "command": "bash scripts/check-kiosk-lna.sh",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-16T05:39:00+05:00",
-      "summary": "Two fresh reviewers passed source exact-origin shape and static gates but found the validator accepted non-exact URL-pattern forms and treated a synthetic source file as effective; the host has no real managed Chrome policy export or chrome://policy LNA entry.",
-      "protocol": ".protocols/TASK-063-T3-FT-003-W1/verification.md",
-      "report": ".tasks/TASK-063-T3-FT-003-W1/TASK-063-T3-FT-003-W1-S-DEBUG-final-report-docs-01.md"
-    },
-    {
-      "stage": "verify",
-      "attempt": 2,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-16T05:51:39+05:00",
-      "summary": "The corrected source validator and all negative probes pass, but both fresh reviewers confirmed that the development host has no real managed Chrome policy or chrome://policy LNA entry. Synthetic source-as-effective input is not accepted as browser evidence; this is an upstream managed-kiosk environment blocker.",
-      "protocol": ".protocols/TASK-063-T3-FT-003-W1/verification.md",
-      "report": ".tasks/TASK-063-T3-FT-003-W1/TASK-063-T3-FT-003-W1-S-VERIFY-final-report-docs-02.md"
-    },
-    {
-      "stage": "closure",
-      "verdict": "blocked",
-      "completed_at": "2026-08-16T05:51:39+05:00",
-      "summary": "TASK-063 is blocked after two bounded verification attempts because effective managed Chromium policy and restart/listed-unlisted browser evidence require the real kiosk host. Resume on that host with a redacted chrome://policy export, then rerun fresh verification and T3 red-verification.",
-      "evidence": [
-        ".protocols/TASK-063-T3-FT-003-W1/verification.md",
-        ".tasks/TASK-063-T3-FT-003-W1/TASK-063-T3-FT-003-W1-S-VERIFY-final-report-docs-02.md"
-      ]
-    },
-    {
-      "stage": "verify",
-      "attempt": 3,
       "verdict": "PASS",
-      "completed_at": "2026-08-16T11:14:43+05:00",
-      "summary": "Two fresh reviewers independently confirmed the real host-managed Chrome policy, exact origin, Machine/Mandatory/OK chrome://policy rendering, restart persistence and host kiosk shell after operator environment correction. No synthetic effective-file evidence was used.",
-      "protocol": ".protocols/TASK-063-T3-FT-003-W1/verification.md",
-      "report": ".tasks/TASK-063-T3-FT-003-W1/TASK-063-T3-FT-003-W1-S-VERIFY-final-report-docs-03.md"
-    },
-    {
-      "stage": "red-verify",
-      "attempt": 3,
-      "verdict": "semantic-concern",
-      "completed_at": "2026-08-16T11:25:00+05:00",
-      "summary": "The original checker compared listed/unlisted policy values statically and did not perform a real browser permission-state probe. No material policy, credential, restart, Docker-port or ownership break was found; a bounded CDP browser probe was added and fresh functional/semantic verification is required.",
-      "protocol": ".protocols/TASK-063-T3-FT-003-W1/red-verification.md",
-      "report": ".tasks/TASK-063-T3-FT-003-W1/TASK-063-T3-FT-003-W1-S-RED-VERIFY-final-report-docs-01.md"
-    },
-    {
-      "stage": "verify",
-      "attempt": 4,
-      "verdict": "PASS",
-      "completed_at": "2026-08-16T11:30:00+05:00",
-      "summary": "Two fresh reviewers confirmed the real CDP browser probe: listed https://localhost:8443 is granted and unlisted https://localhost:9443 remains prompt for all LNA permission names; kiosk origin is restored and no synthetic policy evidence is used.",
-      "protocol": ".protocols/TASK-063-T3-FT-003-W1/verification.md",
-      "report": ".tasks/TASK-063-T3-FT-003-W1/TASK-063-T3-FT-003-W1-S-VERIFY-final-report-docs-04.md"
-    },
-    {
-      "stage": "red-verify",
-      "attempt": 4,
-      "verdict": "semantic-pass",
-      "completed_at": "2026-08-16T11:39:47+05:00",
-      "summary": "Fresh adversarial review passed the real listed/unlisted browser permission probe, exact effective policy, restart persistence, no wildcard/credential leakage, Docker separation and anti-goals with no material finding.",
-      "protocol": ".protocols/TASK-063-T3-FT-003-W1/red-verification.md",
-      "report": ".tasks/TASK-063-T3-FT-003-W1/TASK-063-T3-FT-003-W1-S-RED-VERIFY-final-report-docs-02.md"
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
+      "report": ".tasks/TASK-063-T3-FT-003-W1/TASK-063-T3-FT-003-W1-S-VERIFY-final-report-docs-04.md",
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-063-T3-FT-003-W1/TASK-063-T3-FT-003-W1-S-RED-VERIFY-final-report-docs-02.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-16T11:39:47+05:00",
-      "summary": "Scheduler closed TASK-063 after Attempt 4 functional PASS and required T3 semantic-pass; the prior semantic concern was corrected with a real CDP listed/unlisted origin probe inside task scope.",
-      "evidence": [
-        ".tasks/TASK-063-T3-FT-003-W1/TASK-063-T3-FT-003-W1-S-VERIFY-final-report-docs-04.md",
-        ".tasks/TASK-063-T3-FT-003-W1/TASK-063-T3-FT-003-W1-S-RED-VERIFY-final-report-docs-02.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
-  "docs": [".memory-bank/features/FT-003.md", ".memory-bank/contracts/sensor-passage-api.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "docs": [
+    ".memory-bank/features/FT-003.md",
+    ".memory-bank/contracts/sensor-passage-api.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
   "evidence_required": [
     "FT-003-AC-017 RED: no source-managed Chromium Local Network Access policy exists; GREEN: the effective managed kiosk policy contains LocalNetworkAccessAllowedForUrls with exactly the central Face Moment origin and no wildcard/unrelated origin, survives browser restart and makes that origin eligible for the later ESP32 integration while an unlisted origin receives no pre-authorization; decisive comparison: scripts/check-kiosk-lna.sh compares source and chrome://policy/effective policy plus listed/unlisted-origin probes without reading secrets; artifact: redacted inspection under .tasks/TASK-063-T3-FT-003-W1/."
   ],
   "purpose": "Own the deployable/reversible managed Chromium LNA prerequisite independently of sensor application code.",
   "success_outcome": "Only the central Face Moment origin is pre-authorized for local-network access in the managed kiosk profile.",
-  "anti_goals": ["Do not implement ESP32 polling/CORS/Bearer behavior.", "Do not use wildcard or store any sensor/display secret in policy.", "Do not change kiosk sandbox or port topology."],
+  "anti_goals": [
+    "Do not implement ESP32 polling/CORS/Bearer behavior.",
+    "Do not use wildcard or store any sensor/display secret in policy.",
+    "Do not change kiosk sandbox or port topology."
+  ],
   "runtime_context": {
-    "forbidden_scope": ["Sensor integration owned by TASK-046-T3-FT-003-W2", "Kiosk/port controls owned by TASK-049 and TASK-065", "Any deployment-policy secret injection"],
-    "stop_conditions": ["Effective Chromium policy cannot represent the exact origin.", "Validation requires a wildcard/unrelated origin.", "Inspection would expose browser-profile secrets."]
+    "forbidden_scope": [
+      "Sensor integration owned by TASK-046-T3-FT-003-W2",
+      "Kiosk/port controls owned by TASK-049 and TASK-065",
+      "Any deployment-policy secret injection"
+    ],
+    "stop_conditions": [
+      "Effective Chromium policy cannot represent the exact origin.",
+      "Validation requires a wildcard/unrelated origin.",
+      "Inspection would expose browser-profile secrets."
+    ]
   },
-  "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-017", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
-  "normative_inputs": [".memory-bank/features/FT-003.md#ft-003-ac-017--managed-local-network-access-policy", ".memory-bank/testing/client-realtime.md#required-proof", ".memory-bank/contracts/sensor-passage-api.md#cors-and-failure-semantics"],
-  "constraints": ["Use a source-managed managed-policy artifact and focused read-only check.", "Authorize exactly the configured central Face Moment origin.", "Retain redacted source/effective-policy evidence."],
-  "invariants": ["No wildcard/unrelated origin is pre-authorized.", "No credential is stored in policy.", "TASK-046 depends on this task for real-browser sensor integration."],
-  "verification_targets": ["FT-003-AC-017 source/effective policy comparison.", "Listed versus unlisted origin eligibility probe.", "Restart persistence and secret-absence scan."]
+  "source_artifacts": [
+    ".memory-bank/features/FT-003.md#FT-003-AC-017",
+    ".protocols/FT-003/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-003.md#ft-003-ac-017--managed-local-network-access-policy",
+    ".memory-bank/testing/client-realtime.md#required-proof",
+    ".memory-bank/contracts/sensor-passage-api.md#cors-and-failure-semantics"
+  ],
+  "constraints": [
+    "Use a source-managed managed-policy artifact and focused read-only check.",
+    "Authorize exactly the configured central Face Moment origin.",
+    "Retain redacted source/effective-policy evidence."
+  ],
+  "invariants": [
+    "No wildcard/unrelated origin is pre-authorized.",
+    "No credential is stored in policy.",
+    "TASK-046 depends on this task for real-browser sensor integration."
+  ],
+  "verification_targets": [
+    "FT-003-AC-017 source/effective policy comparison.",
+    "Listed versus unlisted origin eligibility probe.",
+    "Restart persistence and secret-absence scan."
+  ]
 }

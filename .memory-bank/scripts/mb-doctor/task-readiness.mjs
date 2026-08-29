@@ -502,6 +502,10 @@ export function createTaskReadinessChecks(context) {
     for (const group of groups.values()) {
       if (!group.hasT2) continue;
       const implementationRecords = group.records.filter((record) => !isProductionAcceptanceTask(record));
+      // A done_for_prod implementation boundary is intentionally waiting for
+      // production acceptance and must not trigger a new development feature
+      // semantic-review requirement.
+      if (implementationRecords.some((record) => record.task.status === 'done_for_prod')) continue;
       if (!implementationRecords.every((record) => DONE_STATUSES.has(record.task.status))) continue;
   
       const passFiles = featureSemanticPassFiles(group.featureId);

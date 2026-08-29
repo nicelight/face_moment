@@ -36,14 +36,14 @@
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
       "verdict": "PASS",
-      "completed_at": "2026-08-13T02:24:25+05:00",
-      "image": "face-moment:dev@sha256:74d272f5b64c43a705cd3e80aa67a2b3afc290512d69d78ded4046e7ab41a4c8",
-      "summary": "Fresh independent T2 verification repeated all three exact task gates and passed a verifier-owned UUID PostgreSQL probe. It proved direct counts 2/1/1/1/1, inactive failure visibility, exact oldest pending plus the nullable no-pending branch, exact worker/recovery/current-operation facts, equal repeated reads, SELECT-only production behavior, prerequisite cold imports and collections, absence of UI/SLO/capacity/history/store mechanisms, and zero-row/database/container cleanup with runtime restored to NULL|NULL|0|idle|NULL. Executor RED/GREEN remained supporting-only and was not reused.",
-      "protocol": ".protocols/TASK-032-T2-FT-002-W4/verification.md",
-      "report": ".tasks/TASK-032-T2-FT-002-W4/TASK-032-T2-FT-002-W4-S-VERIFY-final-report-docs-01.md",
-      "artifact": ".tasks/TASK-032-T2-FT-002-W4/TASK-032-T2-FT-002-W4-S-VERIFY-health-probe-code-01.py"
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
+      "report": ".tasks/TASK-032-T2-FT-002-W4/TASK-032-T2-FT-002-W4-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

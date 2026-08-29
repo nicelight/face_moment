@@ -39,18 +39,15 @@
     {
       "stage": "verify",
       "verdict": "PASS",
-      "completed_at": "2026-08-12T21:46:47+05:00",
-      "summary": "Fresh independent T3 verification passed the exact packaged-image mypy and focused private-derivative gates plus Memory Bank lint. A verifier-owned disposable MinIO probe proved exact two-kind repeat convergence, stable private keys/checksums, configured JPEG bounds, positive configuration validation, unchanged original, preserved sentinel, private topology, no delivery/logging/watermark/lifecycle expansion, exact cleanup and zero owned residue. Executor receipts remained supporting-only and were not reused.",
-      "protocol": ".protocols/TASK-021-T3-FT-002-W2/verification.md",
-      "report": ".tasks/TASK-021-T3-FT-002-W2/TASK-021-T3-FT-002-W2-S-VERIFY-final-report-docs-01.md"
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
+      "report": ".tasks/TASK-021-T3-FT-002-W2/TASK-021-T3-FT-002-W2-S-VERIFY-final-report-docs-01.md",
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-021-T3-FT-002-W2/TASK-021-T3-FT-002-W2-S-RED-VERIFY-final-report-docs-01.md"
     },
     {
-      "stage": "red-verify",
-      "verdict": "semantic-pass",
-      "completed_at": "2026-08-12T21:50:06+05:00",
-      "summary": "Fresh adversarial review challenged pre-write and ambiguous post-write failure of the second derivative, retry/repeat convergence, invalid original handling, original/foreign state preservation, private delivery, and ownership/scope drift. Packaged probes passed; no material accepted-outcome break or operator-owned decision survived.",
-      "protocol": ".protocols/TASK-021-T3-FT-002-W2/red-verification.md",
-      "report": ".tasks/TASK-021-T3-FT-002-W2/TASK-021-T3-FT-002-W2-S-RED-VERIFY-final-report-docs-01.md"
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

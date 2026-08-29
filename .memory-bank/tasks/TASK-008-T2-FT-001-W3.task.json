@@ -33,21 +33,13 @@
     {
       "stage": "verify",
       "verdict": "PASS",
-      "completed_at": "2026-08-11T15:12:35+05:00",
-      "summary": "Fresh independent T2 verification passed both exact packaged-image gates and a verifier-owned isolated PostgreSQL proof. Empty-database upgrade, repeated 0006-to-0005-to-0006 migration round-trips, schema/default/constraint/FK introspection and read-only repository lookup proved the complete inventory-owned Photo identity shape, authoritative time sources, private original reference and exact same-scope SHA-256 uniqueness without a public admission command or processing state.",
-      "protocol": ".protocols/TASK-008-T2-FT-001-W3/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-008-T2-FT-001-W3/TASK-008-T2-FT-001-W3-S-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-11T15:15:27+05:00",
-      "summary": "The autopilot scheduler closed TASK-008 after fresh independent T2 verification passed both exact packaged-image gates and the isolated migration, schema, constraint, ownership and read-only repository proof.",
-      "evidence": [
-        ".tasks/TASK-008-T2-FT-001-W3/TASK-008-T2-FT-001-W3-S-EXEC-final-report-code-01.md",
-        ".tasks/TASK-008-T2-FT-001-W3/TASK-008-T2-FT-001-W3-S-VERIFY-final-report-docs-01.md",
-        ".protocols/TASK-008-T2-FT-001-W3/verification.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

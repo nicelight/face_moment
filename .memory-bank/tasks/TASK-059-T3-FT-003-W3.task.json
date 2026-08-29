@@ -4,94 +4,94 @@
   "status": "done",
   "wave": "W3",
   "feature": "FT-003",
-  "reqs": ["REQ-SEC-001", "REQ-REL-001"],
-  "depends_on": ["TASK-058-T3-FT-003-W2", "TASK-044-T2-FT-003-W1", "TASK-057-T3-FT-003-W2"],
-  "touched_files": ["client/", "tests/client/"],
+  "reqs": [
+    "REQ-SEC-001",
+    "REQ-REL-001"
+  ],
+  "depends_on": [
+    "TASK-058-T3-FT-003-W2",
+    "TASK-044-T2-FT-003-W1",
+    "TASK-057-T3-FT-003-W2"
+  ],
+  "touched_files": [
+    "client/",
+    "tests/client/"
+  ],
   "tier": "T3",
-  "gates": [{"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}],
+  "gates": [
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
   "verify": [
     {
-      "stage": "closure",
-      "verdict": "blocked",
-      "completed_at": "2026-08-17T19:03:57+05:00",
-      "summary": "TASK-059 is blocked by upstream TASK-057. No implementation or verification was started for this task.",
-      "evidence": [
-        ".memory-bank/tasks/TASK-057-T3-FT-003-W2.task.json"
-      ],
-      "resume_route": "close TASK-057 through its recorded stable-Docker fresh `/exe` -> `/verify` -> `/red-verify` route, then rerun promotion"
-    },
-    {
       "stage": "verify",
-      "attempt": 1,
       "verdict": "PASS",
-      "completed_at": "2026-08-18T01:35:00+05:00",
-      "summary": "Fresh independent verification passed central-token copy, profile persistence across reload/Chromium restart/replacement, Authorization-only use, leakage scans, cleanup and forbidden-scope review. The external realtime 502 was classified as a pre-existing restart-loop outside TASK-059.",
-      "protocol": ".protocols/TASK-059-T3-FT-003-W3/verification.md",
-      "report": ".tasks/TASK-059-T3-FT-003-W3/TASK-059-T3-FT-003-W3-S-VERIFY-final-report-docs-01.md"
-    },
-    {
-      "stage": "red-verify",
-      "attempt": 1,
-      "verdict": "semantic-concern",
-      "completed_at": "2026-08-18T01:49:00+05:00",
-      "summary": "Fresh adversarial review found an unresolved security/ownership branch: the public client #configuration UI allows an unauthenticated local user to overwrite the kiosk token in localStorage. Canonical docs require an authenticated operator/developer to perform the manual handoff but do not explicitly decide whether the local save control must enforce that role. Task remains open pending operator clarification; the realtime 502 remains external.",
-      "protocol": ".protocols/TASK-059-T3-FT-003-W3/red-verification.md",
-      "report": ".tasks/TASK-059-T3-FT-003-W3/TASK-059-T3-FT-003-W3-S-RED-VERIFY-final-report-docs-01.md"
-    },
-    {
-      "stage": "clarification",
-      "verdict": "resolved",
-      "completed_at": "2026-08-18T02:00:00+05:00",
-      "summary": "Operator selected physical/local access to the managed Linux browser profile as sufficient for setting and replacing the manually handed-off kiosk token. An additional authenticated role restriction on the client Save control is not required for this pilot handoff; fresh execution and independent verification remain required.",
-      "evidence": [
-        ".protocols/AUTONOMOUS-RUN/decision-log.md",
-        ".protocols/AUTONOMOUS-RUN/status.md"
-      ]
-    },
-    {
-      "stage": "verify",
-      "attempt": 2,
-      "verdict": "PASS",
-      "completed_at": "2026-08-18T02:41:40+05:00",
-      "summary": "Fresh independent verification after Attempt 2 passed manual kiosk profile save, persistence across reload and Chromium restart, replacement/reset seam, Authorization-only use, no URL/non-Authorization-header/console leakage, no automatic injection path and cleanup. Operator policy allows physical/local managed-profile access without an additional Save role-gate. The observed realtime 502 was classified as the external restart-loop and excluded from TASK-059.",
-      "protocol": ".protocols/TASK-059-T3-FT-003-W3/verification.md",
-      "report": ".tasks/TASK-059-T3-FT-003-W3/TASK-059-T3-FT-003-W3-S-VERIFY-final-report-docs-02.md"
-    },
-    {
-      "stage": "red-verify",
-      "attempt": 2,
-      "verdict": "semantic-pass",
-      "completed_at": "2026-08-18T02:44:46+05:00",
-      "summary": "Fresh adversarial semantic review found no material break in the task-scoped manual kiosk-profile handoff. Manual provenance, managed-profile persistence/replacement, Authorization-only transport, no leakage, no automatic transfer and forbidden-scope boundaries were supported by current implementation and fresh browser evidence. The operator's physical/local-access policy was applied without reopening it; the external realtime 502 was excluded.",
-      "protocol": ".protocols/TASK-059-T3-FT-003-W3/red-verification.md",
-      "report": ".tasks/TASK-059-T3-FT-003-W3/TASK-059-T3-FT-003-W3-S-RED-VERIFY-final-report-docs-01.md"
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
+      "report": ".tasks/TASK-059-T3-FT-003-W3/TASK-059-T3-FT-003-W3-S-VERIFY-final-report-docs-02.md",
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-059-T3-FT-003-W3/TASK-059-T3-FT-003-W3-S-RED-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-18T02:44:46+05:00",
-      "summary": "TASK-059 closed after fresh execution reconciliation, independent functional PASS and required T3 semantic-pass. No product code change was needed after the accepted local-access policy decision.",
-      "evidence": [
-        ".tasks/TASK-059-T3-FT-003-W3/TASK-059-T3-FT-003-W3-S-EXECUTE-final-report-docs-02.md",
-        ".tasks/TASK-059-T3-FT-003-W3/TASK-059-T3-FT-003-W3-S-VERIFY-final-report-docs-02.md",
-        ".tasks/TASK-059-T3-FT-003-W3/TASK-059-T3-FT-003-W3-S-RED-VERIFY-final-report-docs-01.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
-  "docs": [".memory-bank/features/FT-003.md", ".memory-bank/domains/display-client-access.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "docs": [
+    ".memory-bank/features/FT-003.md",
+    ".memory-bank/domains/display-client-access.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
   "evidence_required": [
     "FT-003-AC-020 RED: the kiosk has no central-token field or durable profile copy; GREEN: an authenticated operator/developer manually reads TASK-058's current token for the intended named kiosk, copies it into that kiosk's client configuration field, persists it in the managed browser profile, authenticates a real request after page reload and Chromium restart, then repeats the manual copy after reset invalidates the old value; decisive comparison: old/new token auth results and profile reload/restart behavior plus a route/config scan prove no server push, pairing, enrollment or deployment-policy injection and no URL/log leakage; artifact: Playwright transcript and redacted scans under .tasks/TASK-059-T3-FT-003-W3/."
   ],
   "purpose": "Implement the kiosk-side central-token configuration and prove the deliberately manual server-to-kiosk handoff.",
   "success_outcome": "The intended kiosk retains and uses the manually copied current display credential across reload/restart, and reset requires another manual copy.",
-  "anti_goals": ["Do not implement or re-own the Admin read page.", "Do not push/inject tokens, add pairing/enrollment/rotation or place secrets in managed policy.", "Do not confuse the retained central credential with personalized QR/session state."],
+  "anti_goals": [
+    "Do not implement or re-own the Admin read page.",
+    "Do not push/inject tokens, add pairing/enrollment/rotation or place secrets in managed policy.",
+    "Do not confuse the retained central credential with personalized QR/session state."
+  ],
   "runtime_context": {
-    "forbidden_scope": ["Server Admin read internals owned by TASK-058-T3-FT-003-W2", "Credential lifecycle/authentication internals owned by TASK-041 and TASK-057", "Deployment-policy secret injection of any kind"],
-    "stop_conditions": ["The token cannot persist in the managed profile across reload/restart.", "Real authentication needs an automatic handoff path.", "The credential would enter URL/log/history/analytics output."]
+    "forbidden_scope": [
+      "Server Admin read internals owned by TASK-058-T3-FT-003-W2",
+      "Credential lifecycle/authentication internals owned by TASK-041 and TASK-057",
+      "Deployment-policy secret injection of any kind"
+    ],
+    "stop_conditions": [
+      "The token cannot persist in the managed profile across reload/restart.",
+      "Real authentication needs an automatic handoff path.",
+      "The credential would enter URL/log/history/analytics output."
+    ]
   },
-  "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-020", ".memory-bank/domains/display-client-access.md#manual-kiosk-profile-handoff", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
-  "normative_inputs": [".memory-bank/features/FT-003.md#ft-003-ac-020--manual-central-token-kiosk-handoff", ".memory-bank/domains/display-client-access.md#manual-kiosk-profile-handoff", ".memory-bank/testing/client-realtime.md#required-proof"],
-  "constraints": ["Use installed playwright cli and a real manually copied token from the completed Admin page.", "Persist only in the intended managed kiosk browser profile and send only as display Authorization Bearer.", "Use disposable kiosk credential fixtures and redact artifacts."],
-  "invariants": ["Handoff is manual and binds the intended named kiosk.", "The central display credential survives reload/Chromium restart until explicit replacement.", "Reset invalidates old value and no automatic secret-transfer path exists."],
-  "verification_targets": ["FT-003-AC-020 real manual handoff/reload/restart/reset sequence.", "Dependency integration observes TASK-058 current-token read and TASK-057 Bearer authentication without duplicating either prerequisite claim.", "Leakage and forbidden automatic-handoff scan."]
+  "source_artifacts": [
+    ".memory-bank/features/FT-003.md#FT-003-AC-020",
+    ".memory-bank/domains/display-client-access.md#manual-kiosk-profile-handoff",
+    ".protocols/FT-003/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-003.md#ft-003-ac-020--manual-central-token-kiosk-handoff",
+    ".memory-bank/domains/display-client-access.md#manual-kiosk-profile-handoff",
+    ".memory-bank/testing/client-realtime.md#required-proof"
+  ],
+  "constraints": [
+    "Use installed playwright cli and a real manually copied token from the completed Admin page.",
+    "Persist only in the intended managed kiosk browser profile and send only as display Authorization Bearer.",
+    "Use disposable kiosk credential fixtures and redact artifacts."
+  ],
+  "invariants": [
+    "Handoff is manual and binds the intended named kiosk.",
+    "The central display credential survives reload/Chromium restart until explicit replacement.",
+    "Reset invalidates old value and no automatic secret-transfer path exists."
+  ],
+  "verification_targets": [
+    "FT-003-AC-020 real manual handoff/reload/restart/reset sequence.",
+    "Dependency integration observes TASK-058 current-token read and TASK-057 Bearer authentication without duplicating either prerequisite claim.",
+    "Leakage and forbidden automatic-handoff scan."
+  ]
 }

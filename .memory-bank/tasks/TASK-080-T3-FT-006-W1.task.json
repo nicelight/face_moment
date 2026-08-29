@@ -41,44 +41,16 @@
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
-      "verdict": "NEEDS-CLARIFICATION",
-      "completed_at": "2026-08-28T01:56:19+05:00",
-      "summary": "Fresh independent functional, typecheck, lint and cleanup checks passed, but the required canonical persistence evidence is incomplete: the isolated suite opens new SQLAlchemy sessions without restarting PostgreSQL and re-reading the committed browser-access row.",
-      "protocol": ".protocols/TASK-080-T3-FT-006-W1/verification.md",
-      "report": ".tasks/TASK-080-T3-FT-006-W1/TASK-080-T3-FT-006-W1-S-VERIFY-final-report-docs-01.md"
-    },
-    {
-      "stage": "verify",
-      "attempt": 2,
       "verdict": "PASS",
-      "completed_at": "2026-08-28T02:22:09+05:00",
-      "summary": "Fresh verifier-owned repository, boundary and actual isolated PostgreSQL process-restart probes passed: one committed browser-access row and its immutable session truth survived stop/start with the same redacted digest, all task-owned claims and required gates passed, and disposable database, container, volume and network resources were removed.",
-      "protocol": ".protocols/TASK-080-T3-FT-006-W1/verification.md",
-      "report": ".tasks/TASK-080-T3-FT-006-W1/TASK-080-T3-FT-006-W1-S-VERIFY-final-report-docs-02.md"
-    },
-    {
-      "stage": "red-verify",
-      "attempt": 1,
-      "verdict": "semantic-pass",
-      "completed_at": "2026-08-28T02:36:48+05:00",
-      "summary": "Fresh adversarial T3 semantic verification found no material break in the single-row shared browser-access state, strict first-open and idle boundaries, concurrent-phone reuse, monotonic explicit activity, passive non-extension, actual PostgreSQL restart durability, immutable session truth, ownership boundaries or cleanup.",
-      "protocol": ".protocols/TASK-080-T3-FT-006-W1/red-verification.md",
-      "report": ".tasks/TASK-080-T3-FT-006-W1/TASK-080-T3-FT-006-W1-S-RED-VERIFY-final-report-docs-01.md"
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
+      "report": ".tasks/TASK-080-T3-FT-006-W1/TASK-080-T3-FT-006-W1-S-VERIFY-final-report-docs-02.md",
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-080-T3-FT-006-W1/TASK-080-T3-FT-006-W1-S-RED-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
-      "attempt": 2,
       "verdict": "done",
-      "completed_at": "2026-08-28T02:36:48+05:00",
-      "summary": "The autopilot scheduler closed TASK-080 after fresh functional Attempt 2 PASS and the required per-task semantic-pass. Historical Attempt 1 NEEDS-CLARIFICATION remains preserved and did not consume the unsuccessful-attempt budget.",
-      "evidence": [
-        ".tasks/TASK-080-T3-FT-006-W1/TASK-080-T3-FT-006-W1-S-EXECUTE-final-report-code-02.md",
-        ".tasks/TASK-080-T3-FT-006-W1/TASK-080-T3-FT-006-W1-S-VERIFY-final-report-docs-02.md",
-        ".tasks/TASK-080-T3-FT-006-W1/TASK-080-T3-FT-006-W1-S-RED-VERIFY-final-report-docs-01.md",
-        ".protocols/TASK-080-T3-FT-006-W1/verification.md",
-        ".protocols/TASK-080-T3-FT-006-W1/red-verification.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

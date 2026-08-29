@@ -38,13 +38,14 @@
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
       "verdict": "PASS",
-      "completed_at": "2026-08-14T22:10:46+05:00",
-      "image": "face-moment:task-039@sha256:05d9971f503bbcd43da905762cded3e01d63334a514db7293655be0043b205db",
-      "summary": "Fresh independent packaged T2 verification passed the exact-A five-state matrix, proving pending/processing blockers, terminal-state non-blockers, SPA/admission-A/exact-state lineage, SELECT-only behavior, unchanged snapshots, safe cleanup and no TASK-040 scope leakage.",
-      "protocol": ".protocols/TASK-039-T2-FT-002-W6/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-039-T2-FT-002-W6/TASK-039-T2-FT-002-W6-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

@@ -4,56 +4,88 @@
   "status": "done",
   "wave": "W2",
   "feature": "FT-003",
-  "reqs": ["REQ-CAP-001", "REQ-REL-001"],
-  "depends_on": ["TASK-044-T2-FT-003-W1"],
-  "touched_files": ["client/", "tests/client/"],
+  "reqs": [
+    "REQ-CAP-001",
+    "REQ-REL-001"
+  ],
+  "depends_on": [
+    "TASK-044-T2-FT-003-W1"
+  ],
+  "touched_files": [
+    "client/",
+    "tests/client/"
+  ],
   "tier": "T2",
-  "gates": [{"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}],
+  "gates": [
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-17T20:04:01+05:00",
-      "summary": "Fresh managed-Chromium evidence passed enumeration/labels, preview, exact persisted reload, no-fallback loss/reconnect, advertising continuity and the 2560x1440 to 1280x720 cap; independent read-only reproduction found a HIGH asynchronous explicit-selection race leaving selected device, active stream and storage inconsistent.",
-      "protocol": ".protocols/TASK-061-T2-FT-003-W2/verification.md",
-      "report": ".tasks/TASK-061-T2-FT-003-W2/TASK-061-T2-FT-003-W2-S-VERIFY-final-report-docs-01.md"
-    },
-    {
-      "stage": "verify",
-      "attempt": 2,
       "verdict": "PASS",
-      "completed_at": "2026-08-17T20:23:04+05:00",
-      "summary": "Fresh verifier-owned Attempt 2 evidence reproduced A then B with B resolving before A and confirmed selected/active/persisted B with stale A stopped; managed Chromium passed enumeration/labels, preview, exact reload persistence, no-fallback loss/reconnect, advertising continuity and the 2560x1440 to 1280x720 cap; focused/container/mb-lint receipts passed and cleanup was confirmed.",
-      "protocol": ".protocols/TASK-061-T2-FT-003-W2/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-061-T2-FT-003-W2/TASK-061-T2-FT-003-W2-S-VERIFY-final-report-docs-02.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-17T20:27:30+05:00",
-      "summary": "Scheduler closed TASK-061 after fresh T2 /verify PASS on Attempt 2. The accepted overlapping explicit-selection race was corrected with bounded stale-result invalidation; independent race, managed-Chromium camera/recovery, focused, container-shell and Memory Bank gates passed. No per-task /red-verify is required for T2.",
-      "evidence": [
-        ".protocols/TASK-061-T2-FT-003-W2/verification.md",
-        ".tasks/TASK-061-T2-FT-003-W2/TASK-061-T2-FT-003-W2-S-VERIFY-final-report-docs-02.md",
-        ".tasks/TASK-061-T2-FT-003-W2/TASK-061-T2-FT-003-W2-S-EXECUTE-final-report-code-02.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
-  "docs": [".memory-bank/features/FT-003.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "docs": [
+    ".memory-bank/features/FT-003.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
   "evidence_required": [
     "FT-003-AC-002 RED: no camera list/preview/selection exists; GREEN: the configuration UI lists understandable browser-visible devices, previews and remembers an explicit selection, downscales above-site-maximum input before downstream buffer work, and after disconnect/reconnect/USB-port move keeps advertising usable and requires explicit reselection rather than arbitrary substitution; decisive comparison: fake/real media fixtures inspect labels, preview, persisted selection, input dimensions and recovery state; artifact: Playwright transcript under .tasks/TASK-061-T2-FT-003-W2/."
   ],
   "purpose": "Own recoverable camera discovery, preview, explicit selection and input downscale independently of static shell delivery.",
   "success_outcome": "Operators can select and recover the intended camera without interrupting advertising or silently switching devices.",
-  "anti_goals": ["Do not serve the client shell or implement ring buffer/capture.", "Do not hard-code a camera model or arbitrary fallback.", "Do not mutate server state from camera configuration."],
+  "anti_goals": [
+    "Do not serve the client shell or implement ring buffer/capture.",
+    "Do not hard-code a camera model or arbitrary fallback.",
+    "Do not mutate server state from camera configuration."
+  ],
   "runtime_context": {
-    "forbidden_scope": ["Static shell delivery owned by TASK-044-T2-FT-003-W1", "Ring buffer/trigger owned by TASK-050-T2-FT-003-W3", "Named degraded-state composition owned by TASK-055-T2-FT-003-W7"],
-    "stop_conditions": ["Recovery requires arbitrary device substitution.", "Browser-visible camera enumeration/preview cannot be proved in managed Chromium.", "Downscale requires server processing."]
+    "forbidden_scope": [
+      "Static shell delivery owned by TASK-044-T2-FT-003-W1",
+      "Ring buffer/trigger owned by TASK-050-T2-FT-003-W3",
+      "Named degraded-state composition owned by TASK-055-T2-FT-003-W7"
+    ],
+    "stop_conditions": [
+      "Recovery requires arbitrary device substitution.",
+      "Browser-visible camera enumeration/preview cannot be proved in managed Chromium.",
+      "Downscale requires server processing."
+    ]
   },
-  "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-002", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
-  "normative_inputs": [".memory-bank/features/FT-003.md#ft-003-ac-002--recoverable-camera-selection", ".memory-bank/testing/client-realtime.md#client-state-and-recovery-proof", ".memory-bank/testing/index.md"],
-  "constraints": ["Use installed playwright cli with fake media plus managed Chromium device fixtures.", "Exact site maximum remains deployment configuration.", "Persist selection in managed kiosk profile and apply from next Attempt."],
-  "invariants": ["Unavailable selected camera never triggers arbitrary substitution.", "Advertising stays usable while explicit reselection is required.", "Oversized input is downscaled before ring-buffer/detector work."],
-  "verification_targets": ["FT-003-AC-002 list/preview/select/reload proof.", "Disconnect/reconnect/port-change recovery comparison.", "Oversized-input dimension proof before downstream seam."]
+  "source_artifacts": [
+    ".memory-bank/features/FT-003.md#FT-003-AC-002",
+    ".protocols/FT-003/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-003.md#ft-003-ac-002--recoverable-camera-selection",
+    ".memory-bank/testing/client-realtime.md#client-state-and-recovery-proof",
+    ".memory-bank/testing/index.md"
+  ],
+  "constraints": [
+    "Use installed playwright cli with fake media plus managed Chromium device fixtures.",
+    "Exact site maximum remains deployment configuration.",
+    "Persist selection in managed kiosk profile and apply from next Attempt."
+  ],
+  "invariants": [
+    "Unavailable selected camera never triggers arbitrary substitution.",
+    "Advertising stays usable while explicit reselection is required.",
+    "Oversized input is downscaled before ring-buffer/detector work."
+  ],
+  "verification_targets": [
+    "FT-003-AC-002 list/preview/select/reload proof.",
+    "Disconnect/reconnect/port-change recovery comparison.",
+    "Oversized-input dimension proof before downstream seam."
+  ]
 }

@@ -54,139 +54,16 @@
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-28T06:10:25+05:00",
-      "summary": "All four exact current-tree gates passed (pytest 26, Node 6, mypy 71 files, mb-lint 98 files), but fresh verifier probes proved that default Uvicorn access logging exposes the /q ticket query/credential and that the accepted HTTPS Origin on the Docker-proxied activity route returns 403 because the forwarded scheme is not trusted. TASK-081 remains in_progress.",
-      "protocol": ".protocols/TASK-081-T3-FT-006-W2/verification.md",
-      "report": ".tasks/TASK-081-T3-FT-006-W2/TASK-081-T3-FT-006-W2-S-VERIFY-final-report-docs-01.md",
-      "artifacts": [
-        ".tasks/TASK-081-T3-FT-006-W2/verifier-gate-results.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verifier-access-log-output.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verifier-forwarded-origin-output.json"
-      ]
-    },
-    {
-      "stage": "verify",
-      "attempt": 2,
       "verdict": "PASS",
-      "completed_at": "2026-08-28T07:38:59+05:00",
-      "summary": "Fresh verification on a current-tree image passed all four exact gates (pytest 28, Node 6, mypy 71 files, mb-lint 98 files), proved that neither Uvicorn nor actual Caddy/backend runtime logs retain the /q query or generated ticket, and proved that only authoritative Caddy forwarding changes HTTPS scheme/client identity while direct spoofed headers remain untrusted. A fresh current-tree Playwright flow also passed. TASK-081 remains in_progress for required T3 red verification and scheduler lifecycle ownership.",
-      "protocol": ".protocols/TASK-081-T3-FT-006-W2/verification.md",
-      "report": ".tasks/TASK-081-T3-FT-006-W2/TASK-081-T3-FT-006-W2-S-VERIFY-final-report-docs-02.md",
-      "artifacts": [
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-2-gates.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-2-access-log.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-2-forwarded-proxy.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-2-playwright.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-2-playwright-transcript.txt",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-2-phone-rendered.png",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-2-phone-continuation.webm",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-2-playwright-trace/README.md"
-      ]
-    },
-    {
-      "stage": "verify",
-      "attempt": 3,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-28T08:42:29+05:00",
-      "summary": "Fresh verification confirmed both prior semantic corrections: default Caddy .254 is outside the dynamic /25 and malformed non-numeric/out-of-range purchase ports fail closed with empty pre-service 503. All four exact gates and the current-tree Chromium flow passed, but a verifier-owned current-image probe proved that a percent-encoded non-ASCII unknown media_ref returns empty 500 instead of the task-linked non-disclosing 404. TASK-081 remains in_progress.",
-      "protocol": ".protocols/TASK-081-T3-FT-006-W2/verification.md",
-      "report": ".tasks/TASK-081-T3-FT-006-W2/TASK-081-T3-FT-006-W2-S-VERIFY-final-report-docs-03.md",
-      "artifacts": [
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-3-results.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify_attempt_3_media_ref_probe.py",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-3-media-ref-output.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-3-playwright.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-3-playwright-transcript.txt",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-3-phone-rendered.png"
-      ]
-    },
-    {
-      "stage": "scheduler_checkpoint",
-      "verdict": "HALT_FAILURE_BUDGET",
-      "completed_at": "2026-08-28T08:50:40+05:00",
-      "summary": "Final preserved-Judge REDIRECT checkpoint: Attempt 1 functional FAIL, Attempt 2 required T3 semantic-fail, and Attempt 3 functional FAIL exhaust the initial attempt plus two retries. The final task-local defect is a percent-encoded non-ASCII unknown media_ref returning empty 500 instead of the required empty non-disclosing 404. Per the operator-directed Judge disposition, TASK-081 remains in_progress; no fourth attempt, red verification, closure or dependent promotion is permitted in this run.",
-      "functional_verification": ".tasks/TASK-081-T3-FT-006-W2/TASK-081-T3-FT-006-W2-S-VERIFY-final-report-docs-03.md",
-      "historical_semantic_failure": ".tasks/TASK-081-T3-FT-006-W2/TASK-081-T3-FT-006-W2-S-RED-VERIFY-final-report-docs-01.md",
-      "bug_handoff": ".memory-bank/bugs/TASK-081-non-ascii-media-ref-status.md"
-    },
-    {
-      "stage": "verify",
-      "attempt": 4,
-      "follow_up_attempt": "1 of 5",
-      "verdict": "PASS",
-      "completed_at": "2026-08-28T15:03:44+05:00",
-      "summary": "Fresh independent verification on the matching Attempt 4 image passed all four exact gates (pytest 31, Node 6, mypy 71 files, mb-lint 99 files), a fresh Chromium continuation/expiry flow, and prior security/configuration regressions. A verifier-owned real Uvicorn/FastAPI request proved that percent-encoded non-ASCII and ASCII unknown media_ref values both return empty no-store/no-referrer 404 after authentication, while unauthenticated access remains empty 401 before session access. Original Attempts 1..3 and HALT_FAILURE_BUDGET remain historical; TASK-081 remains in_progress for fresh T3 red verification and explicit lifecycle ownership.",
-      "protocol": ".protocols/TASK-081-T3-FT-006-W2/verification.md",
-      "report": ".tasks/TASK-081-T3-FT-006-W2/TASK-081-T3-FT-006-W2-S-VERIFY-final-report-docs-04.md",
-      "artifacts": [
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-4-results.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify_attempt_4_media_ref_http_probe.py",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-4-media-ref-http.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-4-playwright.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-4-phone-rendered.png",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-4-browser-qa.spec.js",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-4-playwright.config.js"
-      ]
-    },
-    {
-      "stage": "verify",
-      "attempt": 5,
-      "follow_up_attempt": "2 of 5",
-      "verdict": "FAIL",
-      "completed_at": "2026-08-28T16:41:19+05:00",
-      "summary": "Fresh independent verification on the matching Attempt 5 image passed all four exact gates, two-context shared-expiry revalidation with zero activity writes, prior media authentication/status, ticket-log redaction and actual Caddy/Uvicorn proxy behavior. It failed because additional WHATWG-invalid purchase hosts reached database/service and returned 303/200 instead of empty pre-service 503, and real Chromium exposed a repeated same-media passive retry loop. The separate stale-response experiment was classified as a harness issue, not a product finding. TASK-081 remains in_progress; no red verification or lifecycle action was performed.",
-      "protocol": ".protocols/TASK-081-T3-FT-006-W2/verification.md",
-      "report": ".tasks/TASK-081-T3-FT-006-W2/TASK-081-T3-FT-006-W2-S-VERIFY-final-report-docs-05.md",
-      "artifacts": [
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-5-results.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-5-gates.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-5-shared-expiry.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-5-phone-a-after-stale-deadline.png",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-5-browser-invalid-host.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-5-media.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-5-media-loop.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-5-access-log.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-5-proxy.json",
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-5-client-race-classification.json"
-      ]
-    },
-    {
-      "stage": "verify",
-      "attempt": 6,
-      "follow_up_attempt": "3 of 5",
-      "verdict": "FAIL",
-      "completed_at": "2026-08-28T17:22:57+05:00",
-      "summary": "Fresh independent verification reconciled all four passing exact gates, comprehensive-enumeration evidence for 71 ASCII numeric/C0-C1 hosts, and real Chromium media recovery at 2 session responses, 1 failed media request and 0 activity writes. It failed because browser-rejected mixed-script numeric and bidi-control purchase hosts still pass validation and reach 303/200 plus database/service handling instead of empty pre-service 503. TASK-081 remains in_progress; no red verification or lifecycle action was performed.",
-      "protocol": ".protocols/TASK-081-T3-FT-006-W2/verification.md",
-      "report": ".tasks/TASK-081-T3-FT-006-W2/TASK-081-T3-FT-006-W2-S-VERIFY-final-report-docs-06.md",
-      "artifacts": [
-        ".tasks/TASK-081-T3-FT-006-W2/verify-attempt-6-results.json",
-        ".tasks/TASK-081-T3-FT-006-W2/attempt-6-gates-green.json",
-        ".tasks/TASK-081-T3-FT-006-W2/attempt-6-regressions-green.json",
-        ".tasks/TASK-081-T3-FT-006-W2/attempt-6-purchase-host-green.json",
-        ".tasks/TASK-081-T3-FT-006-W2/attempt-6-media-recovery-playwright.json"
-      ]
-    },
-    {
-      "stage": "verify",
-      "attempt": 7,
-      "execution_attempt": 8,
-      "follow_up_attempt": "5 of 5",
-      "verdict": "PASS",
-      "semantic_verdict": "semantic-pass",
-      "completed_at": "2026-08-28T20:40:24+05:00",
-      "summary": "Fresh independent functional verification PASS/APPROVE for the Attempt 8 extraction, followed by required fresh T3 red verification PASS/APPROVE. The single Promo-owned PHONE_PURCHASE_URL module preserves behavior, tests and qr_continuation public import compatibility; no task-scoped findings remain. Scheduler closure is authorized.",
-      "protocol": ".protocols/TASK-081-T3-FT-006-W2/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-081-T3-FT-006-W2/TASK-081-T3-FT-006-W2-S-VERIFY-final-report-docs-07.md",
-      "semantic_protocol": ".protocols/TASK-081-T3-FT-006-W2/red-verification.md",
-      "semantic_report": ".tasks/TASK-081-T3-FT-006-W2/TASK-081-T3-FT-006-W2-S-RED-VERIFY-final-report-docs-03.md",
-      "artifacts": [
-        ".tasks/TASK-081-T3-FT-006-W2/verify_attempt_8_extraction_probe.py",
-        ".tasks/TASK-081-T3-FT-006-W2/attempt-8-gates-green.json",
-        ".tasks/TASK-081-T3-FT-006-W2/attempt-8-regressions-green.json"
-      ]
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-081-T3-FT-006-W2/TASK-081-T3-FT-006-W2-S-RED-VERIFY-final-report-docs-03.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

@@ -36,20 +36,13 @@
     {
       "stage": "verify",
       "verdict": "PASS",
-      "completed_at": "2026-08-12T21:21:12+05:00",
-      "summary": "Fresh independent T2 verification passed all exact gates and a verifier-owned Buffalo M probe. It proved the configured SCRFD/native-alignment/normed_embedding path, immutable revision/assets/dimension, unit norm, FaceEngine compliance, early SFace and mismatch rejection, and absence of SFace/plugin/download/auto-selection/shared-contract paths. The dependency-starting pytest restarted but did not recreate the same exited-0 migrate container, and the required image digest remained unchanged.",
-      "protocol": ".protocols/TASK-020-T2-FT-002-W2/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-020-T2-FT-002-W2/TASK-020-T2-FT-002-W2-S-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-12T21:23:38+05:00",
-      "summary": "The autopilot scheduler closed TASK-020 after Execution Attempt 1 and fresh independent T2 verification PASS for the native SCRFD-to-alignment-to-normed_embedding Buffalo M Photo path, immutable revision/assets, exact dimension/unit norm, FaceEngine compliance and anti-goals. Two bounded test-fixture fixes occurred before verdict; the observed Compose migrate recreation/restart completed successfully and required no recovery. No task failure budget was consumed.",
-      "evidence": [
-        ".tasks/TASK-020-T2-FT-002-W2/TASK-020-T2-FT-002-W2-S-EXECUTE-final-report-code-02.md",
-        ".tasks/TASK-020-T2-FT-002-W2/TASK-020-T2-FT-002-W2-S-VERIFY-final-report-docs-01.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

@@ -4,7 +4,15 @@
   "status": "done_for_prod",
   "wave": "W5",
   "feature": "FT-004",
-  "reqs": ["REQ-SRCH-003", "REQ-CAP-003", "REQ-PERF-001", "REQ-REL-001", "REQ-DIAG-001", "REQ-SEC-001", "REQ-ARCH-001"],
+  "reqs": [
+    "REQ-SRCH-003",
+    "REQ-CAP-003",
+    "REQ-PERF-001",
+    "REQ-REL-001",
+    "REQ-DIAG-001",
+    "REQ-SEC-001",
+    "REQ-ARCH-001"
+  ],
   "depends_on": [
     "TASK-045-T3-FT-003-W3",
     "TASK-057-T3-FT-003-W2",
@@ -23,52 +31,28 @@
   ],
   "tier": "T3",
   "gates": [
-    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
-    {"name": "Realtime boundary integration tests (development claims)", "command": "docker compose run --rm backend python -m pytest tests/promo/test_realtime_attempt_integration.py", "required": true},
-    {"name": "Memory Bank architecture lint", "command": "node .memory-bank/scripts/mb-lint.mjs", "required": true}
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Realtime boundary integration tests (development claims)",
+      "command": "docker compose run --rm backend python -m pytest tests/promo/test_realtime_attempt_integration.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
   ],
   "verify": [
-    {
-      "stage": "verify",
-      "attempt": 1,
-      "verdict": "NEEDS-CLARIFICATION",
-      "completed_at": "2026-08-22T19:24:48+05:00",
-      "summary": "Historical fresh independent verification passed the authenticated v1 result/non-success boundary, Attempt/session ownership, display-token hash scope, deterministic token/IP limiting, redaction and cleanup for AC-005/AC-006. Its NEEDS-CLARIFICATION applied because AC-004 was then treated as a development gate; the operator has now accepted AC-004 as production-only acceptance. No synthetic production PASS is claimed.",
-      "protocol": ".protocols/TASK-075-T3-FT-004-W5/verification.md",
-      "report": ".tasks/TASK-075-T3-FT-004-W5/TASK-075-T3-FT-004-W5-S-VERIFY-final-report-docs-01.md",
-      "artifacts": [
-        ".tasks/TASK-075-T3-FT-004-W5/verify_boundary_probe.py",
-        ".tasks/TASK-075-T3-FT-004-W5/controlled-corpus-status.md",
-        ".tasks/TASK-075-T3-FT-004-W5/source-congruence.md"
-      ]
-    },
-    {
-      "stage": "closure",
-      "attempt": 1,
-      "verdict": "blocked",
-      "completed_at": "2026-08-22T19:31:23+05:00",
-      "summary": "Historical Judge-supported HALT_QUALITY_GATES: the former task wording made the external AC-004 corpus an immediate development gate. The operator has since decided that AC-004 is production-only; this historical blocker is superseded by the narrowed development verification route and remains as provenance, not as a current source failure.",
-      "evidence": [
-        ".protocols/TASK-075-T3-FT-004-W5/verification.md",
-        ".tasks/TASK-075-T3-FT-004-W5/TASK-075-T3-FT-004-W5-S-VERIFY-final-report-docs-01.md",
-        ".tasks/TASK-075-T3-FT-004-W5/controlled-corpus-status.md"
-      ],
-      "resume_route": "For the deferred production acceptance, after deployment an authorized owner provides a redacted manifest with 20 stable attempt_id values, evaluator role/criterion, ground truth for all four teasers and every complete-union photo_id, processed-selected-detection membership, per-Attempt verdict and server-correctness count >= 19/20; then run the production acceptance evidence route. This historical entry does not block the narrowed development closure.",
-      "judge": "gpt-5.6-sol:xhigh"
-    },
     {
       "stage": "lifecycle-reconciliation",
       "verdict": "done_for_prod",
       "completed_at": "2026-08-29T14:57:49+05:00",
-      "summary": "Explicit owner-accepted closure: the existing independent evidence for FT-004-AC-005 and FT-004-AC-006 is accepted as sufficient for development closure. The former AC-004 blocker is superseded; FT-004-AC-004 remains a production-only residual risk under this task. Historical verification/closure verdicts are preserved; no AC-004 production PASS was created and no evidence was rechecked.",
-      "evidence": [
-        ".memory-bank/workflows/autonomy-policy.md",
-        ".memory-bank/testing/client-realtime.md",
-        ".protocols/TASK-075-T3-FT-004-W5/verification.md",
-        ".tasks/TASK-075-T3-FT-004-W5/gate-results.md",
-        ".tasks/TASK-075-T3-FT-004-W5/security-evidence.md",
-        ".tasks/TASK-075-T3-FT-004-W5/verify_boundary_probe.py"
-      ]
+      "summary": "Development closure is accepted. Remaining acceptance is production-only and does not block development autopilot."
     }
   ],
   "docs": [

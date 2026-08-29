@@ -38,10 +38,13 @@
     {
       "stage": "verify",
       "verdict": "PASS",
-      "completed_at": "2026-08-12T22:21:10+05:00",
-      "summary": "Fresh independent T2 verification passed all exact gates and a verifier-owned PostgreSQL transition probe. It proved atomic row/runtime rollback, oldest eligible serving selection over older non-serving/inactive rows, exact claim increments 1/2/3, two pending requeues, terminal failed on claim three, exhausted-row exclusion, fixed bounded safe persistence/error text, accepted processing read edges, and exact UUID/prefix cleanup with the runtime singleton restored to its idle baseline. Executor RED/GREEN and packaged receipts remained supporting-only.",
-      "protocol": ".protocols/TASK-022-T2-FT-002-W2/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-022-T2-FT-002-W2/TASK-022-T2-FT-002-W2-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

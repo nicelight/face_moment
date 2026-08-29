@@ -38,29 +38,15 @@
     {
       "stage": "verify",
       "verdict": "PASS",
-      "completed_at": "2026-08-12T20:14:11+05:00",
-      "summary": "Execution Attempt 1 passed all three required gates and fresh verifier-owned T3 proof for exact ok/low/unavailable capacity projections, bounded redaction, stable immutable image identity, effective backend-only read-only private topology and complete disposable cleanup.",
-      "protocol": ".protocols/TASK-033-T3-FT-002-W1/verification.md",
-      "report": ".tasks/TASK-033-T3-FT-002-W1/TASK-033-T3-FT-002-W1-S-VERIFY-final-report-docs-01.md"
-    },
-    {
-      "stage": "red-verify",
-      "verdict": "semantic-pass",
-      "completed_at": "2026-08-12T20:16:53+05:00",
-      "summary": "Adversarial T3 review found no material semantic break or operator question across supported unavailable/misconfiguration paths, exact redaction, non-root read-only permission boundary, private topology, shared Settings impact, scope ownership and complete isolation/cleanup.",
-      "protocol": ".protocols/TASK-033-T3-FT-002-W1/red-verification.md",
-      "report": ".tasks/TASK-033-T3-FT-002-W1/TASK-033-T3-FT-002-W1-S-RED-VERIFY-final-report-docs-01.md"
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
+      "report": ".tasks/TASK-033-T3-FT-002-W1/TASK-033-T3-FT-002-W1-S-VERIFY-final-report-docs-01.md",
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-033-T3-FT-002-W1/TASK-033-T3-FT-002-W1-S-RED-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-12T20:18:31+05:00",
-      "summary": "The autopilot scheduler closed TASK-033 after Execution Attempt 1 earned fresh independent T3 verification PASS and adversarial semantic-pass for exact PostgreSQL capacity states, redaction, private backend-only read-only topology, non-root permission behavior and complete disposable cleanup. Two bounded execution fixes were resolved before verdict; one external PyPI build timeout did not consume the task failure budget.",
-      "evidence": [
-        ".tasks/TASK-033-T3-FT-002-W1/TASK-033-T3-FT-002-W1-S-EXECUTE-final-report-code-03.md",
-        ".tasks/TASK-033-T3-FT-002-W1/TASK-033-T3-FT-002-W1-S-VERIFY-final-report-docs-01.md",
-        ".tasks/TASK-033-T3-FT-002-W1/TASK-033-T3-FT-002-W1-S-RED-VERIFY-final-report-docs-01.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

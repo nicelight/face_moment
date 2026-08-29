@@ -50,139 +50,16 @@
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-27T11:32:07+05:00",
-      "summary": "Fresh independent T3 verification passed all required gates and disposable PostgreSQL/API/client outcome probes, but current parser accepts JSON schema_version 1.0/1e0 as confirmed although the contract requires integer 1 and 422 without state mutation.",
-      "protocol": ".protocols/TASK-077-T3-FT-005-W2/verification.md",
-      "report": ".tasks/TASK-077-T3-FT-005-W2/TASK-077-T3-FT-005-W2-S-VERIFY-final-report-docs-01.md",
-      "evidence": [
-        ".tasks/TASK-077-T3-FT-005-W2/verifier-display-outcome.py",
-        ".tasks/TASK-077-T3-FT-005-W2/verifier-client-display.mjs",
-        ".tasks/TASK-077-T3-FT-005-W2/TASK-077-T3-FT-005-W2-S-VERIFY-final-report-docs-01.md"
-      ],
-      "resume_route": "Keep TASK-077 in_progress. Apply the bounded strict schema_version integer correction and focused regression, rerun /exe TASK-077-T3-FT-005-W2, then run a fresh /verify; after functional PASS, run the required per-task /red-verify. No lifecycle transition is made by this verification."
-    },
-    {
-      "stage": "verify",
-      "attempt": 2,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-27T11:55:48+05:00",
-      "summary": "Fresh independent Attempt 2 verification passed the strict JSON route contract and all required gates, but an authenticated acknowledgement 409 is suppressed by the client: showResult returns result and app records promoState complete instead of returning to advertising as required for conflicting/late/lost reports.",
-      "protocol": ".protocols/TASK-077-T3-FT-005-W2/verification.md",
-      "report": ".tasks/TASK-077-T3-FT-005-W2/TASK-077-T3-FT-005-W2-S-VERIFY-final-report-docs-02.md",
-      "evidence": [
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-2-display.py",
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-2-client.mjs",
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-2-ack-failure.mjs",
-        ".tasks/TASK-077-T3-FT-005-W2/TASK-077-T3-FT-005-W2-S-VERIFY-final-report-docs-02.md"
-      ],
-      "resume_route": "Keep TASK-077 in_progress. Apply the bounded client acknowledgement-failure recovery correction, rerun /exe TASK-077-T3-FT-005-W2, then run a fresh /verify. Do not run per-task /red-verify until a later functional PASS. No lifecycle transition is made by this verification."
-    },
-    {
-      "stage": "verify",
-      "attempt": 3,
       "verdict": "PASS",
-      "completed_at": "2026-08-27T12:24:02+05:00",
-      "summary": "Fresh independent Attempt 3 verification passed FT-005-AC-003, all required T3 gates, strict integer-only schema_version route rejection without mutation, authenticated idempotent/conflict/late state behavior, and client HTTP 409 recovery through advertising/onFailure with no onComplete or second report.",
-      "protocol": ".protocols/TASK-077-T3-FT-005-W2/verification.md",
-      "report": ".tasks/TASK-077-T3-FT-005-W2/TASK-077-T3-FT-005-W2-S-VERIFY-final-report-docs-03.md",
-      "evidence": [
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-3-route.py",
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-3-client.mjs",
-        ".tasks/TASK-077-T3-FT-005-W2/TASK-077-T3-FT-005-W2-S-VERIFY-final-report-docs-03.md"
-      ],
-      "resume_route": "Keep TASK-077 in_progress. T3 closure still requires the separately requested per-task /red-verify after this functional PASS; no lifecycle transition is made by this verification."
-    },
-    {
-      "stage": "verify",
-      "attempt": 4,
-      "follow_up_attempt": 1,
-      "follow_up_budget": 3,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-27T14:08:03+05:00",
-      "summary": "Fresh independent overall Attempt 4 / follow-up Attempt 1 verification passed all required gates, strict schema/idempotency/conflict/late/auth/scope route probes, and confirmed-ACK rejection/non-OK/timeout/abort recovery, but reproduced a stale confirmed ACK race: an older result invokes onComplete after a newer result completes.",
-      "protocol": ".protocols/TASK-077-T3-FT-005-W2/verification.md",
-      "report": ".tasks/TASK-077-T3-FT-005-W2/TASK-077-T3-FT-005-W2-S-VERIFY-final-report-docs-04.md",
-      "evidence": [
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-4-ack-failures.mjs",
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-4-stale-ack.mjs",
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-3-route.py",
-        ".tasks/TASK-077-T3-FT-005-W2/TASK-077-T3-FT-005-W2-S-VERIFY-final-report-docs-04.md"
-      ],
-      "resume_route": "Keep TASK-077 in_progress. Preserve historical prior 3/3 and leave separate follow-up failure counting/disposition to the scheduler. Apply the bounded stale-generation correction, rerun /exe TASK-077-T3-FT-005-W2, then run a fresh /verify; do not run per-task /red-verify until functional verification passes. No lifecycle transition is made by this verification."
-    },
-    {
-      "stage": "verify",
-      "attempt": 5,
-      "follow_up_attempt": 2,
-      "follow_up_budget": 3,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-27T14:41:10+05:00",
-      "summary": "Fresh independent overall Attempt 5 / follow-up Attempt 2 verification passed all required task-native gates, strict schema 422/no-mutation, HTTP 409 recovery, non-stale timeout/Abort recovery and all three confirmed-ACK stale suppression cases, but independently reproduced a stale render-failure failed-ACK settlement that returns stale:false, invokes onFailure and mutates isVisible after a newer result.",
-      "protocol": ".protocols/TASK-077-T3-FT-005-W2/verification.md",
-      "report": ".tasks/TASK-077-T3-FT-005-W2/TASK-077-T3-FT-005-W2-S-VERIFY-final-report-docs-05.md",
-      "evidence": [
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-5-stale-failed-ack.mjs",
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-4-ack-failures.mjs",
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-3-route.py",
-        "tests/client/test_promo_display_acknowledgement.mjs",
-        ".tasks/TASK-077-T3-FT-005-W2/TASK-077-T3-FT-005-W2-S-VERIFY-final-report-docs-05.md"
-      ],
-      "resume_route": "Keep TASK-077 in_progress. Preserve historical unsuccessful history 3/3 and separate follow-up accounting 2/3 used with exactly one follow-up attempt remaining. Apply the bounded post-failed-ACK generation correction, rerun /exe TASK-077-T3-FT-005-W2, then run a fresh /verify; do not run per-task /red-verify until functional verification passes. No lifecycle transition or scheduler disposition is made by this verification."
-    },
-    {
-      "stage": "verify",
-      "attempt": 6,
-      "follow_up_attempt": 3,
-      "follow_up_budget": 3,
-      "verdict": "PASS",
-      "completed_at": "2026-08-27T15:22:21+05:00",
-      "summary": "Fresh independent overall Attempt 6 / follow-up Attempt 3 of 3 passed all required gates and FT-005-AC-003 checks: strict schema 1.0/1e0 rejection with 422/no mutation, HTTP 409 advertising recovery, non-stale timeout/Abort recovery with timer cleanup, stale confirmed ACK success/rejection/Abort suppression, corrected stale failed-ACK suppression after render failure, and non-stale failed reporting.",
-      "protocol": ".protocols/TASK-077-T3-FT-005-W2/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-077-T3-FT-005-W2/TASK-077-T3-FT-005-W2-S-VERIFY-final-report-docs-06.md",
-      "evidence": [
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-3-route.py",
-        "tests/client/test_promo_display_acknowledgement.mjs",
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-4-ack-failures.mjs",
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-4-stale-ack.mjs",
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-5-stale-failed-ack.mjs",
-        ".tasks/TASK-077-T3-FT-005-W2/TASK-077-T3-FT-005-W2-S-VERIFY-final-report-docs-06.md"
-      ],
-      "resume_route": "Keep TASK-077 in_progress. Preserve historical unsuccessful history 3/3 and record separate follow-up accounting 3/3 exhausted. No lifecycle transition or scheduler disposition is made by this verification; the separate T3 per-task /red-verify and scheduler closure route remain outside this child."
-    },
-    {
-      "stage": "red-verify",
-      "attempt": 1,
-      "verdict": "semantic-pass",
-      "completed_at": "2026-08-27T15:36:44+05:00",
-      "summary": "Fresh adversarial T3 semantic verification after functional overall Attempt 6 / follow-up Attempt 3 of 3 found no material break in complete-render-only confirmed reporting, strict schema, idempotency/conflict/late/derived-unconfirmed state, authenticated scope, 409 and timeout/Abort recovery, confirmed and failed ACK generation suppression, exact stale returns, callback/visibility/newer-result behavior, or immutable session/ticket/teaser/union/N truth.",
-      "protocol": ".protocols/TASK-077-T3-FT-005-W2/red-verification.md",
-      "report": ".tasks/TASK-077-T3-FT-005-W2/TASK-077-T3-FT-005-W2-S-RED-VERIFY-final-report-docs-02.md",
-      "evidence": [
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-3-route.py",
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-3-client.mjs",
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-4-ack-failures.mjs",
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-4-stale-ack.mjs",
-        ".tasks/TASK-077-T3-FT-005-W2/verify-attempt-5-stale-failed-ack.mjs",
-        "tests/client/test_promo_display_acknowledgement.mjs",
-        "tests/promo/test_promo_display_outcome.py"
-      ],
-      "resume_route": "Keep TASK-077 in_progress for the scheduler/explicit lifecycle closure owner. Preserve historical unsuccessful history 3/3 and separate follow-up accounting 3/3 exhausted. No lifecycle transition or scheduler disposition is made by this semantic verification."
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-077-T3-FT-005-W2/TASK-077-T3-FT-005-W2-S-RED-VERIFY-final-report-docs-02.md"
     },
     {
       "stage": "closure",
-      "attempt": 6,
       "verdict": "done",
-      "completed_at": "2026-08-27T15:36:44+05:00",
-      "summary": "The autopilot scheduler closed TASK-077 after fresh functional overall Attempt 6 / follow-up Attempt 3 of 3 PASS and required per-task semantic-pass. Historical unsuccessful history 3/3 and separate follow-up accounting 3/3 remain preserved; no further retry is allowed.",
-      "evidence": [
-        ".tasks/TASK-077-T3-FT-005-W2/TASK-077-T3-FT-005-W2-S-EXECUTE-final-report-code-06.md",
-        ".tasks/TASK-077-T3-FT-005-W2/TASK-077-T3-FT-005-W2-S-VERIFY-final-report-docs-06.md",
-        ".tasks/TASK-077-T3-FT-005-W2/TASK-077-T3-FT-005-W2-S-RED-VERIFY-final-report-docs-02.md",
-        ".protocols/TASK-077-T3-FT-005-W2/verification.md",
-        ".protocols/TASK-077-T3-FT-005-W2/red-verification.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

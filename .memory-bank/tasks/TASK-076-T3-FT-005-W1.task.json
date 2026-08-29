@@ -63,167 +63,17 @@
   "verify": [
     {
       "stage": "verify",
-      "attempt": 2,
-      "verdict": "NEEDS-CLARIFICATION",
-      "completed_at": "2026-08-26T16:30:05+05:00",
-      "image": "face-moment:dev@sha256:631435122a373ff4244c928d187c453356430f411a428b306a4cb3be4e4edb66",
-      "summary": "Fresh verifier-owned Attempt 2 checks independently passed the accepted processing provider edge, authenticated SPA scope, complete target-viewport Promo, local QR decode, selected advertising fallback branches, current-source gates, safe rerun and disposable cleanup. The required representative-real-phone scan and distinct real four-preview/no-watermark evidence remain unavailable; Attempt 1 count=1 and original RED are preserved. Lifecycle remains in_progress.",
-      "protocol": ".protocols/TASK-076-T3-FT-005-W1/verification.md",
-      "report": ".tasks/TASK-076-T3-FT-005-W1/attempt-2-verifier-evidence.md",
-      "evidence": [
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-2-verifier-provider-edge.py",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-2-verifier-browser.mjs",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-2-verifier-browser.png",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-2-verifier-qr.png",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-2-verifier-evidence.md",
-        ".tasks/TASK-076-T3-FT-005-W1/red-claim-001.md",
-        ".tasks/TASK-076-T3-FT-005-W1/red-claim-005.md"
-      ],
-      "resume_route": "Keep the task open. After an authorized representative-real-phone scan and distinct four-issued-preview/no-watermark evidence are recorded, run a fresh /verify for TASK-076-T3-FT-005-W1; no lifecycle transition is made by this verification."
-    },
-    {
-      "stage": "verify",
-      "attempt": 3,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-26T22:08:13+05:00",
-      "image": "face-moment:dev@sha256:631435122a373ff4244c928d187c453356430f411a428b306a4cb3be4e4edb66",
-      "summary": "The reconciled development-stage evidence timing correctly removes the former physical-phone/real-media blocker, and fresh checks passed the complete logical-target Promo, four distinct issued references, QR decode, broad fallback set, authenticated provider edge and all required gates. Fresh focused probes still observed two task-scoped implementation violations: an empty QR ticket enters final Promo, and a technical object-store outage is misclassified as 404 instead of 5xx. Lifecycle remains in_progress.",
-      "protocol": ".protocols/TASK-076-T3-FT-005-W1/verification.md",
-      "report": ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-evidence.md",
-      "evidence": [
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-browser.mjs",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-fixture-server.py",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-browser.png",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-qr.png",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-candidate-probe.mjs",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-object-store-failure.py",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-playwright-transcript.md",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-evidence.md",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-2-verifier-provider-edge.py",
-        ".tasks/TASK-076-T3-FT-005-W1/red-claim-001.md",
-        ".tasks/TASK-076-T3-FT-005-W1/red-claim-005.md"
-      ],
-      "resume_route": "Keep the task in_progress. Route the fixed-semantics invalid-QR and technical object-store error-classification defects to the owning executor, then run a fresh execution retry and fresh /verify for TASK-076-T3-FT-005-W1; no lifecycle transition is made by this verification."
-    },
-    {
-      "stage": "verify",
-      "attempt": 4,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-26T22:47:14+05:00",
-      "image": "face-moment:dev@sha256:59cad8f19cf1e2cc9c2ca40436b9317a71c2811e50e87311b47c0a922afbfa70",
-      "summary": "Fresh re-verification independently confirmed both Attempt 3 corrections: an empty QR ticket now stays in advertising and a generic technical object-store outage returns HTTP 500; client 5/5, Promo API 4 passed, mypy, MB lint and diff checks passed. Fresh endpoint probes still observed two fixed-semantics Promo API violations: NoSuchBucket with HTTP 404 is misclassified as participant-facing 404 instead of technical 5xx, and a non-ASCII 43-character media reference reaches compare_digest and returns 500 instead of the safe not-found/validation path. Lifecycle remains in_progress.",
-      "protocol": ".protocols/TASK-076-T3-FT-005-W1/verification.md",
-      "report": ".tasks/TASK-076-T3-FT-005-W1/attempt-4-verifier-evidence.md",
-      "evidence": [
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-retry-red.md",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-retry-green.md",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-4-verifier-client-edge.mjs",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-4-verifier-api-edge.py",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-4-verifier-playwright-transcript.md",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-4-verifier-evidence.md",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-candidate-probe.mjs",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-3-verifier-object-store-failure.py"
-      ],
-      "resume_route": "Keep the task in_progress. Route the fixed-semantics NoSuchBucket/technical ClientError classification and non-ASCII media-reference validation defects to the owning executor, add focused regressions, then run a fresh execution retry and fresh /verify for TASK-076-T3-FT-005-W1; no lifecycle transition is made by this verification."
-    },
-    {
-      "stage": "verify",
-      "attempt": 5,
       "verdict": "PASS",
-      "completed_at": "2026-08-26T23:29:56+05:00",
-      "image": "face-moment:dev@sha256:72cce9d3daf7e2deefab542c539e14f3e77240b620ac17210f22f44470cc46c7",
-      "summary": "Fresh re-verification independently confirmed both Attempt 4 corrections at the registered endpoint: NoSuchBucket and other technical storage failures return HTTP 500, while non-ASCII opaque media references safely return 404 and NoSuchKey remains the owned missing-object path. Fresh Playwright at logical 1920x1080 proved the complete four-distinct-reference Promo, programmatic QR decode and all task-owned advertising fallback branches; client 5/5, Promo API 4 passed, mypy, MB lint, syntax and diff checks passed. Lifecycle remains in_progress.",
-      "protocol": ".protocols/TASK-076-T3-FT-005-W1/verification.md",
-      "report": ".tasks/TASK-076-T3-FT-005-W1/attempt-5-verifier-evidence.md",
-      "evidence": [
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-4-retry-red.md",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-4-retry-green.md",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-4-verifier-api-edge.py",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-5-verifier-browser.png",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-5-verifier-qr.png",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-5-verifier-playwright-transcript.md",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-5-verifier-evidence.md",
-        ".tasks/TASK-076-T3-FT-005-W1/red-claim-001.md",
-        ".tasks/TASK-076-T3-FT-005-W1/red-claim-005.md"
-      ],
-      "resume_route": "Keep the task in_progress. Run fresh /red-verify TASK-076-T3-FT-005-W1; after semantic-pass, the explicit scheduler or lifecycle owner may decide closure. No lifecycle transition is made by this verification."
-    },
-    {
-      "stage": "red-verify",
-      "attempt": 1,
-      "verdict": "semantic-fail",
-      "completed_at": "2026-08-26T23:42:32+05:00",
-      "summary": "Fresh adversarial review found two material accepted-contract breaks: ordinary Photo soft delete makes an already issued teaser unavailable because the resolver reuses current search eligibility, and Promo media error JSON lacks the required no-store response policy. TASK-076 remains in_progress for a bounded correction and fresh functional/semantic gates.",
-      "protocol": ".protocols/TASK-076-T3-FT-005-W1/red-verification.md",
-      "report": ".tasks/TASK-076-T3-FT-005-W1/TASK-076-T3-FT-005-W1-S-RED-VERIFY-final-report-docs-01.md",
-      "evidence": [
-        ".protocols/TASK-076-T3-FT-005-W1/verification.md",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-5-verifier-evidence.md",
-        ".memory-bank/states/lifecycle-map.md",
-        ".memory-bank/domains/promo-attempt.md"
-      ],
-      "resume_route": "Keep TASK-076 in_progress. Run /exe TASK-076-T3-FT-005-W1 to preserve soft-deleted issued media and add no-store to media error JSON, then repeat fresh /verify and /red-verify before closure."
-    },
-    {
-      "stage": "verify",
-      "attempt": 6,
-      "verdict": "PASS",
-      "completed_at": "2026-08-27T00:08:35+05:00",
-      "image": "face-moment:dev@sha256:884d7583996ea88986f51c743c949abc05125cf2d550af05cb6ea554bbf2682c",
-      "summary": "Fresh re-verification confirmed the two Attempt 5 corrections on the packaged image: an issued retained preview remains available after ordinary soft delete, and successful plus standard error media outcomes are no-store with correct 401/404/429/500 classification. Fresh Playwright at 1920x1080 passed the complete four-reference Promo, QR decode and task-owned fallback branches; client 5/5, API 5 passed, mypy, MB lint and diff checks passed. No new blocker was admitted under the durable scoped operator narrowing. Lifecycle remains in_progress pending T3 red verification.",
-      "protocol": ".protocols/TASK-076-T3-FT-005-W1/verification.md",
-      "report": ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-evidence.md",
-      "evidence": [
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-5-retry-red.md",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-5-retry-green.md",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-api-lifecycle.py",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-browser.png",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-qr.png",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-playwright-transcript.md",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-evidence.md"
-      ],
-      "resume_route": "Keep TASK-076 in_progress. Run fresh /red-verify TASK-076-T3-FT-005-W1; after semantic-pass, the explicit lifecycle owner may close the task."
-    },
-    {
-      "stage": "red-verify",
-      "attempt": 2,
-      "verdict": "semantic-pass",
-      "completed_at": "2026-08-27T00:15:01+05:00",
-      "summary": "Fresh adversarial review after functional Attempt 6 PASS found no admitted material break in issued-media soft-delete continuity, hard-purge behavior, object-store error classification, authenticated no-store delivery, complete/fallback participant outcome, provider ownership or hard scope.",
-      "protocol": ".protocols/TASK-076-T3-FT-005-W1/red-verification.md",
-      "report": ".tasks/TASK-076-T3-FT-005-W1/TASK-076-T3-FT-005-W1-S-RED-VERIFY-final-report-docs-01.md",
-      "evidence": [
-        ".protocols/TASK-076-T3-FT-005-W1/verification.md",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-evidence.md",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-playwright-transcript.md"
-      ],
-      "resume_route": "The explicit lifecycle owner may close TASK-076; do not promote dependents or run wave-boundary /mb-sync from red verification."
-    },
-    {
-      "stage": "closure",
-      "attempt": 2,
-      "verdict": "done",
-      "completed_at": "2026-08-27T00:15:01+05:00",
-      "summary": "The explicit manual lifecycle owner closed TASK-076 after fresh functional Attempt 6 PASS and required T3 semantic-pass. The closure adds no optional fixes, does not promote dependents and does not perform wave-boundary Memory Bank synchronization.",
-      "evidence": [
-        ".protocols/TASK-076-T3-FT-005-W1/verification.md",
-        ".protocols/TASK-076-T3-FT-005-W1/red-verification.md",
-        ".tasks/TASK-076-T3-FT-005-W1/attempt-6-verifier-evidence.md",
-        ".tasks/TASK-076-T3-FT-005-W1/TASK-076-T3-FT-005-W1-S-RED-VERIFY-final-report-docs-01.md"
-      ]
+      "summary": "Compacted retained final functional PASS. Current task status is done_for_prod.",
+      "report": ".protocols/TASK-076-T3-FT-005-W1/verification.md",
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-076-T3-FT-005-W1/TASK-076-T3-FT-005-W1-S-RED-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "lifecycle-reconciliation",
       "verdict": "done_for_prod",
       "completed_at": "2026-08-28T01:16:41+05:00",
-      "summary": "The explicit manual lifecycle owner migrated the historical done closure to done_for_prod under the current lifecycle: development verification PASS and T3 semantic-pass remain valid, while real-media, no-watermark, target-screen and representative-phone observations remain deferred to post-deployment acceptance. No production verdict is claimed.",
-      "evidence": [
-        ".memory-bank/workflows/autonomy-policy.md",
-        ".memory-bank/testing/client-realtime.md",
-        ".protocols/TASK-076-T3-FT-005-W1/verification.md",
-        ".protocols/TASK-076-T3-FT-005-W1/red-verification.md",
-        ".memory-bank/tasks/TASK-079-T3-FT-005-W3.task.json"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done_for_prod."
     }
   ],
   "docs": [

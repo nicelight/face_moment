@@ -4,8 +4,17 @@
   "status": "done",
   "wave": "W2",
   "feature": "FT-004",
-  "reqs": ["REQ-SRCH-001", "REQ-SRCH-002", "REQ-SRCH-003", "REQ-CAP-003", "REQ-ARCH-001"],
-  "depends_on": ["TASK-069-T2-FT-004-W1", "TASK-027-T2-FT-002-W4"],
+  "reqs": [
+    "REQ-SRCH-001",
+    "REQ-SRCH-002",
+    "REQ-SRCH-003",
+    "REQ-CAP-003",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-069-T2-FT-004-W1",
+    "TASK-027-T2-FT-002-W4"
+  ],
   "touched_files": [
     "src/face_moment/processing/realtime_search.py",
     "src/face_moment/processing/persistence.py",
@@ -14,29 +23,33 @@
   ],
   "tier": "T2",
   "gates": [
-    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
-    {"name": "Exact realtime search tests", "command": "docker compose run --rm backend python -m pytest tests/processing/test_realtime_search.py", "required": true},
-    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Exact realtime search tests",
+      "command": "docker compose run --rm backend python -m pytest tests/processing/test_realtime_search.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
   ],
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
       "verdict": "PASS",
-      "completed_at": "2026-08-22T16:02:28+05:00",
-      "summary": "Fresh independent T2 verification passed exact compatible realtime search: source-congruent disposable PostgreSQL/MinIO scope probe, immutable SPA/date/revision and ready/active/preview filtering before exact comparison, best-face grouping/order, independent selected-detection searches, calibrated threshold, low-quality rejection, deterministic/reused pHash, and no forbidden margin/grouping/fallback/foreign-write path. Executor receipts remained supporting-only; lifecycle remains in_progress.",
-      "protocol": ".protocols/TASK-070-T2-FT-004-W2/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-070-T2-FT-004-W2/TASK-070-T2-FT-004-W2-S-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-22T16:07:32+05:00",
-      "summary": "Scheduler closed TASK-070 after independent T2 verification PASS and Judge-supported lifecycle review; no code, spec or scope changes were made at closure.",
-      "evidence": [
-        ".tasks/TASK-070-T2-FT-004-W2/TASK-070-T2-FT-004-W2-S-VERIFY-final-report-docs-01.md",
-        ".protocols/TASK-070-T2-FT-004-W2/verification.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

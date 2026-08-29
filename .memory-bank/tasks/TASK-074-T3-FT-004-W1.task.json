@@ -4,8 +4,14 @@
   "status": "done",
   "wave": "W1",
   "feature": "FT-004",
-  "reqs": ["REQ-REL-001", "REQ-DIAG-001", "REQ-ARCH-001"],
-  "depends_on": ["TASK-043-T2-FT-003-W1"],
+  "reqs": [
+    "REQ-REL-001",
+    "REQ-DIAG-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-043-T2-FT-003-W1"
+  ],
   "touched_files": [
     "src/face_moment/promo/startup_recovery.py",
     "src/face_moment/promo/attempt.py",
@@ -14,38 +20,35 @@
   ],
   "tier": "T3",
   "gates": [
-    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
-    {"name": "Realtime startup recovery tests", "command": "docker compose run --rm backend python -m pytest tests/promo/test_realtime_startup_recovery.py", "required": true},
-    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Realtime startup recovery tests",
+      "command": "docker compose run --rm backend python -m pytest tests/promo/test_realtime_startup_recovery.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
   ],
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
       "verdict": "PASS",
-      "completed_at": "2026-08-22T15:22:07+05:00",
-      "summary": "Fresh independent T3 verification passed startup interruption for stale accepted/searching Attempts, terminal preservation, idempotent recovery, fresh admission, cross-session late-transition protection, no replay/session path, API persistence invariant and required quality gates; executor evidence remained supporting-only.",
-      "protocol": ".protocols/TASK-074-T3-FT-004-W1/verification.md",
-      "report": ".tasks/TASK-074-T3-FT-004-W1/TASK-074-T3-FT-004-W1-S-VERIFY-final-report-docs-01.md"
-    },
-    {
-      "stage": "red-verify",
-      "attempt": 1,
-      "verdict": "semantic-pass",
-      "completed_at": "2026-08-22T15:29:35+05:00",
-      "summary": "Fresh adversarial semantic verification found no material finding across startup ordering before readiness, exact accepted/searching interruption, terminal preservation/idempotency, stale ORM protection, fresh Attempt reachability, owner/API boundaries, no replay/foreign writes and cleanup.",
-      "protocol": ".protocols/TASK-074-T3-FT-004-W1/red-verification.md",
-      "report": ".tasks/TASK-074-T3-FT-004-W1/TASK-074-T3-FT-004-W1-S-RED-VERIFY-final-report-docs-01.md"
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
+      "report": ".tasks/TASK-074-T3-FT-004-W1/TASK-074-T3-FT-004-W1-S-VERIFY-final-report-docs-01.md",
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-074-T3-FT-004-W1/TASK-074-T3-FT-004-W1-S-RED-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-22T15:32:34+05:00",
-      "summary": "Scheduler closed TASK-074 after independent functional PASS, required T3 semantic-pass and Judge-supported lifecycle review; no code, spec or scope changes were made at closure.",
-      "evidence": [
-        ".tasks/TASK-074-T3-FT-004-W1/TASK-074-T3-FT-004-W1-S-VERIFY-final-report-docs-01.md",
-        ".tasks/TASK-074-T3-FT-004-W1/TASK-074-T3-FT-004-W1-S-RED-VERIFY-final-report-docs-01.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

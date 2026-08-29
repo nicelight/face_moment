@@ -39,10 +39,13 @@
     {
       "stage": "verify",
       "verdict": "PASS",
-      "completed_at": "2026-08-14T06:40:37+05:00",
-      "summary": "Fresh independent T2 verification on the exact packaged image passed the immutable admission-lineage probe, the complete five-test API contract suite, mypy and mb-lint. It proved exact composite-key A selection across the A-only/A+B by A-serving/B-serving matrix, ignored pending/ready/multiple later revisions, preserved exact A fields, derived only searchable=false under B serving, retained missing-A 5xx, and executed SELECT-only with complete cleanup.",
-      "protocol": ".protocols/TASK-038-T2-FT-002-W6/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-038-T2-FT-002-W6/TASK-038-T2-FT-002-W6-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

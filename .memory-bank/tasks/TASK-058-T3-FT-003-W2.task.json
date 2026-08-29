@@ -4,77 +4,103 @@
   "status": "done",
   "wave": "W2",
   "feature": "FT-003",
-  "reqs": ["REQ-SEC-001"],
-  "depends_on": ["TASK-041-T3-FT-003-W1", "TASK-004-T3-FT-001-W2"],
-  "touched_files": ["src/face_moment/serving_control/", "src/face_moment/entrypoints/backend.py", "tests/serving_control/"],
+  "reqs": [
+    "REQ-SEC-001"
+  ],
+  "depends_on": [
+    "TASK-041-T3-FT-003-W1",
+    "TASK-004-T3-FT-001-W2"
+  ],
+  "touched_files": [
+    "src/face_moment/serving_control/",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/serving_control/"
+  ],
   "tier": "T3",
   "gates": [
-    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
-    {"name": "Admin display-client settings tests", "command": "docker compose run --rm backend python -m pytest tests/serving_control/test_display_client_admin.py", "required": true},
-    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Admin display-client settings tests",
+      "command": "docker compose run --rm backend python -m pytest tests/serving_control/test_display_client_admin.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
   ],
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-16T20:33:44+05:00",
-      "summary": "Fresh verifier-owned backend matrix, actual disposable PostgreSQL restart and all task gates passed; FAIL because the configured HTTPS edge has no /staff/display-clients route and returns HTTP 200 with an empty body, so the canonical same-origin outcome is unavailable.",
-      "protocol": ".protocols/TASK-058-T3-FT-003-W2/verification.md",
-      "report": ".tasks/TASK-058-T3-FT-003-W2/TASK-058-T3-FT-003-W2-S-VERIFY-final-report-docs-01.md"
-    },
-    {
-      "stage": "debug",
-      "attempt": 1,
-      "verdict": "CONFIRMED",
-      "completed_at": "2026-08-16T20:40:00+05:00",
-      "summary": "Debug confirmed the first violated invariant is canonical same-origin Admin endpoint availability: deploy/Caddyfile has no exact /staff/display-clients handler, so Caddy returns an empty HTTP 200 without forwarding to the working backend route. Minimum correction is one edge handler plus an edge regression check.",
-      "protocol": ".tasks/TASK-058-T3-FT-003-W2/TASK-058-T3-FT-003-W2-S-DEBUG-final-report-docs-01.md",
-      "report": ".tasks/TASK-058-T3-FT-003-W2/TASK-058-T3-FT-003-W2-S-DEBUG-final-report-docs-01.md"
-    },
-    {
-      "stage": "verify",
-      "attempt": 2,
       "verdict": "PASS",
-      "completed_at": "2026-08-16T21:36:18+05:00",
-      "summary": "Fresh verifier-owned current-image same-origin edge/backend matrix passed before and after an actual disposable PostgreSQL restart: operator/developer received the current token list with 200 and no-store, photographer received 403, invalid/missing auth received 401 without tokens, persisted token/digest state matched, and backend/Caddy log scans showed no credential leakage. All task gates passed; disposable resources were fully removed and long-lived Compose state was unchanged.",
-      "protocol": ".protocols/TASK-058-T3-FT-003-W2/verification.md",
-      "report": ".tasks/TASK-058-T3-FT-003-W2/TASK-058-T3-FT-003-W2-S-VERIFY-final-report-docs-02.md"
-    },
-    {
-      "stage": "red-verify",
-      "attempt": 2,
-      "verdict": "semantic-pass",
-      "completed_at": "2026-08-17T09:03:00+05:00",
-      "summary": "Fresh adversarial review passed the exact Caddy-to-current-backend route, role/status and inactive-kiosk matrix, token identity/digest and PostgreSQL-restart persistence, no-store and URL/log/command/analytics redaction, no rotation or kiosk push, and no auth-internal or runtime side effects. Cleanup left zero disposable residue and unchanged long-lived Compose state.",
-      "protocol": ".protocols/TASK-058-T3-FT-003-W2/red-verification.md",
-      "report": ".tasks/TASK-058-T3-FT-003-W2/TASK-058-T3-FT-003-W2-S-RED-VERIFY-final-report-docs-01.md"
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
+      "report": ".tasks/TASK-058-T3-FT-003-W2/TASK-058-T3-FT-003-W2-S-VERIFY-final-report-docs-02.md",
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-058-T3-FT-003-W2/TASK-058-T3-FT-003-W2-S-RED-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-17T09:04:45+05:00",
-      "summary": "Scheduler closed TASK-058 after functional verification Attempt 2 PASS and required T3 semantic-pass. The earlier edge-routing FAIL was corrected within task scope with an exact Caddy handler and regression assertion.",
-      "evidence": [
-        ".tasks/TASK-058-T3-FT-003-W2/TASK-058-T3-FT-003-W2-S-VERIFY-final-report-docs-02.md",
-        ".tasks/TASK-058-T3-FT-003-W2/TASK-058-T3-FT-003-W2-S-RED-VERIFY-final-report-docs-01.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
-  "docs": [".memory-bank/domains/display-client-access.md", ".memory-bank/contracts/boundary-map.md", ".memory-bank/testing/client-realtime.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "docs": [
+    ".memory-bank/domains/display-client-access.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
   "evidence_required": [
     "display-client-access.md#admin-settings-token-read RED: GET /staff/display-clients is absent; GREEN: the same-origin page lists each kiosk id/name/spa_id/active/current full token on every active operator/developer read, returns the same value after reload and database restart, returns 403 to photographer and no token with 401 for invalid staff auth, adds Cache-Control no-store and leaks no credential into URL, application/proxy log, analytics or command output; decisive comparison: role/session/reload/restart fixtures and redaction scans inspect response/body/headers/logs; artifact: focused pytest and captures under .tasks/TASK-058-T3-FT-003-W2/."
   ],
   "purpose": "Implement the owner-authorized Admin read surface independently of kiosk-side manual configuration.",
   "success_outcome": "Authorized operator/developer can always retrieve the current token for each named kiosk without rotation or leakage; all other principals cannot.",
-  "anti_goals": ["Do not copy/push/store the token in any kiosk.", "Do not reset/regenerate a token merely to display it.", "Do not modify staff roles/sessions or introduce a generic settings framework."],
+  "anti_goals": [
+    "Do not copy/push/store the token in any kiosk.",
+    "Do not reset/regenerate a token merely to display it.",
+    "Do not modify staff roles/sessions or introduce a generic settings framework."
+  ],
   "runtime_context": {
-    "forbidden_scope": ["Kiosk profile handoff owned by TASK-059-T3-FT-003-W3", "Staff authentication internals/completed evidence", "Credential mutation lifecycle owned by TASK-041-T3-FT-003-W1"],
-    "stop_conditions": ["Existing staff principal cannot support the exact role matrix.", "The page cannot stay no-store and redacted.", "A token read would require rotation or one-time display semantics."]
+    "forbidden_scope": [
+      "Kiosk profile handoff owned by TASK-059-T3-FT-003-W3",
+      "Staff authentication internals/completed evidence",
+      "Credential mutation lifecycle owned by TASK-041-T3-FT-003-W1"
+    ],
+    "stop_conditions": [
+      "Existing staff principal cannot support the exact role matrix.",
+      "The page cannot stay no-store and redacted.",
+      "A token read would require rotation or one-time display semantics."
+    ]
   },
-  "source_artifacts": [".memory-bank/domains/display-client-access.md#admin-settings-token-read", ".memory-bank/contracts/boundary-map.md#display-client-administration", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
-  "normative_inputs": [".memory-bank/domains/display-client-access.md#admin-settings-token-read", ".memory-bank/contracts/boundary-map.md#display-client-administration", ".memory-bank/domains/staff-access.md"],
-  "constraints": ["Use the existing same-origin staff session and active operator/developer roles.", "Read token_value only through serving_control owner authorization.", "Use disposable kiosk/staff fixtures and retain redacted output."],
-  "invariants": ["Current token is visible on every authorized read and survives reload/restart.", "Photographer and invalid staff auth receive no token.", "Response is no-store and token never enters URLs/logs/analytics/command artifacts."],
-  "verification_targets": [".memory-bank/domains/display-client-access.md#verification-targets", "Repeated authorized read plus database-restart persistence.", "Role/status/header and full redaction matrix."]
+  "source_artifacts": [
+    ".memory-bank/domains/display-client-access.md#admin-settings-token-read",
+    ".memory-bank/contracts/boundary-map.md#display-client-administration",
+    ".protocols/FT-003/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/display-client-access.md#admin-settings-token-read",
+    ".memory-bank/contracts/boundary-map.md#display-client-administration",
+    ".memory-bank/domains/staff-access.md"
+  ],
+  "constraints": [
+    "Use the existing same-origin staff session and active operator/developer roles.",
+    "Read token_value only through serving_control owner authorization.",
+    "Use disposable kiosk/staff fixtures and retain redacted output."
+  ],
+  "invariants": [
+    "Current token is visible on every authorized read and survives reload/restart.",
+    "Photographer and invalid staff auth receive no token.",
+    "Response is no-store and token never enters URLs/logs/analytics/command artifacts."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/display-client-access.md#verification-targets",
+    "Repeated authorized read plus database-restart persistence.",
+    "Role/status/header and full redaction matrix."
+  ]
 }

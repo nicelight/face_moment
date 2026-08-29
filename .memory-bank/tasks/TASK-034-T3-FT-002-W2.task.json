@@ -38,18 +38,15 @@
     {
       "stage": "verify",
       "verdict": "PASS",
-      "completed_at": "2026-08-12T22:49:00+05:00",
-      "summary": "Execution Attempt 1 passed all required gates and fresh verifier-owned T3 proof for independent exact MinIO ok/low/unavailable capacity, configuration validation, bounded redaction, unchanged PostgreSQL result, backend-only read-only private topology and exact disposable cleanup.",
-      "protocol": ".protocols/TASK-034-T3-FT-002-W2/verification.md",
-      "report": ".tasks/TASK-034-T3-FT-002-W2/TASK-034-T3-FT-002-W2-S-VERIFY-final-report-docs-01.md"
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
+      "report": ".tasks/TASK-034-T3-FT-002-W2/TASK-034-T3-FT-002-W2-S-VERIFY-final-report-docs-01.md",
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-034-T3-FT-002-W2/TASK-034-T3-FT-002-W2-S-RED-VERIFY-final-report-docs-01.md"
     },
     {
-      "stage": "red-verify",
-      "verdict": "semantic-pass",
-      "completed_at": "2026-08-12T22:52:00+05:00",
-      "summary": "Adversarial T3 review found no material semantic break or operator question across supported unavailable/misconfiguration paths, MinIO/PostgreSQL independence, exact redaction, non-root backend-only read-only topology, shared Settings propagation, ownership and isolation/cleanup.",
-      "protocol": ".protocols/TASK-034-T3-FT-002-W2/red-verification.md",
-      "report": ".tasks/TASK-034-T3-FT-002-W2/TASK-034-T3-FT-002-W2-S-RED-VERIFY-final-report-docs-01.md"
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

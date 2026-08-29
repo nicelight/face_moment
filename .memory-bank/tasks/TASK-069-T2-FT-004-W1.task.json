@@ -4,7 +4,11 @@
   "status": "done",
   "wave": "W1",
   "feature": "FT-004",
-  "reqs": ["REQ-SRCH-001", "REQ-SRCH-002", "REQ-ARCH-001"],
+  "reqs": [
+    "REQ-SRCH-001",
+    "REQ-SRCH-002",
+    "REQ-ARCH-001"
+  ],
   "depends_on": [
     "TASK-019-T2-FT-002-W2",
     "TASK-020-T2-FT-002-W2",
@@ -20,29 +24,33 @@
   ],
   "tier": "T2",
   "gates": [
-    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
-    {"name": "Reference query tests", "command": "docker compose run --rm backend python -m pytest tests/processing/test_reference_query.py", "required": true},
-    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Reference query tests",
+      "command": "docker compose run --rm backend python -m pytest tests/processing/test_reference_query.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
   ],
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
       "verdict": "PASS",
-      "completed_at": "2026-08-22T14:55:10+05:00",
-      "summary": "Fresh independent T2 verification passed native SFace/Buffalo reference preparation, inspect-all deterministic at-most-five selection, quality rejection, revision/asset isolation, owner-boundary checks, focused tests, adapter regressions, mypy and Memory Bank lint. Executor evidence remained supporting-only; lifecycle remains in_progress.",
-      "protocol": ".protocols/TASK-069-T2-FT-004-W1/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-069-T2-FT-004-W1/TASK-069-T2-FT-004-W1-S-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-22T14:58:32+05:00",
-      "summary": "Scheduler closed TASK-069 after independent T2 verification PASS and Judge-supported lifecycle review; no code, spec or scope changes were made at closure.",
-      "evidence": [
-        ".tasks/TASK-069-T2-FT-004-W1/TASK-069-T2-FT-004-W1-S-VERIFY-final-report-docs-01.md",
-        ".protocols/TASK-069-T2-FT-004-W1/verification.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

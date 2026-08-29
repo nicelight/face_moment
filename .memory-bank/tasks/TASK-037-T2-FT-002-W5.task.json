@@ -40,10 +40,13 @@
     {
       "stage": "verify",
       "verdict": "PASS",
-      "completed_at": "2026-08-14T04:30:00+05:00",
-      "summary": "Fresh independent T2 verification on the exact packaged image passed the required gates and a twice-repeated disposable PostgreSQL probe. It proved direct 0008-to-0009 ancestry, unchanged pre-DDL non-empty abort, exact UUID NOT NULL RESTRICT lineage shape, same-IngestTarget Photo/pending commit, complete rollback, retained admission revision after later serving/state revision and complete cleanup.",
-      "protocol": ".protocols/TASK-037-T2-FT-002-W5/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-037-T2-FT-002-W5/TASK-037-T2-FT-002-W5-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

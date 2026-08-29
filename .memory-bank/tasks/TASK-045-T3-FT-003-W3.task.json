@@ -4,110 +4,62 @@
   "status": "done",
   "wave": "W3",
   "feature": "FT-003",
-  "reqs": ["REQ-CAP-002", "REQ-DIAG-001", "REQ-SEC-001"],
-  "depends_on": ["TASK-057-T3-FT-003-W2", "TASK-060-T2-FT-003-W2", "TASK-043-T2-FT-003-W1", "TASK-026-T3-FT-002-W5"],
-  "touched_files": ["src/face_moment/promo/", "src/face_moment/entrypoints/realtime.py", "deploy/Caddyfile", "tests/promo/"],
+  "reqs": [
+    "REQ-CAP-002",
+    "REQ-DIAG-001",
+    "REQ-SEC-001"
+  ],
+  "depends_on": [
+    "TASK-057-T3-FT-003-W2",
+    "TASK-060-T2-FT-003-W2",
+    "TASK-043-T2-FT-003-W1",
+    "TASK-026-T3-FT-002-W5"
+  ],
+  "touched_files": [
+    "src/face_moment/promo/",
+    "src/face_moment/entrypoints/realtime.py",
+    "deploy/Caddyfile",
+    "tests/promo/"
+  ],
   "tier": "T3",
   "gates": [
-    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
-    {"name": "Realtime attempt API tests", "command": "docker compose run --rm backend python -m pytest tests/promo/test_realtime_attempt_api.py", "required": true},
-    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Realtime attempt API tests",
+      "command": "docker compose run --rm backend python -m pytest tests/promo/test_realtime_attempt_api.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
   ],
   "verify": [
     {
-      "stage": "closure",
-      "verdict": "blocked",
-      "completed_at": "2026-08-17T19:03:57+05:00",
-      "summary": "TASK-045 is blocked by its unfinished upstream dependencies TASK-057 and TASK-060; TASK-060 is blocked on the external Docker/Buildx image-build capability gap and cannot be promoted through this prerequisite.",
-      "evidence": [
-        ".memory-bank/tasks/TASK-060-T2-FT-003-W2.task.json",
-        ".memory-bank/tasks/TASK-057-T3-FT-003-W2.task.json"
-      ],
-      "resume_route": "close the blocked upstream tasks through their recorded fresh `/exe` -> `/verify` routes, then rerun the scheduler promotion pass"
-    },
-    {
       "stage": "verify",
-      "attempt": 1,
-      "verdict": "NEEDS-CLARIFICATION",
-      "completed_at": "2026-08-18T00:34:00+05:00",
-      "summary": "Fresh independent verification proved the task image route, focused six-test API matrix, typecheck, lint, cleanup and forbidden-scope boundaries. It could not prove the live edge/Attempt-row matrix because face-moment-realtime-1 restarts with CommittedServingTargetUnavailableError while the database has zero active SPA rows; the active Caddy config also lacks /api/realtime/attempts. This is a runtime-readiness blocker, not a task-code FAIL.",
-      "protocol": ".protocols/TASK-045-T3-FT-003-W3/verification.md",
-      "report": ".protocols/TASK-045-T3-FT-003-W3/verification.md"
-    },
-    {
-      "stage": "closure",
-      "verdict": "blocked",
-      "completed_at": "2026-08-18T00:35:19+05:00",
-      "summary": "Scheduler keeps TASK-045 blocked because live runtime readiness and the active edge route are not yet available for verifier-owned T3 proof. Local implementation/gates are green; retry after exactly one active SPA target is present and the current edge config serves /api/realtime/attempts, then run fresh /verify followed by separate /red-verify.",
-      "evidence": [
-        ".protocols/TASK-045-T3-FT-003-W3/verification.md",
-        ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-EXECUTE-continuation-01.md"
-      ],
-      "resume_route": "restore local realtime readiness with one active SPA and refresh the active edge image/config, then fresh `/verify TASK-045-T3-FT-003-W3`; do not create SPA/DB state as an inferred verification tactic"
-    },
-    {
-      "stage": "runtime-provision",
-      "verdict": "blocked",
-      "completed_at": "2026-08-18T02:56:11+05:00",
-      "summary": "Operator-authorized bounded provisioning stopped before mutation. The current mounted model directory has none of the four supported model assets, runtime model identity/version/dimension settings are empty, and read-only SQL reports zero pipeline_revisions. Creating a guessed eligible revision or SPA would be fake readiness data, so no DB write or service restart was performed.",
-      "evidence": [
-        ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-EXECUTE-runtime-provision-blocked-01.md"
-      ],
-      "resume_route": "provide real supported model assets and matching non-empty runtime configuration, obtain the corresponding eligible pipeline revision through its accepted owner, then retry the bounded one-SPA provisioning and fresh `/verify TASK-045-T3-FT-003-W3`"
-    },
-    {
-      "stage": "runtime-provision",
-      "attempt": 2,
-      "verdict": "blocked",
-      "completed_at": "2026-08-18T10:36:12+05:00",
-      "summary": "All four real model files are now mounted and readable, but required admission metadata remains empty for both supported pipelines: IDs, versions, preprocessing/alignment/normalization versions, and embedding dimension. No coherent eligible revision can be created without real values; no DB transaction or service restart was performed.",
-      "evidence": [
-        ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-EXECUTE-runtime-provision-blocked-02.md"
-      ],
-      "resume_route": "provide complete real admission metadata for at least one supported pipeline, repeat read-only model admission, then retry the bounded one-SPA transaction and fresh `/verify TASK-045-T3-FT-003-W3`"
-    },
-    {
-      "stage": "runtime-provision",
-      "attempt": 3,
-      "verdict": "pass",
-      "completed_at": "2026-08-18T10:43:55+05:00",
-      "summary": "Fresh operator SFace/Buffalo admission evidence was reconciled against project adapter identities and exact file hashes. The bounded transaction kept the existing Buffalo revision, created a real SFace eligible revision, switched the same single active SPA to SFace, created SFace reference settings, and retained the existing display client. No broad reset or code/source change occurred.",
-      "evidence": [
-        ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-EXECUTE-runtime-provision-success-01.md"
-      ],
-      "resume_route": "recreate only realtime and edge with the confirmed SFACE_* environment values, verify realtime health and the current edge route, then fresh `/verify TASK-045-T3-FT-003-W3`"
-    },
-    {
-      "stage": "verify",
-      "attempt": 2,
       "verdict": "PASS",
-      "completed_at": "2026-08-18T10:52:19+05:00",
-      "summary": "Independent verifier proved the task-owned matrix through the real HTTPS edge/application path: authentication and readiness mappings, strict manifest/crop validation, one-time zero-proposal admission with idempotent replay, exact 20,971,520-byte admission, 20,971,521-byte pre-admission rejection, no rows for rejected requests, and disposable cleanup. Focused gates also passed.",
-      "protocol": ".protocols/TASK-045-T3-FT-003-W3/verification.md",
-      "report": ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-VERIFY-final-report-docs-02.md"
-    },
-    {
-      "stage": "red-verify",
-      "attempt": 1,
-      "verdict": "semantic-pass",
-      "completed_at": "2026-08-18T11:09:42+05:00",
-      "summary": "Two independent semantic focuses found no evidenced material break of the accepted realtime admission outcome, no FT-004 scope leakage, and no required operator decision. The current local edge/runtime configuration, idempotency, rejection, cleanup and SPA/revision consistency remain coherent.",
-      "protocol": ".protocols/TASK-045-T3-FT-003-W3/red-verification.md",
-      "report": ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-RED-VERIFY-final-report-docs-01.md"
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
+      "report": ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-VERIFY-final-report-docs-02.md",
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-RED-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-18T11:09:42+05:00",
-      "summary": "TASK-045 runtime readiness was restored with real model assets, one active SPA and healthy HTTPS edge/runtime. Fresh functional verification and semantic verification both passed; the task is eligible for scheduler closure.",
-      "evidence": [
-        ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-VERIFY-final-report-docs-02.md",
-        ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-RED-VERIFY-final-report-docs-01.md",
-        ".tasks/TASK-045-T3-FT-003-W3/TASK-045-T3-FT-003-W3-S-EXECUTE-runtime-provision-success-01.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
-  "docs": [".memory-bank/contracts/realtime-attempt-api.md", ".memory-bank/domains/promo-attempt.md", ".memory-bank/features/FT-003.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "docs": [
+    ".memory-bank/contracts/realtime-attempt-api.md",
+    ".memory-bank/domains/promo-attempt.md",
+    ".memory-bank/features/FT-003.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
   "evidence_required": [
     "FT-003-AC-006 RED: POST /api/realtime/attempts is absent; GREEN: the real edge/application boundary strictly validates manifest v1 and ordered crop_000..crop_019 JPEG parts, admits one request key once with its immutable snapshot, maps zero proposals to one explicit non-success Attempt, returns stored/in_progress idempotency results, accepts 20,971,520 total bytes and rejects 20,971,521 with 413 before any Attempt, and maps prerequisite auth/readiness failures without duplicating their owned proofs; decisive comparison: direct boundary requests inspect status/outcome and Attempt rows for valid, invalid, duplicate, zero and exact-byte fixtures; artifact: focused pytest and edge evidence under .tasks/TASK-045-T3-FT-003-W3/."
   ],
@@ -130,8 +82,18 @@
       "Idempotency requires a waiter queue, durable replay or distributed lock."
     ]
   },
-  "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-006", ".memory-bank/contracts/realtime-attempt-api.md", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
-  "normative_inputs": [".memory-bank/features/FT-003.md#ft-003-ac-006--server-side-structurally-bounded-admission", ".memory-bank/contracts/realtime-attempt-api.md", ".memory-bank/domains/promo-attempt.md#admission-and-transitions", ".memory-bank/contracts/boundary-map.md#http-failure-contract"],
+  "source_artifacts": [
+    ".memory-bank/features/FT-003.md#FT-003-AC-006",
+    ".memory-bank/contracts/realtime-attempt-api.md",
+    ".protocols/FT-003/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-003.md#ft-003-ac-006--server-side-structurally-bounded-admission",
+    ".memory-bank/contracts/realtime-attempt-api.md",
+    ".memory-bank/domains/promo-attempt.md#admission-and-transitions",
+    ".memory-bank/contracts/boundary-map.md#http-failure-contract"
+  ],
   "constraints": [
     "Enforce 20,971,520 bytes at both Caddy and realtime application boundaries on the exact public path.",
     "Persist the immutable snapshot before inference; in the FT-003 window nonzero proposals may end at the accepted technical internal_failure seam.",

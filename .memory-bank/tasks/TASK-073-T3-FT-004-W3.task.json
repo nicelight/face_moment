@@ -4,8 +4,16 @@
   "status": "done",
   "wave": "W3",
   "feature": "FT-004",
-  "reqs": ["REQ-REL-001", "REQ-DIAG-001", "REQ-PERF-001", "REQ-ARCH-001"],
-  "depends_on": ["TASK-070-T2-FT-004-W2", "TASK-043-T2-FT-003-W1"],
+  "reqs": [
+    "REQ-REL-001",
+    "REQ-DIAG-001",
+    "REQ-PERF-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-070-T2-FT-004-W2",
+    "TASK-043-T2-FT-003-W1"
+  ],
   "touched_files": [
     "src/face_moment/promo/realtime_orchestration.py",
     "src/face_moment/promo/attempt.py",
@@ -14,47 +22,35 @@
   ],
   "tier": "T3",
   "gates": [
-    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
-    {"name": "Realtime orchestration tests", "command": "docker compose run --rm backend python -m pytest tests/promo/test_realtime_orchestration.py", "required": true},
-    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Realtime orchestration tests",
+      "command": "docker compose run --rm backend python -m pytest tests/promo/test_realtime_orchestration.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
   ],
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
       "verdict": "PASS",
-      "completed_at": "2026-08-22T17:30:05+05:00",
-      "summary": "Fresh independent current-source verification passed the task-owned FT-004-AC-007 singleton/deadline outcome, required gates and disposable cleanup.",
-      "protocol": ".protocols/TASK-073-T3-FT-004-W3/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-073-T3-FT-004-W3/TASK-073-T3-FT-004-W3-S-VERIFY-final-report-docs-01.md",
-      "evidence": [
-        ".tasks/TASK-073-T3-FT-004-W3/verify_independent_probe.py"
-      ]
-    },
-    {
-      "stage": "red-verify",
-      "attempt": 1,
-      "verdict": "semantic-pass",
-      "completed_at": "2026-08-22T17:40:47+05:00",
-      "summary": "Fresh adversarial semantic verification found no admitted findings or operator questions for FT-004-AC-007 and confirmed task ownership, forbidden-scope compliance and cleanup.",
-      "protocol": ".protocols/TASK-073-T3-FT-004-W3/red-verification.md",
-      "report": ".tasks/TASK-073-T3-FT-004-W3/TASK-073-T3-FT-004-W3-S-RED-VERIFY-final-report-docs-01.md",
-      "evidence": [
-        ".tasks/TASK-073-T3-FT-004-W3/red_semantic_probe.py"
-      ]
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-073-T3-FT-004-W3/TASK-073-T3-FT-004-W3-S-RED-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
-      "attempt": 1,
       "verdict": "done",
-      "completed_at": "2026-08-22T17:45:04+05:00",
-      "summary": "Judge-supported T3 task closure after fresh independent PASS and required per-task semantic-pass; no findings/questions remain and required gates and cleanup passed. This closes TASK-073 only, not FT-004.",
-      "evidence": [
-        ".tasks/TASK-073-T3-FT-004-W3/TASK-073-T3-FT-004-W3-S-VERIFY-final-report-docs-01.md",
-        ".tasks/TASK-073-T3-FT-004-W3/TASK-073-T3-FT-004-W3-S-RED-VERIFY-final-report-docs-01.md"
-      ],
-      "feature_level_closure": false,
-      "judge": "gpt-5.6-sol:xhigh"
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

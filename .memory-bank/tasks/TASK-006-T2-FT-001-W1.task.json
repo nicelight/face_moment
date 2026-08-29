@@ -33,21 +33,13 @@
     {
       "stage": "verify",
       "verdict": "PASS",
-      "completed_at": "2026-08-10T16:29:53+05:00",
-      "summary": "Fresh independent T2 verification passed the focused PostgreSQL migration/repository probe, mypy, single-head Alembic and diff checks. The verifier observed both accepted codes, non-null eligibility, unsupported and stored-ineligible rejection, DB-enforced immutability, linear migration round-trip and processing-owned shared-MetaData integration without model behavior or foreign writes.",
-      "protocol": ".protocols/TASK-006-T2-FT-001-W1/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-006-T2-FT-001-W1/TASK-006-T2-FT-001-W1-S-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-10T16:31:47+05:00",
-      "summary": "The autopilot scheduler closed TASK-006 after fresh independent functional PASS satisfied all T2 obligations; task-level red-verification is not required.",
-      "evidence": [
-        ".protocols/TASK-006-T2-FT-001-W1/handoff.md",
-        ".protocols/TASK-006-T2-FT-001-W1/verification.md",
-        ".tasks/TASK-006-T2-FT-001-W1/TASK-006-T2-FT-001-W1-S-VERIFY-final-report-docs-01.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

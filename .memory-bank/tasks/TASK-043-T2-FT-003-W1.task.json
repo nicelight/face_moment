@@ -36,22 +36,14 @@
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
       "verdict": "PASS",
-      "completed_at": "2026-08-16T04:56:06+05:00",
-      "summary": "Fresh independent verification passed full Attempt persistence, restart, duplicate-key arbitration under concurrency, state and range validation, migration round-trip with unrelated-row preservation, promo-only ownership, no foreign cascade and cleanup checks.",
-      "protocol": ".protocols/TASK-043-T2-FT-003-W1/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-043-T2-FT-003-W1/TASK-043-T2-FT-003-W1-S-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-16T04:56:06+05:00",
-      "summary": "Scheduler closed TASK-043 after the T2 functional verification PASS. FT-003 completion is governed by its accepted task records and completion boundary; no separate feature-level verification is scheduled.",
-      "evidence": [
-        ".tasks/TASK-043-T2-FT-003-W1/TASK-043-T2-FT-003-W1-S-EXECUTE-final-report-code-01.md",
-        ".tasks/TASK-043-T2-FT-003-W1/TASK-043-T2-FT-003-W1-S-VERIFY-final-report-docs-01.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

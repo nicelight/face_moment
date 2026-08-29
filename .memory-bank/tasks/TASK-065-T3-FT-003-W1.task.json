@@ -4,55 +4,93 @@
   "status": "planned",
   "wave": "W1",
   "feature": "FT-003",
-  "reqs": ["REQ-SEC-001"],
-  "depends_on": ["TASK-002-T2-FT-000-W0"],
-  "touched_files": ["compose.yaml", "deploy/Caddyfile", "scripts/check-private-topology.sh"],
+  "reqs": [
+    "REQ-SEC-001"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0"
+  ],
+  "touched_files": [
+    "compose.yaml",
+    "deploy/Caddyfile",
+    "scripts/check-private-topology.sh"
+  ],
   "tier": "T3",
-  "gates": [{"name": "Private topology inspection", "command": "bash scripts/check-private-topology.sh", "required": true}, {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}],
+  "gates": [
+    {
+      "name": "Private topology inspection",
+      "command": "bash scripts/check-private-topology.sh",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
   "verify": [
-    {
-      "stage": "verify",
-      "attempt": 1,
-      "verdict": "NEEDS-CLARIFICATION",
-      "completed_at": "2026-08-16T12:30:02+05:00",
-      "summary": "Fresh independent verification passed source bindings and confirmed only loopback HTTPS edge publication, but the bounded runtime scan finds a pre-existing host PostgreSQL listener on 127.0.0.1:5432 and no distinct external observer is available. Source-only evidence cannot satisfy FT-003-AC-019.",
-      "protocol": ".protocols/TASK-065-T3-FT-003-W1/verification.md",
-      "report": ".tasks/TASK-065-T3-FT-003-W1/TASK-065-T3-FT-003-W1-S-VERIFY-final-report-docs-01.md"
-    },
-    {
-      "stage": "closure",
-      "verdict": "blocked",
-      "completed_at": "2026-08-16T12:30:02+05:00",
-      "summary": "The real-runtime topology proof is deferred until the application is actually running in the real runtime; before that point this verification is optional and is not a blocker for local feature implementation. Keep the task-specific acceptance evidence pending. Later, run /exe TASK-065-T3-FT-003-W1 on an isolated pilot-host-capable environment with an authorized outside observer; do not publish internal ports or mutate native PostgreSQL as an inferred task tactic.",
-      "evidence": [
-        ".protocols/TASK-065-T3-FT-003-W1/verification.md",
-        ".tasks/TASK-065-T3-FT-003-W1/TASK-065-T3-FT-003-W1-S-VERIFY-final-report-docs-01.md"
-      ]
-    },
     {
       "stage": "reconciliation",
       "verdict": "deferred",
       "completed_at": "2026-08-18T12:30:00+05:00",
-      "summary": "Source bindings and local topology checks are accepted for current Linux development. External observer/private-port evidence is deferred until the real server exists and is not a current queue gateway.",
-      "evidence": ["scripts/check-private-topology.sh"],
+      "summary": "Production acceptance is deferred until the required deployed environment exists. This record is not a development blocker and is excluded from development autopilot.",
+      "evidence": [
+        "scripts/check-private-topology.sh"
+      ],
       "deferred_runtime_evidence": true,
       "resume_route": "when the real server exists, run the already-defined external private-port scan as follow-up acceptance evidence"
     }
   ],
-  "docs": [".memory-bank/features/FT-003.md", ".memory-bank/contracts/boundary-map.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "docs": [
+    ".memory-bank/features/FT-003.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
   "evidence_required": [
     "FT-003-AC-019 RED: no focused source/runtime proof limits externally reachable ports; GREEN: source-managed Compose/edge bindings and an external scan show only the pilot HTTPS edge reachable while PostgreSQL, MinIO and backend/worker/realtime internal ports remain private and the client flow publishes none; decisive comparison: scripts/check-private-topology.sh reconciles declared bindings, listening sockets and external scan targets without printing credentials; artifact: redacted topology report under .tasks/TASK-065-T3-FT-003-W1/."
   ],
   "purpose": "Own the independently deployable private-port topology control.",
   "success_outcome": "Only the intended HTTPS edge is externally reachable; every internal role/data service stays private.",
-  "anti_goals": ["Do not change application routes or browser policies.", "Do not publish PostgreSQL/MinIO/internal role ports for testing.", "Do not add firewall orchestration beyond the source-managed pilot topology."],
+  "anti_goals": [
+    "Do not change application routes or browser policies.",
+    "Do not publish PostgreSQL/MinIO/internal role ports for testing.",
+    "Do not add firewall orchestration beyond the source-managed pilot topology."
+  ],
   "runtime_context": {
-    "forbidden_scope": ["Application behavior and credentials", "LNA/browser controls owned by TASK-063 and TASK-049", "Production network/firewall architecture"],
-    "stop_conditions": ["Privacy cannot be proved without exposing an internal port.", "Fix requires a production network redesign.", "Inspection would disclose protected connection data."]
+    "forbidden_scope": [
+      "Application behavior and credentials",
+      "LNA/browser controls owned by TASK-063 and TASK-049",
+      "Production network/firewall architecture"
+    ],
+    "stop_conditions": [
+      "Privacy cannot be proved without exposing an internal port.",
+      "Fix requires a production network redesign.",
+      "Inspection would disclose protected connection data."
+    ]
   },
-  "source_artifacts": [".memory-bank/features/FT-003.md#FT-003-AC-019", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
-  "normative_inputs": [".memory-bank/features/FT-003.md#ft-003-ac-019--private-internal-port-topology", ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries", ".memory-bank/architecture/system-architecture.md#deployment-and-recovery"],
-  "constraints": ["Use source-managed bind/publish configuration and a read-only external scan.", "Scan only the intended pilot host/ports and redact sensitive connection data.", "Keep the HTTPS edge behavior unchanged."],
-  "invariants": ["Only HTTPS edge is externally reachable.", "PostgreSQL, MinIO and internal application-role ports remain private.", "Client flow creates no port exposure."],
-  "verification_targets": ["FT-003-AC-019 source/runtime/external topology reconciliation.", "Negative external reachability for every internal service.", "Review confirms no testing-only port publication remains."]
+  "source_artifacts": [
+    ".memory-bank/features/FT-003.md#FT-003-AC-019",
+    ".protocols/FT-003/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-003.md#ft-003-ac-019--private-internal-port-topology",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries",
+    ".memory-bank/architecture/system-architecture.md#deployment-and-recovery"
+  ],
+  "constraints": [
+    "Use source-managed bind/publish configuration and a read-only external scan.",
+    "Scan only the intended pilot host/ports and redact sensitive connection data.",
+    "Keep the HTTPS edge behavior unchanged."
+  ],
+  "invariants": [
+    "Only HTTPS edge is externally reachable.",
+    "PostgreSQL, MinIO and internal application-role ports remain private.",
+    "Client flow creates no port exposure."
+  ],
+  "verification_targets": [
+    "FT-003-AC-019 source/runtime/external topology reconciliation.",
+    "Negative external reachability for every internal service.",
+    "Review confirms no testing-only port publication remains."
+  ]
 }

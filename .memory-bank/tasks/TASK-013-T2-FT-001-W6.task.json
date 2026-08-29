@@ -28,17 +28,16 @@
     }
   ],
   "verify": [
-    "2026-08-11 /verify PASS: both required packaged-image gates passed; a fresh isolated PostgreSQL/MinIO probe proved sequential and supported concurrent one-winner arbitration, rollback-before-cleanup, redacted duplicate outcome, exact Photo/pending counts, independent-scope admission, named-constraint filtering, winner/noncandidate retention, loser-only repeat-safe cleanup, and zero fixture residue. Evidence: .protocols/TASK-013-T2-FT-001-W6/verification.md; report: .tasks/TASK-013-T2-FT-001-W6/TASK-013-T2-FT-001-W6-S-VERIFY-final-report-docs-01.md",
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
+      "report": ".tasks/TASK-013-T2-FT-001-W6/TASK-013-T2-FT-001-W6-S-VERIFY-final-report-docs-01.md"
+    },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-11T19:52:07+05:00",
-      "summary": "The autopilot scheduler closed TASK-013 after Execution Attempt 1 earned fresh packaged-image T2 verification PASS for exact duplicate arbitration, accepted-constraint filtering, sequential/concurrent one-winner behavior, loser-only object cleanup, independent scope and zero residue.",
-      "evidence": [
-        ".tasks/TASK-013-T2-FT-001-W6/TASK-013-T2-FT-001-W6-S-EXECUTE-final-report-code-01.md",
-        ".tasks/TASK-013-T2-FT-001-W6/TASK-013-T2-FT-001-W6-S-VERIFY-final-report-docs-01.md",
-        ".tasks/TASK-013-T2-FT-001-W6/TASK-013-T2-FT-001-W6-S-VERIFY-verifier-probe-code-01.py"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

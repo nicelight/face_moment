@@ -50,109 +50,16 @@
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-27T16:43:21+05:00",
-      "summary": "Свежая независимая T3-проверка подтвердила exact authenticated positive config 1234/5678, независимые client timers, local advertising expiry, сохранение joinable QR session и current-tree gates. Но при отсутствии REALTIME_SUCCESS_COOLDOWN_MS реальный config route вернул 200 и silently подставил Settings default 30000 вместо обязательного 503; task остаётся in_progress.",
-      "protocol": ".protocols/TASK-078-T3-FT-005-W2/verification.md",
-      "report": ".tasks/TASK-078-T3-FT-005-W2/TASK-078-T3-FT-005-W2-S-VERIFY-final-report-docs-01.md",
-      "artifacts": [
-        ".tasks/TASK-078-T3-FT-005-W2/verifier_config_session_probe.py",
-        ".tasks/TASK-078-T3-FT-005-W2/verifier_config_session_probe-output.json",
-        ".tasks/TASK-078-T3-FT-005-W2/verifier_client_lifetime_probe.mjs",
-        ".tasks/TASK-078-T3-FT-005-W2/verifier_client_lifetime_probe-output.json"
-      ]
-    },
-    {
-      "stage": "verify",
-      "attempt": 2,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-27T17:12:26+05:00",
-      "summary": "Свежая независимая T3-проверка подтвердила explicit positive 1234/5678, оба missing REALTIME_RESULT_DISPLAY_MS и REALTIME_SUCCESS_COOLDOWN_MS как authenticated no-store 503 без substitution, display expiry/advertising fallback, cooldown independence и unchanged/joinable QR session. Но delayed-ACK probe показал visible Promo с нулевым display timer до завершения ACK; timer 150 ms создаётся только после ACK, поэтому display lifetime может быть продлён и task остаётся in_progress.",
-      "protocol": ".protocols/TASK-078-T3-FT-005-W2/verification.md",
-      "report": ".tasks/TASK-078-T3-FT-005-W2/TASK-078-T3-FT-005-W2-S-VERIFY-final-report-docs-02.md",
-      "artifacts": [
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-2-verifier-missing-bindings-probe.py",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-2-verifier-missing-bindings-probe-output.json",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-2-verifier-config-session-probe-output.json",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-2-verifier-client-lifetime-probe-output.json",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-2-verifier-ack-delay-probe.mjs",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-2-verifier-ack-delay-probe-output.json"
-      ]
-    },
-    {
-      "stage": "verify",
-      "attempt": 3,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-27T17:44:12+05:00",
-      "summary": "Свежая независимая T3-проверка подтвердила exact authenticated positive 1234/5678, оба missing binding как no-store 503, exact display expiry/session continuity, один delayed-ACK result timer без restart и late-ACK suppression. Но app-level expiry probe показал, что при expiry до ACK AttemptOutcome становится advertising, а ReferenceCaptureController остаётся searching и блокирует следующий trigger как busy; task остаётся in_progress.",
-      "protocol": ".protocols/TASK-078-T3-FT-005-W2/verification.md",
-      "report": ".tasks/TASK-078-T3-FT-005-W2/TASK-078-T3-FT-005-W2-S-VERIFY-final-report-docs-03.md",
-      "artifacts": [
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-3-verifier-config-session-probe.py",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-3-verifier-config-session-probe-output.json",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-3-verifier-delayed-ack-probe.mjs",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-3-verifier-delayed-ack-probe-output.json",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-3-verifier-app-expiry-probe.mjs",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-3-verifier-app-expiry-probe-output.json"
-      ]
-    },
-    {
-      "stage": "verify",
-      "attempt": 4,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-27T21:49:32+05:00",
-      "summary": "Свежая независимая T3-проверка подтвердила exact authenticated positive 1234/5678, оба missing binding как authenticated no-store 503, точный 1234 ms display expiry с сохранением pending/session/QR truth и pending-ACK handoff: один timer, один failure handoff, следующий trigger принят, success cooldown не создан, late ACK stale без mutation. Но при обычном успешном cooldown 300 ms display expiry через общий failure handoff переводит ReferenceCaptureController из cooldown в advertising досрочно; client/app.js:426-438 и client/trigger-series.js:287-304. Task остаётся in_progress.",
-      "protocol": ".protocols/TASK-078-T3-FT-005-W2/verification.md",
-      "report": ".tasks/TASK-078-T3-FT-005-W2/TASK-078-T3-FT-005-W2-S-VERIFY-final-report-docs-04.md",
-      "artifacts": [
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-4-verifier-lifecycle-probe.mjs",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-4-verifier-lifecycle-output.json",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-4-verifier-config-session-output.json"
-      ]
-    },
-    {
-      "stage": "verify",
-      "attempt": 5,
       "verdict": "PASS",
-      "completed_at": "2026-08-27T22:20:10+05:00",
-      "summary": "Свежая независимая T3-проверка прошла: exact authenticated positive 1234/5678, оба missing binding как authenticated no-store 503, exact 1234 ms display expiry с неизменной joinable session/QR truth, один display timer до pending ACK, ровно один existing failure handoff с переходом searching -> advertising и принятым next trigger без cooldown, stale late ACK без callback/second report/mutation, а ordinary ACK сохранил независимый cooldown 5678 ms до собственного timer. TASK-078 остаётся in_progress.",
-      "protocol": ".protocols/TASK-078-T3-FT-005-W2/verification.md",
-      "report": ".tasks/TASK-078-T3-FT-005-W2/TASK-078-T3-FT-005-W2-S-VERIFY-final-report-docs-05.md",
-      "artifacts": [
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-5-verifier-config-session-probe.py",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-5-verifier-config-session-output.json",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-5-verifier-lifecycle-probe.mjs",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-5-verifier-lifecycle-output.json"
-      ]
-    },
-    {
-      "stage": "verify",
-      "attempt": 6,
-      "verdict": "PASS",
-      "completed_at": "2026-08-27T23:01:56+05:00",
-      "summary": "Свежая независимая T3-проверка прошла: shared Compose environment передаёт независимые 1234/5678 в backend и realtime без display fallback и без omitted cooldown binding; authenticated positive config возвращает exact 200 no-store, missing/invalid bindings — 503 no-store без substitution; один display timer ставится после complete card/QR до ACK; pending-ACK expiry делает один existing failure handoff searching -> advertising и принимает next trigger без cooldown; ordinary success cooldown сохраняется независимо до собственного timer; session/QR unchanged; stale late ACK и stale/failed expiry paths не мутируют и не dispatch-ят. TASK-078 остаётся in_progress.",
-      "protocol": ".protocols/TASK-078-T3-FT-005-W2/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-078-T3-FT-005-W2/TASK-078-T3-FT-005-W2-S-VERIFY-final-report-docs-06.md",
-      "artifacts": [
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-6-verifier-compose-binding-probe.py",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-6-verifier-compose-binding-probe-output.json",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-6-verifier-config-session-probe.py",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-6-verifier-config-session-output.json",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-6-verifier-lifecycle-probe.mjs",
-        ".tasks/TASK-078-T3-FT-005-W2/attempt-6-verifier-lifecycle-output.json"
-      ]
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-078-T3-FT-005-W2/TASK-078-T3-FT-005-W2-S-RED-VERIFY-final-report-docs-02.md"
     },
     {
       "stage": "closure",
-      "verdict": "PASS",
-      "completed_at": "2026-08-27T23:17:06+05:00",
-      "summary": "Scheduler closure: functional verify Attempt 6 is PASS and the fresh per-task red verification is SEMANTIC_VERDICT: semantic-pass. TASK-078 is closed as done; historical functional Attempts 1-5 and prior semantic-fail evidence remain preserved.",
-      "functional_verify": ".tasks/TASK-078-T3-FT-005-W2/TASK-078-T3-FT-005-W2-S-VERIFY-final-report-docs-06.md",
-      "semantic_verification": ".tasks/TASK-078-T3-FT-005-W2/TASK-078-T3-FT-005-W2-S-RED-VERIFY-final-report-docs-02.md",
-      "semantic_protocol": ".protocols/TASK-078-T3-FT-005-W2/red-verification.md",
-      "historical_semantic_fail": ".tasks/TASK-078-T3-FT-005-W2/TASK-078-T3-FT-005-W2-S-RED-VERIFY-final-report-docs-01.md",
-      "follow_up_attempt": "3/5"
+      "verdict": "done",
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

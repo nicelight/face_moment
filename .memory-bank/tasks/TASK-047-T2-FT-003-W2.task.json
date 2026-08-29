@@ -31,22 +31,14 @@
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
       "verdict": "PASS",
-      "completed_at": "2026-08-16T13:59:00+05:00",
-      "summary": "Fresh independent verification passed the real disposable browser/runtime proof for FT-003-AC-004: pinned BlazeFace Full-range asset and MediaPipe runtime loaded over HTTPS; 22 occurrences emitted exactly the first 20 with chronological frame and detector order, stopping before the next frame; repeated detections were retained; model HTTP 500 preserved advertising with visible recoverable feedback and no fallback runtime. Mypy, mb-lint, syntax and client-shell tests passed.",
-      "protocol": ".protocols/TASK-047-T2-FT-003-W2/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-047-T2-FT-003-W2/TASK-047-T2-FT-003-W2-S-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-16T14:00:31+05:00",
-      "summary": "TASK-047 T2 closure is authorized by fresh /verify PASS; all task-owned implementation and verification gates are complete. No per-task /red-verify is required for T2.",
-      "evidence": [
-        ".protocols/TASK-047-T2-FT-003-W2/verification.md",
-        ".tasks/TASK-047-T2-FT-003-W2/TASK-047-T2-FT-003-W2-S-VERIFY-final-report-docs-01.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

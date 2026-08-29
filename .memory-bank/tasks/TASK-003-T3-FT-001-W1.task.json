@@ -33,39 +33,15 @@
     {
       "stage": "verify",
       "verdict": "PASS",
-      "completed_at": "2026-08-10T15:00:31+05:00",
-      "summary": "Fresh T3 verification passed both configured gates and two independent isolated provisioning probes. The probes proved normalized uniqueness, stdin and hidden-prompt provisioning, independent Argon2id verification, output/service-log redaction, single-head migration, safe rerun and complete task-owned cleanup without crossing Staff Access ownership or anti-goals.",
-      "protocol": ".protocols/TASK-003-T3-FT-001-W1/verification.md",
-      "report": ".tasks/TASK-003-T3-FT-001-W1/TASK-003-T3-FT-001-W1-S-VERIFY-final-report-docs-01.md"
-    },
-    {
-      "stage": "verify",
-      "verdict": "PASS",
-      "summary": "Independent T3 verification (verifier-owned project face-moment-task003-verify1) reran all task gates (mypy 18 files, focused pytest 1 passed, single alembic head 0002_staff_users) and proved FT-001-AC-006 with a fresh 32-check probe: migration round-trip, strip+casefold normalized unique active photographer, only Argon2id hash persisted and independently verified via argon2-cffi, hidden-prompt and stdin intake without echo, redacted output and service logs, argon2-cffi 25.1.0 confirmed on PyPI, complete task-owned cleanup with Docker restored inactive.",
-      "protocol": ".protocols/TASK-003-T3-FT-001-W1/verification.md",
-      "report": ".tasks/TASK-003-T3-FT-001-W1/verify-attempt-1.md",
-      "artifacts": [
-        ".tasks/TASK-003-T3-FT-001-W1/verify-probe.py"
-      ]
-    },
-    {
-      "stage": "red-verify",
-      "verdict": "semantic-pass",
-      "summary": "Fresh adversarial semantic review challenged secret intake and error paths, normalized uniqueness, Argon2id-only persistence, transaction rollback, model/migration equivalence, ownership, anti-goals, safe rerun and cleanup; no finding or operator question survived.",
-      "protocol": ".protocols/TASK-003-T3-FT-001-W1/red-verification.md",
-      "report": ".tasks/TASK-003-T3-FT-001-W1/TASK-003-T3-FT-001-W1-S-RED-VERIFY-final-report-docs-01.md"
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
+      "report": ".tasks/TASK-003-T3-FT-001-W1/TASK-003-T3-FT-001-W1-S-VERIFY-final-report-docs-01.md",
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-003-T3-FT-001-W1/TASK-003-T3-FT-001-W1-S-RED-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-10T15:25:59+05:00",
-      "summary": "The explicit manual lifecycle owner closed TASK-003 after independent functional PASS and per-task semantic-pass satisfied all T3 obligations.",
-      "evidence": [
-        ".protocols/TASK-003-T3-FT-001-W1/verification.md",
-        ".protocols/TASK-003-T3-FT-001-W1/red-verification.md",
-        ".tasks/TASK-003-T3-FT-001-W1/TASK-003-T3-FT-001-W1-S-VERIFY-final-report-docs-01.md",
-        ".tasks/TASK-003-T3-FT-001-W1/TASK-003-T3-FT-001-W1-S-RED-VERIFY-final-report-docs-01.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

@@ -34,31 +34,15 @@
     {
       "stage": "verify",
       "verdict": "PASS",
-      "completed_at": "2026-08-10T17:30:08+05:00",
-      "summary": "Fresh independent T3 functional verification proved opaque private request-owned stage/read/delete/repeat against an isolated MinIO bucket, preserved an unrelated sentinel during owned cleanup, observed no browser/log/key/credential exposure, removed all disposable resources, and found no regression in TASK-010's validation behavior or export surface.",
-      "protocol": ".protocols/TASK-011-T3-FT-001-W1/verification.md",
-      "report": ".tasks/TASK-011-T3-FT-001-W1/TASK-011-T3-FT-001-W1-S-VERIFY-final-report-docs-01.md"
-    },
-    {
-      "stage": "red-verify",
-      "verdict": "semantic-pass",
-      "completed_at": "2026-08-10T17:35:31+05:00",
-      "summary": "Fresh adversarial review challenged cross-request deletion, opaque-key separation, transient delete retry, repeated owned cleanup, foreign-object preservation, private topology, exposure paths, ownership boundaries and TASK-010 regression; no material finding or operator decision survived.",
-      "protocol": ".protocols/TASK-011-T3-FT-001-W1/red-verification.md",
-      "report": ".tasks/TASK-011-T3-FT-001-W1/TASK-011-T3-FT-001-W1-S-RED-VERIFY-final-report-docs-01.md"
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
+      "report": ".tasks/TASK-011-T3-FT-001-W1/TASK-011-T3-FT-001-W1-S-VERIFY-final-report-docs-01.md",
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-011-T3-FT-001-W1/TASK-011-T3-FT-001-W1-S-RED-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-10T17:36:35+05:00",
-      "summary": "The autopilot scheduler closed TASK-011 after fresh independent functional PASS and per-task semantic-pass satisfied all T3 obligations; two bounded executor corrections remained within Attempt 1.",
-      "evidence": [
-        ".protocols/TASK-011-T3-FT-001-W1/handoff.md",
-        ".protocols/TASK-011-T3-FT-001-W1/verification.md",
-        ".protocols/TASK-011-T3-FT-001-W1/red-verification.md",
-        ".tasks/TASK-011-T3-FT-001-W1/TASK-011-T3-FT-001-W1-S-VERIFY-final-report-docs-01.md",
-        ".tasks/TASK-011-T3-FT-001-W1/TASK-011-T3-FT-001-W1-S-RED-VERIFY-final-report-docs-01.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

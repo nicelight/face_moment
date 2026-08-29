@@ -4,70 +4,99 @@
   "status": "done",
   "wave": "W2",
   "feature": "FT-003",
-  "reqs": ["REQ-CAP-002", "REQ-REL-001"],
-  "depends_on": ["TASK-042-T2-FT-003-W1"],
-  "touched_files": ["src/face_moment/serving_control/", "tests/serving_control/"],
+  "reqs": [
+    "REQ-CAP-002",
+    "REQ-REL-001"
+  ],
+  "depends_on": [
+    "TASK-042-T2-FT-003-W1"
+  ],
+  "touched_files": [
+    "src/face_moment/serving_control/",
+    "tests/serving_control/"
+  ],
   "tier": "T2",
   "gates": [
-    {"name": "Python typecheck", "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment", "required": true},
-    {"name": "Realtime context resolver tests", "command": "docker compose run --rm backend python -m pytest tests/serving_control/test_realtime_context.py", "required": true},
-    {"name": "Memory Bank architecture lint", "command": "node scripts/mb-lint.mjs", "required": true}
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Realtime context resolver tests",
+      "command": "docker compose run --rm backend python -m pytest tests/serving_control/test_realtime_context.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node scripts/mb-lint.mjs",
+      "required": true
+    }
   ],
   "verify": [
     {
       "stage": "verify",
-      "attempt": 1,
-      "verdict": "FAIL",
-      "completed_at": "2026-08-17T18:25:57+05:00",
-      "summary": "Fresh independent T2 verification found a reproducible mixed owner snapshot: after a supported settings update commits between the SPA read and settings read, resolve_realtime_context returned settings_revision=3 with threshold=0.91 and quality version 2. Focused tests (7), mypy (57 files), mb-lint (87 files), git diff --check, closed SQL-only, invalid-release 503 and nested-immutability probes otherwise passed. See the admitted finding in the protocol/report.",
-      "protocol": ".protocols/TASK-060-T2-FT-003-W2/verification.md",
-      "report": ".tasks/TASK-060-T2-FT-003-W2/TASK-060-T2-FT-003-W2-S-VERIFY-final-report-docs-01.md"
-    },
-    {
-      "stage": "closure",
-      "verdict": "blocked",
-      "completed_at": "2026-08-17T19:03:57+05:00",
-      "summary": "The external Docker/Buildx image-build availability gap that blocked bounded Attempt 2 is resolved: the operator produced current image face-moment:manual-20260817 on the healthy desktop-linux builder, with current-image mypy and focused realtime-context tests passing. The owner-lock correction and source-overlay GREEN remain retained. Resume with a fresh /exe TASK-060 using the current image, then fresh /verify and T2 closure.",
-      "evidence": [
-        ".tasks/TASK-060-T2-FT-003-W2/TASK-060-T2-FT-003-W2-S-EXECUTE-final-report-code-02.md",
-        ".protocols/TASK-060-T2-FT-003-W2/handoff.md"
-      ],
-      "resume_route": "stable Docker/Buildx environment, then fresh `/exe TASK-060-T2-FT-003-W2` Attempt 2 recovery, `/verify`, and T2 closure"
-    },
-    {
-      "stage": "verify",
-      "attempt": 2,
       "verdict": "PASS",
-      "completed_at": "2026-08-17T23:58:00+05:00",
-      "summary": "Fresh independent T2 verification on the operator-provided current image passed owner-lock and coherent-snapshot behavior under a supported settings update, focused realtime-context tests, mypy, lint, cleanup and forbidden-scope review. The earlier mixed-owner snapshot defect is no longer reproducible.",
-      "protocol": ".protocols/TASK-060-T2-FT-003-W2/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-060-T2-FT-003-W2/TASK-060-T2-FT-003-W2-S-VERIFY-final-report-docs-02.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-18T00:03:01+05:00",
-      "summary": "Scheduler closed TASK-060 after fresh T2 verification PASS. The owner-lock correction and current-image gates passed; the earlier Docker/Buildx blocker and mixed-owner snapshot finding are resolved within task scope. No kiosk/runtime crash issue is attributed to this task.",
-      "evidence": [
-        ".tasks/TASK-060-T2-FT-003-W2/TASK-060-T2-FT-003-W2-S-VERIFY-final-report-docs-02.md",
-        ".tasks/TASK-060-T2-FT-003-W2/TASK-060-T2-FT-003-W2-S-EXECUTE-final-report-code-03.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
-  "docs": [".memory-bank/domains/realtime-search.md", ".memory-bank/contracts/boundary-map.md", ".memory-bank/features/FT-003.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
+  "docs": [
+    ".memory-bank/domains/realtime-search.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/features/FT-003.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
   "evidence_required": [
     "realtime-search.md#immutable-active-search-context RED: no owner resolver/readiness boundary exists; GREEN: one call consumes the authenticated spa_id plus owner stores and committed serving revision to return the exact immutable snapshot, copies it before admission, never accepts client overrides, and reports closed 503 readiness before promo admission with no Attempt/search/session whenever any required value/model admission is absent; decisive comparison: complete/missing/override and settings-change-after-resolution fixtures inspect snapshot immutability and zero downstream writes; artifact: focused pytest under .tasks/TASK-060-T2-FT-003-W2/."
   ],
   "purpose": "Implement immutable context resolution and closed readiness over the separately persisted owner settings.",
   "success_outcome": "Every admitted request can consume one immutable authoritative context; incomplete context closes before domain admission.",
-  "anti_goals": ["Do not persist settings or implement their provision path.", "Do not implement the staff active-date API, promo admission or search.", "Do not add durable readiness state, scheduler or time inference."],
+  "anti_goals": [
+    "Do not persist settings or implement their provision path.",
+    "Do not implement the staff active-date API, promo admission or search.",
+    "Do not add durable readiness state, scheduler or time inference."
+  ],
   "runtime_context": {
-    "forbidden_scope": ["Settings persistence owned by TASK-042-T2-FT-003-W1", "Staff active-date surface owned by FT-004", "Promo Attempt/admission/search state"],
-    "stop_conditions": ["Resolution requires mutating settings or changing FT-002 revision selection.", "Closed readiness cannot precede promo admission.", "A durable readiness lifecycle would be required."]
+    "forbidden_scope": [
+      "Settings persistence owned by TASK-042-T2-FT-003-W1",
+      "Staff active-date surface owned by FT-004",
+      "Promo Attempt/admission/search state"
+    ],
+    "stop_conditions": [
+      "Resolution requires mutating settings or changing FT-002 revision selection.",
+      "Closed readiness cannot precede promo admission.",
+      "A durable readiness lifecycle would be required."
+    ]
   },
-  "source_artifacts": [".memory-bank/domains/realtime-search.md#immutable-active-search-context", ".protocols/FT-003/plan.md", ".memory-bank/tasks/plans/IMPL-FT-003.md"],
-  "normative_inputs": [".memory-bank/domains/realtime-search.md#immutable-active-search-context", ".memory-bank/contracts/boundary-map.md#active-search-date", ".memory-bank/contracts/boundary-map.md#http-failure-contract"],
-  "constraints": ["Consume TASK-042 owner stores and the accepted selected revision through public boundaries.", "Copy one complete snapshot before inference/admission use.", "Use disposable settings fixtures and create no Attempt/search/session in closed cases."],
-  "invariants": ["Client supplies or overrides no context value.", "Resolved context is immutable for one admitted Attempt.", "Missing required input closes readiness before promo admission and durable Attempt creation."],
-  "verification_targets": [".memory-bank/domains/realtime-search.md#immutable-active-search-context", "Complete snapshot and post-resolution mutation isolation.", "Missing/override fixtures prove 503 and zero downstream work."]
+  "source_artifacts": [
+    ".memory-bank/domains/realtime-search.md#immutable-active-search-context",
+    ".protocols/FT-003/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/realtime-search.md#immutable-active-search-context",
+    ".memory-bank/contracts/boundary-map.md#active-search-date",
+    ".memory-bank/contracts/boundary-map.md#http-failure-contract"
+  ],
+  "constraints": [
+    "Consume TASK-042 owner stores and the accepted selected revision through public boundaries.",
+    "Copy one complete snapshot before inference/admission use.",
+    "Use disposable settings fixtures and create no Attempt/search/session in closed cases."
+  ],
+  "invariants": [
+    "Client supplies or overrides no context value.",
+    "Resolved context is immutable for one admitted Attempt.",
+    "Missing required input closes readiness before promo admission and durable Attempt creation."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/realtime-search.md#immutable-active-search-context",
+    "Complete snapshot and post-resolution mutation isolation.",
+    "Missing/override fixtures prove 503 and zero downstream work."
+  ]
 }

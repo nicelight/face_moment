@@ -34,61 +34,15 @@
     {
       "stage": "verify",
       "verdict": "PASS",
-      "completed_at": "2026-08-10T18:11:22+05:00",
-      "summary": "Fresh independent T3 verification passed mypy, the focused isolated session test and a separate disposable PostgreSQL/ASGI matrix. It proved exact login/current/logout and cookie behavior, digest-only storage, unchanged absolute expiry, generic invalid-session 401, CSRF 403, normalized-username-plus-IP 429, role projection, secret/digest redaction, cleanup, and linear migration compatibility with TASK-003 staff_users and TASK-006 pipeline_revisions.",
-      "protocol": ".protocols/TASK-004-T3-FT-001-W2/verification.md",
-      "report": ".tasks/TASK-004-T3-FT-001-W2/TASK-004-T3-FT-001-W2-S-VERIFY-final-report-docs-01.md"
-    },
-    {
-      "stage": "red-verify",
-      "verdict": "semantic-fail",
-      "completed_at": "2026-08-10T18:15:15+05:00",
-      "summary": "Adversarial supported-path verification proved that the configured HTTPS edge does not proxy the accepted root staff-session paths: canonical login/current/login-page requests terminate at Caddy with empty 200 responses, so valid login cannot return 204/cookies and invalid current-session traffic cannot return 401 through the browser-facing boundary.",
-      "protocol": ".protocols/TASK-004-T3-FT-001-W2/red-verification.md",
-      "report": ".tasks/TASK-004-T3-FT-001-W2/TASK-004-T3-FT-001-W2-S-RED-VERIFY-final-report-docs-01.md"
-    },
-    {
-      "stage": "verify",
-      "verdict": "PASS",
-      "completed_at": "2026-08-10T18:39:50+05:00",
-      "summary": "Attempt 2 fresh independent T3 reassessment passed mypy, the two-test auth/Caddy regression gate, Caddy validation and a fully disposable current-source HTTPS stack. Canonical login/current/logout now cross Caddy with 200/204 behavior, Secure session/CSRF cookies and backend Via; missing and invalid sessions return 401, prior auth/migration/security coverage remains green, and all isolated resources were removed.",
-      "protocol": ".protocols/TASK-004-T3-FT-001-W2/verification.md",
-      "report": ".tasks/TASK-004-T3-FT-001-W2/TASK-004-T3-FT-001-W2-S-VERIFY-final-report-docs-02.md"
-    },
-    {
-      "stage": "red-verify",
-      "verdict": "semantic-fail",
-      "completed_at": "2026-08-10T18:47:52+05:00",
-      "summary": "Attempt 2 resolved canonical HTTPS path transit, but fresh adversarial proxy-boundary proof found that distinct browser IPs share one login limiter budget because backend keys on the Caddy peer. With limit two, client A received 401,401 and distinct client B's first same-username attempt received 429 instead of an independent 401, violating normalized-username-plus-client-IP semantics and enabling cross-client lockout.",
-      "protocol": ".protocols/TASK-004-T3-FT-001-W2/red-verification.md",
-      "report": ".tasks/TASK-004-T3-FT-001-W2/TASK-004-T3-FT-001-W2-S-RED-VERIFY-final-report-docs-02.md"
-    },
-    {
-      "stage": "verify",
-      "verdict": "PASS",
-      "completed_at": "2026-08-10T19:15:49+05:00",
-      "summary": "Attempt 3 fresh independent T3 reassessment passed mypy, all three focused auth/migration/Caddy tests, Caddy validation and a fully isolated current-source HTTPS stack. Two distinct clients supplied identical forged XFF yet retained independent username/IP budgets (A 401,401,429; B first 401); canonical session flows, digest-only persistence, absolute expiry, CSRF, invalid-session/rate branches, redaction, Task-003/006 migration compatibility and complete cleanup all passed.",
-      "protocol": ".protocols/TASK-004-T3-FT-001-W2/verification.md",
-      "report": ".tasks/TASK-004-T3-FT-001-W2/TASK-004-T3-FT-001-W2-S-VERIFY-final-report-docs-03.md"
-    },
-    {
-      "stage": "red-verify",
-      "verdict": "semantic-pass",
-      "completed_at": "2026-08-10T19:18:13+05:00",
-      "summary": "Final Attempt 3 adversarial review confirmed both prior failures resolved: canonical staff paths reach backend without rewrite, and Caddy overwrites forged forwarded identity so distinct origin clients retain separate username/IP budgets while same-client limiting remains enforced. Full T3 cookie, CSRF, expiry, secret-storage, invalid-session, ownership, migration, topology, redaction and cleanup semantics remain intact with no surviving finding or operator question.",
-      "protocol": ".protocols/TASK-004-T3-FT-001-W2/red-verification.md",
-      "report": ".tasks/TASK-004-T3-FT-001-W2/TASK-004-T3-FT-001-W2-S-RED-VERIFY-final-report-docs-03.md"
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
+      "report": ".tasks/TASK-004-T3-FT-001-W2/TASK-004-T3-FT-001-W2-S-VERIFY-final-report-docs-03.md",
+      "semantic_verdict": "semantic-pass",
+      "semantic_report": ".tasks/TASK-004-T3-FT-001-W2/TASK-004-T3-FT-001-W2-S-RED-VERIFY-final-report-docs-03.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-10T19:19:24+05:00",
-      "summary": "The autopilot scheduler closed TASK-004 after correction attempt 3 earned fresh functional PASS and semantic-pass. Two prior semantic failures were durably corrected within the allowed retry budget: canonical HTTPS reachability and originating-client rate-limit isolation.",
-      "evidence": [
-        ".protocols/TASK-004-T3-FT-001-W2/handoff.md",
-        ".tasks/TASK-004-T3-FT-001-W2/TASK-004-T3-FT-001-W2-S-VERIFY-final-report-docs-03.md",
-        ".tasks/TASK-004-T3-FT-001-W2/TASK-004-T3-FT-001-W2-S-RED-VERIFY-final-report-docs-03.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

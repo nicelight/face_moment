@@ -41,20 +41,13 @@
     {
       "stage": "verify",
       "verdict": "PASS",
-      "completed_at": "2026-08-12T18:44:01+05:00",
-      "summary": "Fresh independent T2 verification passed the exact packaged-image mypy, focused PostgreSQL persistence and Memory Bank lint gates. The verifier-owned migration probe proved unchanged refusal for a serving-referenced legacy revision and an empty direct upgrade/downgrade/re-upgrade with one head, exact compatibility/state/face/runtime shape, immutable referenced identity, matching embedding dimension, RESTRICT ownership boundaries and prerequisite-row retention.",
-      "protocol": ".protocols/TASK-018-T2-FT-002-W1/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-018-T2-FT-002-W1/TASK-018-T2-FT-002-W1-S-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-12T18:45:53+05:00",
-      "summary": "The autopilot scheduler closed TASK-018 after Execution Attempt 1 and fresh independent T2 verification PASS. The orchestrator-owned full Dockerfile build produced the current-source image used by both final packaged gates and verification; no task-owned fix or unsuccessful verification attempt was required.",
-      "evidence": [
-        ".tasks/TASK-018-T2-FT-002-W1/TASK-018-T2-FT-002-W1-S-EXECUTE-final-report-code-01.md",
-        ".tasks/TASK-018-T2-FT-002-W1/TASK-018-T2-FT-002-W1-S-VERIFY-final-report-docs-01.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

@@ -33,20 +33,13 @@
     {
       "stage": "verify",
       "verdict": "PASS",
-      "completed_at": "2026-08-11T18:58:40+05:00",
-      "summary": "Fresh independent T2 verification passed the packaged-image mypy and focused PostgreSQL gates. Repeated isolated migration round-trips, transaction checks and database introspection proved the processing-owned public create-only boundary, exact composite pending row, zero attempts, server timestamp, caller commit retention, rollback removal, RESTRICT foreign keys, absence of later transition behavior and complete task-resource cleanup.",
-      "protocol": ".protocols/TASK-009-T2-FT-001-W4/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-009-T2-FT-001-W4/TASK-009-T2-FT-001-W4-S-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-11T18:59:30+05:00",
-      "summary": "The autopilot scheduler closed TASK-009 after Execution Attempt 1 earned fresh packaged-image T2 verification PASS for the processing-owned initial pending boundary, migration round-trip, caller transaction semantics, schema invariants and cleanup. Three exact image builds failed only on external PyPI responses; the equivalent builder-timeout build completed without repository or runtime-contract changes.",
-      "evidence": [
-        ".tasks/TASK-009-T2-FT-001-W4/TASK-009-T2-FT-001-W4-S-EXECUTE-final-report-code-01.md",
-        ".tasks/TASK-009-T2-FT-001-W4/TASK-009-T2-FT-001-W4-S-VERIFY-final-report-docs-01.md"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [

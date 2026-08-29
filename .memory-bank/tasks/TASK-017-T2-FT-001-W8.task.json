@@ -34,22 +34,13 @@
     {
       "stage": "verify",
       "verdict": "PASS",
-      "completed_at": "2026-08-11T23:26:11+05:00",
-      "summary": "Fresh T2 verification passed both exact packaged gates and independently proved the authenticated same-origin uploader, real reordered per-file completion with stable visible rows, accepted/rejected/duplicate mappings, mixed-EXIF warning with authoritative date projection, private Caddy topology, redaction and complete disposable cleanup.",
-      "protocol": ".protocols/TASK-017-T2-FT-001-W8/verification.md",
+      "summary": "Compacted retained final functional PASS. Current task status is done.",
       "report": ".tasks/TASK-017-T2-FT-001-W8/TASK-017-T2-FT-001-W8-S-VERIFY-final-report-docs-01.md"
     },
     {
       "stage": "closure",
       "verdict": "done",
-      "completed_at": "2026-08-11T23:27:59+05:00",
-      "summary": "The autopilot scheduler closed TASK-017 after Execution Attempt 1 and fresh packaged/browser T2 verification PASS for the authenticated same-origin uploader, independent per-file outcomes/order, accepted/rejected/duplicate mappings, authoritative date projection, private topology, redaction and complete disposable cleanup.",
-      "evidence": [
-        ".tasks/TASK-017-T2-FT-001-W8/TASK-017-T2-FT-001-W8-S-EXECUTE-final-report-code-01.md",
-        ".tasks/TASK-017-T2-FT-001-W8/TASK-017-T2-FT-001-W8-S-VERIFY-final-report-docs-01.md",
-        ".tasks/TASK-017-T2-FT-001-W8/browser-uat-result.json",
-        ".tasks/TASK-017-T2-FT-001-W8/uploader-browser-green.png"
-      ]
+      "summary": "Compacted final lifecycle closure: current task status is done."
     }
   ],
   "docs": [
