@@ -1,7 +1,7 @@
 ---
 description: Canonical verification contract for client proposal submission, one-clock Promo latency and related diagnostics.
 status: active
-last_updated: 2026-08-29
+last_updated: 2026-09-01
 source_of_truth:
   - .memory-bank/testing/client-realtime.md
 ---
@@ -107,7 +107,7 @@ validation.
   Promo/QR render.
 - The diagnostic UI shows client-local ready-series processing start,
   request-send start and response receipt for a correlated admitted Attempt.
-- Retention proof applies 30 days to technical logs, 90 days to ordinary
+- Retention proof applies 30 days to structured server events, 90 days to ordinary
   Attempts/evidence including persisted capture-derived media, deletes an old
   Attempt even when no evidence row exists, and preserves only the curated
   promoted subset until explicit deletion. It also proves overlapping cleanup

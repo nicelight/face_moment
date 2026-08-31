@@ -4,7 +4,7 @@ status: draft
 type: prd
 clarification_status: complete
 constitution_checked: true
-last_updated: 2026-08-29
+last_updated: 2026-09-01
 ---
 # PRD
 
@@ -19,7 +19,7 @@ beyond the resolved behavior, constraints and acceptance criteria below.
 ## Clarifications
 
 Clarification is complete. Resolved operator decisions are incorporated into
-the FR, NFR and acceptance criteria below rather than repeated as a dated log.
+the FR, NFR and acceptance criteria below.
 
 ### 2026-08-29 — Independent production performance gates
 
@@ -43,11 +43,11 @@ The pilot ends at a verified phone continuation page. Payment, actual original
 download and public use by ordinary СПА visitors are post-pilot context, not
 current delivery or acceptance scope.
 
-The same pilot includes a developer-only investigation and calibration contour
-in the target backend to be delivered by this project: correlated attempts,
-browser/server log search, manual per-person/per-detection annotation and
-explainable recommendations for face-match threshold and individual input
-quality gates.
+The same pilot includes FT-008, a simple role-scoped Attempt investigation
+surface with a sanitized operator view and authorized developer detail. FT-009
+supplies a minimal developer-only web view of redacted server events for
+important errors and lifecycle transitions; annotation and Calibration remain
+separate features.
 
 ## Goals
 
@@ -105,8 +105,9 @@ quality gates.
 - Automatic application of calibration recommendations, multidimensional joint
   optimization of threshold and quality gates, or an embedded experimentation/
   test-management platform.
-- Session replay, bulk diagnostic export, automatic replay runner or a separate
-  observability datastore/stack in the first version.
+- Generic/saved log queries, full-text search, live tail, dashboards, exports,
+  diagnostic read models, browser-log collection, session replay, replay runner
+  or a separate observability datastore/stack.
 - Automatic tuning of capture-window, frame-interval, group-selection,
   CPU/thread or UI/QR timing parameters.
 - A separate backup, replication or primary-storage-loss recovery system. The
@@ -148,11 +149,12 @@ quality gates.
 
 ### Application developer
 
-- Investigates individual attempts and correlated browser/server logs.
+- Finds Attempts by exact `attempt_id`/`correlation_id`, searches the minimal
+  developer-only server-event page and follows a correlated event into FT-008.
 - May view recent queue statistics per СПА, soft-delete or restore any Photo,
   and invoke the confirmed project-wide restore-all or hard-purge action.
-- Has authorized access to developer-restricted diagnostic data, real names in
-  annotations, detailed Log Explorer records and Calibration.
+- Has authorized access to Attempt detail, diagnostic evidence, annotations and
+  Calibration under their respective feature boundaries.
 - Adds ground-truth annotations, compares releases/configurations and examines
   group-search decisions.
 - Receives explainable threshold and quality-gate recommendations and applies
@@ -386,60 +388,52 @@ pilot actor or blocker.
 
 ### E. Attempts and diagnostic evidence
 
-- **FR-DIAG-01** — Every capture/search request admitted by the server,
-  including unsuccessful domain outcomes, MUST persist one core Attempt with a
-  client-generated `attempt_id/correlation_id` before inference. That identity
-  connects browser events, server processing, configuration, face-search
-  decisions and artifacts without requiring a separate empty diagnostic-anchor
-  row. A client-only offline trigger MAY be delivered through a short-lived
-  metadata outbox and server upsert, but this is best-effort and is not
-  guaranteed to produce a durable Attempt.
-- **FR-DIAG-02** — The diagnostic UI MUST show the client-local moments when
-  ready-series processing starts, request sending starts and the response is
-  received. The correlated timeline MUST also expose capture/reference
-  readiness, request/network, singleton-slot acquisition or `busy`, server
-  processing, Promo render and full QR visibility so a `>=10 s` outcome can be
-  localized.
-- **FR-DIAG-03** — Attempt detail MUST show release, serving pipeline revision,
-  applied threshold and quality values, selected detections, repeated
-  detections, candidate pools, selected teasers, `N`, outcome/status and issue
-  tags.
-- **FR-DIAG-04** — Collected diagnostic evidence MUST correlate received
-  proposal crops and metadata, camera/config metadata, detections, candidates,
-  thresholds, selected IDs, timestamps, actually displayed Promo evidence and
-  QR continuation event. A product flow that actually captures a selfie MUST
-  also retain that selfie as a diagnostic artifact; the current pilot has no
-  selfie capture and therefore creates no selfie artifact.
-- **FR-DIAG-05** — Detailed evidence is attached best-effort by `attempt_id`; a
+- **FR-DIAG-01** — Every server-admitted capture/search request, including an
+  unsuccessful outcome, MUST persist one core Attempt with `attempt_id` and
+  associated `correlation_id` before inference. A client-only offline trigger MAY
+  remain best-effort and need not create a durable Attempt.
+- **FR-DIAG-02** — Attempt detail MUST show available client markers
+  (`local_detection_completed_ms`, `request_started_ms`, `response_received_ms`)
+  and server timestamps/durations for reference readiness, request/network,
+  `busy`, server processing, Promo render and QR visibility.
+- **FR-DIAG-03** — Attempt detail MUST show current state/outcome, identifiers,
+  issue tags and already collected diagnostic evidence. Missing, expired or
+  removed evidence MUST be shown truthfully.
+- **FR-DIAG-04** — Collected evidence MUST remain linked to its core Attempt.
+  Existing evidence types may include crops, metadata, detections, decisions,
+  timestamps and display/QR events; FT-008 MUST NOT require new frames,
+  artifacts, manifests or replay. A selfie artifact is required only if a
+  product flow actually captures a selfie; the current pilot does not.
+- **FR-DIAG-05** — Evidence attachment is best-effort by Attempt identity; a
   terminal Attempt without finalized evidence MUST remain visible as
-  `incomplete`. When evidence exists, the attempt MUST expose a reproducibility
-  manifest with versions, parameters, timestamps and links governed by
-  NFR-SEC-06; an automatic replay runner is not required.
-- **FR-DIAG-06** — The `Attempts` page MUST support filtering by time, status,
-  release, pipeline, latency and issue tags, opening a unified browser/server
-  timeline and navigating to relevant logs/artifacts.
+  `incomplete`, and expired/removed evidence MUST be marked accordingly.
+- **FR-DIAG-06** — `Attempts` MUST support exact lookup by `attempt_id`/
+  `correlation_id`, minimal time/state filters and tabular state, stages,
+  durations, client markers and evidence; generic/saved queries, exports and
+  log/artifact navigation are not required.
 - **FR-DIAG-07** — The operator view of an attempt MUST be sanitized to outcome,
   stage timeline, latency and issue tags. Navigation beyond that view MUST
   follow NFR-SEC-04 and NFR-SEC-06.
 
-### F. Manual annotation, logs and calibration
+### F. Minimal server events, manual annotation and calibration
 
 - **FR-DEV-01** — An authorized developer MUST be able to annotate ground truth
   at person/detection level, associate a real pilot-participant name and record
   `correct`, `wrong/false` or `missed` outcomes. Exact normalized storage
   vocabulary is deferred to SDD, but its semantics MUST support the stated
   calculations.
-- **FR-DEV-02** — Developer-only `Log Explorer` MUST search structured
-  browser/server logs by time, source, component, severity, release, message and
-  correlation fields, and MUST navigate from a record to its related attempt.
-- **FR-DEV-03** — Log search MUST operate through the project backend and
-  PostgreSQL. The browser MUST NOT access PostgreSQL directly.
-- **FR-DEV-04** — Browser/server logging MUST be non-blocking for capture,
-  search, Promo and QR. Log records MUST NOT contain embeddings, credentials,
-  authentication headers, cookies, tokens, participant names, commercial Photo
-  originals, personalized session data or session replay. Capture-derived
-  media MAY be logged when useful and bounded; logging every crop or complete
-  request body is not required.
+- **FR-DEV-02** — FT-009 MUST emit and retain in the existing PostgreSQL a small
+  structured server-event set for important errors and lifecycle transitions.
+  Each event MUST include timestamp, severity, component, event code and release
+  identifier, plus `attempt_id` or `correlation_id` when known.
+- **FR-DEV-03** — An authorized developer MUST have one minimal web page showing
+  recent server events with bounded filters for time, severity, component, event
+  code and exact `attempt_id`/`correlation_id`. A correlated event MUST navigate
+  to FT-008. Generic/saved queries, full-text search, live tail, dashboards,
+  exports, read models and browser-log collection are not required.
+- **FR-DEV-04** — Server-event emission MUST be non-blocking for capture, search,
+  Promo and QR. Events MUST NOT contain secrets, personal data, embeddings,
+  request bodies or arbitrary payloads; browser logs are out of scope.
 - **FR-DEV-05** — `Calibration` MUST use annotated attempts to compare SFace and
   Buffalo M and calculate face-match-threshold recommendations without changing
   serving settings automatically.
@@ -590,7 +584,7 @@ pilot actor or blocker.
 - **NFR-SEC-04** — Application authorization MUST enforce a split diagnostic
   access matrix for protected data and actions: the operator receives the
   sanitized attempt outcome/timeline/latency/issue tags; participant names,
-  annotations, detailed logs and Calibration require the developer role. The
+  annotations, server events and Calibration require the developer role. The
   photographer is limited to their own uploaded-photo state and has no
   diagnostic-page access.
 - **NFR-SEC-05** — Photo Inventory authorization MUST restrict photographers to
@@ -599,10 +593,10 @@ pilot actor or blocker.
   actions MUST be restricted to authorized operator/developer admin settings.
 - **NFR-SEC-06** — Capture-derived reference images, normalized images and face
   crops are ordinary media, not protected solely because they contain an image
-  or face. They MAY be logged, cached, stored or delivered without
-  developer-only media authorization; none of those mechanisms is required.
-  Credentials, infrastructure, commercial Photo media, personalized data,
-  participant names and administrative actions remain protected.
+  or face. They MAY be logged, cached, stored or delivered without developer-
+  only media authorization; none of those mechanisms is required. Credentials,
+  infrastructure, commercial Photo media, personalized data, participant names
+  and administrative actions remain protected.
 - **NFR-SEC-07** — The managed kiosk MUST pre-authorize the central Face Moment
   origin for Local Network Access. ESP32 MUST allow that exact origin through
   CORS, handle OPTIONS when Authorization is present and validate one manually
@@ -610,7 +604,7 @@ pilot actor or blocker.
   managed kiosk browser profile. The secret MUST be sent only in the
   Authorization header and MUST NOT enter URLs or logs. Pairing, automatic
   rotation, PKI and a separate sensor-credential lifecycle are not required.
-- **NFR-DATA-01** — Technical browser/server logs MUST expire after 30 days.
+- **NFR-DATA-01** — Structured server events MUST expire after 30 days.
 - **NFR-DATA-02** — Attempts and ordinary diagnostic bundles/artifacts MUST
   expire after 90 days, including persisted capture-derived diagnostic media.
 - **NFR-DATA-03** — A manually promoted calibration case MAY be retained until
@@ -618,10 +612,10 @@ pilot actor or blocker.
   available server-side media, required face crops or an actually captured
   selfie, versioned parameters/configuration, scores, annotations and the
   entered participant name. Other diagnostic media and the Promo screenshot
-  MUST expire with the ordinary 90-day bundle; technical logs MUST still expire
+  MUST expire with the ordinary 90-day bundle; server events MUST still expire
   after 30 days.
 - **NFR-DATA-04** — Real pilot-participant names may appear only in authorized
-  manual diagnostic annotations, not in general technical logs.
+  manual diagnostic annotations, not in structured server events.
 
 ### Architecture and maintainability constraints
 
@@ -683,8 +677,9 @@ pilot actor or blocker.
   manifest, indexed events, decisions, configuration and display evidence linked
   to a core Attempt. Absence or failed finalization is represented as
   `incomplete`, not by a mandatory empty anchor row.
-- **Structured log record** — browser/server event associated with a correlation
-  ID where applicable.
+- **Structured server event** — redacted PostgreSQL record for an important
+  server error/lifecycle transition, with `attempt_id`/`correlation_id` where
+  known.
 - **Annotation** — authorized ground truth associating a participant/person and
   detection/result outcome.
 - **Calibration case/recommendation** — a manually curated reproducible subset
@@ -721,7 +716,7 @@ pilot actor or blocker.
   the entire unique union.
 - Attempt/log/evidence identifiers must allow navigation without placing
   protected payloads in logs.
-- Technical logs, normal attempt/evidence data and promoted calibration data have
+- Server events, normal attempt/evidence data and promoted calibration data have
   distinct retention rules defined by NFR-DATA-01..03.
 - Promoting a calibration case does not extend the lifetime of the entire
   diagnostic evidence set: only the curated subset named by NFR-DATA-03
@@ -791,15 +786,13 @@ pilot actor or blocker.
 
 ### Developer investigation and calibration flow
 
-1. Filter `Attempts` and open a slow, failed or suspicious attempt.
-2. Inspect the combined timeline, active versions/parameters, selected
-   detections, candidate pools, teaser and `N` decisions.
-3. Follow links to authorized artifacts and correlated log records.
-4. Add per-person/per-detection ground truth.
-5. Use `Calibration` to inspect threshold profiles, individual quality-gate
-   recommendations and before/after comparisons.
-6. Drill down from an aggregate recommendation to contributing attempts.
-7. Apply a chosen setting manually outside automatic recommendation execution.
+1. Find an Attempt by exact `attempt_id` or `correlation_id`.
+2. Inspect its table row/detail: state, outcome, server-stage durations, available
+   client markers and already collected evidence; missing or expired data is shown
+   explicitly.
+3. Search recent important server events in the minimal developer-only web page
+   and use their correlation ID to return to FT-008.
+4. Add annotations or run Calibration only through their separate feature flows.
 
 ## Integrations / Dependencies
 
@@ -807,8 +800,8 @@ pilot actor or blocker.
   camera, lens, lighting and maximum input dimensions remain site choices.
 - Managed Chromium, Local Network Access and the BlazeFace model asset are
   client dependencies governed by FR-CAP-13..17 and NFR-SEC-07.
-- PostgreSQL with pgvector for metadata, state, exact vector search, structured
-  logs and indexed diagnostic events.
+- PostgreSQL with pgvector for metadata, state, exact vector search,
+  Attempt/evidence persistence and one minimal structured server-event table.
 - MinIO/S3-compatible private object storage for originals, previews and
   diagnostic images.
 - SFace/YuNet and Buffalo M/SCRFD pipelines with native preprocessing.
@@ -855,11 +848,10 @@ payment/fiscal providers, external observability stores and message brokers.
   may leave no server record.
 - Missing optional audio/animation assets must have a silent/non-blocking
   fallback and must not prevent a valid QR result.
-- Logging/diagnostic ingestion failure must not block the critical capture,
-  search, Promo or QR path; a terminal server-side core Attempt without
-  finalized evidence must remain observable as `incomplete`. A client-only
-  offline trigger may have no durable Attempt because its metadata delivery is
-  best-effort.
+- Server-event or evidence-write failure must not block capture, search, Promo or
+  QR; a terminal server-side core Attempt without finalized evidence remains
+  observable as `incomplete`. A client-only offline trigger may have no durable
+  Attempt because its metadata delivery is best-effort.
 - A QR opened more than 30 minutes after `qr_issued_at`, or a session-wide
   browser context with no explicit participant activity on any opened phone for
   60 minutes, invalidates the personalized result and redirects to the main
@@ -942,20 +934,23 @@ payment/fiscal providers, external observability stores and message brokers.
 - **AC-09** — An operator can find a failed or slow attempt and see only its
   sanitized outcome, timeline, latency and issue tags; protected data governed
   by NFR-SEC-04 and NFR-SEC-06 is inaccessible to that role.
-- **AC-10** — An authorized developer can trace the same attempt's versions,
-  parameters, group/search decisions, available artifacts and detailed logs by
-  correlation ID; `Log Explorer` supports all required filters and navigation
-  without exposing PostgreSQL directly.
+- **AC-10** — An authorized developer finds an Attempt by exact `attempt_id`/
+  `correlation_id` and sees state/outcome, server durations, client markers and
+  collected evidence; missing/expired/removed evidence is explicit. The same
+  role can filter recent structured server events by the bounded FT-009 fields
+  and navigate from a correlated event to FT-008; no generic query builder,
+  full-text search, live tail, dashboard, export or diagnostic read model is
+  required.
 - **AC-11** — An authorized developer can annotate person/detection outcomes and
   see those annotations reflected in threshold and individual quality-gate
   recommendation evidence.
 - **AC-12** — Calibration shows all three threshold profiles and required
   measures/drill-down, supports before/after comparison, and never changes a
   serving setting automatically.
-- **AC-13** — Technical logs exclude forbidden payloads and respect 30-day
-  retention; ordinary attempts/bundles respect 90-day retention; promoting a
-  calibration case preserves only the curated NFR-DATA-03 subset until explicit
-  deletion. The latest cleanup outcome satisfies NFR-REL-05.
+- **AC-13** — Structured server events exclude forbidden payloads and respect
+  30-day retention; ordinary attempts/bundles respect 90-day retention;
+  promoting a calibration case preserves only the curated NFR-DATA-03 subset
+  until explicit deletion. The latest cleanup outcome satisfies NFR-REL-05.
 - **AC-14** — Network/search failure leaves the display on local advertising,
   discards stale work and permits a fresh attempt without a success cooldown.
   A server-communication failure also shows

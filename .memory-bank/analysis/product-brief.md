@@ -34,8 +34,8 @@ one-СПА pilot, показывает четыре персональных tea
 - Оператор Face Moment/СПА — контролирует readiness фотографий, Promo и
   диагностику, управляет доступными Photo и запускает глобальные inventory
   actions.
-- Разработчик приложения — расследует attempts и browser/server logs, размечает
-  результаты, подбирает thresholds/quality gates и имеет staff-доступ к Photo
+- Разработчик приложения — расследует attempts и важные server events, размечает
+  результаты, калибрует thresholds/quality gates и имеет staff-доступ к Photo
   Inventory Operations.
 - После pilot: посетитель СПА как покупатель полного пакета фотографий.
 
@@ -68,8 +68,8 @@ one-СПА pilot, показывает четыре персональных tea
 - СПА получает автоматический Promo без полноценного touchscreen kiosk.
 - Фотограф и staff могут скрывать ошибочные Photo, восстанавливать их и видеть
   недавнее состояние ingest/processing без отдельной queueing-системы.
-- Команда получает correlated diagnostics с явными evidence gaps для настройки
-  камеры, pipeline, thresholds, UX и latency.
+- FT-008 — поиск state/stages/evidence по `attempt_id`/`correlation_id`; FT-009 —
+  минимальная developer-only web-page важных server events.
 
 ## 6. Product Concept
 
@@ -137,16 +137,15 @@ server по-прежнему authoritative для validation, ranking и выб�
 - четыре low-quality preview и QR без watermark;
 - QR continuation page без нового selfie: СПА, дата, teaser, `N` и post-pilot
   CTA полного пакета;
-- core Attempt каждого server-admitted request; подробные diagnostic evidence
-  присоединяются best-effort, и их отсутствие у существующего server Attempt
-  отображается как `incomplete`; client-only offline event может не оставить
-  server record. Capture-derived media не требует защиты только как media или
-  developer-only authorization; это не создаёт public-endpoint, cache или
-  logging obligation. Credentials, infrastructure, commercial Photo media и
-  personalized data сохраняют текущую защиту;
-- sanitized `Attempts` для operator (outcome, timeline, latency, issue tags);
-  participant names, manual annotations, searchable logs и `Calibration`
-  вместе с прочими role-protected diagnostic fields остаются developer-only;
+- core Attempt каждого server-admitted request; diagnostic evidence присоединяются
+  best-effort и при отсутствии отображаются как `incomplete`; client-only offline
+  event может не оставить server record. FT-008: табличные `Attempts` по
+  `attempt_id`/`correlation_id` со state, stages и evidence; capture-derived media
+  не создаёт дополнительных logging/public-access требований, credentials,
+  commercial Photo media и personalized data сохраняют защиту;
+- FT-009: минимальная developer-only web-page над redacted server events в
+  существующем PostgreSQL, с bounded filters и переходом по correlation ID в
+  FT-008.
 - failure mode с локальной рекламой, best-effort diagnostic event и коротким
   неблокирующим сообщением при неудачной связи с сервером;
 - controlled acceptance run из 20 попыток.
@@ -161,8 +160,9 @@ server по-прежнему authoritative для validation, ranking и выб�
 - watermark на любых preview;
 - гарантия полного покрытия каждого человека в группе;
 - production-grade validation по 20 попыткам;
-- RAW, identity clustering, ANN, Redis/Celery/Kafka, Kubernetes, GPU-first и
-  полноценный kiosk.
+- RAW, identity clustering, ANN, Redis/Celery/Kafka, Kubernetes, GPU-first,
+  полноценный kiosk, generic/saved log queries, full-text search, live tail,
+  dashboards, exports, browser-log ingestion и внешняя observability platform.
 - отдельный purge worker, per-photo `purge_pending`, purge jobs table,
   materialized recent counters и WebSocket/SSE для queue statistics.
 - representative benchmark как prerequisite или design/tasking gate для
@@ -273,9 +273,12 @@ continuation. Обязательные решения: automatic Promo, authenti
 algorithm, core Attempt для server-admitted request с best-effort offline/
 diagnostic evidence, 90-day retention ordinary attempt/evidence и performance
 acceptance `19/20 under 10s`.
-Developer logging, attempt investigation, manual annotation и explainable
-parameter recommendations определены в `IDEA_DEBUG.md` и также являются входом
-PRD. Photo Inventory Operations включают role-scoped time-range soft
+FT-008 — табличная диагностика по `attempt_id`/`correlation_id` на основе
+`PromoAttempt`/`DiagnosticEvidence`; FT-009 — минимальная developer-only
+web-page над redacted events важных ошибок/lifecycle boundaries в существующем
+PostgreSQL, с bounded filters и переходом в FT-008. Generic Log Explorer и
+observability platform отложены; annotations, artifacts и Calibration —
+отдельные features. Photo Inventory Operations включают role-scoped time-range soft
 delete/restore, global restore-all, fixed-snapshot resumable hard purge с
 Promo session/Attempt/evidence retention, restore rejection для snapshot members
 и per-СПА 1/5/60-minute statistics с five-second polling. Payment и originals

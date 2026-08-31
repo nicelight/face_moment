@@ -1,7 +1,7 @@
 ---
 description: Canonical greenfield system shape, capability ownership and Architecture Spine for the Face Moment pilot.
 status: active
-last_updated: 2026-08-14
+last_updated: 2026-09-01
 source_of_truth:
   - .memory-bank/architecture/system-architecture.md
 ---
@@ -242,7 +242,7 @@ speculative distributed infrastructure.
   [Photo Processing](../domains/photo-processing.md#model-asset-admission).
 
 #### AD-013 — Owner-ordered retention cleanup
-- Binds: core Attempts, technical logs, ordinary diagnostic evidence and
+- Binds: core Attempts, structured server events, ordinary diagnostic evidence and
   promoted Calibration subsets.
 - Prevents: cross-owner delete cascades, foreign direct writes, a generic jobs
   subsystem and retention cleanup that destroys promoted evidence.

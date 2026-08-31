@@ -1,7 +1,7 @@
 ---
 description: Owner-ordered diagnostic retention command and latest-result staff contract.
 status: active
-last_updated: 2026-08-25
+last_updated: 2026-09-01
 source_of_truth:
   - .memory-bank/contracts/diagnostic-retention-api.md
 ---
@@ -16,9 +16,9 @@ deletes only promo-owned eligible Attempts/sessions. Each provider deletes only
 its own rows/objects. No cross-owner cascade, cleanup history, generic jobs
 table or reliable queue is introduced.
 
-The fixed policy cutoffs are 30 days for technical logs and 90 days for
+The fixed policy cutoffs are 30 days for structured server events and 90 days for
 ordinary Attempts/evidence, evaluated in UTC. FT-007 implements the ordinary
-Attempt/evidence portion; FT-009 later supplies technical-log deletion through
+Attempt/evidence portion; FT-009 later supplies server-event deletion through
 the same diagnostics owner boundary without changing the public result shape.
 
 ## Idempotent Cleanup Command
@@ -122,8 +122,8 @@ with this shape:
 
 `state` is `running|succeeded|failed|interrupted`; counts are non-negative
 integers. While running, `finished_at` is null. `error` is non-null only for
-`failed|interrupted`. Until FT-009 supplies its owner deletion, the fixed
-technical-log cutoff remains visible and `technical_logs_deleted` is `0`; this
+  `failed|interrupted`. Until FT-009 supplies its owner deletion, the fixed
+server-event cutoff remains visible and `technical_logs_deleted` is `0`; this
 does not claim FT-009 completion. The HTML page renders the same fields and
 never exposes raw object identities, participant data or an execution trigger.
 

@@ -1,7 +1,7 @@
 ---
 description: Канонический словарь терминов со специальным значением в Face Moment.
 status: active
-last_updated: 2026-08-15
+last_updated: 2026-09-01
 source_of_truth:
   - .memory-bank/glossary.md
 ---
@@ -18,7 +18,7 @@ source_of_truth:
 | `SpaPromoClient` | Единый browser-native Chromium display/capture client одной СПА, загружаемый с центрального HTTPS origin. Он получает локальный ESP32 trigger, формирует reference series, отправляет первые не более 20 chronological local-detector occurrences без ranking/tracking/person deduplication и управляет display states и client-local timings. | Backend, local bridge, local web server, server-side processing/search или самой СПА-площадкой. |
 | `Photographer` | Product role, которая загружает Photo и может soft-delete/restore только собственные uploads в выбранной СПА/date/time-range. | Operator/developer с правом управлять любыми Photo в доступной СПА или глобальными admin actions. |
 | `Face Moment / СПА operator` | Роль, которая управляет рабочей датой и операционным состоянием, управляет Photo в доступной СПА, запускает разрешённые global inventory actions и видит sanitized attempt summary: outcome, timeline, latency и issue tags. | `Application developer`, которому доступны role-restricted names, annotations, detailed logs и Calibration. |
-| `Application developer` | Product role с доступом к role-restricted diagnostic data/actions, включая participant names в annotations, detailed logs, Log Explorer и Calibration, а также staff-доступом к Photo Inventory Operations; serving-setting changes применяет вручную. | Единственным владельцем доступа к capture-derived media или OS user `facemoment`. |
+| `Application developer` | Product role с доступом к role-restricted Attempt detail, minimal server-event view, participant names в annotations и Calibration, а также staff-доступом к Photo Inventory Operations; serving-setting changes применяет вручную. | Единственным владельцем доступа к capture-derived media или OS user `facemoment`. |
 | `Admin settings` / `Admin` | Защищённая same-origin staff surface и действующий `operator|developer`, которому разрешено ею пользоваться. Для display-client credentials она всегда показывает текущий token каждого киоска для ручного переноса в kiosk settings. | Новой четвёртой staff role, OS user `facemoment` или автоматическим provisioning/pairing channel. |
 | `facemoment` / `display` | Два OS users центрального сервера: `facemoment` администрирует SSH, `sudo` и Docker; `display` автоматически запускает sandboxed Chromium без административных прав. | Product roles оператора и участника pilot. |
 
@@ -77,12 +77,12 @@ source_of_truth:
 
 | Термин | Значение в Face Moment | Не путать с |
 |---|---|---|
-| `diagnostic_session_id` / `correlation_id` | Один логический correlation identifier попытки, связывающий browser events, server stages, configuration, search decisions, logs и artifacts. | Promo/search session token или participant identity. |
+| `diagnostic_session_id` / `correlation_id` | Один логический correlation identifier попытки, связывающий core Attempt, server stages, фактически сохранённые diagnostic evidence и относящиеся к попытке structured server events. | Promo/search session token или participant identity. |
 | Diagnostic evidence | Best-effort набор evidence, связанный с core Attempt; optional capture-derived media и доступ регулируются PRD `FR-DIAG-04..07` и `NFR-SEC-06`. Незавершённый set отображается как `incomplete`. | Core Attempt или разрешением ослабить защиту других data classes. |
-| Capture-derived media | Reference images, normalized images и face crops автоматической попытки. Media content само по себе не требует developer-only authorization; logging, caching, storage и public delivery разрешены, но не обязательны. | Commercial Photo originals/previews/teasers, personalized data, credentials или публичным MinIO. |
-| Structured log record | Неблокирующее browser/server событие, связанное с correlation ID; content и retention регулируются PRD `FR-DEV-04` и `NFR-DATA-01`. | Diagnostic artifact или долговременный calibration dataset. |
-| `Attempts` | Role-scoped UI для поиска попыток и investigation по attempt-level timeline, parameters, decisions, logs и artifacts; operator получает sanitized subset, developer — полный разрешённый detail. | `Log Explorer`, который ищет отдельные log records глобально. |
-| `Log Explorer` | Developer-only UI глобального поиска structured browser/server logs через backend/PostgreSQL с переходом к связанной attempt. | Прямым browser-доступом к PostgreSQL или отдельным observability datastore. |
+| Capture-derived media | Reference images, normalized images и face crops автоматической попытки. Logging, caching, storage и application delivery разрешены, но не обязательны; FT-009 structured server events не содержат media. | Commercial Photo originals/previews/teasers, personalized data, credentials или публичным MinIO. |
+| Structured server event / structured log record | Неблокирующая redacted PostgreSQL-запись важной server error или lifecycle boundary; содержит фиксированные поля и Attempt correlation context, когда он известен. | Diagnostic artifact, browser log, произвольным payload, полным потоком debug-сообщений или долговременным calibration dataset. |
+| `Attempts` | Основной role-scoped diagnostic UI: простой табличный поиск одной Attempt по `attempt_id` или `correlation_id` с состоянием, основными этапами и фактически сохранёнными diagnostic evidence. Operator получает sanitized subset, developer — разрешённый detail. | Универсальной diagnostic/analytics platform, generic query builder или поиском отдельных log records. |
+| Minimal server-event view | Developer-only FT-009 web page с ограниченными фильтрами по важным structured server events и переходом по известной correlation identity в `Attempts`. | Generic Log Explorer, live tail, dashboard, export, saved/full-text query, browser-log ingestion или отдельной observability platform. |
 | Annotation | Developer-only ground truth на уровне person/detection с разрешённым именем pilot participant и outcome `correct`, `wrong/false` или `missed`. | Автоматическим identity cluster или общей записью имени в technical logs. |
 | Promoted calibration case | Вручную выбранный воспроизводимый subset из PRD `NFR-DATA-03`, хранящийся до явного удаления. | Продлением retention всего diagnostic evidence set. |
 | `Calibration` | Developer-only UI, использующий annotated attempts для сравнения pipelines/releases/config sets и расчёта объяснимых recommendations. Run может занять общий `BackgroundPhotoWorker`; после interruption разработчик запускает его повторно вручную. | Автоматическим изменением serving settings, отдельной experimentation platform или отдельным Calibration worker. |

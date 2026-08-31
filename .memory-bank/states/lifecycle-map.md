@@ -1,7 +1,7 @@
 ---
 description: Canonical pilot lifecycles for Photo admission, processing, inventory visibility, purge, Promo and diagnostics.
 status: active
-last_updated: 2026-08-14
+last_updated: 2026-09-01
 source_of_truth:
   - .memory-bank/states/lifecycle-map.md
 ---
@@ -254,7 +254,7 @@ collecting -> complete | incomplete -> expired
 
 - An incomplete bundle retains an explicit gap reason. Participant flow and the
   core Attempt/outcome/snapshot do not depend on detailed evidence completion.
-- Technical browser/server logs expire after 30 days.
+- Structured server events expire after 30 days.
 - Ordinary Attempts and diagnostic evidence, including persisted
   capture-derived media, expire after 90 days.
 - Manual promotion preserves only the curated calibration subset named by PRD

@@ -1,7 +1,7 @@
 ---
 description: Product definition (C4 L1) for the Face Moment one-СПА pilot.
 status: draft
-last_updated: 2026-07-31
+last_updated: 2026-08-31
 ---
 # Face Moment Product
 
@@ -13,9 +13,9 @@ exit. A sensor-triggered display finds four valid low-quality teaser photos and
 continues the same short-lived result on the participant's phone through QR,
 without a new selfie.
 
-The pilot also gives the application developer a role-scoped diagnostic and
-calibration contour for explaining attempts and preparing manual face-match and
-input-quality setting changes.
+The pilot also gives the application developer exact Attempt investigation, a
+minimal view of important structured server events and a separate Calibration
+contour for preparing manual face-match and input-quality setting changes.
 
 The repository is no longer documentation-only: the verified Foundation
 supplies runnable backend, background-worker and realtime entrypoints plus the
@@ -32,9 +32,10 @@ runtime do not exist yet; the capabilities below remain the product to be built.
 - An operator can observe recent per-СПА photo activity, manage authorized
   inventory and Promo outcomes without receiving access to sensitive developer
   diagnostics.
-- A developer can correlate failures, latency and face-search decisions and
-  derive explainable, manually applied calibration recommendations, while
-  retaining project-wide inventory administration.
+- A developer can inspect one correlated Attempt, find important redacted
+  server events through a bounded web view and derive explainable, manually
+  applied calibration recommendations, while retaining project-wide inventory
+  administration.
 
 ## Audience
 
@@ -72,6 +73,9 @@ attached best-effort; an offline trigger may have no durable Attempt, while
 missing evidence for a server Attempt remains visibly `incomplete`. Authorized
 developers may annotate collected evidence and use it for explainable
 Calibration; recommendations never update serving settings automatically.
+The only global log view is a minimal developer-only server-event page
+over the existing PostgreSQL; its correlated records link back to the Attempt
+surface.
 
 ## Success Contract
 
@@ -158,6 +162,9 @@ Calibration; recommendations never update serving settings automatically.
   GPU-first deployment or an external observability stack without evidence.
 - Automatic application of Calibration recommendations or a general-purpose
   experimentation platform.
+- Generic/saved log queries, full-text search, live tail, dashboards, exports,
+  browser-log ingestion, diagnostic read models or a separate observability
+  datastore/platform.
 - Backup, replication or recovery after irreversible loss of the only primary
   disk/server; the controlled pilot accepts that data-loss risk.
 

@@ -1,7 +1,7 @@
 ---
 description: Implementation plan for sensor-triggered reference capture and attempt control in FT-003.
 status: active
-last_updated: 2026-08-16
+last_updated: 2026-09-01
 ---
 # IMPL-FT-003 — Sensor-Triggered Capture And Attempt Control
 
@@ -18,7 +18,8 @@ mandatory offline-metadata delivery path.
 
 ## Normative Basis
 
-- [FT-003](../../features/FT-003.md): `FT-003-AC-001..020` and its governing
+- [FT-003](../../features/FT-003.md): `FT-003-AC-001..017` plus
+  `FT-003-AC-019..020` and their governing
   `REQ-*` set.
 - [System Architecture](../../architecture/system-architecture.md): AD-001,
   AD-002, AD-006, AD-009, AD-010 and `Deployment And Recovery`.
@@ -179,7 +180,8 @@ scope.
 ## Definition Of Done
 
 All twenty-six indexed tasks independently satisfy their exact owned claims
-and tier obligations, every `FT-003-AC-001..020` has one and only one task
+and tier obligations, every `FT-003-AC-001..017` and
+`FT-003-AC-019..020` has one and only one task
 owner, every root retains the completed Foundation gate directly or
 transitively, the review-directed dependencies and disposable-probe semantics
 hold, and a fresh `/review-tasks-plan FT-003` can evaluate the queue at Global
