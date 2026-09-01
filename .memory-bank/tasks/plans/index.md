@@ -12,3 +12,5 @@ status: active
 - [IMPL-FT-005](IMPL-FT-005.md): truthful Promo presentation, display outcome and visible-QR acceptance.
 - [IMPL-FT-006](IMPL-FT-006.md): QR phone continuation and personalized-session expiry.
 - [IMPL-FT-007](IMPL-FT-007.md): correlated Attempt evidence and owner-ordered retention.
+- [IMPL-FT-008](IMPL-FT-008.md): role-scoped Attempt investigation.
+- [IMPL-FT-009](IMPL-FT-009.md): non-blocking structured server events, bounded developer search and expiry.

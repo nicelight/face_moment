@@ -65,10 +65,7 @@ export function createTerminalCompatibilityChecks(context) {
       });
     }
   
-    // done_for_prod is an explicit development closure with production-only
-    // acceptance still deferred. Do not demand a fabricated development PASS
-    // or semantic verdict for that deferred boundary.
-    if (task.status === 'in_progress' || task.status === 'done_for_prod') return;
+    if (task.status === 'in_progress') return;
   
     if (!hasTaskStatusEvidence(task, task.status) && !hasProtocolOrArtifactStatusEvidence(id, task.status)) {
       const code = DONE_STATUSES.has(task.status) ? 'TASK_DONE_EVIDENCE_MISSING' : 'TASK_FAILED_EVIDENCE_MISSING';

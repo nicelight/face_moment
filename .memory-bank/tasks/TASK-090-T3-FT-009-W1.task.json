@@ -1,0 +1,115 @@
+{
+  "id": "TASK-090-T3-FT-009-W1",
+  "title": "Collect structured server events without blocking participant flow",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-009",
+  "reqs": [
+    "REQ-LOG-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-081-T3-FT-006-W2",
+    "TASK-085-T2-FT-007-W3",
+    "TASK-086-T3-FT-007-W3"
+  ],
+  "touched_files": [
+    "migrations/versions/0018_structured_server_events.py",
+    "src/face_moment/diagnostics/server_events.py",
+    "src/face_moment/diagnostics/__init__.py",
+    "src/face_moment/promo/realtime_orchestration.py",
+    "src/face_moment/promo/display_outcome.py",
+    "src/face_moment/promo/qr_continuation.py",
+    "src/face_moment/entrypoints/common.py",
+    "src/face_moment/entrypoints/backend.py",
+    "src/face_moment/entrypoints/realtime.py",
+    "tests/diagnostics/test_server_events.py",
+    "tests/promo/test_server_event_emission.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Structured server-event collection tests",
+      "command": "docker compose run --rm backend python -m pytest tests/diagnostics/test_server_events.py tests/promo/test_server_event_emission.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-009.md",
+    ".memory-bank/domains/structured-server-events.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/tasks/plans/IMPL-FT-009.md"
+  ],
+  "evidence_required": [
+    "FT-009-AC-002 RED: no diagnostics-owned structured server-event table/emitter or production producer wiring exists, so important lifecycle/error events are not retained and sink latency/failure cannot be shown independent of capture, search, Promo or QR; GREEN: the next-linear owner migration, fixed typed catalog, capacity-256 non-waiting emitter, isolated writer session and accepted producer seams persist allowed rows while blocked/full/failed sinks leave every caller transaction, response and participant outcome unchanged without retry; decisive comparison: every catalog code plus held-sink, full-queue and database-failure cases against unchanged owner state/outcome and a forbidden-field inventory; artifact: migration, runtime-isolation and redaction evidence under .tasks/TASK-090-T3-FT-009-W1/."
+  ],
+  "purpose": "Create the smallest diagnostics-owned runtime collection boundary that retains useful fixed server events without placing PostgreSQL latency, failure or protected payloads on participant-critical paths.",
+  "success_outcome": "Every accepted event code can be persisted as the exact redacted row through an isolated non-waiting writer, while unavailable capacity or storage changes no capture/search/Promo/QR behavior.",
+  "anti_goals": [
+    "Do not ingest browser logs, attach arbitrary messages/payloads, capture the Python root logger or serialize exceptions/request bodies.",
+    "Do not add a broker, reliable outbox, delivery retry, internal scheduler, new runtime role, second datastore or shutdown-drain guarantee.",
+    "Do not implement the staff search page, FT-008 navigation, 30-day deletion, annotations, Calibration or production configuration."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production PostgreSQL rows, staff/display credentials, participant data and unredacted retained task artifacts",
+      "Direct producer writes to diagnostics tables and mutation of Promo/QR/Attempt outcomes for logging",
+      "Browser logging, generic logger capture, event broker/outbox, FT-009 staff UI/retention and FT-010/FT-011 behavior"
+    ],
+    "stop_conditions": [
+      "The fixed envelope cannot exclude arbitrary payloads and every forbidden data class before enqueue.",
+      "Blocked/full/failed persistence cannot remain isolated from caller latency, transaction and participant outcome without a broker, reliable queue or new architecture edge.",
+      "Producer wiring would require direct diagnostics-table access, a new capability owner or a new module dependency outside the accepted Boundary Map.",
+      "T3 runtime/redaction probes cannot use disposable database state, synthetic identifiers, safe rerun and fully redacted artifacts."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-009.md#FT-009-AC-002",
+    ".protocols/FT-009/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-009.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/structured-server-events.md#postgresql-shape-and-search-projection",
+    ".memory-bank/domains/structured-server-events.md#event-catalog-and-producer-boundary",
+    ".memory-bank/domains/structured-server-events.md#non-blocking-emission",
+    ".memory-bank/domains/structured-server-events.md#redaction-and-validation",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/contracts/boundary-map.md#diagnostic-evidence-and-access",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/testing/client-realtime.md#data-policy-checks"
+  ],
+  "constraints": [
+    "Primary owner and code root are diagnostics at src/face_moment/diagnostics/; promo producers use only the existing application boundary and entrypoints bind lifecycle adapters without selecting or writing events.",
+    "Use exactly the fixed catalog, envelope and capacity-256 non-waiting FIFO; producers cannot override severity/component or attach free-form context.",
+    "Resolve the actual direct Alembic predecessor after migration 0017 and prove only this revision's upgrade/downgrade, schema transition and data preservation on a disposable database.",
+    "Emit only after the corresponding owner state/outcome is known; event failure never rolls back, retries or changes that owner result.",
+    "Use a held writer latch rather than an arbitrary millisecond threshold to prove non-blocking completion, and retain only synthetic redacted evidence."
+  ],
+  "invariants": [
+    "Diagnostics alone validates and writes server-event rows; one shared database schema does not grant producers direct write authority.",
+    "Queue or sink latency, capacity exhaustion, database failure and shutdown may lose an event but never wait, retry or alter capture/search/Promo/QR.",
+    "Stored rows contain only the fixed typed fields; credentials, auth state, participant/session data, media, embeddings, bodies, arbitrary payloads and tracebacks never enter the envelope.",
+    "Attempt identities are nullable logical references without cross-owner cascade; uncorrelated server events remain valid."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-009.md#FT-009-AC-002",
+    "Disposable migration/repository fixtures prove exact table fields, constraints, indexes, fixed catalog, immutable projections, restart persistence and no ownership-crossing foreign-key cascade.",
+    "A per-code producer matrix proves fixed severity/component/correlation and complete forbidden-field absence without browser ingestion or arbitrary logger capture.",
+    "Held-sink, full-queue and failed-database integrations prove caller completion and unchanged Attempt/result/display/QR state and responses before persistence release, with no retry or owner rollback.",
+    "Ownership/import inspection proves diagnostics-only persistence, accepted promo -> diagnostics calls, adapter-only entrypoints and no broker, outbox, scheduler, new runtime role or second store."
+  ]
+}

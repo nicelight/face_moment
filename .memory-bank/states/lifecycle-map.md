@@ -249,7 +249,9 @@ Sources: [IDEA_CLIENT.md](../../IDEA_CLIENT.md) and
 ## Diagnostic And Calibration Retention
 
 ```text
-collecting -> complete | incomplete -> expired
+collecting -> complete | incomplete
+complete | incomplete -- ordinary retention --> expired
+complete | incomplete -- explicit diagnostics removal --> removed
 ```
 
 - An incomplete bundle retains an explicit gap reason. Participant flow and the
@@ -257,6 +259,13 @@ collecting -> complete | incomplete -> expired
 - Structured server events expire after 30 days.
 - Ordinary Attempts and diagnostic evidence, including persisted
   capture-derived media, expire after 90 days.
+- `diagnostics` alone may create `removed` through the irreversible owner
+  transition in
+  [Diagnostic Evidence](../domains/diagnostic-evidence.md#explicit-ordinary-removal-transition).
+  The transition retains provenance, exposes no public FT-008 mutation route,
+  rejects stale ordinary writes and never aliases explicit removal to expiry.
+  Later ordinary retention may delete the old core Attempt through `promo`, but
+  cannot restore removed content.
 - Manual promotion preserves only the curated calibration subset named by PRD
   `NFR-DATA-03` until explicit deletion; it does not extend the whole ordinary
   bundle or its Promo screenshot.
@@ -269,6 +278,11 @@ collecting -> complete | incomplete -> expired
 - Retention cleanup adds no separate lifecycle. Its ownership, observable
   result and safe-rerun contract are defined in the
   [boundary map](../contracts/boundary-map.md).
+- Structured server events have no per-row lifecycle beyond retained versus
+  deleted: the diagnostics owner deletes rows strictly before the fixed cutoff,
+  including uncorrelated rows, and current/stale search cannot reconstruct
+  them. Exact shape and deletion proof are defined by
+  [Structured Server Events](../domains/structured-server-events.md#retention-boundary).
 
 Sources: [IDEA_DEBUG.md](../../IDEA_DEBUG.md),
 [IDEA_CLIENT.md](../../IDEA_CLIENT.md) and clarified

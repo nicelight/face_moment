@@ -1,0 +1,122 @@
+{
+  "id": "TASK-091-T3-FT-009-W2",
+  "title": "Expose developer-only bounded server-event search",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-009",
+  "reqs": [
+    "REQ-LOG-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-089-T3-FT-008-W2",
+    "TASK-090-T3-FT-009-W1"
+  ],
+  "touched_files": [
+    "src/face_moment/diagnostics/server_events.py",
+    "src/face_moment/diagnostics/server_event_search.py",
+    "src/face_moment/diagnostics/http.py",
+    "src/face_moment/diagnostics/__init__.py",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/diagnostics/test_server_event_search.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Developer server-event search tests",
+      "command": "docker compose run --rm backend python -m pytest tests/diagnostics/test_server_event_search.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-009.md",
+    ".memory-bank/contracts/server-event-api.md",
+    ".memory-bank/domains/structured-server-events.md",
+    ".memory-bank/contracts/attempt-investigation-api.md",
+    ".memory-bank/domains/staff-access.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/tasks/plans/IMPL-FT-009.md"
+  ],
+  "evidence_required": [
+    "FT-009-AC-001 RED: no developer-only in-application server-event page exposes the accepted bounded fields or FT-008 navigation; GREEN: GET /staff/server-events applies the exact default/custom time, severity, component, event-code and exact Attempt/correlation filters, deterministic cap/order, developer-only current authorization, no-store rendering and accepted FT-008 links while every other role/direct/stale request discloses no rows; decisive comparison: seeded boundary/filter cases and the same synthetic rows requested by current developer, operator, photographer, unauthenticated, revoked and downgraded sessions plus browser navigation; artifact: filter, authorization and playwright evidence under .tasks/TASK-091-T3-FT-009-W2/.",
+    "FT-009-AC-004 RED: no page can show an important uncorrelated event without inventing an Attempt association; GREEN: rows with neither identity remain searchable and render no link, attempt_id rows use FT-008 detail, and correlation-only rows use the exact FT-008 correlation filter without a promo-table read; decisive comparison: all three identity shapes against rendered fields/links and provider call traces; artifact: correlation-shape evidence under .tasks/TASK-091-T3-FT-009-W2/.",
+    ".memory-bank/contracts/server-event-api.md#invalid-filter-response RED: no FT-009 adapter rejects every unknown, repeated, malformed, lone-time-bound and invalid/oversized-range class before persistence access; GREEN: each class returns no-store 422 with zero repository calls; decisive comparison: per-class status/header/body and provider spy count fixed at zero; artifact: focused invalid-filter evidence under .tasks/TASK-091-T3-FT-009-W2/.",
+    ".memory-bank/contracts/server-event-api.md#sanitized-internal-failure-response RED: no FT-009 adapter sanitizes event repository or HTML-render failures; GREEN: both injected branches return no-store 500 while response, server output and retained artifacts contain no traceback, cookie, credential, arbitrary payload or participant data; decisive comparison: injected branch/status/header/body plus redaction scan; artifact: focused internal-failure evidence under .tasks/TASK-091-T3-FT-009-W2/."
+  ],
+  "purpose": "Deliver the complete minimal FT-009 investigation page while enforcing developer-only current authorization and preserving FT-008 as the sole Attempt detail owner.",
+  "success_outcome": "An authorized developer can search at most 100 recent fixed-field event rows through the exact bounded route, follow truthful FT-008 navigation when correlation exists and see uncorrelated events without an invented link, while every denied or stale request reveals nothing protected.",
+  "anti_goals": [
+    "Do not add a JSON API, event detail route, read model, pagination, arbitrary sort/query, full text, saved query, live tail, dashboard or export.",
+    "Do not embed FT-008 detail, read promo tables, validate correlation by foreign access or expose DiagnosticEvidence, annotations, Calibration, media or personalized sessions.",
+    "Do not add roles, generic RBAC, unsafe mutation/CSRF surface, production credentials/configuration or retention deletion."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production staff credentials, server-event rows and unredacted retained browser/task artifacts",
+      "Promo Attempt/result/session writes, direct promo-table reads and FT-008 route/projection changes",
+      "Server-event collection/runtime, 30-day deletion, FT-010 annotations, FT-011 Calibration and new media delivery"
+    ],
+    "stop_conditions": [
+      "Business authorization/filtering cannot remain diagnostics-owned with platform/auth limited to current-principal authentication.",
+      "A correct page would require a JSON API, detail/read-model table, arbitrary query surface, new role or direct diagnostics read of promo tables.",
+      "Correlated navigation cannot reuse the exact existing FT-008 routes without changing their contract or disclosing target existence.",
+      "T3 authorization/browser probes cannot use disposable principals/rows, controlled downgrade/revocation, safe rerun, redacted artifacts and complete cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-009.md#FT-009-AC-001",
+    ".memory-bank/features/FT-009.md#FT-009-AC-004",
+    ".memory-bank/contracts/server-event-api.md#invalid-filter-response",
+    ".memory-bank/contracts/server-event-api.md#sanitized-internal-failure-response",
+    ".protocols/FT-009/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-009.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/server-event-api.md#staff-route-and-filters",
+    ".memory-bank/contracts/server-event-api.md#html-projection-and-ft-008-navigation",
+    ".memory-bank/contracts/server-event-api.md#invalid-filter-response",
+    ".memory-bank/contracts/server-event-api.md#sanitized-internal-failure-response",
+    ".memory-bank/domains/structured-server-events.md#postgresql-shape-and-search-projection",
+    ".memory-bank/contracts/attempt-investigation-api.md#staff-routes-and-filters",
+    ".memory-bank/domains/staff-access.md#browser-session-contract",
+    ".memory-bank/contracts/boundary-map.md#dependency-graph",
+    ".memory-bank/contracts/boundary-map.md#diagnostic-evidence-and-access",
+    ".memory-bank/contracts/boundary-map.md#authentication-and-data-specific-delivery",
+    ".memory-bank/contracts/boundary-map.md#http-failure-contract",
+    ".memory-bank/testing/index.md#ui-verification"
+  ],
+  "constraints": [
+    "Primary owner and code root are diagnostics at src/face_moment/diagnostics/; the adapter obtains the current principal across diagnostics -> staff_access and backend only registers it.",
+    "Use only GET /staff/server-events with server-rendered no-store HTML, the exact filters/default interval/range cap and at most 100 newest rows.",
+    "Use existing GET /staff/attempts/{attempt_id} and GET /staff/attempts?correlation_id=... links exactly; FT-008 reevaluates authorization and target state.",
+    "Use playwright cli for the real filter/table/navigation and stale-role/stale-retention journey, storing only redacted synthetic transcript/screenshots under .tasks/TASK-091-T3-FT-009-W2/.",
+    "Use disposable developer/operator/photographer principals and synthetic event rows with known initial state, role downgrade/revocation, safe rerun and cleanup limited to those fixtures."
+  ],
+  "invariants": [
+    "Current authentication and developer role are evaluated on every request; copied URLs and browser history grant no authority.",
+    "Diagnostics filters and renders only its immutable event projections; it never reads or writes promo tables and FT-008 remains the Attempt detail owner.",
+    "A missing correlation stays missing and has no link; a present identity is rendered exactly without participant/session payload.",
+    "Every response is no-store and exposes only fixed event fields; deleted/denied rows cannot reappear through stale browser content."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-009.md#FT-009-AC-001",
+    ".memory-bank/features/FT-009.md#FT-009-AC-004",
+    ".memory-bank/contracts/server-event-api.md#invalid-filter-response",
+    ".memory-bank/contracts/server-event-api.md#sanitized-internal-failure-response",
+    "Focused repository/HTML fixtures prove exact default/custom time and field filters, conjunctive behavior, deterministic ties, 100-row cap, fixed columns and no-store responses.",
+    "T3 authorization matrix proves developer access and operator/photographer/unauthenticated/revoked/downgraded denial without existence disclosure or stale protected content.",
+    "Identity-shape fixtures and playwright cli prove FT-008 detail link, correlation-query link and truthful no-link behavior without a promo-table read.",
+    "Failure injection proves every invalid filter returns no-query 422 and repository/render failures return redacted 500, with no protected values in responses, output or artifacts."
+  ]
+}

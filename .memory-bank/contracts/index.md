@@ -6,6 +6,8 @@ status: active
 
 - [Boundary Map](boundary-map.md): capability ownership, public boundaries and
   cross-slice write rules.
+- [Attempt Investigation API](attempt-investigation-api.md): exact role-scoped
+  Attempts filters, list/detail page, projections and failures.
 - [Client Diagnostic API](client-diagnostic-api.md): authenticated best-effort
   browser response-receipt marker for one admitted core Attempt.
 - [Diagnostic Retention API](diagnostic-retention-api.md): owner-ordered cleanup
@@ -20,5 +22,7 @@ status: active
   session-wide browser access, protected phone reads and expiry redirects.
 - [Realtime Attempt API](realtime-attempt-api.md): proposal-attempt multipart
   request, validation, idempotency and outcomes.
+- [Server Event API](server-event-api.md): developer-only bounded structured
+  server-event filters, HTML projection, FT-008 navigation and failures.
 - [Sensor Passage API](sensor-passage-api.md): browser-to-ESP32 long-poll,
   authentication, CORS and event response.

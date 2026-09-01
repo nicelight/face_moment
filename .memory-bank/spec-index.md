@@ -1,7 +1,7 @@
 ---
 description: Pure SDD spec registry and planned-spec index.
 status: active
-last_updated: 2026-08-25
+last_updated: 2026-09-01
 source_of_truth:
   - .memory-bank/spec-index.md
 ---
@@ -21,6 +21,7 @@ source_of_truth:
 | glossary | [.memory-bank/glossary.md](glossary.md) | active | Canonical Face Moment vocabulary and disambiguation rules. | /brief, /spec-init, or /spec-design |
 | architecture | [.memory-bank/architecture/system-architecture.md](architecture/system-architecture.md) | active | Accepted greenfield system shape, capability ownership and Architecture Spine. | /spec-design |
 | contract | [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md) | active | Canonical capability/application boundaries, write authority and cross-slice orchestration. | /spec-design or /feature-to-tasks |
+| contract | [.memory-bank/contracts/attempt-investigation-api.md](contracts/attempt-investigation-api.md) | active | Exact role-scoped Attempts filters, staff list/detail projection and failure contract. | /feature-to-tasks |
 | contract | [.memory-bank/contracts/client-diagnostic-api.md](contracts/client-diagnostic-api.md) | active | Authenticated best-effort client response-timing report for one admitted core Attempt. | /feature-to-tasks |
 | contract | [.memory-bank/contracts/diagnostic-retention-api.md](contracts/diagnostic-retention-api.md) | active | Owner-ordered cleanup command and authorized latest-result read surface. | /feature-to-tasks |
 | contract | [.memory-bank/contracts/photo-admission-api.md](contracts/photo-admission-api.md) | active | Exact authenticated staff uploader, independent per-file response, failure and UI contract. | /feature-to-tasks |
@@ -29,13 +30,15 @@ source_of_truth:
 | contract | [.memory-bank/contracts/qr-continuation-api.md](contracts/qr-continuation-api.md) | active | Exact public QR ticket exchange, shared browser access, phone-session/media and expiry contract. | /feature-to-tasks |
 | contract | [.memory-bank/contracts/sensor-passage-api.md](contracts/sensor-passage-api.md) | active | Exact central-origin browser to ESP32 long-poll, event, CORS and Bearer contract. | /feature-to-tasks |
 | contract | [.memory-bank/contracts/realtime-attempt-api.md](contracts/realtime-attempt-api.md) | active | Exact proposal-attempt endpoint, multipart serialization, validation, idempotency and typed outcome contract. | /feature-to-tasks |
+| contract | [.memory-bank/contracts/server-event-api.md](contracts/server-event-api.md) | active | Exact developer-only bounded structured server-event search page, FT-008 navigation and failure contract. | /feature-to-tasks |
 | data | [.memory-bank/domains/photo-admission.md](domains/photo-admission.md) | active | Photo/original/serving-pending persistence, duplicate arbitration, transaction and crash recovery. | /feature-to-tasks |
 | data | [.memory-bank/domains/photo-processing.md](domains/photo-processing.md) | active | Compatible pipeline revision, background processing, derivatives/faces, searchable truth, recovery and SLO projection. | /feature-to-tasks |
 | data | [.memory-bank/domains/staff-access.md](domains/staff-access.md) | active | Staff principals, roles, password hashes, server sessions, CSRF and credential lifecycle. | /feature-to-tasks |
 | data | [.memory-bank/domains/display-client-access.md](domains/display-client-access.md) | active | Serving-control display-client identity, retrievable Admin-visible token plus authentication hash, manual kiosk handoff and lifecycle. | /feature-to-tasks |
-| data | [.memory-bank/domains/diagnostic-evidence.md](domains/diagnostic-evidence.md) | active | Diagnostics-owned versioned evidence bundle, completeness, promoted subset and retention boundary. | /feature-to-tasks |
+| data | [.memory-bank/domains/diagnostic-evidence.md](domains/diagnostic-evidence.md) | active | Diagnostics-owned versioned evidence bundle, completeness, explicit ordinary removal, promoted subset and retention boundary. | /feature-to-tasks |
 | data | [.memory-bank/domains/promo-attempt.md](domains/promo-attempt.md) | active | Promo-owned core Attempt, result/session, display and shared QR browser-access state. | /feature-to-tasks |
 | data | [.memory-bank/domains/realtime-search.md](domains/realtime-search.md) | active | Server-authoritative reference-query selection, immutable search context and compatible exact search. | /feature-to-tasks |
+| data | [.memory-bank/domains/structured-server-events.md](domains/structured-server-events.md) | active | Diagnostics-owned fixed server-event shape/catalog, non-blocking persistence, redaction and 30-day expiry. | /feature-to-tasks |
 | state | [.memory-bank/states/lifecycle-map.md](states/lifecycle-map.md) | active | Canonical pilot lifecycle and recovery rules. | /spec-design or /feature-to-tasks |
 | foundation | [.memory-bank/foundation.md](foundation.md) | active | Explicit Foundation Dev Path decision and minimum substrate evidence. | /spec-design or /foundation-to-tasks |
 | testing | [.memory-bank/testing/index.md](testing/index.md) | active | Bootstrap verification contract and project quality-gate router. | /spec-design or /foundation-to-tasks |

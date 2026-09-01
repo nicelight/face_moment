@@ -29,7 +29,7 @@ One next-linear Alembic revision creates:
 | `attempt_id` | Unique promo-owned server Attempt UUID used as a logical cross-owner reference. It has no ownership-crossing delete cascade. |
 | `schema_version` | Positive integer; current value is `1`. |
 | `completeness` | `incomplete \| complete`. |
-| `gap_reason` | Required non-empty bounded text for `incomplete`; null for `complete`. |
+| `gap_reason` | Required non-empty bounded text for `incomplete`; null for `complete`. Reserved `ordinary_removed` is the durable explicit-removal marker. |
 | `issue_tags` | JSON array of unique bounded machine tags used by later diagnostics filtering. |
 | `ordinary_manifest` | Nullable JSONB versioned evidence bundle; cleared by ordinary retention expiry. |
 | `promoted_subset` | Nullable JSONB curated Calibration subset retained until explicit deletion. |
@@ -168,6 +168,50 @@ Read projection composes this bundle with the immutable promo Attempt through
 the accepted `diagnostics -> promo` boundary. Missing core detail after its
 ordinary retention expiry remains truthfully unavailable; a promoted subset
 does not recreate the expired ordinary Attempt.
+
+## Explicit Ordinary Removal Transition
+
+`diagnostics` owns one irreversible, idempotent ordinary-removal transition for
+an existing evidence row. It is an internal application/repository boundary,
+not an FT-008 HTTP mutation route. Given an existing `attempt_id`, it atomically:
+
+- clears `ordinary_manifest` and any diagnostics-owned ordinary artifact
+  references;
+- sets `completeness=incomplete`, `gap_reason=ordinary_removed` and
+  `finalized_at=null`;
+- leaves `ordinary_expired_at` null so explicit removal remains distinct from
+  scheduled retention expiry;
+- preserves row identity, schema version, bounded issue tags and any separately
+  authorized `promoted_subset`.
+
+An absent evidence row cannot transition to `removed`; it remains an absent/
+`incomplete` projection. Repeating the same removal is a no-op success. Later
+ordinary write, patch or finalization attempts MUST reject the reserved
+`ordinary_removed` state, so stale producers cannot recreate content. Existing
+retention may later delete the old promo-owned core Attempt under its owner
+boundary, but neither cleanup nor promotion restores removed ordinary detail.
+FT-008 adds no public removal control, new column or new artifact storage.
+
+## Investigation Read Projection
+
+The role-scoped [Attempt Investigation API](../contracts/attempt-investigation-api.md)
+derives ordinary-evidence availability only from current diagnostics-owned
+truth:
+
+- no row, or a readable row marked `incomplete`, projects `incomplete`;
+- readable `complete` content projects `complete`;
+- absent ordinary content with `ordinary_expired_at` projects `expired`;
+- a row in the reserved `gap_reason=ordinary_removed` owner state, with absent
+  ordinary content and no expiry marker, projects `removed`.
+
+The last shape is reachable only through the
+[Explicit Ordinary Removal Transition](#explicit-ordinary-removal-transition).
+Current and stale reads MUST NOT expose
+ordinary content after either `expired` or `removed`. `promoted_subset` is
+excluded from FT-008 and cannot recreate ordinary detail. Operator reads expose
+only the availability label and merged bounded issue tags; authorized developer
+reads may additionally expose the allowed ordinary manifest, completeness and
+gap fields described by the staff contract.
 
 ## Promoted Subset
 

@@ -1,0 +1,146 @@
+{
+  "id": "TASK-089-T3-FT-008-W2",
+  "title": "Expose role-scoped Attempts investigation",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-008",
+  "reqs": [
+    "REQ-DIAG-001",
+    "REQ-DIAG-003",
+    "REQ-DATA-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-085-T2-FT-007-W3",
+    "TASK-086-T3-FT-007-W3",
+    "TASK-088-T2-FT-008-W1"
+  ],
+  "touched_files": [
+    "src/face_moment/diagnostics/attempt_investigation.py",
+    "src/face_moment/diagnostics/evidence.py",
+    "src/face_moment/diagnostics/http.py",
+    "src/face_moment/diagnostics/__init__.py",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/diagnostics/test_attempt_investigation.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Role-scoped Attempt investigation tests",
+      "command": "docker compose run --rm backend python -m pytest tests/diagnostics/test_attempt_investigation.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-008.md",
+    ".memory-bank/contracts/attempt-investigation-api.md",
+    ".memory-bank/domains/diagnostic-evidence.md",
+    ".memory-bank/domains/staff-access.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/tasks/plans/IMPL-FT-008.md"
+  ],
+  "evidence_required": [
+    "FT-008-AC-001 RED: no staff Attempts list/detail surface composes the accepted promo query with DiagnosticEvidence, so exact IDs, time/state filters, stages, durations and all three client markers are unavailable in one investigation flow; GREEN: the exact staff routes render bounded filter/table/detail results with complete existing core/evidence fields and deterministic no-store behavior; decisive comparison: seeded exact-ID/time/state cases and rendered fields against owner projections; artifact: focused API/HTML/browser evidence under .tasks/TASK-089-T3-FT-008-W2/.",
+    "FT-008-AC-002 + FT-008-AC-004 RED: no FT-008 route currently enforces the operator-sanitized versus photographer-denied field matrix, including copied URLs and role downgrade; GREEN: operator list/detail contains only identifiers, outcome/timeline/latency/issue tags and availability while photographer, unauthenticated and downgraded requests receive current 401|403 without protected fields or existence disclosure; decisive comparison: same disposable Attempts requested under each current principal plus stale direct-link/browser state; artifact: authorization matrix and browser transcript/screenshots under .tasks/TASK-089-T3-FT-008-W2/.",
+    "FT-008-AC-003 RED: an authorized developer has no in-application Attempt investigation page for existing ordinary evidence; GREEN: developer detail adds only the accepted ordinary manifest/completeness/gap fields and excludes promoted subsets, participant names/annotations, Calibration, server events, personalized sessions, commercial Photo media and new artifact navigation; decisive comparison: complete, partial and absent evidence fixtures with exact response/render field inventory; artifact: developer projection evidence under .tasks/TASK-089-T3-FT-008-W2/.",
+    "FT-008-AC-005 RED: no accepted owner transition creates the distinct removed state and no staff projection proves incomplete, expired and removed semantics or stale-route isolation; GREEN: the diagnostics-owned irreversible/idempotent transition creates removed on the existing row shape, rejects stale ordinary writes, preserves only allowed provenance/promoted subset, and complete/incomplete/expired/removed fixtures render distinct states with no expired or removed content through current/direct/stale reads; decisive comparison: owner-operation before/equal-repeat/stale-write state reads plus HTML/content absence; artifact: evidence-state and owner-transition matrix under .tasks/TASK-089-T3-FT-008-W2/.",
+    ".memory-bank/contracts/attempt-investigation-api.md#missing-attempt-response RED: the FT-008 detail route is absent and therefore has no bounded missing-identity response; GREEN: an authorized missing server attempt_id returns 404 with no-store and no evidence-derived reconstruction or extra existence detail; decisive comparison: existing versus absent disposable identity response/status/body and provider/evidence call trace; artifact: focused missing-detail HTTP evidence under .tasks/TASK-089-T3-FT-008-W2/.",
+    ".memory-bank/contracts/attempt-investigation-api.md#invalid-filter-response RED: no FT-008 adapter rejects the accepted malformed, unknown, repeated, unsupported and invalid-range filter classes before provider access; GREEN: each class returns 422 with no-store and zero promo-query calls; decisive comparison: per-class request/status/body plus a provider spy count fixed at zero; artifact: focused invalid-filter HTTP evidence under .tasks/TASK-089-T3-FT-008-W2/.",
+    ".memory-bank/contracts/attempt-investigation-api.md#sanitized-internal-failure-response RED: no FT-008 adapter sanitizes provider, evidence-read or HTML-render failures; GREEN: each injected branch returns no-store 500 while response, logs and retained artifacts contain no traceback, cookie, credential, protected manifest or participant data; decisive comparison: injected branch/status/body/header plus redaction scan; artifact: focused internal-failure HTTP evidence under .tasks/TASK-089-T3-FT-008-W2/."
+  ],
+  "purpose": "Deliver the complete FT-008 staff investigation experience while enforcing the current role on every read and exposing only truthful owner-provided Attempt/evidence state.",
+  "success_outcome": "Operators and developers can find and inspect existing Attempts through the exact staff routes with their accepted projections, while photographers, invalid or downgraded principals and stale routes disclose no unauthorized or expired/removed detail.",
+  "anti_goals": [
+    "Do not add a JSON API, materialized read model, arbitrary query builder, pagination, export or live-tail surface.",
+    "Do not expose promoted subsets, annotations, Calibration, FT-009 server events, personalized sessions or commercial Photo media.",
+    "Do not add a public removal endpoint, non-owner evidence writes, new roles, generic RBAC, media delivery, migrations or production configuration."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production staff credentials, operator/default Attempts/evidence and retained protected task artifacts",
+      "Promo Attempt/result/session writes, public/non-owner evidence mutation and database migrations",
+      "FT-009 logs, FT-010 annotations, FT-011 Calibration, promoted-subset UI and new media delivery"
+    ],
+    "stop_conditions": [
+      "Business authorization or evidence projection cannot remain owned by diagnostics with platform/auth limited to authentication.",
+      "A correct surface would require a new role, public identity, table/migration, JSON API or direct diagnostics read of promo tables.",
+      "The reserved existing-shape removal transition cannot remain diagnostics-owned, irreversible, idempotent and protected from stale ordinary writes.",
+      "T3 authorization/evidence probes cannot use disposable principals/rows with known state, safe rerun, redacted artifacts and complete cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-008.md#FT-008-AC-001",
+    ".memory-bank/features/FT-008.md#FT-008-AC-002",
+    ".memory-bank/features/FT-008.md#FT-008-AC-003",
+    ".memory-bank/features/FT-008.md#FT-008-AC-004",
+    ".memory-bank/features/FT-008.md#FT-008-AC-005",
+    ".memory-bank/domains/diagnostic-evidence.md#explicit-ordinary-removal-transition",
+    ".memory-bank/contracts/attempt-investigation-api.md#missing-attempt-response",
+    ".memory-bank/contracts/attempt-investigation-api.md#invalid-filter-response",
+    ".memory-bank/contracts/attempt-investigation-api.md#sanitized-internal-failure-response",
+    ".protocols/FT-008/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-008.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/attempt-investigation-api.md#staff-routes-and-filters",
+    ".memory-bank/contracts/attempt-investigation-api.md#role-scoped-html-projection",
+    ".memory-bank/contracts/attempt-investigation-api.md#evidence-availability",
+    ".memory-bank/contracts/attempt-investigation-api.md#missing-attempt-response",
+    ".memory-bank/contracts/attempt-investigation-api.md#invalid-filter-response",
+    ".memory-bank/contracts/attempt-investigation-api.md#sanitized-internal-failure-response",
+    ".memory-bank/domains/diagnostic-evidence.md#explicit-ordinary-removal-transition",
+    ".memory-bank/domains/diagnostic-evidence.md#investigation-read-projection",
+    ".memory-bank/domains/staff-access.md#browser-session-contract",
+    ".memory-bank/contracts/boundary-map.md#dependency-graph",
+    ".memory-bank/contracts/boundary-map.md#diagnostic-evidence-and-access",
+    ".memory-bank/states/lifecycle-map.md#core-attempt-and-diagnostic-evidence",
+    ".memory-bank/states/lifecycle-map.md#diagnostic-and-calibration-retention",
+    ".memory-bank/testing/client-realtime.md#required-proof",
+    ".memory-bank/testing/index.md#ui-verification"
+  ],
+  "constraints": [
+    "Primary owner and code root are diagnostics at src/face_moment/diagnostics/; its HTTP adapter obtains the current principal across the registered diagnostics -> staff_access edge, backend only registers the adapter, and promo supplies immutable projections.",
+    "Use only GET /staff/attempts and GET /staff/attempts/{attempt_id}; both responses are no-store and add no unsafe/CSRF mutation.",
+    "Use playwright cli for the real-browser filter/table/detail and stale-role flow, storing transcript and screenshots under .tasks/TASK-089-T3-FT-008-W2/.",
+    "Use disposable operator/developer/photographer principals and Attempt/evidence rows with known initial state, controlled role downgrade, safe rerun and cleanup limited to those fixtures.",
+    "Create removed only through the diagnostics owner transition, prove equal repeat and stale-write rejection, and add no public mutation route or new schema field.",
+    "Protect retained task artifacts: no cookies, credentials, protected manifests, participant data or unredacted response dumps."
+  ],
+  "invariants": [
+    "Current authentication and role are evaluated for every request; copied URLs and browser history grant no authority.",
+    "Diagnostics authorizes and composes but never reads/writes promo tables directly; promo and diagnostics remain sole writers of their state.",
+    "Operator and developer projections are exact; photographer has no diagnostic-page access.",
+    "Expired/removed ordinary content and promoted subsets never reappear through current or stale FT-008 routes.",
+    "The diagnostics-owned ordinary-removal transition is irreversible and idempotent; no stale ordinary producer can recreate removed content.",
+    "Client monotonic values are never subtracted from server clocks and missing stages/evidence are never fabricated."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-008.md#FT-008-AC-001",
+    ".memory-bank/features/FT-008.md#FT-008-AC-002",
+    ".memory-bank/features/FT-008.md#FT-008-AC-003",
+    ".memory-bank/features/FT-008.md#FT-008-AC-004",
+    ".memory-bank/features/FT-008.md#FT-008-AC-005",
+    ".memory-bank/domains/diagnostic-evidence.md#explicit-ordinary-removal-transition",
+    ".memory-bank/contracts/attempt-investigation-api.md#missing-attempt-response",
+    ".memory-bank/contracts/attempt-investigation-api.md#invalid-filter-response",
+    ".memory-bank/contracts/attempt-investigation-api.md#sanitized-internal-failure-response",
+    "Focused API/HTML fixtures prove exact filters, every tabular/detail field, all three client markers, no-store responses and complete/incomplete/expired/owner-removed behavior against owner projections.",
+    "Failure injection proves missing-detail 404, every invalid-filter 422 with zero provider calls, and sanitized provider/evidence/render 500 with redacted no-store responses, logs and artifacts.",
+    "T3 authorization matrix proves operator sanitization, developer-only ordinary evidence, photographer/unauthenticated/downgraded denial, direct-link non-disclosure and redacted disposable-fixture cleanup.",
+    "playwright cli proves the real-browser list/filter/detail journey and that stale page/direct-link access after role downgrade reveals no prior protected detail.",
+    "Ownership/source inspection proves diagnostics uses the registered promo and staff_access edges, backend owns no business query/authorization, the removal transition stays diagnostics-owned, and no JSON API, migration, read-model table or related-feature projection was added."
+  ]
+}

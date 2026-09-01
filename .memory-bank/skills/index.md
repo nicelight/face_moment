@@ -33,6 +33,7 @@ status: active
 | <code>mb-init</code> | yes | yes |
 | <code>mb-sync</code> | yes | yes |
 | <code>multiagentic</code> | yes | yes |
+| <code>multipilot</code> | yes | yes |
 | <code>prd-to-features</code> | yes | yes |
 | <code>red-verify</code> | yes | yes |
 | <code>review-feat-plan</code> | yes | yes |

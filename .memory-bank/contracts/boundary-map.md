@@ -1,7 +1,7 @@
 ---
 description: Canonical accepted module/change-unit dependency graph and boundary contracts for the Face Moment pilot.
 status: active
-last_updated: 2026-08-25
+last_updated: 2026-09-01
 source_of_truth:
   - .memory-bank/contracts/boundary-map.md
 ---
@@ -54,6 +54,7 @@ contract.
 | `promo` | `processing` | [Participant Promo](#participant-promo) |
 | `promo` | `diagnostics` | [Participant Promo](#participant-promo) |
 | `diagnostics` | `promo` | [Diagnostic evidence and access](#diagnostic-evidence-and-access) |
+| `diagnostics` | `staff_access` | [Diagnostic evidence and access](#diagnostic-evidence-and-access) |
 | `diagnostics` | `processing` | [Calibration and serving change](#calibration-and-serving-change) |
 | `diagnostics` | `serving_control` | [Calibration and serving change](#calibration-and-serving-change) |
 | `serving_control` | `processing` | [Manual serving-revision switch](#manual-serving-revision-switch) |
@@ -75,7 +76,7 @@ contracts remain in their registered subject specifications.
 | `inventory` | Admit one JPEG; query authorized Photos; soft-delete/restore; restore-all; start/read one global hard purge; read recent per-СПА counters and primary-storage capacity. | Photo identity, uploader, authoritative date, effective capture time, accepted time, original reference, visibility, authorization and purge progress. | Pipeline transition rules, embeddings, Promo integrity, core Attempts or evidence retention. |
 | `processing` | Create initial `pending`; report readiness; validate a pipeline revision; process Photo; exact compatible search; offline evaluate; clean Photo-derived state on purge. | Pipeline catalog, processing state, derivatives/faces/embeddings, quality gates, exact search, validation and evaluation. | Photo admission/visibility, live setting mutation, Promo Attempt/session assembly or evidence retention. |
 | `promo` | Execute a fresh attempt; accept display outcome; exchange/read QR continuation; skip unavailable hard-purged media; run/read retention cleanup. | Core Attempt, result/session, candidate union, teasers, `N`, QR/browser access and latest retention result. | Photo, processing or settings writes and detailed diagnostic evidence. |
-| `diagnostics` | Record/search evidence and logs; expose role-scoped views; annotate; run evaluation; request explicit apply; expire owned data. | Detailed evidence/logs, access views, annotations, curated Calibration cases, recommendations and diagnostic-data expiry. | Core Attempt/result/session, aggregate cleanup result or direct serving-setting mutation. |
+| `diagnostics` | Record/search evidence and logs; expose role-scoped views; annotate; run evaluation; request explicit apply; expire or explicitly remove owned ordinary data. | Detailed evidence/logs, access views, annotations, curated Calibration cases, recommendations and diagnostic-data expiry/removal. | Core Attempt/result/session, aggregate cleanup result or direct serving-setting mutation. |
 | `staff_access` | Authenticate staff browser sessions and return the current principal. | Staff principals, password hashes, opaque session/CSRF token hashes, expiry and revocation. | Photo or other capability authorization, domain state or business orchestration. |
 
 Shared PostgreSQL access does not grant shared write authority. A module may read
@@ -222,6 +223,22 @@ detailed evidence best-effort. It MUST NOT create an empty replacement anchor,
 mutate the core Attempt/result/session or make evidence completion a
 participant-flow prerequisite. Operator, photographer and developer views
 remain data-class-specific; missing finalization stays visibly `incomplete`.
+For staff investigation, the diagnostics HTTP adapter obtains the current
+principal through the `staff_access` application boundary and passes that
+principal to diagnostics-owned business authorization and projection.
+`staff_access` authenticates only; it MUST NOT decide diagnostic visibility,
+query evidence or own the investigation use case. The backend composition root
+registers the adapter and owns neither interaction.
+The exact bounded promo query, staff routes, role projections, evidence states
+and failures are owned by the
+[Attempt Investigation API](attempt-investigation-api.md).
+The fixed operational event envelope, non-blocking writer and owner persistence
+are defined by [Structured Server Events](../domains/structured-server-events.md),
+while the developer-only staff search/filter/navigation surface is defined by
+the [Server Event API](server-event-api.md). Promo producers use the existing
+`promo -> diagnostics` boundary and MUST NOT write event rows directly;
+diagnostics staff search reuses the existing `diagnostics -> staff_access`
+authentication edge. No new module edge or read model is introduced.
 
 ### Calibration and serving change
 
@@ -273,6 +290,9 @@ those UUIDs. Diagnostics confirms both converged evidence and the explicit
 no-row case before promo deletion. Each module deletes only its own
 rows/objects. Exact cutoffs and promoted-subset retention are owned by the
 [lifecycle map](../states/lifecycle-map.md#diagnostic-and-calibration-retention).
+Diagnostics also deletes its structured server events independently by the
+fixed 30-day technical-event cutoff, including uncorrelated rows, and returns
+the confirmed count through the same public result shape.
 Failure remains observable, a project-scoped advisory lock rejects overlapping
 runs without overwriting the active result, and rerun is safe. No cleanup
 history, generic jobs lifecycle or cross-owner cascade is introduced. Exact

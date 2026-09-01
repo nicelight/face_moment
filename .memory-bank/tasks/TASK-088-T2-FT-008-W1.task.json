@@ -1,0 +1,98 @@
+{
+  "id": "TASK-088-T2-FT-008-W1",
+  "title": "Publish the bounded Attempt investigation query projection",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-008",
+  "reqs": [
+    "REQ-DIAG-001",
+    "REQ-DIAG-003",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-083-T3-FT-007-W1"
+  ],
+  "touched_files": [
+    "src/face_moment/promo/attempt_queries.py",
+    "src/face_moment/promo/__init__.py",
+    "tests/promo/test_attempt_investigation_queries.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Attempt investigation query tests",
+      "command": "docker compose run --rm backend python -m pytest tests/promo/test_attempt_investigation_queries.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-008.md",
+    ".memory-bank/contracts/attempt-investigation-api.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/domains/promo-attempt.md",
+    ".memory-bank/tasks/plans/IMPL-FT-008.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/contracts/attempt-investigation-api.md#promo-query-boundary RED: the promo owner exposes only single-row repository reads and no accepted bounded investigation query, so diagnostics cannot obtain exact server/correlation/time/state projections without foreign-table access; GREEN: one promo application query returns immutable core projections for the exact typed filters with conjunctive semantics, deterministic newest-first ordering, a 100-row cap and no ORM/write authority; decisive comparison: seeded identities, all processing states, boundary timestamps and more than 100 matches against returned values plus unchanged owner rows; artifact: focused query and ownership evidence under .tasks/TASK-088-T2-FT-008-W1/."
+  ],
+  "purpose": "Publish the smallest promo-owned read boundary that lets diagnostics investigate existing Attempts without direct foreign-table access or new persistence.",
+  "success_outcome": "Diagnostics can request bounded immutable Attempt projections by exact server/correlation identity, UTC time and processing state, with deterministic ordering/cap and unchanged promo-owned state.",
+  "anti_goals": [
+    "Do not expose ORM entities, arbitrary predicates/sorts, pagination, exports or a generic query service.",
+    "Do not implement staff HTTP/UI, role authorization or read diagnostics-owned evidence.",
+    "Do not add a table, migration, index, materialized read model or second identity scheme."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Diagnostics evidence writes, staff authorization/UI and FT-009 server events",
+      "Database migrations, production Attempts and operator/default data",
+      "Promo Attempt/result/session mutations beyond proving they remain unchanged"
+    ],
+    "stop_conditions": [
+      "The query cannot remain a read-only promo-owned application boundary returning immutable projections.",
+      "Exact attempt_id/correlation_id behavior would require a new persisted identity or schema change.",
+      "A sufficient query would require arbitrary filtering, pagination or a materialized diagnostic read model.",
+      "Stateful proof cannot use disposable owner-scoped rows with known initial state, safe rerun and cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/contracts/attempt-investigation-api.md#promo-query-boundary",
+    ".protocols/FT-008/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-008.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/attempt-investigation-api.md#staff-routes-and-filters",
+    ".memory-bank/contracts/attempt-investigation-api.md#promo-query-boundary",
+    ".memory-bank/domains/promo-attempt.md#core-timeline-projection",
+    ".memory-bank/contracts/boundary-map.md#diagnostic-evidence-and-access",
+    ".memory-bank/architecture/system-architecture.md#cross-slice-orchestration"
+  ],
+  "constraints": [
+    "Primary owner and code root are promo at src/face_moment/promo/; diagnostics is the consumer across the accepted read-only edge.",
+    "Map public attempt_id to PromoAttempt.id and correlation_id to client_attempt_id without adding an alias column.",
+    "Apply conjunctive filters, created_at DESC plus attempt_id DESC ordering and the 100-row maximum inside the provider boundary.",
+    "Use task-owned disposable Attempts with controlled UTC values, safe rerun and cleanup limited to those fixtures."
+  ],
+  "invariants": [
+    "Promo remains the sole core Attempt writer; the new boundary performs no mutation.",
+    "No consumer receives ORM entities or direct promo repository/table authority.",
+    "Client monotonic values and server timestamps remain separate and nullable stages stay nullable.",
+    "The accepted module graph and diagnostics -> promo edge remain unchanged."
+  ],
+  "verification_targets": [
+    ".memory-bank/contracts/attempt-investigation-api.md#promo-query-boundary",
+    "Repository/application fixtures prove both exact identities, conjunctive typed UTC/state filtering, every state, deterministic ties and the 100-row cap without changing owner rows.",
+    "Ownership/import inspection proves the projection stays in promo, returns no ORM entity and introduces no diagnostics-table read, migration or new persistence model."
+  ]
+}

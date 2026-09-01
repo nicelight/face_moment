@@ -1,0 +1,118 @@
+{
+  "id": "TASK-093-T3-FT-009-W3",
+  "title": "Expire structured server events through the existing cleanup command",
+  "status": "planned",
+  "wave": "W3",
+  "feature": "FT-009",
+  "reqs": [
+    "REQ-LOG-001",
+    "REQ-DATA-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-086-T3-FT-007-W3",
+    "TASK-091-T3-FT-009-W2"
+  ],
+  "touched_files": [
+    "src/face_moment/diagnostics/server_events.py",
+    "src/face_moment/diagnostics/retention.py",
+    "src/face_moment/promo/retention.py",
+    "tests/diagnostics/test_server_event_retention.py",
+    "tests/diagnostics/test_retention_cleanup.py",
+    "tests/diagnostics/test_retention_api.py",
+    "tests/diagnostics/test_server_event_search.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Structured event retention tests",
+      "command": "docker compose run --rm backend python -m pytest tests/diagnostics/test_server_event_retention.py tests/diagnostics/test_retention_cleanup.py tests/diagnostics/test_retention_api.py tests/diagnostics/test_server_event_search.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-009.md",
+    ".memory-bank/domains/structured-server-events.md",
+    ".memory-bank/contracts/server-event-api.md",
+    ".memory-bank/contracts/diagnostic-retention-api.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/testing/index.md",
+    ".memory-bank/tasks/plans/IMPL-FT-009.md"
+  ],
+  "evidence_required": [
+    "FT-009-AC-003 RED: with the accepted server-event collection and staff search route present, the existing cleanup exposes a 30-day technical cutoff but leaves server_events untouched and technical_logs_deleted fixed at zero, so current and bookmarked browser searches still render old correlated and uncorrelated rows; GREEN: the existing owner-ordered command passes the fixed UTC cutoff to diagnostics, deletes only owner rows strictly before it including uncorrelated events, preserves equal/newer rows, records the confirmed newly deleted count in the unchanged latest-result shape, sanitizes failure and converges on safe rerun, while playwright cli proves current and bookmarked searches cannot recover deleted content; decisive comparison: disposable before/equal/after correlated/uncorrelated rows plus latest-result, repository and real-browser reads across success, injected owner failure, overlap and rerun; artifact: destructive retention evidence plus redacted Playwright transcript/screenshots under .tasks/TASK-093-T3-FT-009-W3/."
+  ],
+  "purpose": "Complete the accepted technical-event lifecycle by extending the already deployed owner-ordered retention command rather than introducing another scheduler, result model or delete owner.",
+  "success_outcome": "Structured server events strictly older than 30 days are deleted by diagnostics, the existing promo latest result reports the confirmed count, failure/rerun remains truthful and no current or stale search can reconstruct deleted content.",
+  "anti_goals": [
+    "Do not add a second cleanup command/timer, request-triggered deletion, per-event tombstones, cleanup history, jobs table or internal scheduler.",
+    "Do not delete promo Attempts/evidence directly, change their 90-day claim, mutate the latest-result schema or cross ownership boundaries.",
+    "Do not run against production/operator data, alter production timer configuration or implement server-event collection/search behavior beyond the retention integration delta."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production PostgreSQL, operator/default Attempts/evidence/events and production timer configuration",
+      "Direct diagnostics deletion by promo, foreign-row/cascade deletion and mutation of the existing latest-result schema",
+      "FT-009 collection/search implementation changes, FT-010 annotations, FT-011 Calibration and Photo retention/purge"
+    ],
+    "stop_conditions": [
+      "Event expiry cannot remain diagnostics-owned and independent of Attempt candidates through the existing promo cleanup orchestration/result.",
+      "Safe failure/rerun would require a second scheduler, history/jobs lifecycle, cross-owner transaction or fabricated deletion count.",
+      "The real current/bookmarked staff-search proof cannot use the completed TASK-091 route without modifying its search behavior or inheriting its feature claims.",
+      "Expired rows could be reconstructed through the current/stale staff page, FT-008, DiagnosticEvidence or retained task artifacts.",
+      "T3 destructive probes cannot be limited to disposable correlated/uncorrelated rows with controlled time, known state, safe rerun and complete cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-009.md#FT-009-AC-003",
+    ".protocols/FT-009/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-009.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/structured-server-events.md#retention-boundary",
+    ".memory-bank/contracts/diagnostic-retention-api.md#idempotent-cleanup-command",
+    ".memory-bank/contracts/diagnostic-retention-api.md#latest-result-persistence",
+    ".memory-bank/contracts/diagnostic-retention-api.md#structured-server-event-extension",
+    ".memory-bank/contracts/diagnostic-retention-api.md#failure-and-rerun-rules",
+    ".memory-bank/contracts/server-event-api.md#html-projection-and-ft-008-navigation",
+    ".memory-bank/contracts/server-event-api.md#verification-targets",
+    ".memory-bank/contracts/boundary-map.md#retention-cleanup",
+    ".memory-bank/states/lifecycle-map.md#diagnostic-and-calibration-retention",
+    ".memory-bank/testing/client-realtime.md#required-proof",
+    ".memory-bank/testing/index.md#ui-verification"
+  ],
+  "constraints": [
+    "Promo remains the cleanup/latest-result owner and supplies both fixed cutoffs; diagnostics alone deletes server_events and returns technical_logs_deleted through the existing result.",
+    "Delete rows with occurred_at strictly before the UTC 30-day cutoff independently of Attempt candidate IDs; equal/newer and all 90-day Attempt/evidence behavior remain unchanged.",
+    "Use the existing advisory lock, exit codes, failure sanitization, single latest-result row and external timer; add no route, command, migration or deployment change.",
+    "Use disposable correlated and uncorrelated rows with controlled before/equal/after times, owner failure, overlap, partial convergence, safe rerun, decisive search/result reads and cleanup limited to fixtures.",
+    "Use playwright cli against the implemented GET /staff/server-events route for one current search and the same bookmarked filter URL before/after cleanup; store a redacted transcript and screenshots under .tasks/TASK-093-T3-FT-009-W3/ without adopting TASK-091 filter/authorization claims.",
+    "Retained reports contain only synthetic identifiers and aggregate counts, never production rows, credentials, participant data or unredacted failures."
+  ],
+  "invariants": [
+    "Diagnostics deletes only its event/evidence rows and promo deletes only confirmed promo-owned state; no cascade or direct foreign write crosses ownership.",
+    "Thirty-day event deletion includes uncorrelated rows and never depends on the 90-day Attempt candidate set.",
+    "Failure/overlap never fabricates or replaces counts; rerun never restores events and reports only newly confirmed deletion in the successful invocation.",
+    "Expired event content cannot be reconstructed through FT-009, FT-008, DiagnosticEvidence, browser cache or task evidence."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-009.md#FT-009-AC-003",
+    "Disposable controlled-time fixtures prove strict before/equal/after deletion for correlated and uncorrelated events, exact aggregate count and unchanged 90-day Attempt/evidence behavior.",
+    "Injected diagnostics failure, active-lock overlap and safe rerun prove sanitized truthful latest results, no fabricated count, owner-only writes and convergence without event restoration.",
+    "playwright cli drives one current search and the same bookmarked filter URL before/after cleanup, proving deleted event fields never reappear from FT-009, FT-008, DiagnosticEvidence, browser state or retained artifacts; the redacted transcript and screenshots stay under .tasks/TASK-093-T3-FT-009-W3/.",
+    "Source/ownership scans prove one existing command/latest result/external timer, no migration/history/jobs/tombstone/internal scheduler and no production configuration mutation."
+  ]
+}

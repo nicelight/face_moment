@@ -16,10 +16,10 @@ deletes only promo-owned eligible Attempts/sessions. Each provider deletes only
 its own rows/objects. No cross-owner cascade, cleanup history, generic jobs
 table or reliable queue is introduced.
 
-The fixed policy cutoffs are 30 days for structured server events and 90 days for
-ordinary Attempts/evidence, evaluated in UTC. FT-007 implements the ordinary
-Attempt/evidence portion; FT-009 later supplies server-event deletion through
-the same diagnostics owner boundary without changing the public result shape.
+The fixed policy cutoffs are 30 days for structured server events and 90 days
+for ordinary Attempts/evidence, evaluated in UTC. FT-007 supplies the ordinary
+Attempt/evidence command and result; FT-009 extends the same diagnostics owner
+boundary with server-event deletion without changing the public result shape.
 
 ## Idempotent Cleanup Command
 
@@ -36,13 +36,16 @@ advisory lock and holds it through terminal result recording. It then:
    `interrupted`; an active run cannot be orphaned while it holds the same lock;
 2. atomically records the promo-owned latest result as `running`, with fixed
    cutoffs and a new run UUID;
-3. selects promo-owned core Attempts strictly before the 90-day cutoff and
+3. asks diagnostics to delete its structured server events strictly before the
+   30-day cutoff, including uncorrelated rows;
+4. selects promo-owned core Attempts strictly before the 90-day cutoff and
    passes those UUIDs to diagnostics;
-4. asks diagnostics to expire its owned data and confirm each supplied UUID,
-   including an explicit no-op confirmation when no evidence row exists;
-5. deletes only the confirmed promo-owned Attempts and owner-local expired
+5. asks diagnostics to expire its owned Attempt evidence and confirm each
+   supplied UUID, including an explicit no-op confirmation when no evidence row
+   exists;
+6. deletes only the confirmed promo-owned Attempts and owner-local expired
    sessions;
-6. records `succeeded` with confirmed counts, or a sanitized `failed` result.
+7. records `succeeded` with confirmed counts, or a sanitized `failed` result.
 
 If another invocation cannot acquire the advisory lock, it exits with code `2`
 and leaves the active run and latest-result row unchanged. A completed cleanup
@@ -122,10 +125,25 @@ with this shape:
 
 `state` is `running|succeeded|failed|interrupted`; counts are non-negative
 integers. While running, `finished_at` is null. `error` is non-null only for
-  `failed|interrupted`. Until FT-009 supplies its owner deletion, the fixed
-server-event cutoff remains visible and `technical_logs_deleted` is `0`; this
-does not claim FT-009 completion. The HTML page renders the same fields and
-never exposes raw object identities, participant data or an execution trigger.
+`failed|interrupted`. `technical_logs_deleted` is the diagnostics-confirmed
+count of structured server events newly deleted by that successful invocation;
+zero remains valid when no row crossed the cutoff or a prior partial run already
+converged. The HTML page renders the same fields and never exposes raw object
+identities, participant data or an execution trigger.
+
+## Structured Server-Event Extension
+
+The cleanup command supplies `technical_logs_before` to the diagnostics owner
+independently of the 90-day Attempt candidate UUIDs. Diagnostics deletes
+`face_moment.server_events` rows with `occurred_at` strictly before that cutoff,
+including rows without Attempt/correlation identity, and returns the newly
+deleted count. Equal-cutoff and newer rows remain.
+
+This extension follows the
+[Structured Server Events retention boundary](../domains/structured-server-events.md#retention-boundary).
+It adds no new command, timer, result field, cleanup history, event tombstone or
+cross-owner delete. An owner failure is sanitized and the command records
+`failed`; a rerun converges without restoring events or fabricating counts.
 
 ## Failure And Rerun Rules
 
@@ -139,6 +157,9 @@ never exposes raw object identities, participant data or an execution trigger.
   and may finish already-expired work without restoring it.
 - A promoted subset is counted as preserved and is never deleted by ordinary
   cleanup.
+- Structured server-event deletion is diagnostics-owned, applies independently
+  of Attempt candidates and includes uncorrelated rows; promo records only the
+  confirmed count and never deletes those rows directly.
 - Missing private objects are an idempotent success only after their owning
   database state is already inaccessible.
 - Staff reads never start cleanup; no CSRF-protected mutation endpoint is part
@@ -146,10 +167,11 @@ never exposes raw object identities, participant data or an execution trigger.
 
 ## Verification Targets
 
-- Disposable database/object fixtures prove fixed cutoffs, owner order,
-  successful deletion including an old Attempt with no evidence row, promoted
-  preservation, failure isolation, orphaned-running interruption, overlapping-
-  invocation exit `2`, safe rerun and exactly one latest-result row.
+- Disposable database/object fixtures prove both fixed cutoffs, owner order,
+  correlated and uncorrelated server-event deletion, successful deletion of an
+  old Attempt with no evidence row, promoted preservation, failure isolation,
+  orphaned-running interruption, overlapping-invocation exit `2`, safe rerun
+  and exactly one latest-result row.
 - Before/after reads prove operator/developer visibility, photographer and
   unauthenticated denial, `no-store` responses and sanitized errors.
 - Ownership tracing proves promo never writes diagnostics rows, diagnostics
