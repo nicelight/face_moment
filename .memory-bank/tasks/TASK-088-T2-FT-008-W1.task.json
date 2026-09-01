@@ -1,7 +1,7 @@
 {
   "id": "TASK-088-T2-FT-008-W1",
   "title": "Publish the bounded Attempt investigation query projection",
-  "status": "planned",
+  "status": "in_progress",
   "wave": "W1",
   "feature": "FT-008",
   "reqs": [

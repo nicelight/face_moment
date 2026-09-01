@@ -1,7 +1,7 @@
 {
   "id": "TASK-090-T3-FT-009-W1",
   "title": "Collect structured server events without blocking participant flow",
-  "status": "planned",
+  "status": "ready",
   "wave": "W1",
   "feature": "FT-009",
   "reqs": [
