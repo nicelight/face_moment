@@ -1,7 +1,7 @@
 ---
 description: Stable product requirements and REQ-to-epic-to-feature traceability for the one-СПА pilot.
 status: draft
-last_updated: 2026-09-01
+last_updated: 2026-09-02
 ---
 # Requirements
 
@@ -43,7 +43,7 @@ last_updated: 2026-09-01
 | `REQ-DIAG-001` | Every server-admitted request MUST create one core Attempt/correlation identity before inference and retain a timeline sufficient to localize outcome and latency, including client-local ready-series processing start, request-send start and response receipt. Missing finalized evidence remains `incomplete`; client-only offline delivery is best-effort. | FR-DIAG-01..02/05, AC-22 |
 | `REQ-DIAG-002` | Detailed diagnostic evidence MUST remain best-effort and non-blocking. When collected, it MUST expose the required reproducibility context; capture-derived media MAY be logged, cached, stored or delivered, but no such mechanism or per-crop logging is required. | FR-DIAG-03..05, NFR-SEC-06 |
 | `REQ-DIAG-003` | Attempts MUST support exact `attempt_id`/`correlation_id` lookup, minimal time/state filters and tabular state, stages, durations, client markers and available `DiagnosticEvidence`. Operator access remains sanitized, developer access follows the evidence boundary, and incomplete, expired or removed data MUST remain explicit. Annotations, Calibration and specialized diagnostics do not automatically expand FT-008. | FR-DIAG-02..07, NFR-SEC-04/06, AC-09/10 |
-| `REQ-LOG-001` | FT-009 MUST persist only important redacted structured server events in the existing PostgreSQL and expose one developer-only backend web view with bounded time, severity, component, event-code and exact Attempt/correlation filters plus navigation to FT-008. Emission MUST remain non-blocking; browser logs, images, embeddings, secrets, personal data, request bodies and arbitrary payloads are forbidden. | FR-DEV-02..04, NFR-SEC-04/06, AC-10 |
+| `REQ-LOG-001` | FT-009 MUST persist only important redacted structured server events in the existing PostgreSQL and expose one developer-only backend web view with bounded time, severity, component, event-code and exact Attempt/correlation filters. Events carry paired Attempt/correlation identities or neither, and FT-008 navigation uses a known `attempt_id`; correlation-only persistence/navigation is not required. Emission MUST remain non-blocking; browser logs, images, embeddings, secrets, personal data, request bodies and arbitrary payloads are forbidden. | FR-DEV-02..04, NFR-SEC-04/06, AC-10 |
 | `REQ-ANN-001` | An authorized developer MUST record person/detection ground truth with participant name and correct, false or missed semantics usable by Calibration. | FR-DEV-01 |
 | `REQ-CAL-001` | Calibration MUST compare SFace and Buffalo M and show the three named threshold profiles with proposed value, counts, precision, recall, sample size and attempt drill-down. | FR-DEV-05..07 |
 | `REQ-CAL-002` | Calibration MUST analyze each input quality gate independently, support version/parameter before-after comparison and leave serving-setting application as an explicit manual developer action. | FR-DEV-08..10 |

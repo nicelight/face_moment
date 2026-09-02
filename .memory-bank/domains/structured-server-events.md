@@ -31,13 +31,14 @@ One next-linear Alembic revision creates:
 | `component` | `runtime \| realtime \| promo \| qr`. |
 | `event_code` | One exact code from the catalog below. |
 | `release_id` | Non-empty bounded release identifier, at most 128 characters. |
-| `attempt_id` | Nullable server `PromoAttempt.id` UUID supplied by the promo owner when known. |
-| `correlation_id` | Nullable client correlation UUID supplied by the promo owner when known. |
+| `attempt_id` | Nullable server `PromoAttempt.id` UUID supplied with its matching `correlation_id` when an existing Attempt association is available. |
+| `correlation_id` | Nullable client correlation UUID supplied with its matching `attempt_id` when an existing Attempt association is available. |
 
 There is no message, payload, JSON, traceback, object key, URL, request field or
 participant/session field. Attempt identities are logical cross-owner
-references without a foreign key or delete cascade. Either identity may be
-null; both null means the event is truthfully uncorrelated.
+references without a foreign key or delete cascade. The identities are a pair:
+both are present for an associated Attempt or both are null for a truthfully
+uncorrelated event. A one-sided identity is invalid.
 
 The owner repository publishes immutable projections and applies filters before
 returning rows. It indexes `occurred_at`, exact Attempt/correlation identity and
@@ -130,8 +131,9 @@ cache.
 - Migration/repository fixtures prove the exact table, constraints, catalog,
   indexes, restart persistence, bounded immutable query projection and absence
   of ownership-crossing foreign-key cascades.
-- A per-code inventory proves fixed severity/component, allowed correlation and
-  complete forbidden-field absence for every emitted event type.
+- A per-code inventory proves fixed severity/component, paired-or-uncorrelated
+  identity shape and complete forbidden-field absence for every emitted event
+  type.
 - Blocked-writer, full-queue and failed-database fixtures prove unchanged caller
   transaction and participant response/outcome while event persistence remains
   isolated. An explicit owner-side correlation lookup is allowed and is not an

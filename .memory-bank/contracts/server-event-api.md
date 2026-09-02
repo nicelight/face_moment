@@ -1,7 +1,7 @@
 ---
 description: Exact developer-only bounded structured server-event search page and failure contract.
 status: active
-last_updated: 2026-09-01
+last_updated: 2026-09-02
 source_of_truth:
   - .memory-bank/contracts/server-event-api.md
 ---
@@ -51,12 +51,11 @@ The page renders only event time, severity, component, event code, release ID
 and nullable Attempt/correlation IDs. It renders no arbitrary message/payload,
 traceback, media or protected value.
 
-- An event with `attempt_id` links to
+- An event with paired `attempt_id`/`correlation_id` links by `attempt_id` to
   `GET /staff/attempts/{attempt_id}`.
-- An event without `attempt_id` but with `correlation_id` links to
-  `GET /staff/attempts?correlation_id={correlation_id}`.
 - An event with neither identity renders no Attempt link and MUST NOT invent an
   association.
+- A one-sided identity is not an accepted persisted or rendered state.
 
 The target route applies its own current authorization and missing-state rules.
 FT-009 neither reads promo tables to validate the link nor embeds FT-008 detail.
@@ -89,8 +88,8 @@ introduced.
 - Compare developer, operator, photographer, unauthenticated, revoked and
   downgraded requests, including copied URLs and browser history; prove current
   `401|403`, no-store and no retained protected page content.
-- Prove detail-link, correlation-query link and no-link behavior for the three
-  identity shapes without a promo-table read or invented Attempt.
+- Prove detail-link and no-link behavior for the paired and uncorrelated identity
+  shapes without a promo-table read or invented Attempt.
 - Exercise every invalid-filter class and injected repository/render failures;
   prove no-query `422`, sanitized `500` and redacted artifacts.
 - Use `playwright cli` for the real browser filter/table/navigation and stale-

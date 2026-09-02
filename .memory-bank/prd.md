@@ -4,7 +4,7 @@ status: draft
 type: prd
 clarification_status: complete
 constitution_checked: true
-last_updated: 2026-09-01
+last_updated: 2026-09-02
 ---
 # PRD
 
@@ -29,6 +29,16 @@ and at least 19 attempts must pass the visible/scannable-QR-under-10-seconds
 gate. The counts are reported separately; a joint intersection is not required.
 QR/latency evidence remains FT-005-owned and server correctness remains
 FT-004-owned.
+
+### 2026-09-02 — Paired server-event identity only
+
+The operator rejected correlation-only server-event persistence and navigation
+because its product value does not justify a third identity shape, another
+migration and matching runtime/UI branches. An FT-009 event carries both
+`attempt_id` and `correlation_id` when an existing Attempt association is
+available, or neither when it is truthfully uncorrelated. A one-sided identity
+is not an accepted product state. Exact filters remain available, while FT-008
+navigation uses the known `attempt_id` only.
 
 ## Product Summary
 
@@ -425,12 +435,14 @@ pilot actor or blocker.
 - **FR-DEV-02** — FT-009 MUST emit and retain in the existing PostgreSQL a small
   structured server-event set for important errors and lifecycle transitions.
   Each event MUST include timestamp, severity, component, event code and release
-  identifier, plus `attempt_id` or `correlation_id` when known.
+  identifier, plus paired `attempt_id` and `correlation_id` when an existing
+  Attempt association is available; otherwise both identifiers MUST be absent.
 - **FR-DEV-03** — An authorized developer MUST have one minimal web page showing
   recent server events with bounded filters for time, severity, component, event
-  code and exact `attempt_id`/`correlation_id`. A correlated event MUST navigate
-  to FT-008. Generic/saved queries, full-text search, live tail, dashboards,
-  exports, read models and browser-log collection are not required.
+  code and exact `attempt_id`/`correlation_id`. An event with a known Attempt
+  MUST navigate to FT-008 by `attempt_id`. Generic/saved queries, full-text
+  search, live tail, dashboards, exports, read models and browser-log collection
+  are not required.
 - **FR-DEV-04** — Server-event emission MUST be non-blocking for capture, search,
   Promo and QR. Events MUST NOT contain secrets, personal data, embeddings,
   request bodies or arbitrary payloads; browser logs are out of scope.
@@ -678,8 +690,8 @@ pilot actor or blocker.
   to a core Attempt. Absence or failed finalization is represented as
   `incomplete`, not by a mandatory empty anchor row.
 - **Structured server event** — redacted PostgreSQL record for an important
-  server error/lifecycle transition, with `attempt_id`/`correlation_id` where
-  known.
+  server error/lifecycle transition, with paired `attempt_id`/`correlation_id`
+  when an existing Attempt association is available, otherwise with neither.
 - **Annotation** — authorized ground truth associating a participant/person and
   detection/result outcome.
 - **Calibration case/recommendation** — a manually curated reproducible subset
@@ -791,7 +803,8 @@ pilot actor or blocker.
    client markers and already collected evidence; missing or expired data is shown
    explicitly.
 3. Search recent important server events in the minimal developer-only web page
-   and use their correlation ID to return to FT-008.
+   and use a linked `attempt_id` to return to FT-008 when the event has an
+   existing Attempt association.
 4. Add annotations or run Calibration only through their separate feature flows.
 
 ## Integrations / Dependencies
@@ -938,9 +951,9 @@ payment/fiscal providers, external observability stores and message brokers.
   `correlation_id` and sees state/outcome, server durations, client markers and
   collected evidence; missing/expired/removed evidence is explicit. The same
   role can filter recent structured server events by the bounded FT-009 fields
-  and navigate from a correlated event to FT-008; no generic query builder,
-  full-text search, live tail, dashboard, export or diagnostic read model is
-  required.
+  and navigate from an event carrying a known `attempt_id` to FT-008; no generic
+  query builder, full-text search, live tail, dashboard, export or diagnostic
+  read model is required.
 - **AC-11** — An authorized developer can annotate person/detection outcomes and
   see those annotations reflected in threshold and individual quality-gate
   recommendation evidence.

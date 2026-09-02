@@ -10,8 +10,7 @@
   ],
   "depends_on": [
     "TASK-089-T3-FT-008-W2",
-    "TASK-094-T3-FT-009-W1",
-    "TASK-095-T3-FT-009-W1"
+    "TASK-094-T3-FT-009-W1"
   ],
   "touched_files": [
     "src/face_moment/diagnostics/server_events.py",
@@ -65,14 +64,14 @@
     {
       "stage": "execution-hold",
       "verdict": "blocked",
-      "summary": "Execution Attempt 1 stopped before production implementation after a disposable PostgreSQL probe proved that the accepted correlation-only row is rejected by the closed persistence baseline. TASK-091 remains in_progress with its RED/blocker evidence intact and now waits for the distinct TASK-095 provider correction.",
+      "summary": "Execution Attempt 1 stopped before production implementation after a disposable PostgreSQL probe proved that the then-accepted correlation-only row was rejected by the closed persistence baseline. The probe, RED and stop evidence remain historical execution truth; the later paired-identity decision supersedes only this blocker and its recovery route, without replaying or dispositioning TASK-091.",
       "evidence": [
         ".tasks/TASK-091-T3-FT-009-W2/correlation-shape-blocker.md",
         ".protocols/TASK-091-T3-FT-009-W2/handoff.md",
         ".protocols/FT-009/clarification.md#finding--correlation-only-persistence-shape",
-        ".memory-bank/tasks/TASK-095-T3-FT-009-W1.task.json"
+        ".memory-bank/features/FT-009.md#FT-009-AC-004"
       ],
-      "resume_route": "/review-tasks-plan FT-009 -> strict readiness -> execute and close TASK-095-T3-FT-009-W1 -> /exe TASK-091-T3-FT-009-W2"
+      "resume_route": "/review-tasks-plan FT-009 -> strict readiness -> /exe TASK-091-T3-FT-009-W2"
     }
   ],
   "docs": [
@@ -85,13 +84,13 @@
     ".memory-bank/tasks/plans/IMPL-FT-009.md"
   ],
   "evidence_required": [
-    "FT-009-AC-001 RED: no developer-only in-application server-event page exposes the accepted bounded fields or FT-008 navigation; GREEN: GET /staff/server-events applies the exact default/custom time, severity, component, event-code and exact Attempt/correlation filters, deterministic cap/order, developer-only current authorization, no-store rendering and accepted FT-008 links while every other role/direct/stale request discloses no rows; decisive comparison: seeded boundary/filter cases and the same synthetic rows requested by current developer, operator, photographer, unauthenticated, revoked and downgraded sessions plus browser navigation; artifact: filter, authorization and playwright evidence under .tasks/TASK-091-T3-FT-009-W2/.",
-    "FT-009-AC-004 RED: no page can show an important uncorrelated event without inventing an Attempt association; GREEN: rows with neither identity remain searchable and render no link, attempt_id rows use FT-008 detail, and correlation-only rows use the exact FT-008 correlation filter without a promo-table read; decisive comparison: all three identity shapes against rendered fields/links and provider call traces; artifact: correlation-shape evidence under .tasks/TASK-091-T3-FT-009-W2/.",
+    "FT-009-AC-001 RED: no developer-only in-application server-event page exposes the accepted bounded fields or FT-008 navigation, and no observation proves the browser reaches PostgreSQL only through the project backend; GREEN: GET /staff/server-events applies the exact default/custom time, severity, component, event-code and exact Attempt/correlation filters, deterministic cap/order, developer-only current authorization, no-store rendering and accepted FT-008 links while every other role/direct/stale request discloses no rows, and a browser-network plus effective runtime/database-topology observation shows the browser calling only the project HTTPS backend while PostgreSQL remains private and is queried only by that backend; decisive comparison: seeded boundary/filter cases and the same synthetic rows requested by current developer, operator, photographer, unauthenticated, revoked and downgraded sessions plus browser navigation, with the observed browser -> project backend -> PostgreSQL path compared against the forbidden direct browser -> PostgreSQL path; artifact: filter, authorization, Playwright network/navigation and topology evidence under .tasks/TASK-091-T3-FT-009-W2/.",
+    "FT-009-AC-004 RED: no page can show an important uncorrelated event without inventing an Attempt association; GREEN: rows with neither identity remain searchable and render no link, while rows with paired attempt_id/correlation_id link by attempt_id to FT-008 without a promo-table read and no one-sided row is persisted or rendered; decisive comparison: paired and uncorrelated fixtures against rendered fields, links and provider call traces; artifact: identity-shape evidence under .tasks/TASK-091-T3-FT-009-W2/.",
     ".memory-bank/contracts/server-event-api.md#invalid-filter-response RED: no FT-009 adapter rejects every unknown, repeated, malformed, lone-time-bound and invalid/oversized-range class before persistence access; GREEN: each class returns no-store 422 with zero repository calls; decisive comparison: per-class status/header/body and provider spy count fixed at zero; artifact: focused invalid-filter evidence under .tasks/TASK-091-T3-FT-009-W2/.",
     ".memory-bank/contracts/server-event-api.md#sanitized-internal-failure-response RED: no FT-009 adapter sanitizes event repository or HTML-render failures; GREEN: both injected branches return no-store 500 while response, server output and retained artifacts contain no traceback, cookie, credential, arbitrary payload or participant data; decisive comparison: injected branch/status/header/body plus redaction scan; artifact: focused internal-failure evidence under .tasks/TASK-091-T3-FT-009-W2/."
   ],
   "purpose": "Deliver the complete minimal FT-009 investigation page while enforcing developer-only current authorization and preserving FT-008 as the sole Attempt detail owner.",
-  "success_outcome": "An authorized developer can search at most 100 recent fixed-field event rows through the exact bounded route, follow truthful FT-008 navigation when correlation exists and see uncorrelated events without an invented link, while every denied or stale request reveals nothing protected.",
+  "success_outcome": "An authorized developer can search at most 100 recent fixed-field event rows through the exact bounded route, navigate paired rows to FT-008 by attempt_id and see uncorrelated rows without an invented link, while every denied or stale request reveals nothing protected.",
   "anti_goals": [
     "Do not add a JSON API, event detail route, read model, pagination, arbitrary sort/query, full text, saved query, live tail, dashboard or export.",
     "Do not embed FT-008 detail, read promo tables, validate correlation by foreign access or expose DiagnosticEvidence, annotations, Calibration, media or personalized sessions.",
@@ -135,15 +134,15 @@
   "constraints": [
     "Primary owner and code root are diagnostics at src/face_moment/diagnostics/; the adapter obtains the current principal across diagnostics -> staff_access and backend only registers it.",
     "Use only GET /staff/server-events with server-rendered no-store HTML, the exact filters/default interval/range cap and at most 100 newest rows.",
-    "Use existing GET /staff/attempts/{attempt_id} and GET /staff/attempts?correlation_id=... links exactly; FT-008 reevaluates authorization and target state.",
-    "Use playwright cli for the real filter/table/navigation and stale-role/stale-retention journey, storing only redacted synthetic transcript/screenshots under .tasks/TASK-091-T3-FT-009-W2/.",
+    "Use only the existing GET /staff/attempts/{attempt_id} link for a row carrying paired identities; FT-008 reevaluates authorization and target state, and uncorrelated rows render no link.",
+    "Use playwright cli for the real filter/table/navigation and stale-role/current-authorization/no-store journey, storing only redacted synthetic transcript/screenshots under .tasks/TASK-091-T3-FT-009-W2/.",
     "Use disposable developer/operator/photographer principals and synthetic event rows with known initial state, role downgrade/revocation, safe rerun and cleanup limited to those fixtures."
   ],
   "invariants": [
     "Current authentication and developer role are evaluated on every request; copied URLs and browser history grant no authority.",
     "Diagnostics filters and renders only its immutable event projections; it never reads or writes promo tables and FT-008 remains the Attempt detail owner.",
-    "A missing correlation stays missing and has no link; a present identity is rendered exactly without participant/session payload.",
-    "Every response is no-store and exposes only fixed event fields; deleted/denied rows cannot reappear through stale browser content."
+    "A persisted row has paired attempt_id/correlation_id or neither; only the paired shape links by attempt_id, and no participant/session payload is rendered.",
+    "Every response is no-store and exposes only fixed event fields; denied rows cannot reappear through stale browser content."
   ],
   "verification_targets": [
     ".memory-bank/features/FT-009.md#FT-009-AC-001",
@@ -152,7 +151,8 @@
     ".memory-bank/contracts/server-event-api.md#sanitized-internal-failure-response",
     "Focused repository/HTML fixtures prove exact default/custom time and field filters, conjunctive behavior, deterministic ties, 100-row cap, fixed columns and no-store responses.",
     "T3 authorization matrix proves developer access and operator/photographer/unauthenticated/revoked/downgraded denial without existence disclosure or stale protected content.",
-    "Identity-shape fixtures and playwright cli prove FT-008 detail link, correlation-query link and truthful no-link behavior without a promo-table read.",
+    "Playwright browser-network evidence plus effective runtime/database-topology inspection proves the browser calls the project HTTPS backend, PostgreSQL remains private and only the backend performs the database query; compare the observed browser -> project backend -> PostgreSQL path with the forbidden direct browser -> PostgreSQL path and retain the redacted trace/topology artifact under .tasks/TASK-091-T3-FT-009-W2/.",
+    "Paired and uncorrelated identity fixtures plus playwright cli prove the FT-008 detail link by attempt_id and truthful no-link behavior without a promo-table read or one-sided rendered state.",
     "Failure injection proves every invalid filter returns no-query 422 and repository/render failures return redacted 500, with no protected values in responses, output or artifacts."
   ]
 }
