@@ -1,7 +1,7 @@
 {
   "id": "TASK-091-T3-FT-009-W2",
   "title": "Expose developer-only bounded server-event search",
-  "status": "planned",
+  "status": "in_progress",
   "wave": "W2",
   "feature": "FT-009",
   "reqs": [
@@ -10,7 +10,8 @@
   ],
   "depends_on": [
     "TASK-089-T3-FT-008-W2",
-    "TASK-090-T3-FT-009-W1"
+    "TASK-094-T3-FT-009-W1",
+    "TASK-095-T3-FT-009-W1"
   ],
   "touched_files": [
     "src/face_moment/diagnostics/server_events.py",
@@ -38,7 +39,42 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "dependency-block",
+      "verdict": "blocked",
+      "summary": "Autopilot blocked TASK-091 because dependency TASK-090-T3-FT-009-W1 is failed after exhausting its retry budget.",
+      "evidence": [
+        ".memory-bank/tasks/TASK-090-T3-FT-009-W1.task.json",
+        ".memory-bank/bugs/task-090-realtime-event-post-commit-sql.md"
+      ],
+      "resume_route": "/feature-to-tasks FT-009 -> /review-tasks-plan FT-009 -> strict readiness"
+    },
+    {
+      "stage": "dependency-unblock",
+      "verdict": "planned",
+      "summary": "The explicit owner removed the obsolete dependency block after TASK-089 and replacement TASK-094 both reached done with their required functional and semantic evidence. TASK-091 is intentionally left planned and has not been executed or promoted to ready.",
+      "evidence": [
+        ".memory-bank/tasks/TASK-089-T3-FT-008-W2.task.json",
+        ".memory-bank/tasks/TASK-094-T3-FT-009-W1.task.json",
+        ".protocols/TASK-094-T3-FT-009-W1/verification.md",
+        ".protocols/TASK-094-T3-FT-009-W1/red-verification.md"
+      ],
+      "resume_route": "/exe TASK-091-T3-FT-009-W2 only after a future explicit scheduler or operator selection"
+    },
+    {
+      "stage": "execution-hold",
+      "verdict": "blocked",
+      "summary": "Execution Attempt 1 stopped before production implementation after a disposable PostgreSQL probe proved that the accepted correlation-only row is rejected by the closed persistence baseline. TASK-091 remains in_progress with its RED/blocker evidence intact and now waits for the distinct TASK-095 provider correction.",
+      "evidence": [
+        ".tasks/TASK-091-T3-FT-009-W2/correlation-shape-blocker.md",
+        ".protocols/TASK-091-T3-FT-009-W2/handoff.md",
+        ".protocols/FT-009/clarification.md#finding--correlation-only-persistence-shape",
+        ".memory-bank/tasks/TASK-095-T3-FT-009-W1.task.json"
+      ],
+      "resume_route": "/review-tasks-plan FT-009 -> strict readiness -> execute and close TASK-095-T3-FT-009-W1 -> /exe TASK-091-T3-FT-009-W2"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-009.md",
     ".memory-bank/contracts/server-event-api.md",

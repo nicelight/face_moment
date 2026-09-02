@@ -1,7 +1,7 @@
 {
   "id": "TASK-088-T2-FT-008-W1",
   "title": "Publish the bounded Attempt investigation query projection",
-  "status": "in_progress",
+  "status": "done",
   "wave": "W1",
   "feature": "FT-008",
   "reqs": [
@@ -35,7 +35,26 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Independent current-source PostgreSQL proof passed all task-owned query-boundary claims and required gates; lifecycle remains scheduler-owned.",
+      "report": ".tasks/TASK-088-T2-FT-008-W1/TASK-088-T2-FT-008-W1-S-VERIFY-final-report-docs-01.md",
+      "protocol": ".protocols/TASK-088-T2-FT-008-W1/verification.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Autopilot scheduler closed TASK-088 after T2 Execution Attempt 1, honest claim-linked RED/GREEN, all required execution gates, and independent VERDICT: PASS.",
+      "evidence": [
+        ".protocols/TASK-088-T2-FT-008-W1/verification.md",
+        ".tasks/TASK-088-T2-FT-008-W1/TASK-088-T2-FT-008-W1-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-088-T2-FT-008-W1/attempt-1-red.md",
+        ".tasks/TASK-088-T2-FT-008-W1/attempt-1-green.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-008.md",
     ".memory-bank/contracts/attempt-investigation-api.md",

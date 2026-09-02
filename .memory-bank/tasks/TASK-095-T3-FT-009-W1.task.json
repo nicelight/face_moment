@@ -1,0 +1,106 @@
+{
+  "id": "TASK-095-T3-FT-009-W1",
+  "title": "Correct correlation-only structured-event persistence shape",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-009",
+  "reqs": [
+    "REQ-LOG-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-094-T3-FT-009-W1"
+  ],
+  "touched_files": [
+    "migrations/versions/0019_allow_correlation_only_server_events.py",
+    "src/face_moment/diagnostics/server_events.py",
+    "tests/diagnostics/test_server_events.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Structured-event correlation persistence tests",
+      "command": "docker compose run --rm backend python -m pytest tests/diagnostics/test_server_events.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-009.md",
+    ".memory-bank/domains/structured-server-events.md",
+    ".memory-bank/contracts/server-event-api.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/architecture/system-architecture.md",
+    ".memory-bank/tasks/plans/IMPL-FT-009.md"
+  ],
+  "evidence_required": [
+    ".protocols/FT-009/clarification.md#finding--correlation-only-persistence-shape RED: the pre-correction migration 0018 baseline plus matching ORM/envelope validation reject a synthetic qr.session_expired event with null attempt_id and present correlation_id; GREEN: one next-linear Alembic correction and matching diagnostics ORM/envelope rules persist and reload that exact correlation-only row while preserving the accepted both-identities and uncorrelated shapes; decisive comparison: disposable predecessor/upgrade/downgrade schema transitions, direct repository/envelope writes and retained baseline rows with the new-shape fixture removed before downgrade; artifact: redacted correlation-only migration/runtime evidence under .tasks/TASK-095-T3-FT-009-W1/."
+  ],
+  "purpose": "Repair the diagnostics-owned persistence provider so the already accepted correlation-only event shape is durable before the paused FT-009 search task resumes.",
+  "success_outcome": "A correlation-only structured server event is accepted consistently by the diagnostics envelope, ORM metadata and PostgreSQL constraint through one linear data-preserving migration, without changing the event catalog or any participant behavior.",
+  "anti_goals": [
+    "Do not implement or modify the TASK-091 search page, filters, authorization, HTML projection or FT-008 navigation.",
+    "Do not rewrite migration 0018, change the fixed event catalog/envelope fields, invent an Attempt association or alter producer/retention behavior.",
+    "Do not change canonical specs, feature acceptance, module topology, Foundation, Planning Revision or production data/configuration."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production PostgreSQL rows, production migration execution and operator/default server-event data",
+      "TASK-091 staff search/UI implementation, FT-008 routes, Promo Attempt/session writes and direct diagnostics reads of promo tables",
+      "Event catalog/field expansion, producer/retention behavior, canonical specifications, Foundation and Global Planning Revision"
+    ],
+    "stop_conditions": [
+      "The correction cannot remain a next-linear diagnostics-owned migration plus matching local validator change.",
+      "A correlation-only row would require an invented Attempt association, a promo-table read, an event-envelope/catalog change or another architecture edge.",
+      "Upgrade/downgrade and regression proof cannot use a disposable database with known baseline rows, safe rerun, explicit fixture cleanup and redacted artifacts.",
+      "Executing the repair would require replaying, verifying or disposing TASK-091 before this prerequisite is closed."
+    ]
+  },
+  "source_artifacts": [
+    ".protocols/FT-009/clarification.md#finding--correlation-only-persistence-shape",
+    ".tasks/TASK-091-T3-FT-009-W2/correlation-shape-blocker.md",
+    ".protocols/TASK-091-T3-FT-009-W2/handoff.md",
+    ".memory-bank/features/FT-009.md",
+    ".protocols/FT-009/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-009.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/structured-server-events.md#postgresql-shape-and-search-projection",
+    ".memory-bank/domains/structured-server-events.md#redaction-and-validation",
+    ".memory-bank/contracts/server-event-api.md#html-projection-and-ft-008-navigation",
+    ".memory-bank/contracts/boundary-map.md#diagnostic-evidence-and-access",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/architecture/system-architecture.md#ad-010--one-postgresql-schema-and-migration-stream"
+  ],
+  "constraints": [
+    "Primary owner and code root are diagnostics at src/face_moment/diagnostics/; only its persistence constraint, matching envelope validation and focused regression proof change.",
+    "Create a new linear Alembic correction after the actual current predecessor; leave migration 0018 immutable and keep one head, one Base/MetaData and one application schema.",
+    "Feature migration proof is limited to the correction revision, its direct down_revision, predecessor-to-revision upgrade, downgrade after removing the new-shape fixture, schema transition and preservation of pre-existing accepted rows; it must not require this revision to remain the mutable repository head.",
+    "Admit the required null attempt_id plus present correlation_id shape without inventing an Attempt, and keep the existing both-identities and truthfully uncorrelated shapes valid.",
+    "Keep database CheckConstraint text, SQLAlchemy metadata and envelope validation behavior aligned; preserve fixed fields, catalog, indexes, redaction, owner and non-blocking writer behavior.",
+    "Use only synthetic UUID/release values in a UUID-named disposable PostgreSQL database, prove known initial state and safe rerun, remove the correlation-only fixture before downgrade, force-drop the database in cleanup and retain only redacted artifacts."
+  ],
+  "invariants": [
+    "Diagnostics remains the only writer and validator of face_moment.server_events; shared PostgreSQL grants no producer write authority.",
+    "A known correlation_id does not require or justify an invented attempt_id, and a persisted correlation-only row remains an immutable searchable diagnostics projection.",
+    "The correction is additive and data-preserving for existing rows; it changes no fixed event field, catalog mapping, index, retention cutoff or participant outcome.",
+    "TASK-091 remains in_progress with its Attempt 1 RED/blocker evidence intact and is not repaired, replayed, verified or dispositioned until TASK-095 is done."
+  ],
+  "verification_targets": [
+    ".protocols/FT-009/clarification.md#finding--correlation-only-persistence-shape",
+    "Alembic inspection proves one linear stream, the correction's actual direct predecessor, upgrade/downgrade of only that revision and preservation of seeded accepted baseline rows without rewriting migration 0018.",
+    "A disposable PostgreSQL and repository fixture proves a qr.session_expired row with null attempt_id and present correlation_id survives commit and reload, while both-identities and uncorrelated rows remain valid.",
+    "Envelope/ORM/constraint parity tests prove the same correlation-only acceptance and reject forbidden field/catalog shapes without adding a promo lookup or invented Attempt association.",
+    "Focused regression, mypy and ownership/source inspection preserve fixed catalog/redaction, diagnostics-only persistence, non-blocking writer behavior and absence of TASK-091 search/UI changes."
+  ]
+}

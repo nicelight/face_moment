@@ -40,7 +40,29 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "dependency-block",
+      "verdict": "blocked",
+      "summary": "Autopilot repeated the dependent-blocking pass and blocked TASK-093 because dependency TASK-091-T3-FT-009-W2 is blocked by failed TASK-090.",
+      "evidence": [
+        ".memory-bank/tasks/TASK-090-T3-FT-009-W1.task.json",
+        ".memory-bank/tasks/TASK-091-T3-FT-009-W2.task.json",
+        ".memory-bank/bugs/task-090-realtime-event-post-commit-sql.md"
+      ],
+      "resume_route": "/feature-to-tasks FT-009 -> /review-tasks-plan FT-009 -> strict readiness"
+    },
+    {
+      "stage": "dependency-unblock",
+      "verdict": "planned",
+      "summary": "The explicit owner removed the obsolete failed-chain block after TASK-094 replaced the unfinished TASK-090 outcome. TASK-093 remains ordinary planned future work behind TASK-091 and has not been executed or promoted to ready.",
+      "evidence": [
+        ".memory-bank/tasks/TASK-094-T3-FT-009-W1.task.json",
+        ".memory-bank/tasks/TASK-091-T3-FT-009-W2.task.json"
+      ],
+      "resume_route": "/exe TASK-093-T3-FT-009-W3 only after TASK-091 is done and a future explicit scheduler or operator selection"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-009.md",
     ".memory-bank/domains/structured-server-events.md",

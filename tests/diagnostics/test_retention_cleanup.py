@@ -301,6 +301,7 @@ def test_failed_private_delete_preserves_retry_state_until_rerun_converges(
         assert rerun.state == "succeeded"
         assert rerun.core_attempts_deleted == 1
         assert rerun.private_artifacts_deleted == 1
+        assert rerun.promoted_subsets_preserved == 1
 
     assert store.calls == 2
     assert store.keys == {promoted_key}
@@ -313,6 +314,7 @@ def test_failed_private_delete_preserves_retry_state_until_rerun_converges(
         latest_rows = session.scalars(select(RetentionCleanupLatest)).all()
         assert len(latest_rows) == 1
         assert latest_rows[0].status == "succeeded"
+        assert latest_rows[0].promoted_subsets_preserved == 1
 
 
 def test_failure_is_sanitized_and_overlap_does_not_replace_latest(

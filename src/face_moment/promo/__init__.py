@@ -14,6 +14,12 @@ from face_moment.promo.client_timing import (
     project_core_timeline,
     record_client_response_timing,
 )
+from face_moment.promo.attempt_queries import (
+    AttemptInvestigationFilters,
+    AttemptInvestigationProjection,
+    AttemptProcessingStatus,
+    query_attempts,
+)
 from face_moment.promo.result_assembly import ResultAssembly, assemble_result
 from face_moment.promo.session import (
     BROWSER_IDLE_TTL,
@@ -66,6 +72,10 @@ __all__ = [
     "PromoAttempt",
     "PromoAttemptNotFoundError",
     "PromoAttemptRepository",
+    "AttemptInvestigationFilters",
+    "AttemptInvestigationProjection",
+    "AttemptProcessingStatus",
+    "query_attempts",
     "ClientTimingConflictError",
     "ClientTimingReport",
     "CoreTimelineProjection",

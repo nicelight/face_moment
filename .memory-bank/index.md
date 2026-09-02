@@ -44,6 +44,8 @@ status: active
   and `REQ -> Epic -> Feature -> Test` traceability.
 - [.memory-bank/changelog.md](changelog.md): durable Memory Bank change history
   and wave-boundary reconciliation record.
+- [.memory-bank/bugs/task-090-realtime-event-post-commit-sql.md](bugs/task-090-realtime-event-post-commit-sql.md):
+  archived TASK-090 failure evidence and verified TASK-094 resolution.
 - [.memory-bank/epics/index.md](epics/index.md): router for the three product
   epics (C4 L2).
 - [.memory-bank/features/index.md](features/index.md): router for the twelve product

@@ -8,7 +8,9 @@ from datetime import datetime, timedelta, timezone
 import threading
 import time
 from typing import Generic, Literal, Protocol, TypeVar
+import uuid
 
+from face_moment.diagnostics.server_events import ServerEventCode, ServerEventSink
 from face_moment.processing.realtime_search import RealtimeSearchResult
 from face_moment.promo.attempt import PromoAttempt
 from face_moment.promo.result_assembly import ResultAssembly, assemble_result
@@ -231,6 +233,63 @@ def execute_realtime_attempt(
         search_result=search_result,
         assembly=assembly,
     )
+
+
+def emit_runtime_readiness_closed(event_sink: ServerEventSink | None) -> None:
+    """Record one pre-admission closed-readiness observation best-effort."""
+
+    try:
+        if event_sink is not None:
+            event_sink.emit(ServerEventCode.RUNTIME_READINESS_CLOSED)
+    except Exception:
+        pass
+
+
+def emit_attempt_admitted(
+    event_sink: ServerEventSink | None,
+    *,
+    attempt_id: uuid.UUID,
+    correlation_id: uuid.UUID,
+) -> None:
+    """Record the committed core Attempt without exposing arbitrary context."""
+
+    try:
+        if event_sink is not None:
+            event_sink.emit(
+                ServerEventCode.ATTEMPT_ADMITTED,
+                attempt_id=attempt_id,
+                correlation_id=correlation_id,
+            )
+    except Exception:
+        pass
+
+
+def emit_attempt_terminal(
+    event_sink: ServerEventSink | None,
+    *,
+    attempt_id: uuid.UUID,
+    correlation_id: uuid.UUID,
+    processing_status: str,
+) -> None:
+    """Map only accepted terminal owner states to the fixed event catalog."""
+
+    try:
+        if event_sink is None:
+            return
+        if processing_status == "result_issued":
+            event_sink.emit(
+                ServerEventCode.PROMO_RESULT_ISSUED,
+                attempt_id=attempt_id,
+                correlation_id=correlation_id,
+            )
+        elif processing_status in {"deadline", "internal_failure", "interrupted"}:
+            event_sink.emit(
+                ServerEventCode.ATTEMPT_FAILED,
+                attempt_id=attempt_id,
+                correlation_id=correlation_id,
+            )
+    except Exception:
+        pass
 
 
 def _is_unacceptable_query(search_result: RealtimeSearchResult) -> bool:

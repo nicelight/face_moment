@@ -9,12 +9,33 @@ from face_moment.diagnostics.evidence import (
     DiagnosticEvidenceProvider,
     DiagnosticEvidenceRepository,
     EvidenceWriteOutcome,
+    ORDINARY_REMOVED_GAP_REASON,
+)
+from face_moment.diagnostics.attempt_investigation import (
+    AttemptInvestigationAccessDeniedError,
+    AttemptInvestigationNotFoundError,
+    AttemptInvestigationView,
+    DeveloperEvidenceProjection,
+    EvidenceAvailability,
+    authorize_attempt_investigation,
+    read_attempt_detail,
+    read_attempts,
 )
 from face_moment.diagnostics.retention import (
     DiagnosticRetentionProvider,
     DiagnosticRetentionResult,
     RetentionObjectStore,
     expire_diagnostic_attempts,
+)
+from face_moment.diagnostics.server_events import (
+    EVENT_CATALOG,
+    EVENT_QUEUE_CAPACITY,
+    ServerEvent,
+    ServerEventCode,
+    ServerEventEmitter,
+    ServerEventProjection,
+    ServerEventRepository,
+    ServerEventSink,
 )
 
 __all__ = [
@@ -26,8 +47,25 @@ __all__ = [
     "DiagnosticEvidenceProvider",
     "DiagnosticEvidenceRepository",
     "EvidenceWriteOutcome",
+    "ORDINARY_REMOVED_GAP_REASON",
+    "AttemptInvestigationAccessDeniedError",
+    "AttemptInvestigationNotFoundError",
+    "AttemptInvestigationView",
+    "DeveloperEvidenceProjection",
+    "EvidenceAvailability",
+    "authorize_attempt_investigation",
+    "read_attempt_detail",
+    "read_attempts",
     "DiagnosticRetentionProvider",
     "DiagnosticRetentionResult",
     "RetentionObjectStore",
     "expire_diagnostic_attempts",
+    "EVENT_CATALOG",
+    "EVENT_QUEUE_CAPACITY",
+    "ServerEvent",
+    "ServerEventCode",
+    "ServerEventEmitter",
+    "ServerEventProjection",
+    "ServerEventRepository",
+    "ServerEventSink",
 ]

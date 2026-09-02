@@ -245,7 +245,7 @@ class PromoSessionRepository:
         ticket: str,
         *,
         now: datetime | None = None,
-    ) -> PromoSession:
+    ) -> tuple[PromoSession, bool]:
         """Atomically admit or reuse the shared browser context for a scan.
 
         The row lock serializes every phone's first/repeated scan. The caller
@@ -256,7 +256,8 @@ class PromoSessionRepository:
         session_row = self._get_by_ticket(ticket, for_update=True)
         first_opened_at = session_row.browser_first_opened_at
         last_seen_at = session_row.browser_last_seen_at
-        if first_opened_at is None and last_seen_at is None:
+        first_open = first_opened_at is None and last_seen_at is None
+        if first_open:
             if timestamp >= _utc(session_row.qr_first_open_expires_at):
                 raise PromoBrowserAccessExpiredError("QR browser access is expired")
             session_row.browser_first_opened_at = timestamp
@@ -269,7 +270,7 @@ class PromoSessionRepository:
             self._require_active(session_row, timestamp)
             session_row.browser_last_seen_at = _later(last_seen_at, timestamp)
         self._session.flush()
-        return session_row
+        return session_row, first_open
 
     def read_browser_access(
         self,

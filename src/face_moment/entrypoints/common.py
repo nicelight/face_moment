@@ -2,15 +2,57 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from ipaddress import ip_address
 import os
 from typing import Any, AsyncContextManager
 
 from fastapi import FastAPI
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
 
+from face_moment.diagnostics import ServerEventEmitter
 from face_moment.infrastructure.readiness import wait_for_dependencies
 from face_moment.infrastructure.settings import Settings
 RoleLifecycle = Callable[[Settings, dict[str, Any]], AsyncContextManager[None]]
+
+
+@dataclass(slots=True)
+class ServerEventBinding:
+    database_engine: Engine
+    emitter: ServerEventEmitter
+
+    def close(self) -> None:
+        self.emitter.stop()
+        self.database_engine.dispose()
+
+
+def bind_server_events(settings: Settings) -> ServerEventBinding:
+    """Bind one process-local diagnostics writer to its isolated Sessions."""
+
+    engine = create_engine(settings.database_url, pool_pre_ping=True)
+    emitter = ServerEventEmitter(
+        lambda: Session(engine),
+        release_id=os.environ.get("FACE_MOMENT_RELEASE_ID", "face-moment-runtime"),
+    )
+    emitter.start()
+    return ServerEventBinding(database_engine=engine, emitter=emitter)
+
+
+@asynccontextmanager
+async def server_event_lifecycle(
+    settings: Settings, state: dict[str, Any]
+) -> AsyncIterator[None]:
+    """Composition-only lifecycle adapter shared by backend and realtime."""
+
+    binding = bind_server_events(settings)
+    state["server_event_emitter"] = binding.emitter
+    try:
+        yield
+    finally:
+        state.pop("server_event_emitter", None)
+        binding.close()
 
 
 def create_role_app(

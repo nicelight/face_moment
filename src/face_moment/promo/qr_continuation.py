@@ -13,13 +13,19 @@ import uuid
 from botocore.exceptions import ClientError
 from sqlalchemy.orm import Session
 
+from face_moment.diagnostics.server_events import ServerEventCode, ServerEventSink
 from face_moment.processing import read_photo_processing_projection
+from face_moment.promo.attempt import PromoAttemptRepository
 from face_moment.promo.display_media import derive_media_ref
 from face_moment.promo.purchase_url import (
     PhoneContinuationConfigurationError,
     validate_phone_purchase_url,
 )
-from face_moment.promo.session import PromoSession, PromoSessionRepository
+from face_moment.promo.session import (
+    PromoBrowserAccessExpiredError,
+    PromoSession,
+    PromoSessionRepository,
+)
 from face_moment.serving_control.ingest_target import IngestTargetRepository
 
 
@@ -119,6 +125,7 @@ class PhoneContinuationService:
         qr_ticket_secret: bytes | str,
         purchase_url: str,
         object_store: PreviewObjectStore,
+        event_sink: ServerEventSink | None = None,
     ) -> None:
         self._database_session = database_session
         self._sessions = PromoSessionRepository(
@@ -128,17 +135,43 @@ class PhoneContinuationService:
         self._qr_ticket_secret = qr_ticket_secret
         self._purchase_url = validate_phone_purchase_url(purchase_url)
         self._object_store = object_store
+        self._event_sink = event_sink
 
     def exchange_ticket(
         self, ticket: str, *, now: datetime | None = None
-    ) -> PromoSession:
-        return self._sessions.open_browser_access(ticket, now=now)
+    ) -> tuple[PromoSession, bool]:
+        try:
+            return self._sessions.open_browser_access(ticket, now=now)
+        except PromoBrowserAccessExpiredError:
+            self._emit_expired()
+            raise
+
+    def emit_opened(
+        self, *, attempt_id: uuid.UUID, first_open: bool
+    ) -> None:
+        """Resolve correlation after commit and emit the first-open event."""
+
+        try:
+            if self._event_sink is None or not first_open:
+                return
+            attempt = PromoAttemptRepository(self._database_session).get(attempt_id)
+            self._event_sink.emit(
+                ServerEventCode.QR_SESSION_OPENED,
+                attempt_id=attempt_id,
+                correlation_id=attempt.client_attempt_id,
+            )
+        except Exception:
+            pass
 
     def read_session(
         self, ticket: str, *, now: datetime | None = None
     ) -> PhoneSessionView:
         timestamp = _utc(now)
-        session_row = self._sessions.read_browser_access(ticket, now=timestamp)
+        try:
+            session_row = self._sessions.read_browser_access(ticket, now=timestamp)
+        except PromoBrowserAccessExpiredError:
+            self._emit_expired()
+            raise
         idle_expires_at = _idle_expiry(session_row)
         if session_row.visit_date is None:
             raise ValueError("issued phone session has no authoritative visit date")
@@ -162,13 +195,21 @@ class PhoneContinuationService:
     ) -> PromoSession:
         """Validate the protected HTML shell without assembling personal data."""
 
-        return self._sessions.read_browser_access(ticket, now=now)
+        try:
+            return self._sessions.read_browser_access(ticket, now=now)
+        except PromoBrowserAccessExpiredError:
+            self._emit_expired()
+            raise
 
     def record_activity(
         self, ticket: str, *, now: datetime | None = None
     ) -> PhoneActivityView:
         timestamp = _utc(now)
-        session_row = self._sessions.record_browser_activity(ticket, now=timestamp)
+        try:
+            session_row = self._sessions.record_browser_activity(ticket, now=timestamp)
+        except PromoBrowserAccessExpiredError:
+            self._emit_expired()
+            raise
         idle_expires_at = _idle_expiry(session_row)
         return PhoneActivityView(
             idle_expires_at=idle_expires_at,
@@ -182,7 +223,11 @@ class PhoneContinuationService:
         *,
         now: datetime | None = None,
     ) -> bytes:
-        session_row = self._sessions.read_browser_access(ticket, now=now)
+        try:
+            session_row = self._sessions.read_browser_access(ticket, now=now)
+        except PromoBrowserAccessExpiredError:
+            self._emit_expired()
+            raise
         if not media_ref.isascii():
             raise PhoneMediaNotFoundError(media_ref)
         for photo_id in session_row.teaser_photo_ids:
@@ -233,6 +278,14 @@ class PhoneContinuationService:
                 return None
             raise
         return body or None
+
+    def _emit_expired(self) -> None:
+        try:
+            if self._event_sink is None:
+                return
+            self._event_sink.emit(ServerEventCode.QR_SESSION_EXPIRED)
+        except Exception:
+            pass
 
 
 def _idle_expiry(session_row: PromoSession) -> datetime:

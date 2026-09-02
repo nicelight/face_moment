@@ -61,11 +61,14 @@ class FakeDatabaseSession:
 class FakePhoneService:
     def __init__(self) -> None:
         self.session_id = uuid.uuid4()
+        self.attempt_id = uuid.uuid4()
         self.photo_id = uuid.uuid4()
         self.first_open_expires_at = START + timedelta(minutes=30)
         self.first_opened_at: datetime | None = None
         self.last_seen_at: datetime | None = None
         self.calls: list[str] = []
+        self.database: FakeDatabaseSession | None = None
+        self.opened_handoffs: list[tuple[uuid.UUID, bool, int]] = []
         self.media_available = True
         self.immutable = {
             "session_id": self.session_id,
@@ -75,7 +78,9 @@ class FakePhoneService:
             "n": 9,
         }
 
-    def exchange_ticket(self, ticket: str, *, now: datetime | None = None) -> object:
+    def exchange_ticket(
+        self, ticket: str, *, now: datetime | None = None
+    ) -> tuple[object, bool]:
         self.calls.append("exchange")
         timestamp = _aware(now)
         if ticket != TICKET or timestamp >= self.first_open_expires_at:
@@ -84,10 +89,15 @@ class FakePhoneService:
             minutes=60
         ):
             raise PromoSessionNotFoundError("expired")
-        if self.first_opened_at is None:
+        first_open = self.first_opened_at is None
+        if first_open:
             self.first_opened_at = timestamp
         self.last_seen_at = timestamp
-        return SimpleNamespace(id=self.session_id)
+        return SimpleNamespace(id=self.session_id, attempt_id=self.attempt_id), first_open
+
+    def emit_opened(self, *, attempt_id: uuid.UUID, first_open: bool) -> None:
+        assert self.database is not None
+        self.opened_handoffs.append((attempt_id, first_open, self.database.commits))
 
     def validate_access(self, ticket: str, *, now: datetime | None = None) -> object:
         self.calls.append("shell")
@@ -230,6 +240,7 @@ def _install_fixture(
     app = create_app()
     service = FakePhoneService()
     database = FakeDatabaseSession()
+    service.database = database
     clock = {"now": START}
     settings = _settings(limit=limit, purchase_url=purchase_url)
 
@@ -416,7 +427,10 @@ def test_multi_phone_exchange_passive_read_activity_and_exact_idle_expiry(
     assert service.first_opened_at == START
     assert service.last_seen_at == START + timedelta(minutes=5)
     assert database.commits == 2
-
+    assert service.opened_handoffs == [
+        (service.attempt_id, True, 1),
+        (service.attempt_id, False, 2),
+    ]
     clock["now"] = START + timedelta(minutes=10)
     passive = _invoke(
         app,
@@ -470,6 +484,24 @@ def test_multi_phone_exchange_passive_read_activity_and_exact_idle_expiry(
     assert expired.body == b""
     assert "Max-Age=0" in expired.headers["set-cookie"]
     assert service.immutable == immutable_before
+
+
+def test_ticket_exchange_does_not_emit_when_commit_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app, service, database, _clock = _install_fixture(monkeypatch)
+
+    def fail_commit() -> None:
+        raise RuntimeError("synthetic commit failure")
+
+    monkeypatch.setattr(database, "commit", fail_commit)
+    response = _route(app, "/q", "GET")(  # type: ignore[operator]
+        _request("/q", query=f"ticket={TICKET}")
+    )
+
+    assert response.status_code == 500
+    assert database.rollbacks == 1
+    assert service.opened_handoffs == []
 
 
 def test_safe_redirect_validation_activity_and_media_failures_are_non_disclosing(

@@ -1,7 +1,7 @@
 ---
 description: Implementation plan for role-scoped Attempt investigation in FT-008.
 status: active
-last_updated: 2026-09-01
+last_updated: 2026-09-02
 ---
 # IMPL-FT-008 — Role-Scoped Attempt Investigation
 
@@ -161,3 +161,9 @@ Both indexed cards satisfy their exact claims and tier obligations; every
 contract headings resolve; dependencies are acyclic and retain Foundation;
 feature design remains `complete`; Planning Revision remains `4`; and fresh
 `/review-tasks-plan FT-008` returns `APPROVE` without implementation guesses.
+
+## Current Delivery State
+
+Complete. TASK-088 and TASK-089 are `done`, all task gates pass, and the
+feature-level semantic verdict is `semantic-pass`. FT-008 has no remaining
+implementation task.

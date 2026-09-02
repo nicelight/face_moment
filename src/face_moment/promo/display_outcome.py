@@ -10,6 +10,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from face_moment.diagnostics.server_events import ServerEventCode, ServerEventSink
 from face_moment.promo.attempt import PromoAttempt, PromoAttemptRepository
 from face_moment.promo.session import PromoSession
 
@@ -176,6 +177,25 @@ def parse_display_report(payload: object) -> DisplayReport:
     )
 
 
+def emit_display_confirmed(
+    event_sink: ServerEventSink | None,
+    *,
+    attempt: PromoAttempt,
+    outcome: DisplayOutcome,
+) -> None:
+    """Record only the committed accepted display outcome best-effort."""
+
+    try:
+        if event_sink is not None and outcome.status == "confirmed":
+            event_sink.emit(
+                ServerEventCode.PROMO_DISPLAY_CONFIRMED,
+                attempt_id=attempt.id,
+                correlation_id=attempt.client_attempt_id,
+            )
+    except Exception:
+        pass
+
+
 def _validate_report(report: DisplayReport) -> None:
     if report.status not in {"confirmed", "failed"}:
         raise InvalidDisplayReportError("display status is invalid")
@@ -234,4 +254,5 @@ __all__ = [
     "InvalidDisplayReportError",
     "PromoDisplaySessionNotFoundError",
     "parse_display_report",
+    "emit_display_confirmed",
 ]

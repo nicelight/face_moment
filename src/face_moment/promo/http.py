@@ -15,6 +15,7 @@ import json
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
+from face_moment.diagnostics.server_events import ServerEventSink
 from face_moment.infrastructure.object_store import PrivateObjectStore
 from face_moment.infrastructure.settings import (
     DEFAULT_PHONE_PUBLIC_RATE_LIMIT,
@@ -38,6 +39,7 @@ from face_moment.promo.display_outcome import (
     DisplayReportConflictError,
     InvalidDisplayReportError,
     PromoDisplaySessionNotFoundError,
+    emit_display_confirmed,
     parse_display_report,
 )
 from face_moment.promo.realtime_evidence import (
@@ -181,8 +183,10 @@ def register_phone_continuation_routes(app: FastAPI, *, client_root: Path) -> No
                 purchase_url=purchase_url,
             )
             try:
-                service.exchange_ticket(ticket, now=timestamp)
+                session_row, first_open = service.exchange_ticket(ticket, now=timestamp)
+                attempt_id = session_row.attempt_id
                 database_session.commit()
+                service.emit_opened(attempt_id=attempt_id, first_open=first_open)
             except PromoSessionNotFoundError:
                 return _phone_redirect(purchase_url)
             except Exception:
@@ -410,6 +414,11 @@ def _register_promo_media_and_outcome_routes(app: FastAPI) -> None:
                     else database_session.get(PromoAttempt, attempt_id)
                 )
                 if attempt is not None:
+                    emit_display_confirmed(
+                        _server_event_sink(app),
+                        attempt=attempt,
+                        outcome=outcome,
+                    )
                     attach_realtime_evidence_patch_in_session(
                         database_session,
                         attempt=attempt,
@@ -574,7 +583,16 @@ def _phone_service(
             "promo_phone_object_store",
             PrivateObjectStore(settings),
         ),
+        event_sink=_server_event_sink(app),
     )
+
+
+def _server_event_sink(app: FastAPI) -> ServerEventSink | None:
+    role_state = getattr(app.state, "role_state", None)
+    if not isinstance(role_state, dict):
+        return None
+    sink = role_state.get("server_event_emitter")
+    return sink if hasattr(sink, "emit") else None
 
 
 def _phone_now(app: FastAPI) -> datetime:

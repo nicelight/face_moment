@@ -220,9 +220,10 @@ def test_browser_access_has_strict_boundaries_passive_reads_and_restart_persiste
     first_open_at = issued_at + timedelta(minutes=1)
 
     with Session(disposable_qr_engine) as session:
-        opened = PromoSessionRepository(
+        opened, first_open = PromoSessionRepository(
             session, qr_ticket_secret=QR_SECRET
         ).open_browser_access(ticket, now=first_open_at)
+        assert first_open
         assert opened.browser_first_opened_at == first_open_at
         assert opened.browser_last_seen_at == first_open_at
         assert opened.browser_idle_expires_at == first_open_at + BROWSER_IDLE_TTL
@@ -231,7 +232,10 @@ def test_browser_access_has_strict_boundaries_passive_reads_and_restart_persiste
     repeated_scan_at = issued_at + timedelta(minutes=5)
     with Session(disposable_qr_engine) as session:
         repository = PromoSessionRepository(session, qr_ticket_secret=QR_SECRET)
-        repeated = repository.open_browser_access(ticket, now=repeated_scan_at)
+        repeated, first_open = repository.open_browser_access(
+            ticket, now=repeated_scan_at
+        )
+        assert not first_open
         session.commit()
         assert repeated.browser_last_seen_at == repeated_scan_at
 
@@ -288,7 +292,7 @@ def _open_concurrently(
 ) -> tuple[uuid.UUID, datetime | None, datetime | None]:
     barrier.wait()
     with Session(engine) as session:
-        row = PromoSessionRepository(
+        row, _first_open = PromoSessionRepository(
             session, qr_ticket_secret=QR_SECRET
         ).open_browser_access(ticket, now=now)
         result = (row.id, row.browser_first_opened_at, row.browser_last_seen_at)

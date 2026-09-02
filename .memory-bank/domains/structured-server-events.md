@@ -1,7 +1,7 @@
 ---
 description: Diagnostics-owned structured server-event persistence, non-blocking emission and retention data contract.
 status: active
-last_updated: 2026-09-01
+last_updated: 2026-09-02
 source_of_truth:
   - .memory-bank/domains/structured-server-events.md
 ---
@@ -64,6 +64,12 @@ cannot supply severity/component independently of the event code, add a new
 field or attach free-form context. A new code changes this catalog and its
 redaction test inventory before producer wiring.
 
+Resolving an already existing Attempt identity for correlation may use one
+explicit bounded query through the `promo` owner after the owner outcome is
+known. That query is ordinary owner data access, not event emission or event
+persistence. Its failure may drop the event or leave an allowed event
+uncorrelated, but MUST NOT roll back or change the owner outcome.
+
 ## Non-Blocking Emission
 
 Each emitting server process binds one diagnostics-owned emitter to one fixed
@@ -74,7 +80,9 @@ session and commits event rows independently of the caller transaction.
 - A full/unavailable queue, rejected envelope, sink latency, database failure or
   shutdown may lose an event and returns a local unsuccessful result.
 - The producer MUST ignore that result for capture, search, Promo, display and
-  QR behavior and MUST NOT retry, wait, roll back or change its response.
+  QR behavior and MUST NOT retry, wait for the diagnostics writer, roll back or
+  change its response. This rule does not prohibit the explicit owner query
+  allowed by the producer boundary above.
 - The writer rolls back its own failed transaction and may continue with later
   events. There is no outbox, delivery guarantee, broker, internal scheduler,
   second runtime role or shutdown-drain guarantee.
@@ -82,9 +90,11 @@ session and commits event rows independently of the caller transaction.
   generic infrastructure own no event selection, redaction or persistence
   rule.
 
-Controlled proof holds the sink behind a latch while the producer completes,
-then exercises queue-full and database-failure branches. Wall-clock subtraction
-or an arbitrary performance threshold is not the proof method.
+Controlled proof holds the diagnostics writer behind a latch while event
+enqueue and the owner outcome complete, then exercises queue-full and
+database-failure branches. It does not hold or reject unrelated owner queries.
+Wall-clock subtraction or an arbitrary performance threshold is not the proof
+method.
 
 ## Redaction And Validation
 
@@ -122,9 +132,10 @@ cache.
   of ownership-crossing foreign-key cascades.
 - A per-code inventory proves fixed severity/component, allowed correlation and
   complete forbidden-field absence for every emitted event type.
-- Blocked-sink, full-queue and failed-database fixtures prove unchanged caller
-  transaction, participant response/outcome and completion while the writer
-  remains isolated.
+- Blocked-writer, full-queue and failed-database fixtures prove unchanged caller
+  transaction and participant response/outcome while event persistence remains
+  isolated. An explicit owner-side correlation lookup is allowed and is not an
+  event-writer failure fixture.
 - Controlled-time cleanup proves before/equal/after cutoff behavior,
   uncorrelated deletion, exact latest-result count, failure/rerun convergence
   and no stale-search recovery.

@@ -7,7 +7,8 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from face_moment.entrypoints.common import create_role_app, run
+from face_moment.diagnostics.http import register_attempt_investigation_routes
+from face_moment.entrypoints.common import create_role_app, run, server_event_lifecycle
 from face_moment.inventory.http import register_ingest_target_routes
 from face_moment.platform.auth.http import register_staff_session_routes
 from face_moment.promo.http import (
@@ -39,8 +40,9 @@ CLIENT_ROOT = _client_root()
 
 
 def create_app() -> FastAPI:
-    app = create_role_app("backend")
+    app = create_role_app("backend", lifecycle=server_event_lifecycle)
     register_staff_session_routes(app)
+    register_attempt_investigation_routes(app)
     register_ingest_target_routes(app)
     register_display_client_admin_routes(app)
     register_active_search_date_routes(app)

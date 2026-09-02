@@ -71,6 +71,8 @@ class DiagnosticRetentionProvider:
                 for key in _private_artifact_keys(evidence.ordinary_manifest)
                 if key not in promoted_artifact_keys
             )
+            if evidence.promoted_subset is not None:
+                promoted_preserved += 1
             if evidence.ordinary_expired_at is None:
                 if self._repository.mark_ordinary_expired(
                     attempt_id=attempt_id,
@@ -81,8 +83,6 @@ class DiagnosticRetentionProvider:
                     # retry state, but ordinary reads are expired already.
                     self._session.commit()
                     evidence_expired += 1
-                    if evidence.promoted_subset is not None:
-                        promoted_preserved += 1
 
             if artifact_keys and object_store is None:
                 raise RuntimeError("private artifact deletion unavailable")

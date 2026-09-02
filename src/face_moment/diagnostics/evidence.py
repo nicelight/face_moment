@@ -24,6 +24,7 @@ _MAX_DETECTIONS = 5
 _MAX_GAP_REASON_LENGTH = 255
 _MAX_ISSUE_TAGS = 32
 _MAX_ISSUE_TAG_LENGTH = 64
+ORDINARY_REMOVED_GAP_REASON = "ordinary_removed"
 _ISSUE_TAG_PATTERN = re.compile(r"[a-z0-9]+(?:_[a-z0-9]+)*\Z")
 _ORDINARY_TOP_LEVEL_KEYS = frozenset(
     {
@@ -284,6 +285,8 @@ class DiagnosticEvidenceRepository:
 
         if evidence.ordinary_expired_at is not None:
             raise DiagnosticEvidenceError("ordinary evidence has expired")
+        if evidence.gap_reason == ORDINARY_REMOVED_GAP_REASON:
+            raise DiagnosticEvidenceError("ordinary evidence has been removed")
         if evidence.completeness == Completeness.COMPLETE.value:
             return evidence
 
@@ -321,6 +324,8 @@ class DiagnosticEvidenceRepository:
         )
         if evidence.ordinary_expired_at is not None:
             raise DiagnosticEvidenceError("ordinary evidence has expired")
+        if evidence.gap_reason == ORDINARY_REMOVED_GAP_REASON:
+            raise DiagnosticEvidenceError("ordinary evidence has been removed")
         normalized_manifest = (
             _validate_ordinary_manifest(ordinary_manifest)
             if ordinary_manifest is not None
@@ -399,6 +404,34 @@ class DiagnosticEvidenceRepository:
         )
         return True
 
+    def remove_ordinary(
+        self,
+        *,
+        attempt_id: uuid.UUID,
+        now: datetime | None = None,
+        schema_version: int = CURRENT_SCHEMA_VERSION,
+    ) -> DiagnosticEvidence:
+        """Irreversibly remove ordinary content while retaining owner provenance."""
+
+        _validate_attempt_id(attempt_id)
+        _validate_schema_version(schema_version)
+        evidence = self.require(
+            attempt_id, schema_version=schema_version, for_update=True
+        )
+        if evidence.gap_reason == ORDINARY_REMOVED_GAP_REASON:
+            return evidence
+        if evidence.ordinary_expired_at is not None:
+            raise DiagnosticEvidenceError("ordinary evidence has expired")
+        timestamp = _utc(now)
+        evidence.ordinary_manifest = None
+        evidence.completeness = Completeness.INCOMPLETE.value
+        evidence.gap_reason = ORDINARY_REMOVED_GAP_REASON
+        evidence.finalized_at = None
+        evidence.updated_at = timestamp
+        self._session.flush()
+        self._session.refresh(evidence)
+        return evidence
+
     def mark_ordinary_expired(
         self,
         *,
@@ -413,7 +446,11 @@ class DiagnosticEvidenceRepository:
         evidence = self.get(
             attempt_id, schema_version=schema_version, for_update=True
         )
-        if evidence is None or evidence.ordinary_expired_at is not None:
+        if (
+            evidence is None
+            or evidence.ordinary_expired_at is not None
+            or evidence.gap_reason == ORDINARY_REMOVED_GAP_REASON
+        ):
             return False
         timestamp = _utc(now)
         evidence.ordinary_expired_at = timestamp
@@ -542,6 +579,25 @@ class DiagnosticEvidenceProvider:
             lambda: self._repository.promote_subset(
                 attempt_id=attempt_id,
                 promoted_subset=promoted_subset,
+                schema_version=schema_version,
+                now=now,
+            ),
+        )
+
+    def remove_ordinary(
+        self,
+        *,
+        attempt_id: uuid.UUID,
+        schema_version: int = CURRENT_SCHEMA_VERSION,
+        now: datetime | None = None,
+    ) -> EvidenceWriteOutcome:
+        """Run the internal diagnostics-owned explicit removal transition."""
+
+        return self._run(
+            "remove_ordinary",
+            attempt_id,
+            lambda: self._repository.remove_ordinary(
+                attempt_id=attempt_id,
                 schema_version=schema_version,
                 now=now,
             ),

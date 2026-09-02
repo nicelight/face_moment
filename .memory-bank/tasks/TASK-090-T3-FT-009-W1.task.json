@@ -1,7 +1,7 @@
 {
   "id": "TASK-090-T3-FT-009-W1",
   "title": "Collect structured server events without blocking participant flow",
-  "status": "ready",
+  "status": "failed",
   "wave": "W1",
   "feature": "FT-009",
   "reqs": [
@@ -44,7 +44,24 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    "Independent verification failed: a verifier-owned latch probe proved that QR first-open and expired-event producers synchronously wait on logging-only PostgreSQL correlation lookups before participant completion, violating FT-009-AC-002; focused tests, mypy, mb-lint, migration/catalog/redaction and diagnostics ownership checks otherwise passed. Evidence: .protocols/TASK-090-T3-FT-009-W1/verification.md and .tasks/TASK-090-T3-FT-009-W1/TASK-090-T3-FT-009-W1-S-VERIFY-targeted-probe-01.md. Scheduler action: keep lifecycle unchanged and return TASK-090 to the implementation owner for a corrected Execution Attempt.",
+    "Corrected Attempt 2 still failed independent verification: real disposable PostgreSQL proved first-open owner state commits, then emit_opened implicitly refreshes expired PromoSession attributes and blocks participant completion/event enqueue on a logging-only post-commit SELECT; exact-boundary expiry and fresh schema/catalog/redaction, queue/sink, migration, owner and gate checks passed. Evidence: .protocols/TASK-090-T3-FT-009-W1/verification.md and .tasks/TASK-090-T3-FT-009-W1/TASK-090-T3-FT-009-W1-S-VERIFY-targeted-probe-02.md. Scheduler action: keep lifecycle unchanged and return TASK-090 to the implementation owner for another bounded Execution Attempt.",
+    "Final Attempt 3 failed independent verification: the QR primitive snapshot correction and every required gate passed, but a fresh real PostgreSQL latch proved realtime admission still performs a logging-only post-commit PromoAttempt refresh before exact event enqueue, blocking the producer path until release and violating FT-009-AC-002. Evidence: .protocols/TASK-090-T3-FT-009-W1/verification.md and .tasks/TASK-090-T3-FT-009-W1/TASK-090-T3-FT-009-W1-S-VERIFY-targeted-probe-03.md. Scheduler action: keep lifecycle unchanged and apply the recorded third-failure disposition; no red-verify or mb-sync.",
+    {
+      "stage": "closure",
+      "verdict": "failed",
+      "summary": "Autopilot scheduler marked TASK-090 failed after the initial attempt plus two retries each returned a reproducible functional FAIL for task-owned FT-009-AC-002. Retry budget is exhausted; no fourth attempt is permitted.",
+      "evidence": [
+        ".protocols/TASK-090-T3-FT-009-W1/verification.md",
+        ".tasks/TASK-090-T3-FT-009-W1/TASK-090-T3-FT-009-W1-S-VERIFY-targeted-probe-01.md",
+        ".tasks/TASK-090-T3-FT-009-W1/TASK-090-T3-FT-009-W1-S-VERIFY-targeted-probe-02.md",
+        ".tasks/TASK-090-T3-FT-009-W1/TASK-090-T3-FT-009-W1-S-VERIFY-targeted-probe-03.md",
+        ".memory-bank/bugs/task-090-realtime-event-post-commit-sql.md"
+      ],
+      "repair_owner": "/feature-to-tasks FT-009"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-009.md",
     ".memory-bank/domains/structured-server-events.md",

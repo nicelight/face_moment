@@ -4,6 +4,21 @@ status: active
 ---
 # Changelog
 
+## [2026-09-02] FT-008 closure and FT-009 producer slice
+
+- Verified: FT-008 is complete. TASK-088 and TASK-089 are `done`, the
+  feature-level adversarial review is `semantic-pass`, and `REQ-DIAG-003` is
+  verified.
+- Implemented: FT-009's isolated redacted persistence slice
+  (`FT-009-AC-002`) is closed by TASK-094 with functional PASS and
+  task-scoped semantic-pass.
+- Reconciled: TASK-090 remains failed historical evidence and its resolved bug
+  note is archived. TASK-091 and TASK-093 no longer carry the obsolete failed-
+  dependency block; both remain `planned` and unexecuted.
+- Clarified: one explicit bounded Promo-owned QR correlation query after commit
+  is accepted ordinary owner access, not diagnostics writer latency. No global
+  zero-SQL requirement was introduced.
+
 ## [2026-08-29] Development baseline after FT-001…FT-007
 
 - All development work for `FT-001` through `FT-007` is terminal. Their

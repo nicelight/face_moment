@@ -15,7 +15,7 @@ import numpy as np
 from numpy.typing import NDArray
 from sqlalchemy.orm import Session
 
-from face_moment.entrypoints.common import create_role_app, run
+from face_moment.entrypoints.common import bind_server_events, create_role_app, run
 from face_moment.entrypoints.model_consumers import bind_model_consumer
 from face_moment.infrastructure.object_store import PrivateObjectStore
 from face_moment.infrastructure.settings import (
@@ -56,6 +56,11 @@ from face_moment.promo.realtime_admission import (
     admission_values,
     parse_realtime_multipart,
 )
+from face_moment.promo.realtime_orchestration import (
+    emit_attempt_admitted,
+    emit_attempt_terminal,
+    emit_runtime_readiness_closed,
+)
 from face_moment.promo.startup_recovery import RealtimeStartupRecoveryRepository
 from face_moment.serving_control.display_client_auth import (
     DisplayClientRateLimiter,
@@ -77,8 +82,15 @@ _NO_STORE_HEADERS = {"Cache-Control": "no-store"}
 async def _realtime_lifecycle(
     settings: Settings, state: dict[str, Any]
 ) -> AsyncIterator[None]:
-    display_configuration = read_display_configuration(settings)
-    binding = bind_model_consumer(settings)
+    event_binding = bind_server_events(settings)
+    state["server_event_emitter"] = event_binding.emitter
+    try:
+        display_configuration = read_display_configuration(settings)
+        binding = bind_model_consumer(settings)
+    except Exception:
+        state.pop("server_event_emitter", None)
+        event_binding.close()
+        raise
     state["session_factory"] = binding.session_factory
     state["model_adapter"] = binding.adapter
     state["object_store"] = PrivateObjectStore(settings)
@@ -123,7 +135,9 @@ async def _realtime_lifecycle(
         state.pop("realtime_success_cooldown_ms", None)
         state.pop("qr_ticket_secret", None)
         state.pop("display_client_rate_limiter", None)
+        state.pop("server_event_emitter", None)
         binding.close()
+        event_binding.close()
 
 
 def create_app() -> FastAPI:
@@ -191,6 +205,7 @@ def create_app() -> FastAPI:
                 )
             except (RealtimeReadinessClosedError, UnknownRealtimeContextSpaError) as error:
                 database_session.rollback()
+                emit_runtime_readiness_closed(state.get("server_event_emitter"))
                 raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE) from error
 
             attempt = repository.create_or_get(
@@ -202,7 +217,14 @@ def create_app() -> FastAPI:
                     ),
                 ),
             )
+            admitted_attempt_id = attempt.id
+            admitted_correlation_id = attempt.client_attempt_id
             database_session.commit()
+            emit_attempt_admitted(
+                state.get("server_event_emitter"),
+                attempt_id=admitted_attempt_id,
+                correlation_id=admitted_correlation_id,
+            )
             attempt = repository.get_by_admission_key(
                 spa_id=principal.spa_id,
                 client_attempt_id=payload.attempt_id,
@@ -258,7 +280,15 @@ def create_app() -> FastAPI:
                 execution=execution,
             )
             evidence_attempt_id = attempt.id
+            terminal_correlation_id = attempt.client_attempt_id
+            terminal_processing_status = attempt.processing_status
             database_session.commit()
+            emit_attempt_terminal(
+                state.get("server_event_emitter"),
+                attempt_id=evidence_attempt_id,
+                correlation_id=terminal_correlation_id,
+                processing_status=terminal_processing_status,
+            )
             attach_realtime_evidence(
                 session_factory,
                 attempt_id=evidence_attempt_id,

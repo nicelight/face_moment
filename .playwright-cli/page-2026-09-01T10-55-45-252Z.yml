@@ -1,0 +1,44 @@
+- main [ref=e2]:
+  - heading "Attempts" [level=1] [ref=e3]
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - text: Attempt ID
+      - textbox "Attempt ID" [ref=e6]
+    - generic [ref=e7]:
+      - text: Correlation ID
+      - textbox "Correlation ID" [ref=e8]
+    - generic [ref=e9]:
+      - text: From UTC
+      - textbox "From UTC" [ref=e10]
+    - generic [ref=e11]:
+      - text: To UTC
+      - textbox "To UTC" [ref=e12]
+    - generic [ref=e13]:
+      - text: State
+      - textbox "State" [ref=e14]: result_issued
+    - button "Filter" [ref=e15]
+  - table [ref=e16]:
+    - rowgroup [ref=e17]:
+      - row [ref=e18]:
+        - columnheader "Attempt" [ref=e19]
+        - columnheader "Correlation" [ref=e20]
+        - columnheader "Created" [ref=e21]
+        - columnheader "State" [ref=e22]
+        - columnheader "Outcome" [ref=e23]
+        - columnheader "Stages" [ref=e24]
+        - columnheader "Latency" [ref=e25]
+        - columnheader "Evidence" [ref=e26]
+        - columnheader "Issues" [ref=e27]
+    - rowgroup [ref=e28]:
+      - row [ref=e29]:
+        - cell [ref=e30]:
+          - link "49037dd5-61d7-4d66-93e6-74dc55062698" [ref=e31] [cursor=pointer]:
+            - /url: /staff/attempts/49037dd5-61d7-4d66-93e6-74dc55062698
+        - cell "cf707033-15e8-4bde-b9d7-2d62fc6b0793" [ref=e32]
+        - cell "2026-09-01T08:00:00Z" [ref=e33]
+        - cell "result_issued" [ref=e34]
+        - cell "result" [ref=e35]
+        - cell "admission_to_slot=10ms, slot_to_search=10ms, search=30ms" [ref=e36]
+        - cell "9500ms client-local" [ref=e37]
+        - cell "complete" [ref=e38]
+        - cell "browser_fixture, evidence_complete" [ref=e39]

@@ -1,16 +1,16 @@
 ---
 description: Implementation plan for non-blocking structured server events, bounded developer search and expiry.
 status: active
-last_updated: 2026-09-01
+last_updated: 2026-09-02
 ---
 # IMPL-FT-009 — Minimal Structured Server Events
 
 ## Goal
 
 Let an authorized developer inspect recent important redacted server events and
-navigate correlated events into FT-008, while event collection never delays the
-participant flow and every retained row expires through the existing cleanup
-command after 30 days.
+navigate correlated events into FT-008, while event enqueue, writer and
+persistence latency/failure never changes the participant outcome and every
+retained row expires through the existing cleanup command after 30 days.
 
 ## Normative Basis And Canonical Coverage
 
@@ -58,8 +58,10 @@ Backbone Planning Revision `4` remain unchanged. Foundation final gate
 In scope are one fixed event envelope/catalog, one diagnostics-owned PostgreSQL
 table/repository, one bounded non-waiting process-local writer per emitting
 role, producer wiring at accepted runtime/realtime/Promo/display/QR outcomes,
-one developer-only server-rendered search page, exact bounded filters and
-navigation, and owner deletion through the current retention result.
+the minimum next-linear correction that makes the accepted correlation-only
+row valid in PostgreSQL and matching ORM/envelope validation, one developer-only
+server-rendered search page, exact bounded filters and navigation, and owner
+deletion through the current retention result.
 
 There is no browser-log ingestion, arbitrary message/payload, Python root-log
 capture, full-text query, JSON API, detail route, pagination, live tail,
@@ -76,6 +78,18 @@ application boundary and remain owners of Attempt/result/session/QR state.
 Diagnostics owns event validation, background persistence, search authorization
 and row deletion. Entrypoints bind lifecycle/HTTP adapters only.
 
+The correlation-shape correction is provider-local to diagnostics. It adds one
+revision after the actual direct Alembic predecessor, updates matching
+SQLAlchemy/envelope validation and preserves migration 0018 as history. It adds
+no new module edge, payload, event code, owner lookup or product behavior.
+
+Promo remains the owner of QR/Attempt correlation. It may execute the one
+accepted explicit bounded owner lookup after the owner outcome is known, then
+pass only immutable UUID primitives to diagnostics. That ordinary owner access
+is not event persistence; diagnostics still never reads promo tables. Realtime
+entrypoint sequencing snapshots the same primitives before commit so its
+post-commit event handoff needs no ORM refresh.
+
 The server-event page obtains the current principal through the accepted
 `diagnostics -> staff_access` edge. It links to the FT-008 routes but does not
 read promo tables, validate target existence or embed Attempt detail. The
@@ -89,28 +103,45 @@ FT-008 URL contract and unchanged cleanup result shape.
 
 | Task | Tier | Wave | Direct prerequisites | Exact owned claim | Outcome |
 |---|---|---|---|---|---|
-| `TASK-090-T3-FT-009-W1` | T3 | W1 | completed QR, realtime evidence and retention/migration seams | `FT-009-AC-002` | Persist the fixed event catalog through an isolated non-blocking diagnostics writer and wire accepted producers without changing participant outcomes. |
-| `TASK-091-T3-FT-009-W2` | T3 | W2 | `TASK-090` and the planned FT-008 staff surface | `FT-009-AC-001`, `FT-009-AC-004`; exact invalid-filter and sanitized-failure obligations | Expose the complete developer-only bounded HTML search/navigation flow, including truthful uncorrelated rows. |
+| `TASK-090-T3-FT-009-W1` | T3 | W1 | completed QR, realtime evidence and retention/migration seams | historical failed ownership of `FT-009-AC-002` | Preserve the exhausted-retry collection implementation and verifier evidence; this identity is not executable. |
+| `TASK-094-T3-FT-009-W1` | T3 | W1 | completed QR, realtime evidence and retention/migration seams; current TASK-090 implementation/evidence as bounded repair input | replacement ownership of `FT-009-AC-002` | Finish only producer integration: primitive realtime handoffs, explicit bounded QR owner correlation and removal of diagnostics-only transient Promo state. |
+| `TASK-095-T3-FT-009-W1` | T3 | W1 | closed `TASK-094` persistence/producer baseline | accepted correlation-only persistence obligation in `.protocols/FT-009/clarification.md#finding--correlation-only-persistence-shape`; no feature AC reassignment | Add one next-linear Alembic correction plus matching ORM/envelope validation and focused persistence regression evidence. |
+| `TASK-091-T3-FT-009-W2` | T3 | W2 | `TASK-089`, `TASK-094` and completed `TASK-095` | `FT-009-AC-001`, `FT-009-AC-004`; exact invalid-filter and sanitized-failure obligations | Resume the preserved Attempt 1 only after TASK-095 closes, then expose the complete developer-only bounded HTML search/navigation flow, including truthful uncorrelated rows. |
 | `TASK-093-T3-FT-009-W3` | T3 | W3 | `TASK-091` staff search plus completed owner-ordered cleanup | `FT-009-AC-003` | Delete correlated and uncorrelated server events at the fixed 30-day cutoff, report the confirmed count and prove current/bookmarked browser non-recovery. |
 
-The row/repository, emitter and producer wiring remain one collection result:
-splitting them would leave a storage-only intermediate with no accepted feature
-outcome under the same owner. Query and HTML remain one surface because there is
-no JSON API, read model or separate frontend. Destructive expiry is independently
-completable and provable, so it remains separate. Its W3 dependency on the W2
-search surface is proof-required: AC-003 owns current/bookmarked route
-non-recovery and cannot execute that browser proof before the route exists.
-Tests, RED/GREEN probes and browser evidence stay with their implementing tasks.
-No production-only work is introduced, so there is no `Production acceptance:`
-task.
+The original collection boundary was execution-cohesive, but its normal retry
+budget is exhausted. The replacement does not reslice the finished migration,
+repository, queue/writer, catalog or redaction work: it isolates only the
+evidence-backed producer correction needed to make that same material outcome
+acceptable. Realtime snapshots UUID/state primitives before commit and emits
+after commit without ORM access. QR uses an explicit bounded promo-owner query
+instead of diagnostics-only transient attributes on `PromoSession` or payload
+on `PromoBrowserAccessExpiredError`. Query and HTML remain one W2 surface;
+destructive expiry remains the unchanged W3 outcome. Tests, RED/GREEN probes and
+browser evidence stay with their implementing tasks. No production-only work is
+introduced, so there is no `Production acceptance:` task.
+
+TASK-095 stays in W1 because it repairs the collection provider consumed by the
+W2 search result; moving TASK-091 or TASK-093 would rewrite their established
+identities without adding ordering value. TASK-095 is T3 because its
+next-linear constraint migration changes deployed runtime persistence even
+though the correction is bounded, reversible in disposable proof and has no
+data-loss intent. Adding TASK-095 to the already `in_progress` TASK-091
+dependency set is the required explicit `rebuild_required` action; TASK-091's
+lifecycle and evidence are otherwise immutable.
 
 ## Advisory Expected Change Surface
 
 - `migrations/versions/0018_structured_server_events.py`;
+- `migrations/versions/0019_allow_correlation_only_server_events.py` as the
+  expected next-linear correction without rewriting 0018;
 - `src/face_moment/diagnostics/server_events.py`, package exports and a bounded
   diagnostics-owned writer lifecycle;
 - existing runtime/realtime/Promo/display/QR producer seams and backend/
   realtime entrypoint bindings;
+- bounded producer repair in `promo/realtime_orchestration.py`,
+  `entrypoints/realtime.py`, `promo/qr_continuation.py`, `promo/session.py`,
+  `promo/attempt_queries.py` and their focused tests;
 - `src/face_moment/diagnostics/server_event_search.py`, diagnostics HTTP adapter
   and backend route registration;
 - existing diagnostics/promo retention services;
@@ -125,13 +156,24 @@ paths. No hard write boundary is inferred from this list.
 - Migration/repository fixtures use a disposable PostgreSQL database, resolve
   the actual direct Alembic predecessor and prove exact fields, constraints,
   indexes, catalog projections and restart persistence.
+- The correction fixture upgrades only from its direct predecessor, proves the
+  correlation-only row through the envelope/repository/database, preserves
+  seeded accepted rows, removes the new-shape fixture before downgrade and
+  proves downgrade without making its revision the mutable exact-head gate.
 - One producer matrix covers every catalog code and verifies fixed severity/
   component/correlation plus complete exclusion of credentials, tokens,
   participant/session data, images, embeddings, request bodies and arbitrary
   payloads.
-- A sink latch, full queue and database failure prove the participant call and
-  owner transaction finish unchanged before persistence is released, without
-  retry, rollback or response mutation.
+- A diagnostics-writer latch, full queue and database failure prove the
+  participant call and owner transaction finish unchanged before persistence is
+  released, without retry, rollback or response mutation. The accepted explicit
+  promo-owner QR query is traced separately and is not held as a writer-failure
+  fixture.
+- A real PostgreSQL all-SQL latch proves realtime admitted and terminal event
+  enqueue performs no post-commit ORM refresh or other event-assembly SQL.
+  Source/runtime checks prove producer helpers consume primitives and no
+  diagnostics-only correlation/event-decision state remains on `PromoSession`
+  or `PromoBrowserAccessExpiredError`.
 - Search fixtures cover default/custom intervals, every filter, conjunctive
   behavior, deterministic ties, the 100-row cap, invalid filters and sanitized
   failures.
@@ -166,9 +208,21 @@ paths. No hard write boundary is inferred from this list.
 
 ## Definition Of Done
 
-All three indexed cards satisfy their exact claims and tier obligations; every
-`FT-009-AC-001..004` is owned exactly once; task-relevant modules, edges and
-contract headings resolve; the migration stream remains linear; dependencies
-are acyclic and retain Foundation; feature design remains `complete`; Planning
-Revision remains `4`; and fresh `/review-tasks-plan FT-009` can return
-`APPROVE` without implementation guesses.
+The executable replacement, correlation-shape prerequisite and unchanged W2/W3
+cards satisfy their exact claims and tier obligations; failed TASK-090 remains
+historical evidence rather than an executable owner; every
+`FT-009-AC-001..004` has one current executable owner without assigning a
+second AC to TASK-095; task-relevant modules, edges and contract headings
+resolve; the migration stream remains linear; dependencies are acyclic and
+retain Foundation; feature design remains `complete`; Planning Revision remains
+`4`; and fresh `/review-tasks-plan FT-009` can return `APPROVE` without
+implementation guesses.
+
+## Current Delivery State
+
+The producer/persistence slice `FT-009-AC-002` is complete through TASK-094.
+TASK-090 remains failed historical evidence. TASK-095 is planned as the minimum
+provider correction. TASK-091 remains `in_progress` with Attempt 1 stopped
+before production implementation and cannot resume until TASK-095 is done;
+TASK-093 remains planned behind TASK-091. The feature itself remains
+incomplete.

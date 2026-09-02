@@ -1,7 +1,7 @@
 {
   "id": "TASK-089-T3-FT-008-W2",
   "title": "Expose role-scoped Attempts investigation",
-  "status": "planned",
+  "status": "done",
   "wave": "W2",
   "feature": "FT-008",
   "reqs": [
@@ -41,7 +41,64 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "FAIL",
+      "summary": "Independent current-worktree verification passed the focused authorization, no-store, failure-sanitization, ownership and Playwright checks, but a fresh disposable PostgreSQL probe proved that scheduled retention aliases explicit removed evidence to expired, violating FT-008-AC-005 and the direct evidence/lifecycle contracts. Lifecycle remains scheduler-owned.",
+      "report": ".tasks/TASK-089-T3-FT-008-W2/TASK-089-T3-FT-008-W2-S-VERIFY-final-report-docs-01.md",
+      "protocol": ".protocols/TASK-089-T3-FT-008-W2/verification.md",
+      "evidence": [
+        ".tasks/TASK-089-T3-FT-008-W2/TASK-089-T3-FT-008-W2-S-VERIFY-targeted-probe-01.md",
+        ".tasks/TASK-089-T3-FT-008-W2/playwright-transcript.md"
+      ]
+    },
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Fresh Attempt 2 verification proved that scheduled retention preserves the explicit ordinary_removed owner state and rendered removed availability. The current-source 16-case authorization/evidence/failure suite, Chrome stale-role journey, mypy, Memory Bank lint, diff/ownership inspection and cleanup checks passed; lifecycle remains scheduler-owned.",
+      "report": ".tasks/TASK-089-T3-FT-008-W2/TASK-089-T3-FT-008-W2-S-VERIFY-final-report-docs-02.md",
+      "protocol": ".protocols/TASK-089-T3-FT-008-W2/verification.md",
+      "evidence": [
+        ".tasks/TASK-089-T3-FT-008-W2/TASK-089-T3-FT-008-W2-S-VERIFY-targeted-probe-02.md",
+        ".tasks/TASK-089-T3-FT-008-W2/playwright-transcript.md"
+      ]
+    },
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Fresh Attempt 3 verification proved the promote-remove-retention path reports one preserved promoted subset while keeping ordinary_removed, null expiry, absent ordinary content, the curated subset and promo cleanup eligibility intact. The current-source 16-case task suite, Chrome stale-role journey, mypy, Memory Bank lint, diff/ownership inspection and disposable cleanup checks passed; lifecycle remains scheduler-owned.",
+      "report": ".tasks/TASK-089-T3-FT-008-W2/TASK-089-T3-FT-008-W2-S-VERIFY-final-report-docs-03.md",
+      "protocol": ".protocols/TASK-089-T3-FT-008-W2/verification.md",
+      "evidence": [
+        ".tasks/TASK-089-T3-FT-008-W2/TASK-089-T3-FT-008-W2-S-VERIFY-targeted-probe-03.md",
+        ".tasks/TASK-089-T3-FT-008-W2/playwright-transcript.md"
+      ]
+    },
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Fresh Attempt 4 verification proved the failed private-artifact deletion retry returns and persists promoted_subsets_preserved=1 while deleting the core Attempt and ordinary artifact and retaining the promoted subset/object. All 19 current-source task and cleanup cases, the Chrome stale-role journey, mypy, Memory Bank lint, bounded two-file diff/ownership inspection and disposable cleanup checks passed; lifecycle remains scheduler-owned.",
+      "report": ".tasks/TASK-089-T3-FT-008-W2/TASK-089-T3-FT-008-W2-S-VERIFY-final-report-docs-04.md",
+      "protocol": ".protocols/TASK-089-T3-FT-008-W2/verification.md",
+      "evidence": [
+        ".tasks/TASK-089-T3-FT-008-W2/TASK-089-T3-FT-008-W2-S-VERIFY-targeted-probe-04.md",
+        ".tasks/TASK-089-T3-FT-008-W2/playwright-transcript.md"
+      ]
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "The explicit outer owner closed TASK-089 after Attempt 4 functional PASS and per-task semantic-pass. Scheduled retention preserves the distinct ordinary_removed state, correctly reports retained promoted subsets on initial and failed-delete retry paths, and all task gates plus authorization/browser evidence pass.",
+      "evidence": [
+        ".tasks/TASK-089-T3-FT-008-W2/TASK-089-T3-FT-008-W2-S-VERIFY-final-report-docs-04.md",
+        ".tasks/TASK-089-T3-FT-008-W2/TASK-089-T3-FT-008-W2-S-RED-VERIFY-final-report-docs-01.md",
+        ".protocols/TASK-089-T3-FT-008-W2/verification.md",
+        ".protocols/TASK-089-T3-FT-008-W2/red-verification.md"
+      ],
+      "owner_lifecycle_closure": "manual_explicit_owner"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-008.md",
     ".memory-bank/contracts/attempt-investigation-api.md",

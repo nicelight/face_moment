@@ -1,0 +1,143 @@
+{
+  "id": "TASK-094-T3-FT-009-W1",
+  "title": "Simplify structured-event producers to explicit primitive handoffs",
+  "status": "done",
+  "wave": "W1",
+  "feature": "FT-009",
+  "reqs": [
+    "REQ-LOG-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-081-T3-FT-006-W2",
+    "TASK-085-T2-FT-007-W3",
+    "TASK-086-T3-FT-007-W3"
+  ],
+  "touched_files": [
+    "src/face_moment/promo/realtime_orchestration.py",
+    "src/face_moment/entrypoints/realtime.py",
+    "src/face_moment/promo/qr_continuation.py",
+    "src/face_moment/promo/session.py",
+    "src/face_moment/promo/attempt_queries.py",
+    "src/face_moment/promo/http.py",
+    "src/face_moment/promo/__init__.py",
+    "tests/promo/test_server_event_emission.py",
+    "tests/promo/test_qr_browser_access.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Structured-event producer repair tests",
+      "command": "docker compose run --rm backend python -m pytest tests/promo/test_server_event_emission.py tests/promo/test_qr_browser_access.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Fresh current-source verification proved primitive-only realtime event handoffs complete with zero post-commit event-assembly SQL; QR first-open commits its owner outcome before exactly one accepted bounded Promo-owned correlation query, while repeat, commit/query failure and expiry preserve the required outcomes. The 7-case task suite, 55-case extended regression, mypy, Memory Bank lint, migration and ownership checks passed; lifecycle remains owner-controlled.",
+      "report": ".tasks/TASK-094-T3-FT-009-W1/TASK-094-T3-FT-009-W1-S-VERIFY-final-report-docs-01.md",
+      "protocol": ".protocols/TASK-094-T3-FT-009-W1/verification.md",
+      "evidence": [
+        ".tasks/TASK-094-T3-FT-009-W1/TASK-094-T3-FT-009-W1-S-VERIFY-targeted-probe-01.md"
+      ]
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "The explicit outer owner closed TASK-094 after Execution Attempt 1 functional PASS and per-task semantic-pass. Realtime event assembly uses pre-commit primitives with zero post-commit SQL, QR uses the accepted single explicit Promo-owned correlation lookup after commit, and commit/query/sink failure preserves owner outcomes without hidden ORM or exception state.",
+      "evidence": [
+        ".tasks/TASK-094-T3-FT-009-W1/TASK-094-T3-FT-009-W1-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-094-T3-FT-009-W1/TASK-094-T3-FT-009-W1-S-RED-VERIFY-final-report-docs-01.md",
+        ".protocols/TASK-094-T3-FT-009-W1/verification.md",
+        ".protocols/TASK-094-T3-FT-009-W1/red-verification.md"
+      ],
+      "owner_lifecycle_closure": "manual_explicit_owner"
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-009.md",
+    ".memory-bank/domains/structured-server-events.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/domains/promo-attempt.md",
+    ".memory-bank/testing/client-realtime.md",
+    ".memory-bank/bugs/task-090-realtime-event-post-commit-sql.md",
+    ".memory-bank/tasks/plans/IMPL-FT-009.md"
+  ],
+  "evidence_required": [
+    "FT-009-AC-002 RED: the failed predecessor's fresh PostgreSQL latch proves realtime admission commits its PromoAttempt and then blocks event enqueue on an implicit refresh of the commit-expired ORM row, while QR event plumbing carries diagnostics-only transient state on PromoSession and correlation fields in PromoBrowserAccessExpiredError; GREEN: realtime snapshots immutable attempt/correlation primitives before successful owner commit and every realtime event helper consumes only primitives afterward, while QR removes those transient ORM/exception diagnostics fields and resolves correlation through at most one explicit bounded promo-owner query after the owner outcome is known; decisive comparison: a real all-SQL post-commit realtime latch, explicit QR owner-query trace, first-open/repeat/commit-failure/expiry matrix and held diagnostics-writer/full-queue/database-failure cases prove exact enqueue plus unchanged owner outcome; artifact: redacted producer-repair evidence under .tasks/TASK-094-T3-FT-009-W1/."
+  ],
+  "purpose": "Finish FT-009 collection with a small durable producer boundary that passes immutable UUID primitives to diagnostics, permits the accepted bounded QR owner lookup and removes diagnostics-only state from Promo ORM rows and exceptions.",
+  "success_outcome": "Realtime event enqueue performs no post-commit ORM or SQL read, QR correlation uses one explicit bounded promo-owner query when needed, and diagnostics enqueue/writer latency or failure changes no committed Promo, display or QR outcome.",
+  "anti_goals": [
+    "Do not reopen the server-event table, migration, fixed catalog, diagnostics queue/writer or redaction implementation already produced under TASK-090.",
+    "Do not prohibit ordinary promo-owner SQL, move QR correlation into diagnostics, add cached ORM metadata, enrich domain exceptions for logging or introduce a generic event context abstraction.",
+    "Do not implement the FT-009 staff search, FT-008 navigation, 30-day deletion, annotations, Calibration or production configuration."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production PostgreSQL rows, staff/display credentials, participant data and unredacted retained task artifacts",
+      "Server-event schema/catalog/migration, diagnostics persistence ownership, broker/outbox and new runtime roles",
+      "FT-009 staff search/retention, FT-010 annotations, FT-011 Calibration and unrelated Promo behavior"
+    ],
+    "stop_conditions": [
+      "The repair would require changing the fixed event envelope/catalog, diagnostics owner, accepted promo -> diagnostics edge, feature acceptance or Global Planning Revision.",
+      "Realtime event enqueue cannot be assembled from immutable primitives captured before owner commit without changing the admitted Attempt outcome.",
+      "QR correlation cannot use one explicit bounded promo-owner query without diagnostics-owned ORM state, diagnostics fields on domain exceptions or a new cross-owner read.",
+      "T3 producer probes cannot use disposable PostgreSQL state, synthetic identifiers, safe rerun, full cleanup and redacted artifacts."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-009.md#FT-009-AC-002",
+    ".memory-bank/bugs/task-090-realtime-event-post-commit-sql.md#failure",
+    ".tasks/TASK-090-T3-FT-009-W1/TASK-090-T3-FT-009-W1-S-VERIFY-targeted-probe-03.md#reproduction",
+    ".protocols/FT-009/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-009.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/structured-server-events.md#event-catalog-and-producer-boundary",
+    ".memory-bank/domains/structured-server-events.md#non-blocking-emission",
+    ".memory-bank/domains/structured-server-events.md#redaction-and-validation",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/contracts/boundary-map.md#diagnostic-evidence-and-access",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/domains/promo-attempt.md#scope-and-owner",
+    ".memory-bank/domains/promo-attempt.md#qr-browser-access",
+    ".memory-bank/testing/client-realtime.md#data-policy-checks"
+  ],
+  "constraints": [
+    "Primary implementation owner is promo at src/face_moment/promo/; entrypoints sequence owner commit and adapter calls, while diagnostics continues to own validation, enqueue and persistence.",
+    "Realtime producer helpers accept explicit attempt_id/correlation_id and terminal primitive state as needed; no helper may accept a PromoAttempt or read an ORM attribute after successful commit.",
+    "Remove diagnostics-only transient attributes/properties from PromoSession and attempt/correlation diagnostics payload from PromoBrowserAccessExpiredError; do not replace them with another hidden ORM cache or generic context carrier.",
+    "QR may perform at most one explicit bounded correlation query through the promo owner after the owner outcome is known. Query failure may drop the event or use an allowed uncorrelated shape, but never changes or rolls back the owner outcome.",
+    "Preserve the already passing QR semantics: first open emits once after commit, repeat emits no duplicate, commit failure emits nothing, and expiry keeps the exact participant outcome and allowed correlation shape.",
+    "Hold only the diagnostics writer for the non-blocking fixture; separately trace the allowed QR owner query and latch every realtime post-commit SQL before event enqueue.",
+    "Retain only synthetic UUID/release values and redacted evidence; do not run against operator/default or production state."
+  ],
+  "invariants": [
+    "Promo remains the sole owner of Attempt/session lookup and state; diagnostics receives only the fixed primitive envelope and never reads promo tables.",
+    "Diagnostics enqueue/writer latency, queue exhaustion and database failure may lose an event but never retry, roll back or alter capture/search/Promo/display/QR outcomes.",
+    "An explicit bounded promo-owner correlation query is ordinary owner access and is not classified as event enqueue, writer or persistence latency.",
+    "No diagnostics-only mutable state is attached to SQLAlchemy rows or participant-domain exceptions.",
+    "The failed TASK-090 identity, status, retry exhaustion and verification evidence remain immutable historical evidence; TASK-094 is the only executable replacement for its unfinished acceptance result."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-009.md#FT-009-AC-002",
+    "A fresh disposable PostgreSQL all-SQL latch proves realtime admitted and terminal event enqueue complete after successful owner commit without ORM refresh or any other SQL caused by event assembly.",
+    "QR owner-query traces prove at most one explicit bounded lookup when correlation is needed, no diagnostics direct promo read and unchanged first-open, repeat, commit-failure and expiry outcomes.",
+    "Source and runtime inspection prove producer helpers consume only primitives and PromoSession/PromoBrowserAccessExpiredError carry no diagnostics-only transient correlation or event-decision state.",
+    "Held diagnostics-writer, full-queue and failed-database cases retain exact owner transactions/responses with no retry, rollback or behavior change; the allowed owner lookup is not held as a writer-failure fixture.",
+    "Focused regression, mypy and ownership/import inspection preserve the fixed catalog, redaction boundary, diagnostics-only persistence and absence of broker/outbox/new runtime role."
+  ]
+}
