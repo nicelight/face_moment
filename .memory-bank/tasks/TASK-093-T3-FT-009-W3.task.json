@@ -26,12 +26,12 @@
   "gates": [
     {
       "name": "Python typecheck",
-      "command": "docker compose run --rm --no-deps backend python -m mypy src/face_moment",
+      "command": "uv run --locked python -m mypy src/face_moment",
       "required": true
     },
     {
       "name": "Structured event retention tests",
-      "command": "docker compose run --rm backend python -m pytest tests/diagnostics/test_server_event_retention.py tests/diagnostics/test_retention_cleanup.py tests/diagnostics/test_retention_api.py tests/diagnostics/test_server_event_search.py",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/diagnostics/test_server_event_retention.py tests/diagnostics/test_retention_cleanup.py tests/diagnostics/test_retention_api.py tests/diagnostics/test_server_event_search.py",
       "required": true
     },
     {

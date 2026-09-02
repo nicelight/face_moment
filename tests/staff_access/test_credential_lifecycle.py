@@ -62,7 +62,9 @@ def disposable_credential_lifecycle_state(
                 password=password,
                 role=StaffRole.PHOTOGRAPHER,
             )
-        yield create_app(), engine, username, password
+        app = create_app()
+        app.state.role_state["session_factory"] = lambda: Session(engine)
+        yield app, engine, username, password
     finally:
         engine.dispose()
         with admin_engine.connect() as connection:

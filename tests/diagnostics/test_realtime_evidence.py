@@ -330,6 +330,7 @@ def test_response_and_display_receipts_merge_to_complete_evidence(
         assert "detections" in evidence.ordinary_manifest
 
     display_app = backend.create_app()
+    display_app.state.role_state["session_factory"] = lambda: Session(engine)
     display = _json_request(
         display_app,
         method="PUT",

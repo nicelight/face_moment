@@ -63,6 +63,7 @@ def disposable_retention_api(
                 )
 
         app = create_app()
+        app.state.role_state["session_factory"] = lambda: Session(engine)
         yield (
             app,
             engine,

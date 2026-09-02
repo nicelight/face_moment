@@ -1,7 +1,7 @@
 ---
 description: Foundation Dev Path evidence and feature pressure map for the greenfield Face Moment pilot.
 status: active
-last_updated: 2026-07-31
+last_updated: 2026-09-02
 ---
 # Foundation Dev Path
 
@@ -27,27 +27,46 @@ That initial absence was evidence for the walking skeleton; the verified
 Foundation does not define or override the accepted target architecture.
 
 ## Minimal Work Path
-- Build command: `docker compose build`.
-- Typecheck command:
-  `docker compose run --rm --no-deps backend python -m mypy src/face_moment`;
-  `mypy` is a dev/test dependency configured in the project `pyproject.toml`.
-- Start command: `docker compose up --build` (single-server composition).
+
+The development loop and packaged-runtime proof are intentionally separate.
+Changing Python code runs from the current working tree through `uv`; Docker is
+used daily only for PostgreSQL/pgvector and MinIO. The release topology and its
+final Compose proof remain unchanged.
+
+- Local setup and runbook: [Local development](guides/local-development.md).
+- Dependency command: `uv sync --python 3.11`.
+- Local infrastructure command:
+  `docker compose -f compose.yaml -f compose.local.yaml up -d postgres minio`.
+- Local migration command:
+  `uv run --locked --env-file .env.local face-moment-migrate`.
+- Local typecheck command:
+  `uv run --locked python -m mypy src/face_moment`.
+- Local test command:
+  `uv run --locked --env-file .env.local python -m pytest`.
+- Local role commands use the same `uv run --locked --env-file .env.local`
+  prefix with `face-moment-backend`, `face-moment-background-worker` or
+  `face-moment-realtime`. Model-consuming roles still fail closed until a
+  committed compatible pipeline revision exists.
+- Packaged build command: `docker compose build`.
+- Packaged start command: `docker compose up --build` (single-server
+  composition).
 - Primary entrypoint: one release image with separately invocable `backend`,
   `BackgroundPhotoWorker` and `RealtimeFaceService` roles; concrete Python
   module names remain implementation discretion.
-- Smoke path: apply the one Alembic stream to an empty PostgreSQL database,
+- Packaged smoke path: apply the one Alembic stream to an empty PostgreSQL database,
   ensure private MinIO buckets, start all three roles with a fake `FaceEngine`,
   verify HTTPS readiness, PostgreSQL/MinIO read-write-delete and restart.
-- Test command: `docker compose run --rm backend python -m pytest`.
 - Deterministic smoke command: `bash scripts/smoke-runtime.sh`; its isolation,
   failure and evidence rules are canonical in the
   [testing specification](testing/index.md), section
   `Executable Baseline Contract`.
-- Evidence: build, typecheck, start, test and smoke commands exit with code
-  `0`; the empty-database migration uses one SQLAlchemy `Base/MetaData`; the
-  target image imports OpenCV and InsightFace; fake realtime warmup/readiness
-  and storage/restart probes pass. No product Photo, Attempt, session, evidence
-  or Promo behavior is part of this proof.
+- Evidence: local commands prove the current editable source; the packaged
+  smoke proves the built image and release topology. A bare
+  `docker compose run` is not evidence for the current working tree. Required
+  commands exit with code `0`; the empty-database migration uses one SQLAlchemy
+  `Base/MetaData`; the target image imports OpenCV and InsightFace; fake
+  realtime warmup/readiness and storage/restart probes pass. No product Photo,
+  Attempt, session, evidence or Promo behavior is part of this proof.
 
 ## Feature Pressure Map
 

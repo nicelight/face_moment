@@ -105,7 +105,9 @@ def disposable_photo_upload_state(
                 password=technical_photographer["password"],
                 role=StaffRole.PHOTOGRAPHER,
             )
-        yield create_app(), engine, object_store, target, {
+        app = create_app()
+        app.state.role_state["session_factory"] = lambda: Session(engine)
+        yield app, engine, object_store, target, {
             "photographer": photographer,
             "operator": operator,
             "validation": validation_photographer,

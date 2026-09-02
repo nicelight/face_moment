@@ -116,7 +116,9 @@ def disposable_ingest_target_state(
                 password=operator["password"],
                 role=StaffRole.OPERATOR,
             )
-        yield create_app(), target, photographer, operator
+        app = create_app()
+        app.state.role_state["session_factory"] = lambda: Session(engine)
+        yield app, target, photographer, operator
     finally:
         engine.dispose()
         with admin_engine.connect() as connection:

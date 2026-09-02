@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
-from contextlib import contextmanager
+from collections.abc import Callable
 
 from datetime import date, datetime
 from ipaddress import ip_address
@@ -12,7 +11,6 @@ from uuid import UUID
 from fastapi import Cookie, FastAPI, Header, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse
 from starlette.datastructures import UploadFile
-from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from face_moment.infrastructure.settings import Settings
@@ -45,12 +43,14 @@ from face_moment.inventory.validation import InvalidJpegCandidateError
 from face_moment.platform.auth.sessions import CsrfValidationError, InvalidSessionError
 
 
-def register_ingest_target_routes(app: FastAPI) -> None:
+def register_ingest_target_routes(
+    app: FastAPI, *, session_factory: Callable[[], Session]
+) -> None:
     @app.get("/staff/photo-upload", response_class=HTMLResponse)
     def photo_upload_page(
         fm_staff_session: str | None = Cookie(default=None),
     ) -> HTMLResponse:
-        with _database_session(Settings.from_env()) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 read_ingest_target_context(
                     database_session,
@@ -66,7 +66,7 @@ def register_ingest_target_routes(app: FastAPI) -> None:
     def processing_health_page(
         fm_staff_session: str | None = Cookie(default=None),
     ) -> HTMLResponse:
-        with _database_session(Settings.from_env()) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 authorize_processing_health_access(
                     database_session,
@@ -82,7 +82,7 @@ def register_ingest_target_routes(app: FastAPI) -> None:
     def ingest_targets(
         fm_staff_session: str | None = Cookie(default=None),
     ) -> IngestTargetContext:
-        with _database_session(Settings.from_env()) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 return read_ingest_target_context(
                     database_session,
@@ -98,7 +98,7 @@ def register_ingest_target_routes(app: FastAPI) -> None:
         photo_id: UUID,
         fm_staff_session: str | None = Cookie(default=None),
     ) -> dict[str, object]:
-        with _database_session(Settings.from_env()) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 return read_photo_processing_status(
                     database_session,
@@ -122,7 +122,7 @@ def register_ingest_target_routes(app: FastAPI) -> None:
         fm_staff_session: str | None = Cookie(default=None),
     ) -> dict[str, object]:
         settings = Settings.from_env()
-        with _database_session(settings) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 return read_processing_health(
                     database_session,
@@ -153,7 +153,7 @@ def register_ingest_target_routes(app: FastAPI) -> None:
     ) -> dict[str, object]:
         spa_id, visit_date, photo_bytes = await _photo_upload_form(request)
         settings = Settings.from_env()
-        with _database_session(settings) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 result = upload_photo(
                     database_session,
@@ -210,14 +210,8 @@ def register_ingest_target_routes(app: FastAPI) -> None:
             }
 
 
-@contextmanager
-def _database_session(settings: Settings) -> Iterator[Session]:
-    engine = create_engine(settings.database_url, pool_pre_ping=True)
-    try:
-        with Session(engine) as database_session:
-            yield database_session
-    finally:
-        engine.dispose()
+def _database_session(session_factory: Callable[[], Session]) -> Session:
+    return session_factory()
 
 
 async def _photo_upload_form(request: Request) -> tuple[UUID, date, bytes]:

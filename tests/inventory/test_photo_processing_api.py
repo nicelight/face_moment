@@ -134,8 +134,10 @@ def disposable_photo_processing_api_state(
             current_revision_id=current_revision.id,
             incompatible_revision_id=incompatible_revision.id,
         )
+        app = create_app()
+        app.state.role_state["session_factory"] = lambda: Session(engine)
         yield _Fixture(
-            app=create_app(),
+            app=app,
             engine=engine,
             spa_id=target.spa_id,
             admission_revision_id=current_revision.id,

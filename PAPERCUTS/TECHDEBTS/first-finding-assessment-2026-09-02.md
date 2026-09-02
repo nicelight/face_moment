@@ -106,3 +106,23 @@ release metadata для закрытия finding не нужны.
 Не измерялись среднее время rebuild и частота сетевых failures; поэтому
 стоимость cache refactor нельзя ранжировать точнее. Текущего evidence достаточно
 для подтверждения source/image mismatch и необходимости provenance guard.
+
+## Результат закрытия 2026-09-02
+
+Принят local-first repair без source mounts и дополнительных application
+containers:
+
+- `uv.lock` и editable `.venv` фиксируют Python 3.11 dependency graph, а
+  `uv run --locked` импортирует `face_moment` из текущего `src/`;
+- `compose.local.yaml` публикует только PostgreSQL/pgvector и MinIO на loopback
+  через отдельную local bridge-сеть; release topology в `compose.yaml` не
+  изменена;
+- текущие незавершённые FT-009 gates используют `uv`, исторические receipts не
+  переписаны;
+- packaged proof остаётся `scripts/smoke-runtime.sh` с обязательным build;
+- старые Face Moment application containers и восемь stale Python image tags
+  удалены без удаления PostgreSQL/MinIO volumes.
+
+Таким образом, неоднозначный bare-run больше не является штатным путём. Finding
+закрыт; отдельные устаревшие/сломанные tests из finding 2 не входят в этот
+repair.

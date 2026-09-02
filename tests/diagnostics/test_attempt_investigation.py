@@ -139,8 +139,10 @@ def disposable_investigation(
             role: _login_token(engine, credentials[role])
             for role in credentials
         }
+        app = create_app()
+        app.state.role_state["session_factory"] = lambda: Session(engine)
         yield InvestigationFixture(
-            app=create_app(),
+            app=app,
             engine=engine,
             cookies=cookies,
             attempts=attempts,

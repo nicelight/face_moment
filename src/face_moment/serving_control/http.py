@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
-from contextlib import contextmanager
+from collections.abc import Callable, Sequence
 from datetime import date, datetime
 from html import escape
 import uuid
@@ -9,10 +8,8 @@ import uuid
 from fastapi import Cookie, FastAPI, Header, HTTPException, status
 from pydantic import BaseModel, ConfigDict
 from fastapi.responses import HTMLResponse
-from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from face_moment.infrastructure.settings import Settings
 from face_moment.platform.auth.sessions import (
     CsrfValidationError,
     InvalidSessionError,
@@ -49,12 +46,14 @@ class ActiveSearchDateResponse(BaseModel):
     updated_at: datetime | None
 
 
-def register_display_client_admin_routes(app: FastAPI) -> None:
+def register_display_client_admin_routes(
+    app: FastAPI, *, session_factory: Callable[[], Session]
+) -> None:
     @app.get("/staff/display-clients", response_class=HTMLResponse)
     def display_client_admin_page(
         fm_staff_session: str | None = Cookie(default=None),
     ) -> HTMLResponse:
-        with _database_session(Settings.from_env()) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 clients = read_display_client_admin(
                     database_session,
@@ -70,12 +69,14 @@ def register_display_client_admin_routes(app: FastAPI) -> None:
         return response
 
 
-def register_active_search_date_routes(app: FastAPI) -> None:
+def register_active_search_date_routes(
+    app: FastAPI, *, session_factory: Callable[[], Session]
+) -> None:
     @app.get("/staff/search-settings", response_class=HTMLResponse)
     def active_search_date_page(
         fm_staff_session: str | None = Cookie(default=None),
     ) -> HTMLResponse:
-        with _database_session(Settings.from_env()) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 spas = list_active_search_date_spas(
                     database_session,
@@ -102,7 +103,7 @@ def register_active_search_date_routes(app: FastAPI) -> None:
         spa_id: uuid.UUID,
         fm_staff_session: str | None = Cookie(default=None),
     ) -> ActiveSearchDateResponse:
-        with _database_session(Settings.from_env()) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 record = read_active_search_date(
                     database_session,
@@ -132,7 +133,7 @@ def register_active_search_date_routes(app: FastAPI) -> None:
         fm_staff_csrf: str | None = Cookie(default=None),
         x_csrf_token: str | None = Header(default=None),
     ) -> ActiveSearchDateResponse:
-        with _database_session(Settings.from_env()) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 record = update_active_search_date(
                     database_session,
@@ -156,14 +157,8 @@ def register_active_search_date_routes(app: FastAPI) -> None:
         return _active_search_date_response(record)
 
 
-@contextmanager
-def _database_session(settings: Settings) -> Iterator[Session]:
-    engine = create_engine(settings.database_url, pool_pre_ping=True)
-    try:
-        with Session(engine) as database_session:
-            yield database_session
-    finally:
-        engine.dispose()
+def _database_session(session_factory: Callable[[], Session]) -> Session:
+    return session_factory()
 
 
 def _display_client_page_html(clients: Sequence[DisplayClientAdminRecord]) -> str:

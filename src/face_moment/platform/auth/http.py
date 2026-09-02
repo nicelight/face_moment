@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
-from contextlib import contextmanager
+from collections.abc import Callable
 from ipaddress import ip_address
 
 from fastapi import Cookie, FastAPI, Header, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from face_moment.infrastructure.settings import Settings
@@ -31,7 +29,9 @@ class LoginRequest(BaseModel):
     password: str
 
 
-def register_staff_session_routes(app: FastAPI) -> None:
+def register_staff_session_routes(
+    app: FastAPI, *, session_factory: Callable[[], Session]
+) -> None:
     @app.get("/staff/login", response_class=HTMLResponse)
     def staff_login_page() -> HTMLResponse:
         return HTMLResponse("<main><h1>Staff login</h1></main>")
@@ -39,7 +39,7 @@ def register_staff_session_routes(app: FastAPI) -> None:
     @app.post("/api/staff/sessions", status_code=status.HTTP_204_NO_CONTENT)
     def login(request: Request, payload: LoginRequest) -> Response:
         settings = Settings.from_env()
-        with _database_session(settings) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 browser_session = create_browser_session(
                     database_session,
@@ -61,7 +61,7 @@ def register_staff_session_routes(app: FastAPI) -> None:
     def current_session(
         fm_staff_session: str | None = Cookie(default=None),
     ) -> dict[str, str]:
-        with _database_session(Settings.from_env()) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 principal = get_current_principal(
                     database_session, session_token=fm_staff_session
@@ -80,7 +80,7 @@ def register_staff_session_routes(app: FastAPI) -> None:
         fm_staff_csrf: str | None = Cookie(default=None),
         x_csrf_token: str | None = Header(default=None),
     ) -> Response:
-        with _database_session(Settings.from_env()) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 revoke_current_browser_session(
                     database_session,
@@ -127,14 +127,8 @@ def _set_session_cookies(
     )
 
 
-@contextmanager
-def _database_session(settings: Settings) -> Iterator[Session]:
-    engine = create_engine(settings.database_url, pool_pre_ping=True)
-    try:
-        with Session(engine) as database_session:
-            yield database_session
-    finally:
-        engine.dispose()
+def _database_session(session_factory: Callable[[], Session]) -> Session:
+    return session_factory()
 
 
 def _login_limiter(app: FastAPI, settings: Settings) -> LoginRateLimiter:

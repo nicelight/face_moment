@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
-from contextlib import contextmanager
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 import uuid
@@ -12,7 +11,7 @@ from fastapi import Cookie, FastAPI, HTTPException, Request, Response, status
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 import html
 import json
-from sqlalchemy import create_engine, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from face_moment.diagnostics.server_events import ServerEventSink
@@ -78,7 +77,9 @@ class _PhoneRateLimitExceeded(Exception):
     pass
 
 
-def register_promo_display_routes(app: FastAPI) -> None:
+def register_promo_display_routes(
+    app: FastAPI, *, session_factory: Callable[[], Session]
+) -> None:
     """Register transport adapters for Promo-owned display boundaries."""
 
     @app.get("/api/promo/display/config")
@@ -91,7 +92,7 @@ def register_promo_display_routes(app: FastAPI) -> None:
                 headers=_NO_STORE_HEADERS,
             ) from error
 
-        with _database_session(settings) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 authenticate_display_client(
                     database_session,
@@ -125,10 +126,14 @@ def register_promo_display_routes(app: FastAPI) -> None:
         response.headers.update(_NO_STORE_HEADERS)
         return response
 
-    _register_promo_media_and_outcome_routes(app)
+    _register_promo_media_and_outcome_routes(
+        app, session_factory=session_factory
+    )
 
 
-def register_diagnostic_retention_routes(app: FastAPI) -> None:
+def register_diagnostic_retention_routes(
+    app: FastAPI, *, session_factory: Callable[[], Session]
+) -> None:
     """Register the read-only authorized latest-retention projection."""
 
     @app.get("/api/diagnostics/retention")
@@ -136,7 +141,7 @@ def register_diagnostic_retention_routes(app: FastAPI) -> None:
         fm_staff_session: str | None = Cookie(default=None),
     ) -> Response:
         settings = Settings.from_env()
-        with _database_session(settings) as database_session:
+        with _database_session(session_factory) as database_session:
             _require_retention_staff(database_session, fm_staff_session)
             payload = read_latest_retention_result(database_session)
         response = JSONResponse(status_code=status.HTTP_200_OK, content=payload)
@@ -148,7 +153,7 @@ def register_diagnostic_retention_routes(app: FastAPI) -> None:
         fm_staff_session: str | None = Cookie(default=None),
     ) -> Response:
         settings = Settings.from_env()
-        with _database_session(settings) as database_session:
+        with _database_session(session_factory) as database_session:
             _require_retention_staff(database_session, fm_staff_session)
             payload = read_latest_retention_result(database_session)
         body = (
@@ -159,7 +164,12 @@ def register_diagnostic_retention_routes(app: FastAPI) -> None:
         return HTMLResponse(status_code=status.HTTP_200_OK, content=body, headers=_NO_STORE_HEADERS)
 
 
-def register_phone_continuation_routes(app: FastAPI, *, client_root: Path) -> None:
+def register_phone_continuation_routes(
+    app: FastAPI,
+    *,
+    client_root: Path,
+    session_factory: Callable[[], Session],
+) -> None:
     """Register the exact public Promo phone-continuation adapter."""
 
     @app.get("/q")
@@ -175,7 +185,7 @@ def register_phone_continuation_routes(app: FastAPI, *, client_root: Path) -> No
         if ticket is None:
             return _phone_redirect(purchase_url)
 
-        with _database_session(settings) as database_session:
+        with _database_session(session_factory) as database_session:
             service = _phone_service(
                 app,
                 database_session,
@@ -216,7 +226,7 @@ def register_phone_continuation_routes(app: FastAPI, *, client_root: Path) -> No
         ticket = _cookie_ticket(request)
         if ticket is None:
             return _phone_redirect(purchase_url, delete_cookie=True)
-        with _database_session(settings) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 _phone_service(
                     app,
@@ -240,7 +250,7 @@ def register_phone_continuation_routes(app: FastAPI, *, client_root: Path) -> No
         if isinstance(context, Response):
             return context
         settings, purchase_url, timestamp, ticket = context
-        with _database_session(settings) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 view = _phone_service(
                     app,
@@ -270,7 +280,7 @@ def register_phone_continuation_routes(app: FastAPI, *, client_root: Path) -> No
         if not await _valid_activity_request(request):
             return _phone_empty(status.HTTP_422_UNPROCESSABLE_ENTITY)
 
-        with _database_session(settings) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 view = _phone_service(
                     app,
@@ -296,7 +306,7 @@ def register_phone_continuation_routes(app: FastAPI, *, client_root: Path) -> No
         if isinstance(context, Response):
             return context
         settings, purchase_url, timestamp, ticket = context
-        with _database_session(settings) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 body = _phone_service(
                     app,
@@ -317,13 +327,15 @@ def register_phone_continuation_routes(app: FastAPI, *, client_root: Path) -> No
         )
 
 
-def _register_promo_media_and_outcome_routes(app: FastAPI) -> None:
+def _register_promo_media_and_outcome_routes(
+    app: FastAPI, *, session_factory: Callable[[], Session]
+) -> None:
     """Keep the existing authenticated display routes grouped together."""
 
     @app.get("/api/promo/media/{media_ref}")
     def promo_media(request: Request, media_ref: str) -> Response:
         settings = Settings.from_env()
-        with _database_session(settings) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 principal = authenticate_display_client(
                     database_session,
@@ -376,7 +388,7 @@ def _register_promo_media_and_outcome_routes(app: FastAPI) -> None:
         request: Request, session_id: uuid.UUID
     ) -> Response:
         settings = Settings.from_env()
-        with _database_session(settings) as database_session:
+        with _database_session(session_factory) as database_session:
             try:
                 principal = authenticate_display_client(
                     database_session,
@@ -466,14 +478,8 @@ def _register_promo_media_and_outcome_routes(app: FastAPI) -> None:
         return response
 
 
-@contextmanager
-def _database_session(settings: Settings) -> Iterator[Session]:
-    engine = create_engine(settings.database_url, pool_pre_ping=True)
-    try:
-        with Session(engine) as database_session:
-            yield database_session
-    finally:
-        engine.dispose()
+def _database_session(session_factory: Callable[[], Session]) -> Session:
+    return session_factory()
 
 
 def _require_retention_staff(session: Session, session_token: str | None) -> None:

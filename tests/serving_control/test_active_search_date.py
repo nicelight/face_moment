@@ -105,8 +105,10 @@ def active_search_date_fixture(
                     role=role,
                 )
 
+        app = create_app()
+        app.state.role_state["session_factory"] = lambda: Session(engine)
         yield _Fixture(
-            app=create_app(),
+            app=app,
             engine=engine,
             spa_id=active_spa.spa_id,
             inaccessible_spa_id=inaccessible_spa.spa_id,

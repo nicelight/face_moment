@@ -71,6 +71,9 @@ status: active
   canonical greenfield system shape, capability ownership and Architecture
   Spine.
 - [.memory-bank/guides/](guides/): Valid HOW docs для использования, запуска и troubleshooting.
+- [.memory-bank/guides/local-development.md](guides/local-development.md):
+  local-first Python loop через `uv` с PostgreSQL/MinIO в Docker и отдельным
+  packaged Compose smoke.
 - [.memory-bank/adrs/](adrs/): ADR решения.
 - [opencv5_Migration.md](../opencv5_Migration.md): операторский стратегический
   план перехода runtime на OpenCV 5.

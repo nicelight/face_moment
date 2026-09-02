@@ -63,7 +63,9 @@ def disposable_staff_session_state(
                 password=password,
                 role=StaffRole.PHOTOGRAPHER,
             )
-        yield create_app(), username, password, rate_username
+        app = create_app()
+        app.state.role_state["session_factory"] = lambda: Session(engine)
+        yield app, username, password, rate_username
     finally:
         engine.dispose()
         with admin_engine.connect() as connection:
@@ -288,8 +290,10 @@ def test_staff_browser_session_contract(
         assert _request(app, "GET", "/api/staff/session", cookies=cookie_values)[0] == 401
         assert _request(app, "DELETE", "/api/staff/session", cookies=cookie_values)[0] == 401
 
+        restarted_app = create_app()
+        restarted_app.state.role_state["session_factory"] = lambda: Session(engine)
         assert _request(
-            create_app(),
+            restarted_app,
             "GET",
             "/api/staff/session",
             cookies={"fm_staff_session": "malformed"},

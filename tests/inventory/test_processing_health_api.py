@@ -131,8 +131,10 @@ def disposable_processing_health_api_state(
             runtime.operation_started_at = operation_started_at
             session.commit()
 
+        app = create_app()
+        app.state.role_state["session_factory"] = lambda: Session(engine)
         yield _Fixture(
-            app=create_app(),
+            app=app,
             engine=engine,
             spa_id=target.spa_id,
             unknown_spa_id=uuid.uuid4(),

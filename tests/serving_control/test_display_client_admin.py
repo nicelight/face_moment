@@ -144,8 +144,10 @@ def display_client_admin_fixture(
                     "fm_staff_session": browser_session.session_token,
                 }
 
+        app = create_app()
+        app.state.role_state["session_factory"] = lambda: Session(engine)
         yield _AdminFixture(
-            app=create_app(),
+            app=app,
             engine=engine,
             database_url=probe_url.render_as_string(hide_password=False),
             display_clients=display_clients,

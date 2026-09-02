@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
-from contextlib import contextmanager
+from collections.abc import Callable, Sequence
 from datetime import datetime, timedelta, timezone
 from html import escape
 import json
@@ -11,7 +10,6 @@ import uuid
 
 from fastapi import Cookie, FastAPI, Request, Response, status
 from fastapi.responses import HTMLResponse
-from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from face_moment.diagnostics.attempt_investigation import (
@@ -22,7 +20,6 @@ from face_moment.diagnostics.attempt_investigation import (
     read_attempt_detail,
     read_attempts,
 )
-from face_moment.infrastructure.settings import Settings
 from face_moment.platform.auth.sessions import InvalidSessionError, get_current_principal
 from face_moment.promo.attempt_queries import (
     AttemptInvestigationFilters,
@@ -49,15 +46,16 @@ class InvalidAttemptInvestigationFilterError(ValueError):
     """The list query is outside the exact bounded filter contract."""
 
 
-def register_attempt_investigation_routes(app: FastAPI) -> None:
+def register_attempt_investigation_routes(
+    app: FastAPI, *, session_factory: Callable[[], Session]
+) -> None:
     @app.get("/staff/attempts", response_class=HTMLResponse)
     def attempt_list(
         request: Request,
         fm_staff_session: str | None = Cookie(default=None),
     ) -> Response:
         try:
-            settings = Settings.from_env()
-            with _database_session(settings) as database_session:
+            with _database_session(session_factory) as database_session:
                 principal = get_current_principal(
                     database_session, session_token=fm_staff_session
                 )
@@ -84,8 +82,7 @@ def register_attempt_investigation_routes(app: FastAPI) -> None:
         fm_staff_session: str | None = Cookie(default=None),
     ) -> Response:
         try:
-            settings = Settings.from_env()
-            with _database_session(settings) as database_session:
+            with _database_session(session_factory) as database_session:
                 principal = get_current_principal(
                     database_session, session_token=fm_staff_session
                 )
@@ -255,14 +252,8 @@ def _empty(status_code: int) -> Response:
     return Response(status_code=status_code, headers=_NO_STORE_HEADERS)
 
 
-@contextmanager
-def _database_session(settings: Settings) -> Iterator[Session]:
-    engine = create_engine(settings.database_url, pool_pre_ping=True)
-    try:
-        with Session(engine) as database_session:
-            yield database_session
-    finally:
-        engine.dispose()
+def _database_session(session_factory: Callable[[], Session]) -> Session:
+    return session_factory()
 
 
 __all__ = [

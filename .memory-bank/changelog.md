@@ -14,10 +14,17 @@ status: active
   task-scoped semantic-pass.
 - Reconciled: TASK-090 remains failed historical evidence and its resolved bug
   note is archived. TASK-091 and TASK-093 no longer carry the obsolete failed-
-  dependency block; both remain `planned` and unexecuted.
+  dependency block; TASK-091 is `in_progress`, while TASK-093 remains `planned`.
 - Clarified: one explicit bounded Promo-owned QR correlation query after commit
   is accepted ordinary owner access, not diagnostics writer latency. No global
   zero-SQL requirement was introduced.
+- Local development now runs current editable Python source through locked
+  `uv`; only PostgreSQL/pgvector and MinIO stay in the daily Compose overlay.
+  The unchanged base Compose topology remains the packaged-runtime smoke.
+- Backend HTTP adapters now reuse one composition-owned SQLAlchemy Engine and
+  open a short Session per request. The Engine is disposed at backend shutdown;
+  the diagnostics writer keeps its contract-required independent Session path.
+  API, transaction ownership, schema and capability ownership are unchanged.
 
 ## [2026-08-29] Development baseline after FT-001…FT-007
 
