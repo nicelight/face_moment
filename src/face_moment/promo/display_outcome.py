@@ -4,14 +4,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Literal
+from typing import Literal, cast
 import uuid
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from face_moment.diagnostics.server_events import ServerEventCode, ServerEventSink
-from face_moment.promo.attempt import PromoAttempt, PromoAttemptRepository
+from face_moment.promo.attempt import (
+    PromoAttempt,
+    PromoAttemptRepository,
+    derive_effective_display_status,
+)
 from face_moment.promo.session import PromoSession
 
 DisplayReportStatus = Literal["confirmed", "failed"]
@@ -216,9 +220,10 @@ def _outcome(
     *,
     now: datetime,
 ) -> DisplayOutcome:
-    status: EffectiveDisplayStatus = attempt.display_status  # type: ignore[assignment]
-    if status == "pending" and now >= _utc(attempt.display_expires_at):
-        status = "unconfirmed"
+    status = cast(
+        EffectiveDisplayStatus,
+        derive_effective_display_status(attempt, now=now),
+    )
     return DisplayOutcome(
         session_id=session_row.id,
         status=status,

@@ -170,6 +170,20 @@ class PromoAttempt(Base):
     )
 
 
+def derive_effective_display_status(
+    attempt: PromoAttempt, *, now: datetime
+) -> str:
+    """Derive expired pending display state without mutating the Attempt."""
+
+    if (
+        attempt.display_status == "pending"
+        and attempt.display_expires_at is not None
+        and now >= _utc(attempt.display_expires_at)
+    ):
+        return "unconfirmed"
+    return attempt.display_status
+
+
 class PromoAttemptNotFoundError(LookupError):
     pass
 

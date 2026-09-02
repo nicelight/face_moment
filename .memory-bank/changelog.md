@@ -25,6 +25,9 @@ status: active
   open a short Session per request. The Engine is disposed at backend shutdown;
   the diagnostics writer keeps its contract-required independent Session path.
   API, transaction ownership, schema and capability ownership are unchanged.
+- Promo now derives effective `pending -> unconfirmed` display state through
+  one pure `PromoAttempt` helper reused by display outcome and diagnostics
+  timeline reads. The persisted state, expiry boundary and API remain unchanged.
 
 ## [2026-08-29] Development baseline after FT-001…FT-007
 

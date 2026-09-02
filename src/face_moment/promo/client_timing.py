@@ -9,7 +9,11 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from face_moment.promo.attempt import PromoAttempt, PromoAttemptRepository
+from face_moment.promo.attempt import (
+    PromoAttempt,
+    PromoAttemptRepository,
+    derive_effective_display_status,
+)
 
 
 _REPORT_FIELDS = {"schema_version", "response_received_ms"}
@@ -143,13 +147,10 @@ def project_core_timeline(
         tags.append("response_receipt_missing")
     if attempt.display_status == "failed":
         tags.append("display_failed")
-    effective_display_status = attempt.display_status
-    if (
-        attempt.display_status == "pending"
-        and attempt.display_expires_at is not None
-        and timestamp >= _utc(attempt.display_expires_at)
-    ):
-        effective_display_status = "unconfirmed"
+    effective_display_status = derive_effective_display_status(
+        attempt, now=timestamp
+    )
+    if effective_display_status == "unconfirmed":
         tags.append("display_unconfirmed")
     if (
         attempt.display_status == "confirmed"

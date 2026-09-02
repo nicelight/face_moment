@@ -30,12 +30,19 @@ from face_moment.diagnostics.retention import (
 from face_moment.diagnostics.server_events import (
     EVENT_CATALOG,
     EVENT_QUEUE_CAPACITY,
+    SERVER_EVENT_SEARCH_LIMIT,
     ServerEvent,
     ServerEventCode,
     ServerEventEmitter,
     ServerEventProjection,
     ServerEventRepository,
+    ServerEventSearchFilters,
     ServerEventSink,
+)
+from face_moment.diagnostics.server_event_search import (
+    ServerEventSearchAccessDeniedError,
+    authorize_server_event_search,
+    search_server_events,
 )
 
 __all__ = [
@@ -62,10 +69,15 @@ __all__ = [
     "expire_diagnostic_attempts",
     "EVENT_CATALOG",
     "EVENT_QUEUE_CAPACITY",
+    "SERVER_EVENT_SEARCH_LIMIT",
     "ServerEvent",
     "ServerEventCode",
     "ServerEventEmitter",
     "ServerEventProjection",
     "ServerEventRepository",
+    "ServerEventSearchFilters",
     "ServerEventSink",
+    "ServerEventSearchAccessDeniedError",
+    "authorize_server_event_search",
+    "search_server_events",
 ]

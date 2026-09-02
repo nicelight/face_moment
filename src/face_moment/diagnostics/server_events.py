@@ -12,13 +12,14 @@ from types import MappingProxyType
 from typing import Literal, Protocol
 import uuid
 
-from sqlalchemy import CheckConstraint, DateTime, String, Uuid
+from sqlalchemy import CheckConstraint, DateTime, String, Uuid, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from face_moment.infrastructure.database import Base
 
 
 EVENT_QUEUE_CAPACITY = 256
+SERVER_EVENT_SEARCH_LIMIT = 100
 Severity = Literal["info", "warning", "error"]
 Component = Literal["runtime", "realtime", "promo", "qr"]
 
@@ -135,6 +136,17 @@ class ServerEventProjection:
     correlation_id: uuid.UUID | None
 
 
+@dataclass(frozen=True, slots=True)
+class ServerEventSearchFilters:
+    occurred_at_from: datetime
+    occurred_at_to: datetime
+    severity: Severity | None = None
+    component: Component | None = None
+    event_code: ServerEventCode | None = None
+    attempt_id: uuid.UUID | None = None
+    correlation_id: uuid.UUID | None = None
+
+
 class ServerEventSink(Protocol):
     """The only application call available to accepted event producers."""
 
@@ -170,6 +182,36 @@ class ServerEventRepository:
     def get(self, event_id: uuid.UUID) -> ServerEventProjection | None:
         row = self._session.get(ServerEvent, event_id)
         return None if row is None else _project(row)
+
+    def search(
+        self, filters: ServerEventSearchFilters
+    ) -> tuple[ServerEventProjection, ...]:
+        """Return the newest immutable rows inside the fixed external bound."""
+
+        statement = select(ServerEvent).where(
+            ServerEvent.occurred_at >= _utc(filters.occurred_at_from),
+            ServerEvent.occurred_at < _utc(filters.occurred_at_to),
+        )
+        if filters.severity is not None:
+            statement = statement.where(ServerEvent.severity == filters.severity)
+        if filters.component is not None:
+            statement = statement.where(ServerEvent.component == filters.component)
+        if filters.event_code is not None:
+            statement = statement.where(
+                ServerEvent.event_code == filters.event_code.value
+            )
+        if filters.attempt_id is not None:
+            statement = statement.where(ServerEvent.attempt_id == filters.attempt_id)
+        if filters.correlation_id is not None:
+            statement = statement.where(
+                ServerEvent.correlation_id == filters.correlation_id
+            )
+        rows = self._session.scalars(
+            statement.order_by(
+                ServerEvent.occurred_at.desc(), ServerEvent.event_id.desc()
+            ).limit(SERVER_EVENT_SEARCH_LIMIT)
+        )
+        return tuple(_project(row) for row in rows)
 
 
 class ServerEventEmitter:
@@ -323,6 +365,7 @@ def _utc(value: datetime) -> datetime:
 __all__ = [
     "EVENT_CATALOG",
     "EVENT_QUEUE_CAPACITY",
+    "SERVER_EVENT_SEARCH_LIMIT",
     "ServerEvent",
     "ServerEventCode",
     "ServerEventDefinition",
@@ -330,5 +373,6 @@ __all__ = [
     "ServerEventEnvelope",
     "ServerEventProjection",
     "ServerEventRepository",
+    "ServerEventSearchFilters",
     "ServerEventSink",
 ]
