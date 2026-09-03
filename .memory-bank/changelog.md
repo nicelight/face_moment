@@ -4,6 +4,20 @@ status: active
 ---
 # Changelog
 
+## [2026-09-03] Wave 3 / FT-009 server-event retention closure
+
+- Closed: `TASK-093-T3-FT-009-W3` is `done` after functional PASS and required
+  per-task `semantic-pass`.
+- Implemented: the existing owner-ordered cleanup now expires diagnostics-owned
+  structured server events strictly before the 30-day cutoff, reports the
+  confirmed count and preserves truthful failure, overlap and rerun behavior.
+- Verified: current and bookmarked search, FT-008 navigation and browser history
+  cannot recover deleted event content; equal/newer events and 90-day
+  Attempt/evidence state remain intact.
+- Reconciled: all `FT-009-AC-001..004` implementation slices are closed, FT-009
+  and `REQ-LOG-001` are `implemented`, and feature-level semantic verification
+  remains the final gate before `verified`.
+
 ## [2026-09-03] Wave 2 / FT-009 server-event search closure
 
 - Closed: `TASK-091-T3-FT-009-W2` is `done` after fresh Attempt 4 functional

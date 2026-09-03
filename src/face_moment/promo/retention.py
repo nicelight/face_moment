@@ -146,6 +146,10 @@ class RetentionCleanupOutcome:
         return self.counts[1]
 
     @property
+    def technical_logs_deleted(self) -> int:
+        return self.counts[2]
+
+    @property
     def private_artifacts_deleted(self) -> int:
         return self.counts[3]
 
@@ -208,14 +212,16 @@ def run_retention_cleanup(
             attempts_cutoff=cutoff,
         )
         try:
+            diagnostic_provider = diagnostics or DiagnosticRetentionProvider(session)
+            technical_logs_deleted = diagnostic_provider.expire_server_events(
+                cutoff=technical_cutoff
+            )
             attempt_ids = tuple(
                 session.scalars(
                     select(PromoAttempt.id).where(PromoAttempt.created_at < cutoff)
                 ).all()
             )
-            diagnostic_result = (
-                diagnostics or DiagnosticRetentionProvider(session)
-            ).expire(
+            diagnostic_result = diagnostic_provider.expire(
                 attempt_ids,
                 cutoff=cutoff,
                 now=timestamp,
@@ -232,7 +238,7 @@ def run_retention_cleanup(
                 counts=(
                     deleted,
                     diagnostic_result.ordinary_evidence_expired,
-                    0,
+                    technical_logs_deleted,
                     diagnostic_result.private_artifacts_deleted,
                     diagnostic_result.promoted_subsets_preserved,
                 ),
@@ -245,7 +251,7 @@ def run_retention_cleanup(
                 counts=(
                     deleted,
                     diagnostic_result.ordinary_evidence_expired,
-                    0,
+                    technical_logs_deleted,
                     diagnostic_result.private_artifacts_deleted,
                     diagnostic_result.promoted_subsets_preserved,
                 ),

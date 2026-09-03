@@ -12,7 +12,7 @@ from types import MappingProxyType
 from typing import Literal, Protocol
 import uuid
 
-from sqlalchemy import CheckConstraint, DateTime, String, Uuid, select
+from sqlalchemy import CheckConstraint, DateTime, String, Uuid, delete, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from face_moment.infrastructure.database import Base
@@ -212,6 +212,14 @@ class ServerEventRepository:
             ).limit(SERVER_EVENT_SEARCH_LIMIT)
         )
         return tuple(_project(row) for row in rows)
+
+    def delete_before(self, cutoff: datetime) -> int:
+        """Delete owner rows strictly before the fixed UTC retention cutoff."""
+
+        result = self._session.execute(
+            delete(ServerEvent).where(ServerEvent.occurred_at < _utc(cutoff))
+        )
+        return int(result.rowcount or 0)
 
 
 class ServerEventEmitter:

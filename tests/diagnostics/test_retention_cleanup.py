@@ -328,6 +328,10 @@ def test_failure_is_sanitized_and_overlap_does_not_replace_latest(
         session.commit()
 
     class FailingDiagnostics:
+        def expire_server_events(self, *, cutoff: datetime) -> int:
+            del cutoff
+            return 0
+
         def expire(
             self,
             _attempt_ids: Iterable[uuid.UUID],

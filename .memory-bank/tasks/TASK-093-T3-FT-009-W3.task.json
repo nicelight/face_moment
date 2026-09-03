@@ -1,7 +1,7 @@
 {
   "id": "TASK-093-T3-FT-009-W3",
   "title": "Expire structured server events through the existing cleanup command",
-  "status": "planned",
+  "status": "done",
   "wave": "W3",
   "feature": "FT-009",
   "reqs": [
@@ -61,6 +61,33 @@
         ".memory-bank/tasks/TASK-091-T3-FT-009-W2.task.json"
       ],
       "resume_route": "/exe TASK-093-T3-FT-009-W3 only after TASK-091 is done and a future explicit scheduler or operator selection"
+    },
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Fresh T3 verification independently passed strict 30-day correlated and uncorrelated event expiry, exact confirmed count, equal/newer and 90-day state preservation, sanitized failure/overlap/rerun behavior, focused regression gates, and current/bookmarked/FT-008/browser-history non-recovery. The accepted promo-to-diagnostics owner edge and unchanged latest-result shape are preserved; lifecycle remains unchanged pending per-task red verification.",
+      "report": ".tasks/TASK-093-T3-FT-009-W3/TASK-093-T3-FT-009-W3-S-VERIFY-final-report-docs-01.md",
+      "protocol": ".protocols/TASK-093-T3-FT-009-W3/verification.md",
+      "evidence": [
+        ".tasks/TASK-093-T3-FT-009-W3/TASK-093-T3-FT-009-W3-S-VERIFY-targeted-probe-01.md",
+        ".tasks/TASK-093-T3-FT-009-W3/attempt-1-red.md",
+        ".tasks/TASK-093-T3-FT-009-W3/attempt-1-green.md",
+        ".tasks/TASK-093-T3-FT-009-W3/browser-before-cleanup.png",
+        ".tasks/TASK-093-T3-FT-009-W3/browser-after-cleanup.png"
+      ],
+      "resume_route": "/red-verify TASK-093-T3-FT-009-W3"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "The explicit manual lifecycle owner closed TASK-093 after functional PASS and per-task semantic-pass. The existing cleanup now deletes diagnostics-owned structured server events strictly before the fixed 30-day cutoff, reports the confirmed count through the unchanged latest result, preserves truthful failure and rerun behavior, and prevents current or stale searches from recovering deleted content.",
+      "evidence": [
+        ".tasks/TASK-093-T3-FT-009-W3/TASK-093-T3-FT-009-W3-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-093-T3-FT-009-W3/TASK-093-T3-FT-009-W3-S-RED-VERIFY-final-report-docs-01.md",
+        ".protocols/TASK-093-T3-FT-009-W3/verification.md",
+        ".protocols/TASK-093-T3-FT-009-W3/red-verification.md"
+      ],
+      "owner_lifecycle_closure": "manual_explicit_owner"
     }
   ],
   "docs": [
@@ -119,7 +146,7 @@
   "constraints": [
     "Promo remains the cleanup/latest-result owner and supplies both fixed cutoffs; diagnostics alone deletes server_events and returns technical_logs_deleted through the existing result.",
     "Delete rows with occurred_at strictly before the UTC 30-day cutoff independently of Attempt candidate IDs; equal/newer and all 90-day Attempt/evidence behavior remain unchanged.",
-    "Use the existing advisory lock, exit codes, failure sanitization, single latest-result row and external timer; add no route, command, migration or deployment change.",
+    "Use the existing advisory lock, exit codes, failure sanitization and single latest-result row; add no route, command, migration or deployment change.",
     "Use disposable correlated and uncorrelated rows with controlled before/equal/after times, owner failure, overlap, partial convergence, safe rerun, decisive search/result reads and cleanup limited to fixtures.",
     "Use playwright cli against the implemented GET /staff/server-events route for one current search and the same bookmarked filter URL before/after cleanup; store a redacted transcript and screenshots under .tasks/TASK-093-T3-FT-009-W3/ without adopting TASK-091 filter/authorization claims.",
     "Retained reports contain only synthetic identifiers and aggregate counts, never production rows, credentials, participant data or unredacted failures."
@@ -135,6 +162,6 @@
     "Disposable controlled-time fixtures prove strict before/equal/after deletion for correlated and uncorrelated events, exact aggregate count and unchanged 90-day Attempt/evidence behavior.",
     "Injected diagnostics failure, active-lock overlap and safe rerun prove sanitized truthful latest results, no fabricated count, owner-only writes and convergence without event restoration.",
     "playwright cli drives one current search and the same bookmarked filter URL before/after cleanup, proving deleted event fields never reappear from FT-009, FT-008, DiagnosticEvidence, browser state or retained artifacts; the redacted transcript and screenshots stay under .tasks/TASK-093-T3-FT-009-W3/.",
-    "Source/ownership scans prove one existing command/latest result/external timer, no migration/history/jobs/tombstone/internal scheduler and no production configuration mutation."
+    "Source/ownership scans prove one existing command/latest result, diagnostics-owned deletion through the accepted edge, no migration/history/jobs/tombstone/internal scheduler and no production configuration mutation."
   ]
 }

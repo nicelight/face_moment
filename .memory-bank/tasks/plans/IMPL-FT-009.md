@@ -1,7 +1,7 @@
 ---
 description: Implementation plan for non-blocking structured server events, bounded developer search and expiry.
 status: active
-last_updated: 2026-09-02
+last_updated: 2026-09-03
 ---
 # IMPL-FT-009 — Minimal Structured Server Events
 
@@ -124,9 +124,8 @@ The paired-identity decision removes the only accepted outcome behind planned
 TASK-095, so that unexecuted record is removed instead of retaining a migration
 with no current claim. TASK-091 keeps its ID, T3 tier, W2 wave and complete
 Attempt history; after final Attempt 4 functional PASS and per-task
-semantic-pass, the explicit lifecycle owner closed it as `done`. TASK-093
-remains `planned`; its TASK-091 dependency is satisfied, but promotion remains
-a separate scheduler/owner action.
+semantic-pass, the explicit lifecycle owner closed it as `done`. TASK-093 is
+also `done` after functional PASS and per-task semantic-pass.
 
 ## Advisory Expected Change Surface
 
@@ -216,6 +215,7 @@ TASK-090 remains failed historical evidence. The unexecuted TASK-095 is removed
 because correlation-only persistence is no longer an accepted outcome.
 The search/navigation slices `FT-009-AC-001` and `FT-009-AC-004` are complete
 through closed TASK-091 with functional PASS and per-task semantic-pass.
-TASK-093 remains planned for `FT-009-AC-003`; its dependencies are satisfied,
-but it has not been promoted or selected. The feature itself remains incomplete
-and retains `lifecycle: planned`.
+The retention slice `FT-009-AC-003` is complete through closed TASK-093 with
+functional PASS and per-task semantic-pass. All implementation slices are now
+closed, so FT-009 has `lifecycle: implemented`; feature-level semantic
+verification remains the final gate before `verified`.

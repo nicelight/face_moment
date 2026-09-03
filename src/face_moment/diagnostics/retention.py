@@ -9,6 +9,7 @@ import uuid
 from sqlalchemy.orm import Session
 
 from face_moment.diagnostics.evidence import DiagnosticEvidenceRepository
+from face_moment.diagnostics.server_events import ServerEventRepository
 
 
 class RetentionObjectStore(Protocol):
@@ -32,6 +33,13 @@ class DiagnosticRetentionProvider:
     def __init__(self, session: Session) -> None:
         self._session = session
         self._repository = DiagnosticEvidenceRepository(session)
+
+    def expire_server_events(self, *, cutoff: datetime) -> int:
+        """Delete diagnostics-owned event rows and confirm the new count."""
+
+        deleted = ServerEventRepository(self._session).delete_before(cutoff)
+        self._session.commit()
+        return deleted
 
     def expire(
         self,
