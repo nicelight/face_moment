@@ -6,6 +6,7 @@ from collections.abc import Callable, Sequence
 from datetime import datetime, timedelta, timezone
 from html import escape
 import json
+import re
 import uuid
 
 from fastapi import Cookie, FastAPI, Request, Response, status
@@ -22,15 +23,14 @@ from face_moment.diagnostics.attempt_investigation import (
 )
 from face_moment.diagnostics.server_event_search import (
     ServerEventSearchAccessDeniedError,
+    authorize_server_event_search,
     search_server_events,
 )
 from face_moment.diagnostics.server_events import (
     EVENT_CATALOG,
-    Component,
     ServerEventCode,
     ServerEventProjection,
     ServerEventSearchFilters,
-    Severity,
 )
 from face_moment.platform.auth.sessions import InvalidSessionError, get_current_principal
 from face_moment.promo.attempt_queries import (
@@ -63,10 +63,18 @@ _SERVER_EVENT_FILTER_NAMES = frozenset(
         "correlation_id",
     }
 )
-_SERVER_EVENT_SEVERITIES = frozenset({"info", "warning", "error"})
-_SERVER_EVENT_COMPONENTS = frozenset({"runtime", "realtime", "promo", "qr"})
+_SERVER_EVENT_SEVERITIES = frozenset(
+    definition.severity for definition in EVENT_CATALOG.values()
+)
+_SERVER_EVENT_COMPONENTS = frozenset(
+    definition.component for definition in EVENT_CATALOG.values()
+)
 _SERVER_EVENT_MAXIMUM_RANGE = timedelta(days=7)
 _SERVER_EVENT_DEFAULT_RANGE = timedelta(hours=24)
+_SERVER_EVENT_RFC3339_UTC = re.compile(
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}[Tt][0-9]{2}:[0-9]{2}:[0-9]{2}"
+    r"(?:\.[0-9]+)?(?:[Zz]|\+00:00)"
+)
 
 
 class InvalidAttemptInvestigationFilterError(ValueError):
@@ -107,42 +115,6 @@ def register_attempt_investigation_routes(
             return _empty(status.HTTP_500_INTERNAL_SERVER_ERROR)
         return HTMLResponse(content=content, headers=_NO_STORE_HEADERS)
 
-
-def register_server_event_search_routes(
-    app: FastAPI,
-    *,
-    session_factory: Callable[[], Session],
-    utc_now: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
-) -> None:
-    @app.get("/staff/server-events", response_class=HTMLResponse)
-    def server_event_list(
-        request: Request,
-        fm_staff_session: str | None = Cookie(default=None),
-    ) -> Response:
-        try:
-            with _database_session(session_factory) as database_session:
-                principal = get_current_principal(
-                    database_session, session_token=fm_staff_session
-                )
-                filters = parse_server_event_filters(request, now=utc_now())
-                events = search_server_events(
-                    database_session,
-                    principal=principal,
-                    filters=filters,
-                )
-                content = _render_server_event_page(
-                    events, request.query_params.multi_items()
-                )
-        except InvalidSessionError:
-            return _empty(status.HTTP_401_UNAUTHORIZED)
-        except ServerEventSearchAccessDeniedError:
-            return _empty(status.HTTP_403_FORBIDDEN)
-        except InvalidServerEventFilterError:
-            return _empty(status.HTTP_422_UNPROCESSABLE_ENTITY)
-        except Exception:
-            return _empty(status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return HTMLResponse(content=content, headers=_NO_STORE_HEADERS)
-
     @app.get("/staff/attempts/{attempt_id}", response_class=HTMLResponse)
     def attempt_detail(
         attempt_id: str,
@@ -170,6 +142,43 @@ def register_server_event_search_routes(
             return _empty(status.HTTP_403_FORBIDDEN)
         except AttemptInvestigationNotFoundError:
             return _empty(status.HTTP_404_NOT_FOUND)
+        except Exception:
+            return _empty(status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return HTMLResponse(content=content, headers=_NO_STORE_HEADERS)
+
+
+def register_server_event_search_routes(
+    app: FastAPI,
+    *,
+    session_factory: Callable[[], Session],
+    utc_now: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
+) -> None:
+    @app.get("/staff/server-events", response_class=HTMLResponse)
+    def server_event_list(
+        request: Request,
+        fm_staff_session: str | None = Cookie(default=None),
+    ) -> Response:
+        try:
+            with _database_session(session_factory) as database_session:
+                principal = get_current_principal(
+                    database_session, session_token=fm_staff_session
+                )
+                authorize_server_event_search(principal)
+                filters = parse_server_event_filters(request, now=utc_now())
+                events = search_server_events(
+                    database_session,
+                    principal=principal,
+                    filters=filters,
+                )
+                content = _render_server_event_page(
+                    events, request.query_params.multi_items()
+                )
+        except InvalidSessionError:
+            return _empty(status.HTTP_401_UNAUTHORIZED)
+        except ServerEventSearchAccessDeniedError:
+            return _empty(status.HTTP_403_FORBIDDEN)
+        except InvalidServerEventFilterError:
+            return _empty(status.HTTP_422_UNPROCESSABLE_ENTITY)
         except Exception:
             return _empty(status.HTTP_500_INTERNAL_SERVER_ERROR)
         return HTMLResponse(content=content, headers=_NO_STORE_HEADERS)
@@ -214,8 +223,8 @@ def parse_server_event_filters(
         raise InvalidServerEventFilterError
     values = dict(pairs)
     try:
-        occurred_at_from = _optional_utc(values.get("from"))
-        occurred_at_to = _optional_utc(values.get("to"))
+        occurred_at_from = _optional_server_event_utc(values.get("from"))
+        occurred_at_to = _optional_server_event_utc(values.get("to"))
         if (occurred_at_from is None) != (occurred_at_to is None):
             raise ValueError
         if occurred_at_from is None:
@@ -229,10 +238,16 @@ def parse_server_event_filters(
             raise ValueError
 
         severity_value = values.get("severity")
-        if severity_value is not None and severity_value not in _SERVER_EVENT_SEVERITIES:
+        if (
+            severity_value is not None
+            and severity_value not in _SERVER_EVENT_SEVERITIES
+        ):
             raise ValueError
         component_value = values.get("component")
-        if component_value is not None and component_value not in _SERVER_EVENT_COMPONENTS:
+        if (
+            component_value is not None
+            and component_value not in _SERVER_EVENT_COMPONENTS
+        ):
             raise ValueError
         event_code_value = values.get("event_code")
         event_code = (
@@ -270,6 +285,18 @@ def _optional_utc(value: str | None) -> datetime | None:
     return parsed.astimezone(timezone.utc)
 
 
+def _optional_server_event_utc(value: str | None) -> datetime | None:
+    if value is None:
+        return None
+    if _SERVER_EVENT_RFC3339_UTC.fullmatch(value) is None:
+        raise ValueError
+    normalized = f"{value[:-1]}+00:00" if value[-1] in {"Z", "z"} else value
+    parsed = datetime.fromisoformat(normalized)
+    if parsed.utcoffset() != timedelta(0):
+        raise ValueError
+    return parsed.astimezone(timezone.utc)
+
+
 def _utc(value: datetime) -> datetime:
     if not isinstance(value, datetime) or value.tzinfo is None:
         raise ValueError
@@ -285,7 +312,7 @@ def _render_server_event_page(
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Server events</title></head>
 <body><main><h1>Server events</h1>
-<form method="get" action="/staff/server-events">
+<form id="server-event-search" method="get" action="/staff/server-events">
 <label>From UTC <input name="from" value="{escape(filters.get('from', ''))}"></label>
 <label>To UTC <input name="to" value="{escape(filters.get('to', ''))}"></label>
 <label>Severity <input name="severity" value="{escape(filters.get('severity', ''))}"></label>
@@ -294,6 +321,14 @@ def _render_server_event_page(
 <label>Attempt ID <input name="attempt_id" value="{escape(filters.get('attempt_id', ''))}"></label>
 <label>Correlation ID <input name="correlation_id" value="{escape(filters.get('correlation_id', ''))}"></label>
 <button type="submit">Filter</button></form>
+<script>
+const form = document.getElementById("server-event-search");
+form.addEventListener("submit", () => {{
+  for (const control of form.querySelectorAll("[name]")) {{
+    if (control.value === "") control.disabled = true;
+  }}
+}});
+</script>
 <table><thead><tr><th>Event time</th><th>Severity</th><th>Component</th><th>Event code</th><th>Release ID</th><th>Attempt ID</th><th>Correlation ID</th></tr></thead>
 <tbody>{rows}</tbody></table></main></body></html>"""
 
@@ -309,7 +344,7 @@ def _render_server_event_row(event: ServerEventProjection) -> str:
         )
         correlation = str(event.correlation_id)
     return (
-        f'<tr data-event-id="{event.event_id}">'
+        "<tr>"
         f"<td>{_iso(event.occurred_at)}</td><td>{escape(event.severity)}</td>"
         f"<td>{escape(event.component)}</td><td>{escape(event.event_code.value)}</td>"
         f"<td>{escape(event.release_id)}</td><td>{attempt}</td>"

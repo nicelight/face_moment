@@ -1,7 +1,7 @@
 {
   "id": "TASK-091-T3-FT-009-W2",
   "title": "Expose developer-only bounded server-event search",
-  "status": "in_progress",
+  "status": "done",
   "wave": "W2",
   "feature": "FT-009",
   "reqs": [
@@ -72,6 +72,71 @@
         ".memory-bank/features/FT-009.md#FT-009-AC-004"
       ],
       "resume_route": "/review-tasks-plan FT-009 -> strict readiness -> /exe TASK-091-T3-FT-009-W2"
+    },
+    {
+      "stage": "verify",
+      "verdict": "FAIL",
+      "summary": "Fresh T3 verification passed the focused PostgreSQL/HTTP suite, FT-008 regression, mypy, Memory Bank lint, HTTPS browser authorization/navigation flow, topology and cleanup checks, but independently reproduced a task-owned invalid-filter violation: non-RFC3339 basic ISO from=20260902T010000Z returned 200 and invoked the repository once instead of returning no-query 422. Lifecycle remains unchanged.",
+      "report": ".tasks/TASK-091-T3-FT-009-W2/TASK-091-T3-FT-009-W2-S-VERIFY-final-report-docs-01.md",
+      "protocol": ".protocols/TASK-091-T3-FT-009-W2/verification.md",
+      "evidence": [
+        ".tasks/TASK-091-T3-FT-009-W2/TASK-091-T3-FT-009-W2-S-VERIFY-targeted-probe-01.md",
+        ".tasks/TASK-091-T3-FT-009-W2/playwright-transcript.md",
+        ".tasks/TASK-091-T3-FT-009-W2/runtime-topology.md"
+      ],
+      "resume_route": "/exe TASK-091-T3-FT-009-W2 -> /verify TASK-091-T3-FT-009-W2"
+    },
+    {
+      "stage": "verify-attempt-2",
+      "verdict": "PASS",
+      "summary": "Fresh T3 verification independently passed the focused PostgreSQL/HTTP matrix, FT-008 regression, mypy, Memory Bank lint, HTTPS Playwright authorization/navigation flow, topology and cleanup checks. The Attempt 2 strict RFC3339 correction rejects the previously reproduced malformed forms before search. Lifecycle remains unchanged pending required per-task red verification.",
+      "report": ".tasks/TASK-091-T3-FT-009-W2/TASK-091-T3-FT-009-W2-S-VERIFY-final-report-docs-02.md",
+      "protocol": ".protocols/TASK-091-T3-FT-009-W2/verification.md",
+      "evidence": [
+        ".tasks/TASK-091-T3-FT-009-W2/TASK-091-T3-FT-009-W2-S-VERIFY-targeted-probe-02.md",
+        ".tasks/TASK-091-T3-FT-009-W2/attempt-2-green.md",
+        ".tasks/TASK-091-T3-FT-009-W2/attempt-2-playwright-transcript.md",
+        ".tasks/TASK-091-T3-FT-009-W2/runtime-topology.md"
+      ],
+      "resume_route": "/red-verify TASK-091-T3-FT-009-W2"
+    },
+    {
+      "stage": "verify-attempt-3",
+      "verdict": "FAIL",
+      "summary": "Fresh T3 verification passed the Attempt 3 release Caddy routing, native form submissions, focused PostgreSQL/HTTP matrix, FT-008 regression, mypy, Memory Bank lint, topology and cleanup checks, but independently reproduced an exact HTML-projection violation: every row exposes the non-contract event_id through data-event-id. Lifecycle remains unchanged.",
+      "report": ".tasks/TASK-091-T3-FT-009-W2/TASK-091-T3-FT-009-W2-S-VERIFY-final-report-docs-03.md",
+      "protocol": ".protocols/TASK-091-T3-FT-009-W2/verification.md",
+      "evidence": [
+        ".tasks/TASK-091-T3-FT-009-W2/TASK-091-T3-FT-009-W2-S-VERIFY-targeted-probe-03.md",
+        ".tasks/TASK-091-T3-FT-009-W2/attempt-3-green.md",
+        ".tasks/TASK-091-T3-FT-009-W2/attempt-3-release-playwright-transcript.md"
+      ],
+      "resume_route": "/exe TASK-091-T3-FT-009-W2 -> /verify TASK-091-T3-FT-009-W2"
+    },
+    {
+      "stage": "verify-attempt-4",
+      "verdict": "PASS",
+      "summary": "Fresh T3 verification independently passed the Attempt 4 exact fixed-field projection, focused PostgreSQL/HTTP matrix, FT-008 regression, mypy, Memory Bank lint, Caddy validation, release topology and exact-release Playwright authorization/form/navigation journey. Internal event_id values no longer reach paired or uncorrelated HTML. Lifecycle remains unchanged pending required per-task red verification.",
+      "report": ".tasks/TASK-091-T3-FT-009-W2/TASK-091-T3-FT-009-W2-S-VERIFY-final-report-docs-04.md",
+      "protocol": ".protocols/TASK-091-T3-FT-009-W2/verification.md",
+      "evidence": [
+        ".tasks/TASK-091-T3-FT-009-W2/TASK-091-T3-FT-009-W2-S-VERIFY-targeted-probe-04.md",
+        ".tasks/TASK-091-T3-FT-009-W2/attempt-4-green.md",
+        ".tasks/TASK-091-T3-FT-009-W2/attempt-4-release-playwright-transcript.md"
+      ],
+      "resume_route": "/red-verify TASK-091-T3-FT-009-W2"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "The explicit manual lifecycle owner closed TASK-091 after Execution Attempt 4 functional PASS and per-task semantic-pass. The release HTTPS route now provides the exact developer-only bounded server-event search, omits blank optional form controls and internal event_id values, preserves paired-or-uncorrelated identity semantics, and leaves FT-008 authorization and projection ownership unchanged.",
+      "evidence": [
+        ".tasks/TASK-091-T3-FT-009-W2/TASK-091-T3-FT-009-W2-S-VERIFY-final-report-docs-04.md",
+        ".tasks/TASK-091-T3-FT-009-W2/TASK-091-T3-FT-009-W2-S-RED-VERIFY-final-report-docs-01.md",
+        ".protocols/TASK-091-T3-FT-009-W2/verification.md",
+        ".protocols/TASK-091-T3-FT-009-W2/red-verification.md"
+      ],
+      "owner_lifecycle_closure": "manual_explicit_owner"
     }
   ],
   "docs": [

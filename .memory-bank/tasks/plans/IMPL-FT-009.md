@@ -122,11 +122,11 @@ introduced, so there is no `Production acceptance:` task.
 
 The paired-identity decision removes the only accepted outcome behind planned
 TASK-095, so that unexecuted record is removed instead of retaining a migration
-with no current claim. TASK-091 keeps its ID, T3 tier, W2 wave, `in_progress`
-lifecycle and Attempt 1 evidence; only its obsolete correlation-only proof,
-dependency and recovery route are reconciled. This material scope/dependency
-change is reported as `rebuild_required`. TASK-093 remains unchanged behind
-TASK-091.
+with no current claim. TASK-091 keeps its ID, T3 tier, W2 wave and complete
+Attempt history; after final Attempt 4 functional PASS and per-task
+semantic-pass, the explicit lifecycle owner closed it as `done`. TASK-093
+remains `planned`; its TASK-091 dependency is satisfied, but promotion remains
+a separate scheduler/owner action.
 
 ## Advisory Expected Change Surface
 
@@ -214,6 +214,8 @@ implementation guesses.
 The producer/persistence slice `FT-009-AC-002` is complete through TASK-094.
 TASK-090 remains failed historical evidence. The unexecuted TASK-095 is removed
 because correlation-only persistence is no longer an accepted outcome.
-TASK-091 remains `in_progress` with Attempt 1 evidence intact and may resume
-only after fresh task-plan review and strict readiness; TASK-093 remains planned
-behind TASK-091. The feature itself remains incomplete.
+The search/navigation slices `FT-009-AC-001` and `FT-009-AC-004` are complete
+through closed TASK-091 with functional PASS and per-task semantic-pass.
+TASK-093 remains planned for `FT-009-AC-003`; its dependencies are satisfied,
+but it has not been promoted or selected. The feature itself remains incomplete
+and retains `lifecycle: planned`.

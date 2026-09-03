@@ -63,6 +63,13 @@ https://localhost:8443 {
 			}
 		}
 
+		@staff_diagnostics path /staff/server-events /staff/attempts /staff/attempts/*
+		handle @staff_diagnostics {
+			reverse_proxy backend:8000 {
+				header_up X-Forwarded-For {remote_host}
+			}
+		}
+
 		handle /staff/photo-upload {
 			reverse_proxy backend:8000 {
 				header_up X-Forwarded-For {remote_host}

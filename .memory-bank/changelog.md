@@ -4,6 +4,23 @@ status: active
 ---
 # Changelog
 
+## [2026-09-03] Wave 2 / FT-009 server-event search closure
+
+- Closed: `TASK-091-T3-FT-009-W2` is `done` after fresh Attempt 4 functional
+  PASS and required per-task `semantic-pass`.
+- Implemented: the effective release HTTPS route exposes the exact
+  developer-only bounded server-event search with usable optional filters,
+  fixed-field escaped HTML, paired FT-008 navigation and truthful uncorrelated
+  rows; internal `event_id` values are not rendered.
+- Preserved: FT-008 retains target authorization/projection ownership, denied
+  and stale sessions disclose no rows, and diagnostics performs no Promo-table
+  read for navigation.
+- Reconciled: FT-009 now has closed producer/persistence and search/navigation
+  slices. `TASK-093-T3-FT-009-W3` remains `planned` for retention expiry; its
+  dependencies are satisfied, but this sync does not promote or select it.
+- Lifecycle: FT-009 and `REQ-LOG-001` remain `planned` until the W3 retention
+  outcome is implemented and receives its required verification.
+
 ## [2026-09-02] FT-008 closure and FT-009 producer slice
 
 - Verified: FT-008 is complete. TASK-088 and TASK-089 are `done`, the
