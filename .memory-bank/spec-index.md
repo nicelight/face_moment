@@ -1,7 +1,7 @@
 ---
 description: Pure SDD spec registry and planned-spec index.
 status: active
-last_updated: 2026-09-01
+last_updated: 2026-09-03
 source_of_truth:
   - .memory-bank/spec-index.md
 ---
@@ -24,6 +24,7 @@ source_of_truth:
 | contract | [.memory-bank/contracts/attempt-investigation-api.md](contracts/attempt-investigation-api.md) | active | Exact role-scoped Attempts filters, staff list/detail projection and failure contract. | /feature-to-tasks |
 | contract | [.memory-bank/contracts/client-diagnostic-api.md](contracts/client-diagnostic-api.md) | active | Authenticated best-effort client response-timing report for one admitted core Attempt. | /feature-to-tasks |
 | contract | [.memory-bank/contracts/diagnostic-retention-api.md](contracts/diagnostic-retention-api.md) | active | Owner-ordered cleanup command and authorized latest-result read surface. | /feature-to-tasks |
+| contract | [.memory-bank/contracts/ground-truth-annotation-api.md](contracts/ground-truth-annotation-api.md) | active | Developer-only Attempt annotation HTML routes, mutations, authorization and failure contract. | /feature-to-tasks |
 | contract | [.memory-bank/contracts/photo-admission-api.md](contracts/photo-admission-api.md) | active | Exact authenticated staff uploader, independent per-file response, failure and UI contract. | /feature-to-tasks |
 | contract | [.memory-bank/contracts/photo-processing-api.md](contracts/photo-processing-api.md) | active | Exact authenticated per-Photo processing status, SLO and primary-storage health UI/API contract. | /feature-to-tasks |
 | contract | [.memory-bank/contracts/promo-display-api.md](contracts/promo-display-api.md) | active | Exact authenticated display configuration, teaser-media and post-render acknowledgement contract. | /feature-to-tasks |
@@ -36,6 +37,7 @@ source_of_truth:
 | data | [.memory-bank/domains/staff-access.md](domains/staff-access.md) | active | Staff principals, roles, password hashes, server sessions, CSRF and credential lifecycle. | /feature-to-tasks |
 | data | [.memory-bank/domains/display-client-access.md](domains/display-client-access.md) | active | Serving-control display-client identity, retrievable Admin-visible token plus authentication hash, manual kiosk handoff and lifecycle. | /feature-to-tasks |
 | data | [.memory-bank/domains/diagnostic-evidence.md](domains/diagnostic-evidence.md) | active | Diagnostics-owned versioned evidence bundle, completeness, explicit ordinary removal, promoted subset and retention boundary. | /feature-to-tasks |
+| data | [.memory-bank/domains/ground-truth-annotations.md](domains/ground-truth-annotations.md) | active | Diagnostics-owned normalized annotations, calculation input, promotion snapshot and ordinary retention. | /feature-to-tasks |
 | data | [.memory-bank/domains/promo-attempt.md](domains/promo-attempt.md) | active | Promo-owned core Attempt, result/session, display and shared QR browser-access state. | /feature-to-tasks |
 | data | [.memory-bank/domains/realtime-search.md](domains/realtime-search.md) | active | Server-authoritative reference-query selection, immutable search context and compatible exact search. | /feature-to-tasks |
 | data | [.memory-bank/domains/structured-server-events.md](domains/structured-server-events.md) | active | Diagnostics-owned fixed server-event shape/catalog, non-blocking persistence, redaction and 30-day expiry. | /feature-to-tasks |

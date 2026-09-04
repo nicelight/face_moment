@@ -12,6 +12,8 @@ status: active
   browser response-receipt marker for one admitted core Attempt.
 - [Diagnostic Retention API](diagnostic-retention-api.md): owner-ordered cleanup
   command and role-scoped latest-result read contract.
+- [Ground-Truth Annotation API](ground-truth-annotation-api.md): developer-only
+  Attempt annotation routes, mutations, authorization and failures.
 - [Photo Admission API](photo-admission-api.md): authenticated staff uploader,
   per-file responses, standard failures and UI behavior.
 - [Photo Processing API](photo-processing-api.md): authenticated per-Photo

@@ -10,6 +10,8 @@ status: active
 - [Diagnostic Evidence](diagnostic-evidence.md): versioned best-effort evidence,
   completeness gaps, explicit ordinary removal, promoted subset and
   diagnostics-owned retention.
+- [Ground-Truth Annotations](ground-truth-annotations.md): normalized ordinary
+  annotation rows, calculation projection, promotion snapshot and retention.
 - [Promo Attempt](promo-attempt.md): core Attempt persistence, immutable
   serving snapshot, result assembly/session, display and shared QR browser
   access transitions.

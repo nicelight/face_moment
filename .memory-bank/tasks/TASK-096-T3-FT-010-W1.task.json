@@ -1,0 +1,108 @@
+{
+  "id": "TASK-096-T3-FT-010-W1",
+  "title": "Create the normalized ground-truth annotation provider",
+  "status": "planned",
+  "wave": "W1",
+  "feature": "FT-010",
+  "reqs": [
+    "REQ-ANN-001",
+    "REQ-DATA-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-093-T3-FT-009-W3"
+  ],
+  "touched_files": [
+    "migrations/versions/0019_ground_truth_annotations.py",
+    "src/face_moment/diagnostics/ground_truth_annotations.py",
+    "src/face_moment/diagnostics/__init__.py",
+    "tests/diagnostics/test_ground_truth_annotations.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Ground-truth annotation provider tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/diagnostics/test_ground_truth_annotations.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-010.md",
+    ".memory-bank/domains/ground-truth-annotations.md",
+    ".memory-bank/domains/diagnostic-evidence.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/contracts/attempt-investigation-api.md",
+    ".memory-bank/testing/calibration.md",
+    ".memory-bank/tasks/plans/IMPL-FT-010.md"
+  ],
+  "evidence_required": [
+    "Ground-Truth Annotations Calculation-Ready Owner Boundary RED: the current diagnostics persistence rejects participant_name/annotations in ordinary evidence and exposes no normalized annotation table or calculation projection; GREEN: a next-linear migration and diagnostics-owned provider persist only valid detection correct|false or person missed rows, reject invalid/nonexistent targets, support correction/removal and return only explicit immutable rows while absence contributes nothing; decisive comparison: disposable migration plus repository/application fixtures across valid, invalid, absent and explicit-missed cases with unchanged promo-owned rows; artifact: redacted provider evidence under .tasks/TASK-096-T3-FT-010-W1/."
+  ],
+  "purpose": "Provide the smallest protected diagnostics-owned persistence and application boundary that later HTML and Calibration flows can reuse without putting names in ordinary evidence or inventing participant identity state.",
+  "success_outcome": "Diagnostics persists only valid normalized annotation rows for existing Attempts and exposes an immutable calculation snapshot in which absent ground truth is excluded and person-level missed needs no detector artifact.",
+  "anti_goals": [
+    "Do not add the staff HTML flow, Calibration calculations, promotion/retention integration or production configuration.",
+    "Do not add a participant registry, identity clustering, dataset/history table, JSON payload column, frame upload or detector-miss proof.",
+    "Do not put participant names or annotations in ordinary_manifest, structured server events, URLs or retained unredacted task artifacts."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production PostgreSQL, operator/default Attempts/evidence and real participant names",
+      "Promo Attempt/result/session mutation, cross-owner foreign keys/cascades and direct foreign-table writes",
+      "Staff annotation routes, Calibration algorithms/runs, retention cleanup and promoted-subset behavior"
+    ],
+    "stop_conditions": [
+      "Calculation-ready semantics cannot remain a diagnostics-owned normalized table plus immutable application projection.",
+      "A valid person-level missed annotation would require a detector occurrence, reference-frame upload or participant registry.",
+      "The migration cannot remain next-linear in the one shared schema/Base/Alembic stream without a cross-owner cascade.",
+      "T3 protected-data probes cannot use synthetic names, disposable rows, safe rerun, redacted artifacts and complete cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-010.md#outcome",
+    ".memory-bank/domains/ground-truth-annotations.md#calculation-ready-owner-boundary",
+    ".protocols/FT-010/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-010.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/ground-truth-annotations.md#postgresql-shape",
+    ".memory-bank/domains/ground-truth-annotations.md#calculation-ready-owner-boundary",
+    ".memory-bank/domains/diagnostic-evidence.md#evidence-bundle-version-1",
+    ".memory-bank/contracts/boundary-map.md#diagnostic-evidence-and-access",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/contracts/attempt-investigation-api.md#promo-query-boundary",
+    ".memory-bank/testing/calibration.md#fixed-evaluation-input",
+    ".memory-bank/testing/index.md#quality-gates"
+  ],
+  "constraints": [
+    "Primary owner is diagnostics at src/face_moment/diagnostics/; promo supplies immutable Attempt truth only through its accepted query boundary.",
+    "Create one next-linear migration from the execution-time direct predecessor; prove only this revision's upgrade/downgrade and linear ancestry on a disposable task database.",
+    "Persist only annotation_id, attempt_id, target kind/index, bounded participant_name and outcome; add no audit/history, participant or dataset model.",
+    "Detection correct|false requires a current evidence occurrence; person missed has no occurrence and no mandatory artifact, but expired/removed ordinary state rejects every new write.",
+    "Use a partial uniqueness rule only for one detection target per Attempt; multiple person-level missed rows remain valid.",
+    "Retain only synthetic names/UUIDs and redacted evidence; cleanup cannot touch operator/default state."
+  ],
+  "invariants": [
+    "Diagnostics is the only writer of annotation state and never mutates promo Attempts/results/sessions.",
+    "Participant names and annotations never enter ordinary_manifest or structured server events.",
+    "No annotation row means no calculation outcome; explicit missed is persisted only as a person-level row.",
+    "The single PostgreSQL schema/Base/Alembic stream remains linear and has no ownership-crossing cascade."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/ground-truth-annotations.md#calculation-ready-owner-boundary",
+    "Disposable PostgreSQL migration/repository fixtures prove exact checks, detection-target uniqueness, no cross-owner FK/cascade, valid create/correct/remove/list and persistence across a new session.",
+    "Application fixtures distinguish absent annotation from explicit person-level missed and reject nonexistent detection targets plus expired/removed writes without requiring frame upload or detector-miss evidence.",
+    "Ownership/import and SQL inspection prove diagnostics-only writes through accepted promo reads, unchanged promo rows and no participant/history/dataset/JSON-bundle model."
+  ]
+}

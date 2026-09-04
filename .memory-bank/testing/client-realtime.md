@@ -1,7 +1,7 @@
 ---
 description: Canonical verification contract for client proposal submission, one-clock Promo latency and related diagnostics.
 status: active
-last_updated: 2026-09-01
+last_updated: 2026-09-03
 source_of_truth:
   - .memory-bank/testing/client-realtime.md
 ---
@@ -264,8 +264,10 @@ validation.
 - Credentials, authentication state, infrastructure access, commercial Photo
   media, personalized session data, participant names/annotations and
   administrative actions retain their existing protection. Ordinary evidence
-  rejects participant names/annotations; only the separately authorized curated
-  promotion seam may admit them.
+  rejects participant names/annotations; ordinary ground truth uses only the
+  separate developer-authorized diagnostics table, and only the separately
+  authorized curated promotion seam may retain its selected snapshot past the
+  ordinary cutoff.
 
 ## Exclusions
 

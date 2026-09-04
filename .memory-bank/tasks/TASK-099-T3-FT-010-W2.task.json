@@ -1,0 +1,111 @@
+{
+  "id": "TASK-099-T3-FT-010-W2",
+  "title": "Integrate ordinary annotation retention",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-010",
+  "reqs": [
+    "REQ-ANN-001",
+    "REQ-DATA-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-096-T3-FT-010-W1"
+  ],
+  "touched_files": [
+    "src/face_moment/diagnostics/ground_truth_annotations.py",
+    "src/face_moment/diagnostics/evidence.py",
+    "src/face_moment/diagnostics/retention.py",
+    "tests/diagnostics/test_ground_truth_annotation_retention.py",
+    "tests/diagnostics/test_retention_cleanup.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Annotation retention tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/diagnostics/test_ground_truth_annotation_retention.py tests/diagnostics/test_retention_cleanup.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-010.md",
+    ".memory-bank/domains/ground-truth-annotations.md",
+    ".memory-bank/domains/diagnostic-evidence.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/contracts/diagnostic-retention-api.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/tasks/plans/IMPL-FT-010.md"
+  ],
+  "evidence_required": [
+    "FT-010-AC-004 RED: annotation rows are not part of the existing 90-day cleanup and can outlive their Attempt context; GREEN: diagnostics deletes them before owner confirmation without changing the promoted subset; decisive comparison: disposable old/equal/new annotated Attempts across cleanup and one safe rerun; artifact: redacted evidence under .tasks/TASK-099-T3-FT-010-W2/.",
+    "Ground-Truth Annotations Ordinary Annotation Removal RED: the existing explicit ordinary-evidence removal clears evidence but not future annotation rows; GREEN: the same diagnostics-owned transition deletes those rows and remains an idempotent no-op when repeated; decisive comparison: one disposable annotated Attempt before removal, after removal and after one repeat; artifact: redacted evidence under .tasks/TASK-099-T3-FT-010-W2/."
+  ],
+  "purpose": "Delete ordinary annotation rows whenever the existing diagnostics owner expires or explicitly removes their ordinary Attempt context.",
+  "success_outcome": "Scheduled expiry and explicit ordinary removal both delete annotation rows while preserving the promoted subset and their existing state/result contracts.",
+  "anti_goals": [
+    "Do not implement annotation promotion, a public ordinary-removal route, Calibration selection/UI, a second cleanup command/timer, jobs/history, tombstones or production activation.",
+    "Do not add an annotation-specific cutoff or let annotation creation time extend the core Attempt lifetime.",
+    "Do not change the latest-result schema, delete promo rows directly or touch production/operator data."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production PostgreSQL/MinIO, operator/default Attempts/evidence/annotations and real participant names",
+      "Promoted-subset creation/deletion behavior, direct diagnostics mutation of promo rows and ownership-crossing cascades",
+      "Annotation HTML routes, Calibration runs/recommendations/UI, serving settings and unrelated event/Photo retention"
+    ],
+    "stop_conditions": [
+      "Ordinary annotation expiry cannot reuse the existing promo-selected Attempt cutoff and diagnostics-before-promo owner order.",
+      "Scheduled expiry and explicit ordinary removal cannot share one diagnostics-owned annotation deletion boundary.",
+      "Either removal path cannot preserve the existing promoted subset while deleting ordinary annotation rows.",
+      "Safe rerun would require a new lifecycle, cleanup command, history/jobs table or cross-owner transaction.",
+      "T3 destructive probes cannot use fixed-time disposable rows, known initial state, safe rerun, synthetic names, redacted artifacts and complete cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-010.md#FT-010-AC-004",
+    ".memory-bank/domains/ground-truth-annotations.md#ordinary-annotation-removal",
+    ".protocols/FT-010/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-010.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/ground-truth-annotations.md#ordinary-annotation-removal",
+    ".memory-bank/domains/diagnostic-evidence.md#explicit-ordinary-removal-transition",
+    ".memory-bank/domains/diagnostic-evidence.md#retention-cleanup-boundary",
+    ".memory-bank/contracts/boundary-map.md#retention-cleanup",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/contracts/diagnostic-retention-api.md#idempotent-cleanup-command",
+    ".memory-bank/contracts/diagnostic-retention-api.md#failure-and-rerun-rules",
+    ".memory-bank/states/lifecycle-map.md#diagnostic-and-calibration-retention"
+  ],
+  "constraints": [
+    "Reuse the existing promo-selected 90-day Attempt cutoff, diagnostics-before-promo owner order and one latest-result shape; add no annotation count or scheduler state.",
+    "Use one diagnostics-owned annotation deletion boundary from scheduled expiry and explicit ordinary removal; delete rows before either operation confirms completion.",
+    "Scheduled expiry deletes annotations for every supplied Attempt even when no diagnostic_evidence row exists.",
+    "Preserve promoted_subset unchanged on both paths.",
+    "Use disposable annotated rows with one safe rerun per path and complete task-owned cleanup."
+  ],
+  "invariants": [
+    "Diagnostics deletes only its ordinary evidence/annotation rows and promo deletes only confirmed promo-owned state; no cascade or direct foreign write crosses ownership.",
+    "Annotation creation or correction time never extends the core Attempt cutoff.",
+    "Neither ordinary-removal path deletes or reconstructs the curated promoted snapshot.",
+    "A repeated scheduled or explicit removal is safe and does not restore removed data or change existing state/result contracts."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-010.md#FT-010-AC-004",
+    ".memory-bank/domains/ground-truth-annotations.md#ordinary-annotation-removal",
+    "Fixed-cutoff fixtures prove old annotation deletion including a no-evidence-row Attempt, equal/newer preservation and one safe cleanup rerun.",
+    "One explicit-removal fixture proves annotation deletion and idempotent repeat while promoted_subset remains unchanged.",
+    "Source inspection proves reuse of the existing operations with no public route, new scheduler, history, tombstone, cascade, Calibration UI or serving mutation."
+  ]
+}

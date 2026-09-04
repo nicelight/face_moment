@@ -30,7 +30,7 @@ status: active
 
 - [FT-007](FT-007.md): Core Attempt, client timings and best-effort evidence.
 - [FT-008](FT-008.md): Verified role-scoped Attempts investigation.
-- [FT-009](FT-009.md): Partially delivered structured server events; bounded
-  search and expiry remain planned.
+- [FT-009](FT-009.md): Verified structured server-event persistence, bounded
+  developer search and 30-day expiry.
 - [FT-010](FT-010.md): Ground-truth annotation.
 - [FT-011](FT-011.md): Explainable Calibration.

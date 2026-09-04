@@ -14,3 +14,4 @@ status: active
 - [IMPL-FT-007](IMPL-FT-007.md): correlated Attempt evidence and owner-ordered retention.
 - [IMPL-FT-008](IMPL-FT-008.md): role-scoped Attempt investigation.
 - [IMPL-FT-009](IMPL-FT-009.md): non-blocking structured server events, bounded developer search and expiry.
+- [IMPL-FT-010](IMPL-FT-010.md): normalized ground-truth annotations, developer entry and retention.

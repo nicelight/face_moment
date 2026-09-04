@@ -1,7 +1,7 @@
 ---
 description: Canonical accepted module/change-unit dependency graph and boundary contracts for the Face Moment pilot.
 status: active
-last_updated: 2026-09-01
+last_updated: 2026-09-03
 source_of_truth:
   - .memory-bank/contracts/boundary-map.md
 ---
@@ -232,6 +232,11 @@ registers the adapter and owns neither interaction.
 The exact bounded promo query, staff routes, role projections, evidence states
 and failures are owned by the
 [Attempt Investigation API](attempt-investigation-api.md).
+The developer-only annotation child routes, mutation authorization and failure
+contract are owned by the
+[Ground-Truth Annotation API](ground-truth-annotation-api.md); normalized rows
+and calculation input remain diagnostics-owned under
+[Ground-Truth Annotations](../domains/ground-truth-annotations.md).
 The fixed operational event envelope, non-blocking writer and owner persistence
 are defined by [Structured Server Events](../domains/structured-server-events.md),
 while the developer-only staff search/filter/navigation surface is defined by
@@ -243,8 +248,9 @@ authentication edge. No new module edge or read model is introduced.
 ### Calibration and serving change
 
 `diagnostics` owns evidence selection and Calibration recommendations. It calls
-`processing` for offline evaluation. A recommendation never changes serving
-state automatically; only a separate explicit developer action may ask
+`processing` for offline evaluation and reads its own immutable annotation
+projection. A recommendation never changes serving state automatically; only a
+separate explicit developer action may ask
 `serving_control` to apply the accepted setting through its audited command.
 The reproducible oracle is owned by
 [Calibration verification](../testing/calibration.md).
@@ -286,8 +292,9 @@ The reproducible oracle is owned by
 
 `promo` owns the project-wide latest cleanup result, selects its own expired
 Attempt candidates and calls `diagnostics` to expire diagnostic-owned data for
-those UUIDs. Diagnostics confirms both converged evidence and the explicit
-no-row case before promo deletion. Each module deletes only its own
+those UUIDs. Diagnostics expires ordinary evidence and annotation rows, then
+confirms both converged owner data and the explicit no-row case before promo
+deletion. Each module deletes only its own
 rows/objects. Exact cutoffs and promoted-subset retention are owned by the
 [lifecycle map](../states/lifecycle-map.md#diagnostic-and-calibration-retention).
 Diagnostics also deletes its structured server events independently by the

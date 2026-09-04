@@ -1,7 +1,7 @@
 ---
 description: Diagnostics-owned evidence bundle, completeness, promotion and retention data contract.
 status: active
-last_updated: 2026-08-25
+last_updated: 2026-09-04
 source_of_truth:
   - .memory-bank/domains/diagnostic-evidence.md
 ---
@@ -137,10 +137,10 @@ Candidate observations may contain Photo UUID, finite score and deterministic
 ranking inputs required for reproduction. Embeddings, credentials, auth
 headers/cookies/tokens, commercial Photo originals, personalized session data,
 request bodies, session replay, participant names and annotations MUST NOT be
-stored in `ordinary_manifest`. Participant names and annotations are accepted
-only by the separately authorized `promoted_subset` write boundary described
-below; an ordinary write containing either field is rejected rather than
-silently stripped.
+stored in `ordinary_manifest`; an ordinary evidence write containing either
+field is rejected rather than silently stripped. FT-010 stores ordinary names
+and annotations only in the separate diagnostics-owned
+[Ground-Truth Annotations](ground-truth-annotations.md) table.
 
 Capture-derived reference images, normalized images and crops are not denied
 solely because they contain image content, but FT-007 requires no capture-media
@@ -222,18 +222,29 @@ scores, annotations and participant name. It MUST NOT retain the whole bundle,
 unselected reference series, Promo screenshot, technical logs, credentials or
 session data.
 
-Promotion does not extend `ordinary_manifest` lifetime. Retention cleanup may
-clear ordinary content while preserving `promoted_subset`, its provenance and
-explicit-deletion lifecycle. FT-007 proves this seam with task-owned fixtures;
-annotation UI and Calibration selection remain owned by FT-010/FT-011.
+When annotations are promoted, `promoted_subset.annotations` contains only the
+selected immutable snapshot defined by
+[Ground-Truth Annotations](ground-truth-annotations.md#promoted-annotation-snapshot).
+Diagnostics validates it against current owner rows; callers cannot inject an
+unrelated name or annotation. A diagnostics-owned application operation
+explicitly deletes the whole promoted subset by clearing both
+`promoted_subset` and `promoted_at`; repeating it after both fields are clear is
+a no-op success. This does not restore ordinary evidence or annotations and
+exposes no public deletion route.
+
+Promotion does not extend `ordinary_manifest` or ordinary-annotation lifetime.
+Retention cleanup may clear ordinary content and annotation rows while
+preserving `promoted_subset`, its provenance and explicit-deletion lifecycle.
+FT-007 proves the generic seam with task-owned fixtures; annotation UI remains
+owned by FT-010 and Calibration selection/promotion UI by FT-011.
 
 ## Retention Cleanup Boundary
 
 Given a fixed UTC cutoff, promo selects its own core Attempts strictly before
 the cutoff and passes their UUIDs to diagnostics. For every supplied UUID,
 diagnostics first makes any ordinary content unreadable, deletes any
-diagnostics-owned private artifacts idempotently, clears ordinary fields and
-returns:
+diagnostics-owned private artifacts and ordinary annotation rows idempotently,
+clears ordinary fields and returns:
 
 - core Attempt UUIDs eligible for promo-owned deletion;
 - evidence rows expired;

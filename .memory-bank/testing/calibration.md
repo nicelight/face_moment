@@ -1,7 +1,7 @@
 ---
 description: Reproducible verification contract for FT-011 threshold profiles, one-dimensional quality analysis and Calibration boundaries.
 status: active
-last_updated: 2026-08-01
+last_updated: 2026-09-03
 source_of_truth:
   - .memory-bank/testing/calibration.md
 ---
@@ -18,6 +18,9 @@ fixed evaluation method and evidence shape needed to verify them.
 their drill-down. It calls `processing` through its offline-evaluation boundary.
 Only `serving_control` may apply an explicitly developer-confirmed setting by
 the audited command in the [boundary map](../contracts/boundary-map.md).
+The persisted ground truth comes only from the immutable calculation projection
+in [Ground-Truth Annotations](../domains/ground-truth-annotations.md#calculation-ready-owner-boundary);
+absence is not synthesized as an outcome.
 
 ## Fixed Evaluation Input
 

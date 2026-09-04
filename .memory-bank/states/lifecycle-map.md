@@ -1,7 +1,7 @@
 ---
 description: Canonical pilot lifecycles for Photo admission, processing, inventory visibility, purge, Promo and diagnostics.
 status: active
-last_updated: 2026-09-01
+last_updated: 2026-09-03
 source_of_truth:
   - .memory-bank/states/lifecycle-map.md
 ---
@@ -259,6 +259,9 @@ complete | incomplete -- explicit diagnostics removal --> removed
 - Structured server events expire after 30 days.
 - Ordinary Attempts and diagnostic evidence, including persisted
   capture-derived media, expire after 90 days.
+- Ordinary ground-truth annotation rows follow the same Attempt-selected
+  90-day cutoff. Diagnostics deletes them before promo deletes the core Attempt;
+  annotation creation or correction never extends the Attempt lifetime.
 - `diagnostics` alone may create `removed` through the irreversible owner
   transition in
   [Diagnostic Evidence](../domains/diagnostic-evidence.md#explicit-ordinary-removal-transition).
@@ -268,7 +271,9 @@ complete | incomplete -- explicit diagnostics removal --> removed
   cannot restore removed content.
 - Manual promotion preserves only the curated calibration subset named by PRD
   `NFR-DATA-03` until explicit deletion; it does not extend the whole ordinary
-  bundle or its Promo screenshot.
+  bundle, ordinary annotations or its Promo screenshot. Promoted annotation
+  fields are an immutable selected snapshot and disappear with explicit
+  promoted-subset deletion.
 - Capture-derived media adds no separate retention lifecycle and is not
   protected solely because it contains an image. Other data keeps its
   data-specific authorization and delivery rules from the boundary contract.

@@ -1,7 +1,7 @@
 ---
 description: Owner-ordered diagnostic retention command and latest-result staff contract.
 status: active
-last_updated: 2026-09-01
+last_updated: 2026-09-03
 source_of_truth:
   - .memory-bank/contracts/diagnostic-retention-api.md
 ---
@@ -17,9 +17,11 @@ its own rows/objects. No cross-owner cascade, cleanup history, generic jobs
 table or reliable queue is introduced.
 
 The fixed policy cutoffs are 30 days for structured server events and 90 days
-for ordinary Attempts/evidence, evaluated in UTC. FT-007 supplies the ordinary
-Attempt/evidence command and result; FT-009 extends the same diagnostics owner
-boundary with server-event deletion without changing the public result shape.
+for ordinary Attempts/evidence/annotations, evaluated in UTC. FT-007 supplies
+the ordinary Attempt/evidence command and result; FT-009 extends the same
+diagnostics owner boundary with server-event deletion, and FT-010 extends its
+existing 90-day owner cleanup with annotation rows, without changing the public
+result shape.
 
 ## Idempotent Cleanup Command
 
@@ -40,9 +42,9 @@ advisory lock and holds it through terminal result recording. It then:
    30-day cutoff, including uncorrelated rows;
 4. selects promo-owned core Attempts strictly before the 90-day cutoff and
    passes those UUIDs to diagnostics;
-5. asks diagnostics to expire its owned Attempt evidence and confirm each
-   supplied UUID, including an explicit no-op confirmation when no evidence row
-   exists;
+5. asks diagnostics to expire its owned Attempt evidence, delete ordinary
+   annotation rows and confirm each supplied UUID, including an explicit no-op
+   confirmation when neither owner table has a row;
 6. deletes only the confirmed promo-owned Attempts and owner-local expired
    sessions;
 7. records `succeeded` with confirmed counts, or a sanitized `failed` result.
@@ -151,6 +153,8 @@ cross-owner delete. An owner failure is sanitized and the command records
   eligible and leaves a visible `failed` result.
 - A supplied UUID with no diagnostics row is confirmed as an owner-local no-op
   and may be deleted by promo; absence MUST NOT retain the old core Attempt.
+- Annotation deletion is part of diagnostics owner convergence and adds no
+  public count; the existing result shape remains unchanged.
 - A concurrent invocation that observes the advisory lock exits `2` without
   replacing the active run identity, cutoffs, timestamps or counts.
 - Interruption never fabricates success counts. Rerun reuses owner idempotency

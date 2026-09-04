@@ -4,6 +4,26 @@ status: active
 ---
 # Changelog
 
+## [2026-09-04] FT-010 task decomposition closure
+
+- Closed: fresh `/review-tasks-plan FT-010` approved the four-card task plan for
+  Global Backbone Planning Revision `4`; no architecture review is required.
+- Reconciled: `TASK-096..099` remain `planned`, every `FT-010-AC-001..005` has
+  one owner, and the implementation-plan router now links IMPL-FT-010.
+- Evidence: `.tasks/TASK-MB-REVIEW-TASKS-PLAN/TASK-MB-REVIEW-TASKS-PLAN-S-TASKS-FT-010-final-report-docs-01.md`.
+- Preserved: FT-010 and `REQ-ANN-001` remain `planned` until implementation and
+  verification; the applicable `/mb-doctor` gate precedes execution.
+
+## [2026-09-04] Wave 3 / FT-009 feature closure
+
+- Closed: FT-009 is `verified` after all `FT-009-AC-001..004` task outcomes,
+  required T3 gates and feature-level `semantic-pass` completed.
+- Reconciled: `REQ-LOG-001` is `verified`, and the feature router now reflects
+  the closed persistence, developer-search and retention outcome.
+- Evidence: `.tasks/FT-009/FT-009-S-RED-VERIFY-final-report-docs-01.md` and the
+  durable marker in `.memory-bank/features/FT-009.md#semantic-verification`.
+- Preserved: EP-003 remains `planned` while FT-010 and FT-011 are unfinished.
+
 ## [2026-09-03] Wave 3 / FT-009 server-event retention closure
 
 - Closed: `TASK-093-T3-FT-009-W3` is `done` after functional PASS and required

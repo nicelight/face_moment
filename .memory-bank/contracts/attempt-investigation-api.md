@@ -1,7 +1,7 @@
 ---
 description: Exact role-scoped staff Attempt investigation page, filters, projections and failure contract.
 status: active
-last_updated: 2026-09-01
+last_updated: 2026-09-03
 source_of_truth:
   - .memory-bank/contracts/attempt-investigation-api.md
 ---
@@ -96,6 +96,10 @@ names/annotations, Calibration, structured server events, personalized session
 data, commercial Photo media or a new artifact-navigation surface. Existing
 capture-derived fields are not hidden solely because they are image-derived;
 their actual delivery still follows the owning media boundary.
+
+FT-010 may add a developer-only navigation link to its separate annotation
+child page. The link carries only the server `attempt_id`; the FT-008 detail
+projection itself still exposes no participant name or annotation field.
 
 ## Evidence Availability
 
