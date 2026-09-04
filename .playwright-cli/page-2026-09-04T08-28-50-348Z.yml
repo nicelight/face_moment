@@ -1,0 +1,53 @@
+- main [ref=f1e2]:
+  - paragraph [ref=f1e3]:
+    - link "Attempts" [ref=f1e4] [cursor=pointer]:
+      - /url: /staff/attempts
+  - heading "Attempt detail" [level=1] [ref=f1e5]
+  - generic [ref=f1e6]:
+    - term [ref=f1e7]: Attempt ID
+    - definition [ref=f1e8]: 97000000-0000-4000-8000-000000000197
+    - term [ref=f1e9]: Correlation ID
+    - definition [ref=f1e10]: 985e5564-6b07-4f7c-8cc6-6c734dd733ae
+    - term [ref=f1e11]: Processing state
+    - definition [ref=f1e12]: result_issued
+    - term [ref=f1e13]: Outcome
+    - definition [ref=f1e14]: result
+    - term [ref=f1e15]: Ready-series start
+    - definition [ref=f1e16]: 2026-09-04T08:59:59.780000Z
+    - term [ref=f1e17]: Local detection completion
+    - definition [ref=f1e18]: 140 ms
+    - term [ref=f1e19]: Request start
+    - definition [ref=f1e20]: 220 ms
+    - term [ref=f1e21]: Response receipt
+    - definition [ref=f1e22]: 360 ms
+    - term [ref=f1e23]: Admission
+    - definition [ref=f1e24]: 2026-09-04T09:00:00Z
+    - term [ref=f1e25]: Slot decision
+    - definition [ref=f1e26]: 2026-09-04T09:00:00.010000Z
+    - term [ref=f1e27]: Search start
+    - definition [ref=f1e28]: 2026-09-04T09:00:00.020000Z
+    - term [ref=f1e29]: Search finish
+    - definition [ref=f1e30]: 2026-09-04T09:00:00.050000Z
+    - term [ref=f1e31]: Display state
+    - definition [ref=f1e32]: confirmed
+    - term [ref=f1e33]: QR visible elapsed
+    - definition [ref=f1e34]: 9500 ms
+    - term [ref=f1e35]: Evidence availability
+    - definition [ref=f1e36]: complete
+    - term [ref=f1e37]: Issue tags
+    - definition [ref=f1e38]: evidence_complete
+  - generic [ref=f1e39]:
+    - heading "Server durations" [level=2] [ref=f1e40]
+    - list [ref=f1e41]:
+      - listitem [ref=f1e42]: "admission_to_slot: 10 ms"
+      - listitem [ref=f1e43]: "slot_to_search: 10 ms"
+      - listitem [ref=f1e44]: "search: 30 ms"
+  - generic [ref=f1e45]:
+    - heading "Developer evidence" [level=2] [ref=f1e46]
+    - paragraph [ref=f1e47]: "Schema version: 1"
+    - paragraph [ref=f1e48]: "Completeness: complete"
+    - paragraph [ref=f1e49]: "Gap reason: unavailable"
+    - generic [ref=f1e50]: "{\"artifacts\": [], \"detections\": [{\"occurrence_index\": 0}], \"identity\": {\"attempt_id\": \"97000000-0000-4000-8000-000000000197\"}, \"schema_version\": 1}"
+    - paragraph [ref=f1e51]:
+      - link "Annotations" [ref=f1e52] [cursor=pointer]:
+        - /url: /staff/attempts/97000000-0000-4000-8000-000000000197/annotations

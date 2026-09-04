@@ -1,7 +1,7 @@
 {
   "id": "TASK-097-T3-FT-010-W2",
   "title": "Deliver the developer-only Attempt annotation flow",
-  "status": "planned",
+  "status": "done",
   "wave": "W2",
   "feature": "FT-010",
   "reqs": [
@@ -38,7 +38,46 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Fresh T3 verification independently passed the exact developer-only annotation HTML flow, FT-008 link, current-role and CSRF enforcement, no-store and sanitized rollback failures, protected-name isolation, calculation-ready stable Attempt result, real Chromium journey and complete disposable cleanup. Lifecycle remains unchanged pending task-scoped red verification.",
+      "report": ".tasks/TASK-097-T3-FT-010-W2/TASK-097-T3-FT-010-W2-S-VERIFY-final-report-docs-01.md",
+      "protocol": ".protocols/TASK-097-T3-FT-010-W2/verification.md",
+      "evidence": [
+        ".tasks/TASK-097-T3-FT-010-W2/TASK-097-T3-FT-010-W2-S-VERIFY-targeted-probe-01.md",
+        ".tasks/TASK-097-T3-FT-010-W2/verify-playwright-transcript.txt",
+        ".tasks/TASK-097-T3-FT-010-W2/verify-annotation-created.png",
+        ".tasks/TASK-097-T3-FT-010-W2/attempt-1-red.md",
+        ".tasks/TASK-097-T3-FT-010-W2/attempt-1-green.md"
+      ],
+      "resume_route": "/red-verify TASK-097-T3-FT-010-W2"
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "summary": "Fresh adversarial verification found no material semantic defect or operator question after challenging the exact developer-only routes, current authorization, CSRF, no-store, failure rollback/redaction, missing-versus-missed behavior, stable Attempt locator, FT-008 link, owner boundaries and supported browser/state paths.",
+      "report": ".tasks/TASK-097-T3-FT-010-W2/TASK-097-T3-FT-010-W2-S-RED-VERIFY-final-report-docs-01.md",
+      "protocol": ".protocols/TASK-097-T3-FT-010-W2/red-verification.md",
+      "evidence": [
+        ".tasks/TASK-097-T3-FT-010-W2/TASK-097-T3-FT-010-W2-S-RED-VERIFY-targeted-probe-01.md"
+      ],
+      "resume_route": "scheduler closure"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Autopilot closed TASK-097 after functional PASS and task-scoped semantic-pass. The accepted developer-only annotation HTML flow, FT-008 child navigation, current authorization/CSRF, no-store failures, protected-name isolation and calculation-ready persisted result are durably verified.",
+      "evidence": [
+        ".tasks/TASK-097-T3-FT-010-W2/TASK-097-T3-FT-010-W2-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-097-T3-FT-010-W2/TASK-097-T3-FT-010-W2-S-RED-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-097-T3-FT-010-W2/verify-playwright-transcript.txt",
+        ".tasks/TASK-097-T3-FT-010-W2/verify-annotation-created.png"
+      ],
+      "owner_lifecycle_closure": "autopilot_scheduler"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-010.md",
     ".memory-bank/contracts/ground-truth-annotation-api.md",

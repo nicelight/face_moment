@@ -177,7 +177,6 @@ def test_migration_shape_and_owner_ordered_cleanup_converge(
                 "schema_version": 1,
                 "media_refs": ["task086/private/photo"],
                 "scores": [0.91],
-                "participant_name": "curated only",
             },
             now=old_promoted.created_at,
         ).accepted
@@ -219,7 +218,6 @@ def test_migration_shape_and_owner_ordered_cleanup_converge(
             "schema_version": 1,
             "media_refs": ["task086/private/photo"],
             "scores": [0.91],
-            "participant_name": "curated only",
         }
         assert session.scalar(select(PromoSession).where(PromoSession.attempt_id == old_ordinary_id)) is None
         latest = session.get(RetentionCleanupLatest, 1)
@@ -254,7 +252,6 @@ def test_failed_private_delete_preserves_retry_state_until_rerun_converges(
         "schema_version": 1,
         "media_refs": [promoted_key],
         "scores": [0.91],
-        "participant_name": "curated only",
     }
     with Session(engine) as session:
         session.add(attempt)

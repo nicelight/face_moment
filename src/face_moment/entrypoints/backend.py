@@ -16,6 +16,9 @@ from face_moment.diagnostics.http import (
     register_attempt_investigation_routes,
     register_server_event_search_routes,
 )
+from face_moment.diagnostics.ground_truth_annotation_http import (
+    register_ground_truth_annotation_routes,
+)
 from face_moment.entrypoints.common import create_role_app, run, server_event_lifecycle
 from face_moment.infrastructure.settings import Settings
 from face_moment.inventory.http import register_ingest_target_routes
@@ -73,6 +76,7 @@ def create_app() -> FastAPI:
 
     register_staff_session_routes(app, session_factory=session_factory)
     register_attempt_investigation_routes(app, session_factory=session_factory)
+    register_ground_truth_annotation_routes(app, session_factory=session_factory)
     register_server_event_search_routes(app, session_factory=session_factory)
     register_ingest_target_routes(app, session_factory=session_factory)
     register_display_client_admin_routes(app, session_factory=session_factory)

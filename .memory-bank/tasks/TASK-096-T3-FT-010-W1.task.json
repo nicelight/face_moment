@@ -1,7 +1,7 @@
 {
   "id": "TASK-096-T3-FT-010-W1",
   "title": "Create the normalized ground-truth annotation provider",
-  "status": "planned",
+  "status": "done",
   "wave": "W1",
   "feature": "FT-010",
   "reqs": [
@@ -36,7 +36,71 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Fresh T3 verification independently passed the exact normalized schema and no-cross-owner-FK shape, valid detection correct|false and person missed semantics, absence-versus-explicit-missed behavior, immutable ordered persistence, expired/removed write rejection, accepted diagnostics-to-promo reads, unchanged Promo/evidence state and disposable cleanup. Required gates and adjacent diagnostics regressions passed; lifecycle remains unchanged pending task-scoped red verification.",
+      "report": ".tasks/TASK-096-T3-FT-010-W1/TASK-096-T3-FT-010-W1-S-VERIFY-final-report-docs-01.md",
+      "protocol": ".protocols/TASK-096-T3-FT-010-W1/verification.md",
+      "evidence": [
+        ".tasks/TASK-096-T3-FT-010-W1/TASK-096-T3-FT-010-W1-S-VERIFY-targeted-probe-01.md",
+        ".tasks/TASK-096-T3-FT-010-W1/attempt-1-red.md",
+        ".tasks/TASK-096-T3-FT-010-W1/attempt-1-green.md"
+      ],
+      "resume_route": "/red-verify TASK-096-T3-FT-010-W1"
+    },
+    {
+      "stage": "red-verify-attempt-1",
+      "verdict": "semantic-fail",
+      "summary": "Attempt 1 adversarial verification reproduced a supported stale-write race: annotation create can validate writable evidence, lose to a committed ordinary removal, then commit a protected participant-name row after the removed state. Feature-doctor confirmed unchanged accepted semantics, task-local implementation ownership and a bounded same-task retry with no replan or operator decision.",
+      "report": ".tasks/TASK-096-T3-FT-010-W1/TASK-096-T3-FT-010-W1-S-RED-VERIFY-final-report-docs-01.md",
+      "protocol": ".protocols/TASK-096-T3-FT-010-W1/red-verification.md",
+      "evidence": [
+        ".tasks/TASK-096-T3-FT-010-W1/TASK-096-T3-FT-010-W1-S-RED-VERIFY-targeted-probe-01.md",
+        ".protocols/FT-010/clarification.md#2026-09-04-task-096-attempt-1-semantic-failure"
+      ],
+      "resume_route": "/exe TASK-096-T3-FT-010-W1 -> /verify TASK-096-T3-FT-010-W1 -> /red-verify TASK-096-T3-FT-010-W1"
+    },
+    {
+      "stage": "verify-attempt-2",
+      "verdict": "PASS",
+      "summary": "Fresh T3 Attempt 2 verification independently passed the normalized provider outcome and the corrected supported ordering: a stale public create blocked behind irreversible removal, then observed committed removed state, rejected, rolled back and left zero annotation rows. Required gates and adjacent diagnostics regressions passed in disposable state; lifecycle remains unchanged pending fresh task-scoped red verification.",
+      "report": ".tasks/TASK-096-T3-FT-010-W1/TASK-096-T3-FT-010-W1-S-VERIFY-final-report-docs-02.md",
+      "protocol": ".protocols/TASK-096-T3-FT-010-W1/verification.md",
+      "evidence": [
+        ".tasks/TASK-096-T3-FT-010-W1/TASK-096-T3-FT-010-W1-S-VERIFY-targeted-probe-02.md",
+        ".tasks/TASK-096-T3-FT-010-W1/attempt-2-green.md",
+        ".tasks/TASK-096-T3-FT-010-W1/TASK-096-T3-FT-010-W1-S-RED-VERIFY-targeted-probe-01.md",
+        ".protocols/FT-010/clarification.md#2026-09-04-task-096-attempt-1-semantic-failure"
+      ],
+      "resume_route": "/red-verify TASK-096-T3-FT-010-W1"
+    },
+    {
+      "stage": "red-verify-attempt-2",
+      "verdict": "semantic-pass",
+      "summary": "Fresh Attempt 2 adversarial verification found no material semantic defect or operator question after exercising all six supported stale mutation interleavings against committed expired and removed transitions. Each mutation blocked on the shared evidence-row lock, then rejected and rolled back without creating, correcting or removing protected annotation rows.",
+      "report": ".tasks/TASK-096-T3-FT-010-W1/TASK-096-T3-FT-010-W1-S-RED-VERIFY-final-report-docs-02.md",
+      "protocol": ".protocols/TASK-096-T3-FT-010-W1/red-verification.md",
+      "evidence": [
+        ".tasks/TASK-096-T3-FT-010-W1/TASK-096-T3-FT-010-W1-S-RED-VERIFY-targeted-probe-02.md",
+        ".tasks/TASK-096-T3-FT-010-W1/red_verify_attempt_2_mutation_order_probe.py"
+      ],
+      "resume_route": "scheduler closure"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Autopilot closed TASK-096 after Attempt 2 functional PASS, task-scoped semantic-pass and post-retry Judge SUPPORT. The diagnostics-owned normalized provider now preserves exact annotation semantics, immutable calculation snapshots, owner boundaries and irreversible expired/removed rejection under supported concurrent mutation ordering.",
+      "evidence": [
+        ".tasks/TASK-096-T3-FT-010-W1/TASK-096-T3-FT-010-W1-S-VERIFY-final-report-docs-02.md",
+        ".tasks/TASK-096-T3-FT-010-W1/TASK-096-T3-FT-010-W1-S-RED-VERIFY-final-report-docs-02.md",
+        ".protocols/FT-010/clarification.md#2026-09-04-task-096-attempt-1-semantic-failure",
+        ".protocols/AUTONOMOUS-RUN/status.md"
+      ],
+      "owner_lifecycle_closure": "autopilot_scheduler"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-010.md",
     ".memory-bank/domains/ground-truth-annotations.md",

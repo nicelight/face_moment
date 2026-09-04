@@ -10,7 +10,7 @@ from enum import StrEnum
 from typing import Callable, Literal, cast
 import uuid
 
-from sqlalchemy import CheckConstraint, DateTime, Integer, String, Uuid, select
+from sqlalchemy import CheckConstraint, DateTime, Integer, String, Uuid, null, select
 from sqlalchemy.dialects.postgresql import JSONB, insert as postgresql_insert
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Mapped, Session, mapped_column
@@ -93,6 +93,9 @@ _PROMOTED_FORBIDDEN_KEYS |= {
 _PROMOTED_FORBIDDEN_BUNDLE_KEYS = (
     _ORDINARY_TOP_LEVEL_KEYS - {"schema_version"}
 ) | {"ordinary_manifest"}
+_CALLER_ANNOTATION_KEYS = frozenset(
+    {"participant_name", "participant_names", "annotation", "annotations"}
+)
 
 CompletenessLiteral = Literal["incomplete", "complete"]
 
@@ -372,12 +375,37 @@ class DiagnosticEvidenceRepository:
         evidence = self.require(
             attempt_id, schema_version=schema_version, for_update=True
         )
+        _require_current_ordinary_context(evidence)
         if evidence.promoted_subset is not None:
             if evidence.promoted_subset != normalized_subset:
                 raise DiagnosticEvidenceError("promoted subset is already recorded")
             return evidence
         evidence.promoted_subset = normalized_subset
         evidence.promoted_at = timestamp
+        evidence.updated_at = timestamp
+        self._session.flush()
+        self._session.refresh(evidence)
+        return evidence
+
+    def delete_promoted_subset(
+        self,
+        *,
+        attempt_id: uuid.UUID,
+        schema_version: int = CURRENT_SCHEMA_VERSION,
+        now: datetime | None = None,
+    ) -> DiagnosticEvidence:
+        """Atomically clear the whole curated subset and its timestamp."""
+
+        _validate_attempt_id(attempt_id)
+        _validate_schema_version(schema_version)
+        evidence = self.require(
+            attempt_id, schema_version=schema_version, for_update=True
+        )
+        if evidence.promoted_subset is None and evidence.promoted_at is None:
+            return evidence
+        timestamp = _utc(now)
+        evidence.promoted_subset = cast(dict[str, object] | None, null())
+        evidence.promoted_at = None
         evidence.updated_at = timestamp
         self._session.flush()
         self._session.refresh(evidence)
@@ -418,6 +446,11 @@ class DiagnosticEvidenceRepository:
         evidence = self.require(
             attempt_id, schema_version=schema_version, for_update=True
         )
+        from face_moment.diagnostics.ground_truth_annotations import (
+            GroundTruthAnnotationRepository,
+        )
+
+        GroundTruthAnnotationRepository(self._session).delete_for_attempt(attempt_id)
         if evidence.gap_reason == ORDINARY_REMOVED_GAP_REASON:
             return evidence
         if evidence.ordinary_expired_at is not None:
@@ -570,6 +603,7 @@ class DiagnosticEvidenceProvider:
         *,
         attempt_id: uuid.UUID,
         promoted_subset: Mapping[str, object],
+        selected_annotation_ids: Sequence[uuid.UUID] | None = None,
         schema_version: int = CURRENT_SCHEMA_VERSION,
         now: datetime | None = None,
     ) -> EvidenceWriteOutcome:
@@ -578,11 +612,99 @@ class DiagnosticEvidenceProvider:
             attempt_id,
             lambda: self._repository.promote_subset(
                 attempt_id=attempt_id,
-                promoted_subset=promoted_subset,
+                promoted_subset=self._with_selected_annotations(
+                    attempt_id=attempt_id,
+                    promoted_subset=promoted_subset,
+                    selected_annotation_ids=selected_annotation_ids,
+                    schema_version=schema_version,
+                ),
                 schema_version=schema_version,
                 now=now,
             ),
         )
+
+    def delete_promoted_subset(
+        self,
+        *,
+        attempt_id: uuid.UUID,
+        schema_version: int = CURRENT_SCHEMA_VERSION,
+        now: datetime | None = None,
+    ) -> EvidenceWriteOutcome:
+        """Run the internal diagnostics-owned whole-subset deletion."""
+
+        return self._run(
+            "delete_promoted_subset",
+            attempt_id,
+            lambda: self._repository.delete_promoted_subset(
+                attempt_id=attempt_id,
+                schema_version=schema_version,
+                now=now,
+            ),
+        )
+
+    def _with_selected_annotations(
+        self,
+        *,
+        attempt_id: uuid.UUID,
+        promoted_subset: Mapping[str, object],
+        selected_annotation_ids: Sequence[uuid.UUID] | None,
+        schema_version: int,
+    ) -> Mapping[str, object]:
+        """Build annotations only from selected current owner rows."""
+
+        _validate_attempt_id(attempt_id)
+        _validate_schema_version(schema_version)
+        _reject_keys(
+            promoted_subset,
+            _CALLER_ANNOTATION_KEYS,
+            "promoted subset",
+        )
+        if selected_annotation_ids is None:
+            return promoted_subset
+
+        evidence = self._repository.require(
+            attempt_id,
+            schema_version=schema_version,
+            for_update=True,
+        )
+        _require_current_ordinary_context(evidence)
+
+        annotation_ids = tuple(selected_annotation_ids)
+        if any(
+            not isinstance(annotation_id, uuid.UUID)
+            for annotation_id in annotation_ids
+        ):
+            raise DiagnosticEvidenceError("selected annotation IDs must be UUIDs")
+        if len(set(annotation_ids)) != len(annotation_ids):
+            raise DiagnosticEvidenceError("selected annotation IDs must be unique")
+
+        from face_moment.diagnostics.ground_truth_annotations import (
+            GroundTruthAnnotationRepository,
+        )
+
+        annotation_repository = GroundTruthAnnotationRepository(self._session)
+        annotations: list[dict[str, object]] = []
+        for annotation_id in sorted(annotation_ids, key=str):
+            annotation = annotation_repository.get(
+                attempt_id=attempt_id,
+                annotation_id=annotation_id,
+                for_update=True,
+            )
+            if annotation is None:
+                raise DiagnosticEvidenceError(
+                    "selected annotation is not a current row for the Attempt"
+                )
+            annotations.append(
+                {
+                    "annotation_id": str(annotation.annotation_id),
+                    "attempt_id": str(annotation.attempt_id),
+                    "target_kind": annotation.target_kind,
+                    "detection_occurrence_index": annotation.detection_occurrence_index,
+                    "participant_name": annotation.participant_name,
+                    "outcome": annotation.outcome,
+                }
+            )
+        return {**promoted_subset, "annotations": annotations}
 
     def remove_ordinary(
         self,
@@ -639,6 +761,13 @@ class DiagnosticEvidenceProvider:
 def _validate_attempt_id(attempt_id: uuid.UUID) -> None:
     if not isinstance(attempt_id, uuid.UUID):
         raise DiagnosticEvidenceError("attempt_id must be a UUID")
+
+
+def _require_current_ordinary_context(evidence: DiagnosticEvidence) -> None:
+    if evidence.ordinary_expired_at is not None:
+        raise DiagnosticEvidenceError("ordinary evidence has expired")
+    if evidence.gap_reason == ORDINARY_REMOVED_GAP_REASON:
+        raise DiagnosticEvidenceError("ordinary evidence has been removed")
 
 
 def _validate_schema_version(schema_version: int) -> None:

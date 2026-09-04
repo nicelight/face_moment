@@ -410,7 +410,8 @@ def _render_attempt_detail(view: AttemptInvestigationView) -> str:
             f"<p>Schema version: {_text(evidence.schema_version)}</p>"
             f"<p>Completeness: {escape(evidence.completeness)}</p>"
             f"<p>Gap reason: {_text(evidence.gap_reason)}</p>"
-            f"<pre>{escape(manifest)}</pre></section>"
+            f"<pre>{escape(manifest)}</pre>"
+            f'<p><a href="/staff/attempts/{core.attempt_id}/annotations">Annotations</a></p></section>'
         )
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Attempt {core.attempt_id}</title></head>

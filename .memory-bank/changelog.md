@@ -4,6 +4,21 @@ status: active
 ---
 # Changelog
 
+## [2026-09-04] Wave 1 / FT-010 normalized annotation provider closure
+
+- Closed: `TASK-096-T3-FT-010-W1` is `done` after Attempt 2 functional `PASS`,
+  required task-scoped `semantic-pass` and scheduler-owned closure.
+- Implemented: the diagnostics-owned normalized provider persists valid
+  detection `correct|false` and person-level `missed` semantics, exposes an
+  immutable ordered calculation projection and rejects mutation after
+  committed evidence expiry or removal.
+- Evidence: `.tasks/TASK-096-T3-FT-010-W1/TASK-096-T3-FT-010-W1-S-VERIFY-final-report-docs-02.md`
+  and `.tasks/TASK-096-T3-FT-010-W1/TASK-096-T3-FT-010-W1-S-RED-VERIFY-final-report-docs-02.md`.
+- Preserved: `TASK-097..099`, FT-010 and `REQ-ANN-001` remain `planned` because
+  the Wave 2 developer flow, promoted subset and ordinary-retention outcomes
+  are unfinished. The current Planning Revision `4` task-plan `APPROVE` remains
+  valid because this closure changes status and evidence only.
+
 ## [2026-09-04] FT-010 task decomposition closure
 
 - Closed: fresh `/review-tasks-plan FT-010` approved the four-card task plan for

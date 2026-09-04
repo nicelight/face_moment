@@ -1,7 +1,7 @@
 {
   "id": "TASK-098-T3-FT-010-W2",
   "title": "Integrate curated annotation promotion",
-  "status": "planned",
+  "status": "done",
   "wave": "W2",
   "feature": "FT-010",
   "reqs": [
@@ -36,7 +36,73 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Fresh T3 verification independently passed current-row selection validation, caller-name rejection, exact selected-only canonical annotation snapshot, paired whole-subset deletion, repeat no-op, ordinary-data preservation, owner isolation and complete disposable cleanup. Required gates and the full diagnostics regression passed; lifecycle remains unchanged pending task-scoped red verification.",
+      "report": ".tasks/TASK-098-T3-FT-010-W2/TASK-098-T3-FT-010-W2-S-VERIFY-final-report-docs-01.md",
+      "protocol": ".protocols/TASK-098-T3-FT-010-W2/verification.md",
+      "evidence": [
+        ".tasks/TASK-098-T3-FT-010-W2/TASK-098-T3-FT-010-W2-S-VERIFY-targeted-probe-01.md",
+        ".tasks/TASK-098-T3-FT-010-W2/verify_task098_promotion_probe.py",
+        ".tasks/TASK-098-T3-FT-010-W2/attempt-1-red.md",
+        ".tasks/TASK-098-T3-FT-010-W2/attempt-1-green.md"
+      ],
+      "resume_route": "/red-verify TASK-098-T3-FT-010-W2"
+    },
+    {
+      "stage": "red-verify-attempt-1",
+      "verdict": "semantic-fail",
+      "summary": "Attempt 1 adversarial verification reproduced two supported terminal-context sequences: after committed ordinary removal or a committed ordinary-expired retention retry state, promotion accepted a remaining annotation row and copied its protected name into promoted_subset. TASK-098 and dependents remain unclosed pending feature-doctor ownership and retry routing.",
+      "report": ".tasks/TASK-098-T3-FT-010-W2/TASK-098-T3-FT-010-W2-S-RED-VERIFY-final-report-docs-01.md",
+      "protocol": ".protocols/TASK-098-T3-FT-010-W2/red-verification.md",
+      "evidence": [
+        ".tasks/TASK-098-T3-FT-010-W2/TASK-098-T3-FT-010-W2-S-RED-VERIFY-targeted-probe-01.md",
+        ".tasks/TASK-098-T3-FT-010-W2/red_verify_task098_lifecycle_probe.py"
+      ],
+      "resume_route": "/feature-doctor FT-010"
+    },
+    {
+      "stage": "verify-attempt-2",
+      "verdict": "PASS",
+      "summary": "Fresh T3 Attempt 2 verification independently passed selected-current exact snapshot validation, caller injection rejection, paired idempotent whole-subset deletion, ordinary-data preservation and both committed removed/expired ordering cases. Recovery confirmed the durable protocol against unchanged current source and complete disposable-state evidence; lifecycle remains in_progress pending task-scoped red verification.",
+      "report": ".tasks/TASK-098-T3-FT-010-W2/TASK-098-T3-FT-010-W2-S-VERIFY-final-report-docs-02.md",
+      "protocol": ".protocols/TASK-098-T3-FT-010-W2/verification.md",
+      "evidence": [
+        ".tasks/TASK-098-T3-FT-010-W2/TASK-098-T3-FT-010-W2-S-VERIFY-targeted-probe-02.md",
+        ".tasks/TASK-098-T3-FT-010-W2/verify_task098_attempt2_probe.py",
+        ".tasks/TASK-098-T3-FT-010-W2/attempt-2-green.md",
+        ".tasks/TASK-098-T3-FT-010-W2/TASK-098-T3-FT-010-W2-S-RED-VERIFY-targeted-probe-01.md",
+        ".protocols/FT-010/clarification.md#2026-09-04-task-098-attempt-1-semantic-failure"
+      ],
+      "resume_route": "/red-verify TASK-098-T3-FT-010-W2"
+    },
+    {
+      "stage": "red-verify-attempt-2",
+      "verdict": "semantic-pass",
+      "summary": "Fresh Attempt 2 adversarial verification found no material semantic defect or operator question after exercising terminal-first and promotion-first expired/removed ordering, concurrent annotation correction/removal, and concurrent repeated whole-subset deletion. Promotion rejects terminal ordinary contexts before reading or copying protected names, preserves only committed selected-current snapshots, and keeps TASK-099 ordinary-row deletion ownership unchanged.",
+      "report": ".tasks/TASK-098-T3-FT-010-W2/TASK-098-T3-FT-010-W2-S-RED-VERIFY-final-report-docs-02.md",
+      "protocol": ".protocols/TASK-098-T3-FT-010-W2/red-verification.md",
+      "evidence": [
+        ".tasks/TASK-098-T3-FT-010-W2/TASK-098-T3-FT-010-W2-S-RED-VERIFY-targeted-probe-02.md",
+        ".tasks/TASK-098-T3-FT-010-W2/red_verify_task098_attempt2_probe.py"
+      ],
+      "resume_route": "scheduler closure"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Autopilot closed TASK-098 after Attempt 2 functional PASS, task-scoped semantic-pass and post-retry Judge SUPPORT. Curated annotation promotion now preserves selected-current exact snapshots, rejects committed expired/removed ordinary contexts before protected-name copy, clears the promoted subset atomically and idempotently, and leaves TASK-099 ordinary annotation deletion ownership unchanged.",
+      "evidence": [
+        ".tasks/TASK-098-T3-FT-010-W2/TASK-098-T3-FT-010-W2-S-VERIFY-final-report-docs-02.md",
+        ".tasks/TASK-098-T3-FT-010-W2/TASK-098-T3-FT-010-W2-S-RED-VERIFY-final-report-docs-02.md",
+        ".protocols/FT-010/clarification.md#2026-09-04-task-098-attempt-1-semantic-failure",
+        ".protocols/AUTONOMOUS-RUN/status.md"
+      ],
+      "owner_lifecycle_closure": "autopilot_scheduler"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-010.md",
     ".memory-bank/domains/ground-truth-annotations.md",

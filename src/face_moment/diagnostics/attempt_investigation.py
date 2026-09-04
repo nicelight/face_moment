@@ -33,6 +33,10 @@ class AttemptInvestigationNotFoundError(LookupError):
     """The promo owner has no core Attempt for the requested server identity."""
 
 
+class GroundTruthAnnotationAccessDeniedError(PermissionError):
+    """The current authenticated principal cannot access annotations."""
+
+
 @dataclass(frozen=True, slots=True)
 class DeveloperEvidenceProjection:
     schema_version: int | None
@@ -115,6 +119,13 @@ def authorize_attempt_investigation(principal: StaffPrincipal) -> None:
         raise AttemptInvestigationAccessDeniedError
 
 
+def authorize_ground_truth_annotations(principal: StaffPrincipal) -> None:
+    """Keep developer-only annotation authorization inside diagnostics."""
+
+    if principal.role is not StaffRole.DEVELOPER:
+        raise GroundTruthAnnotationAccessDeniedError
+
+
 def _project(
     principal: StaffPrincipal,
     core: AttemptInvestigationProjection,
@@ -182,7 +193,9 @@ __all__ = [
     "AttemptInvestigationView",
     "DeveloperEvidenceProjection",
     "EvidenceAvailability",
+    "GroundTruthAnnotationAccessDeniedError",
     "authorize_attempt_investigation",
+    "authorize_ground_truth_annotations",
     "read_attempt_detail",
     "read_attempts",
 ]

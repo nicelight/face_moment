@@ -9,6 +9,9 @@ import uuid
 from sqlalchemy.orm import Session
 
 from face_moment.diagnostics.evidence import DiagnosticEvidenceRepository
+from face_moment.diagnostics.ground_truth_annotations import (
+    GroundTruthAnnotationRepository,
+)
 from face_moment.diagnostics.server_events import ServerEventRepository
 
 
@@ -64,9 +67,11 @@ class DiagnosticRetentionProvider:
         evidence_expired = 0
         private_deleted = 0
         promoted_preserved = 0
+        annotation_repository = GroundTruthAnnotationRepository(self._session)
 
         for attempt_id in unique_ids:
             evidence = self._repository.get(attempt_id, for_update=True)
+            annotation_repository.delete_for_attempt(attempt_id)
             if evidence is None:
                 eligible.append(attempt_id)
                 continue

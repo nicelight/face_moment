@@ -265,8 +265,6 @@ def test_provider_rejects_ordinary_protected_fields_and_accepts_curated_promotio
         "media_refs": ["private/photo-1"],
         "parameters": {"threshold": 0.72},
         "scores": [0.91],
-        "participant_name": "authorized name",
-        "annotations": ["authorized note"],
     }
     with Session(disposable_evidence_engine) as session:
         provider = DiagnosticEvidenceProvider(session)
@@ -289,6 +287,19 @@ def test_provider_rejects_ordinary_protected_fields_and_accepts_curated_promotio
         )
         assert not rejected_nested_promotion.accepted
         assert rejected_nested_promotion.error_code == "invalid_or_conflicting_evidence"
+        rejected_unvalidated_annotation = provider.promote_subset(
+            attempt_id=promoted_attempt_id,
+            promoted_subset={
+                "schema_version": 1,
+                "participant_name": "caller-supplied name",
+                "annotations": ["caller-supplied annotation"],
+            },
+        )
+        assert not rejected_unvalidated_annotation.accepted
+        assert (
+            rejected_unvalidated_annotation.error_code
+            == "invalid_or_conflicting_evidence"
+        )
         persisted_after_nested_rejection = DiagnosticEvidenceRepository(session).require(
             promoted_attempt_id
         )

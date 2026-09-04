@@ -1,7 +1,7 @@
 {
   "id": "TASK-099-T3-FT-010-W2",
   "title": "Integrate ordinary annotation retention",
-  "status": "planned",
+  "status": "in_progress",
   "wave": "W2",
   "feature": "FT-010",
   "reqs": [
@@ -37,7 +37,32 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Fresh T3 verification independently passed scheduled strict-before 90-day annotation expiry, including an Attempt without diagnostic_evidence, and explicit ordinary removal through one diagnostics-owned boundary. Equal/newer annotations, promoted_subset, existing state/result contracts and safe reruns were preserved; required gates and adjacent diagnostics regressions passed in disposable PostgreSQL state. Lifecycle remains unchanged pending task-scoped red verification.",
+      "report": ".tasks/TASK-099-T3-FT-010-W2/TASK-099-T3-FT-010-W2-S-VERIFY-final-report-docs-01.md",
+      "protocol": ".protocols/TASK-099-T3-FT-010-W2/verification.md",
+      "evidence": [
+        ".tasks/TASK-099-T3-FT-010-W2/TASK-099-T3-FT-010-W2-S-VERIFY-targeted-probe-01.md",
+        ".tasks/TASK-099-T3-FT-010-W2/attempt-1-red.md",
+        ".tasks/TASK-099-T3-FT-010-W2/attempt-1-green.md"
+      ],
+      "resume_route": "/red-verify TASK-099-T3-FT-010-W2"
+    },
+    {
+      "stage": "red-verify-attempt-1",
+      "verdict": "semantic-fail",
+      "summary": "Fresh adversarial verification reproduced a supported no-evidence concurrency ordering: annotation creation inserted in an open transaction, scheduled retention deleted the old core Attempt, then the annotation commit left one ordinary annotation row that a same-cutoff rerun could no longer select. TASK-099 remains unclosed pending feature-doctor ownership and retry routing.",
+      "report": ".tasks/TASK-099-T3-FT-010-W2/TASK-099-T3-FT-010-W2-S-RED-VERIFY-final-report-docs-01.md",
+      "protocol": ".protocols/TASK-099-T3-FT-010-W2/red-verification.md",
+      "evidence": [
+        ".tasks/TASK-099-T3-FT-010-W2/TASK-099-T3-FT-010-W2-S-RED-VERIFY-targeted-probe-01.md"
+      ],
+      "resume_route": "/feature-doctor FT-010"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-010.md",
     ".memory-bank/domains/ground-truth-annotations.md",
