@@ -16,10 +16,6 @@ from face_moment.diagnostics.evidence import (
     ORDINARY_REMOVED_GAP_REASON,
 )
 from face_moment.infrastructure.database import Base
-from face_moment.promo.attempt_queries import (
-    AttemptInvestigationFilters,
-    query_attempts,
-)
 
 
 TargetKind = Literal["detection", "person"]
@@ -320,6 +316,11 @@ class GroundTruthAnnotationProvider:
         )
 
     def _require_attempt(self, attempt_id: uuid.UUID) -> None:
+        from face_moment.promo.attempt_queries import (
+            AttemptInvestigationFilters,
+            query_attempts,
+        )
+
         attempt_id = _require_uuid(attempt_id, "attempt_id")
         matches = query_attempts(
             self._session,

@@ -1,7 +1,7 @@
 {
   "id": "TASK-100-T2-FT-011-W1",
   "title": "Create reproducible durable Calibration runs",
-  "status": "ready",
+  "status": "done",
   "wave": "W1",
   "feature": "FT-011",
   "reqs": [
@@ -39,7 +39,31 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify-attempt-1",
+      "verdict": "FAIL",
+      "summary": "Independent verifier reproduced that the Calibration snapshot accepts an Attempt with no annotations, although FT-011-AC-003 requires applicable annotated Attempts and the ground-truth contract excludes missing ground truth. Focused gates passed but do not cover this violation; task lifecycle remains in_progress for executor correction.",
+      "report": ".tasks/TASK-100-T2-FT-011-W1/TASK-100-T2-FT-011-W1-S-VERIFY-final-report-docs-01.md",
+      "protocol": ".protocols/TASK-100-T2-FT-011-W1/verification.md",
+      "evidence": [
+        ".tasks/TASK-100-T2-FT-011-W1/TASK-100-T2-FT-011-W1-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-100-T2-FT-011-W1/red.txt",
+        ".tasks/TASK-100-T2-FT-011-W1/green.txt",
+        ".tasks/TASK-100-T2-FT-011-W1/gates.txt"
+      ],
+      "resume_route": "/exe TASK-100-T2-FT-011-W1 -> /verify TASK-100-T2-FT-011-W1"
+    },
+    {
+      "stage": "verify-attempt-2",
+      "verdict": "PASS",
+      "summary": "Fresh verification confirms the accepted Calibration contract: a request selects existing Attempt UUIDs, persisted applicable annotations are frozen from the diagnostics owner, and a selection with no persisted annotations cannot create a Calibration run. All task gates passed.",
+      "report": ".tasks/TASK-100-T2-FT-011-W1/TASK-100-T2-FT-011-W1-S-VERIFY-final-report-docs-02.md",
+      "evidence": [
+        ".tasks/TASK-100-T2-FT-011-W1/TASK-100-T2-FT-011-W1-S-VERIFY-final-report-docs-02.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-011.md",
     ".memory-bank/domains/calibration.md",
@@ -106,4 +130,3 @@
     "Application fixtures prove dataset_unavailable on missing/digest-mismatched input and dataset_mismatch for before/after across unequal hashes while valid same-hash aggregates reconcile to contributing Attempts."
   ]
 }
-

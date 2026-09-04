@@ -17,6 +17,7 @@ from face_moment.serving_control import ingest_target as serving_ingest_target
 from face_moment.serving_control import display_client_access
 from face_moment.serving_control import realtime_context
 from face_moment.diagnostics import evidence as diagnostic_evidence
+from face_moment.diagnostics import calibration_runs
 from face_moment.promo import attempt as promo_attempt
 from face_moment.promo import retention as promo_retention
 
@@ -30,6 +31,7 @@ _ = serving_ingest_target
 _ = display_client_access
 _ = realtime_context
 _ = diagnostic_evidence
+_ = calibration_runs
 _ = promo_attempt
 _ = promo_retention
 
