@@ -1,12 +1,12 @@
 ---
-description: Evidence-backed repair batching assessment for findings 2-8 under a 200k-token fresh-agent context.
+description: Evidence-backed repair batching assessment for the remaining repository findings under a 200k-token fresh-agent context.
 status: active
 ---
-# Оценка пакетов для findings 2–8
+# Оценка пакетов для оставшихся findings
 
 ## Проверенный scope
 
-Проверены findings 2–8 из
+Проверены оставшиеся findings из
 `PAPERCUTS/TECHDEBTS/tech-debt-2026-09-02.md`, названные code/test locations,
 актуальные FastAPI/Caddy/browser/SQLAlchemy paths, связанные task cards,
 feature `spec_design_links` и размеры обязательного fresh-agent prime и
@@ -33,23 +33,7 @@ feature `spec_design_links` и размеры обязательного fresh-a
 
 ## Findings
 
-### 2. Tests проверяют старую форму проекта
-
-Finding подтверждён, но его исходное описание уже, чем текущая проблема.
-Названные проверки по-прежнему привязаны к mutable Alembic `head`, точным
-отступам Caddyfile и пустому Foundation `Base.metadata`. Дополнительно текущий
-полный прогон имеет `27 failed, 253 passed, 1 skipped`; среди failures есть и
-другие exact-shape assertions, но не все 27 принадлежат этому finding.
-
-Минимальный repair: отдельно классифицировать только obsolete structural
-assertions, заменить их feature-local migration/route/ownership proof и не
-маскировать реальные regressions массовым обновлением expected values.
-
-- Fresh-agent budget: `90–125k` tokens.
-- Делать отдельно: да. Здесь загружаются FT-000/FT-001/FT-002 specs, migration
-  contracts и несколько несвязанных test families.
-
-### 3. Realtime paths продублированы в FastAPI и Caddy
+### 2. Realtime paths продублированы в FastAPI и Caddy
 
 Finding подтверждён. `deploy/Caddyfile:16` вручную перечисляет два paths, а
 реальные handlers находятся в `entrypoints/realtime.py:146,307`. Сейчас список
@@ -61,10 +45,10 @@ body cap и proxy headers; неизвестные paths по-прежнему о
 проверенных specs не найдено.
 
 - Отдельный budget: `65–95k` tokens.
-- Лучший пакет: вместе с finding 4, потому что они разделяют FT-003, Caddy,
+- Лучший пакет: вместе с finding 3, потому что они разделяют FT-003, Caddy,
   client-realtime verification и browser-runtime proof.
 
-### 4. Browser recovery test ненадёжен
+### 3. Browser recovery test ненадёжен
 
 Finding подтверждён и немного шире исходной формулировки. В repository нет
 `package.json`/lockfile, `playwright` CLI установлен, но Node не разрешает
@@ -78,9 +62,9 @@ raw localStorage, а не успешное чтение production-кодом.
 с очисткой persistent profile.
 
 - Отдельный budget: `80–115k` tokens.
-- В пакете с finding 3: `125–165k` суммарно благодаря общим specs и probes.
+- В пакете с finding 2: `125–165k` суммарно благодаря общим specs и probes.
 
-### 5. Effective display state вычисляется дважды
+### 4. Effective display state вычисляется дважды
 
 Finding подтверждён. `display_outcome.py:213-221` и
 `client_timing.py:146-153` независимо реализуют один переход
@@ -94,22 +78,7 @@ schema.
 - Делать отдельно: да; diff мал, но нужно прочитать Promo/display/diagnostics
   contracts FT-005/FT-007/FT-008 и доказать отсутствие semantic drift.
 
-### 6. Package imports загружают почти всё приложение
-
-Finding подтверждён runtime probe: импорт
-`face_moment.diagnostics.server_events` загружает `46` project modules, включая
-`cv2`, `numpy` и `boto3`. Пять package `__init__.py` содержат широкие eager
-re-exports.
-
-Минимальный repair: перевести consumers на прямые module imports и оставить в
-`__init__.py` только действительно обязательную стабильную поверхность. Не
-добавлять lazy-import framework или registry.
-
-- Fresh-agent budget: `100–145k` tokens.
-- Делать отдельно: да; механика проста, но blast radius охватывает пять
-  capability packages, множество callers, mypy и import/runtime probes.
-
-### 7. Engine создаётся на каждый HTTP request
+### 5. Engine создаётся на каждый HTTP request
 
 Finding подтверждён в пяти adapters:
 `platform/auth/http.py:131`, `inventory/http.py:214`,
@@ -130,7 +99,7 @@ Session из этой factory. Не вводить DI framework, global hidden c
   implementation должны разойтись по двум fresh contexts, а не переполнить
   один.
 
-### 8. Revision switch требует чистую Session
+### 6. Revision switch требует чистую Session
 
 Finding подтверждён: `ingest_target.py:131` вызывает `Session.begin()`, который
 конфликтует с SQLAlchemy autobegin после обычного pre-read. Все текущие callers
@@ -142,31 +111,25 @@ Finding подтверждён: `ingest_target.py:131` вызывает `Session
 savepoint как способ скрыть неясное владение outer transaction.
 
 - Fresh-agent budget: `65–95k` tokens.
-- Сейчас разумно отложить. Если делать — в новом context после finding 7,
+- Сейчас разумно отложить. Если делать — в новом context после finding 5,
   потому что общий DB lifecycle может изменить естественный caller boundary.
 
 ## Рекомендуемые пакеты
 
 | Пакет | Findings | Оценка | Решение |
 |---|---:|---:|---|
-| A | 2 | 90–125k | Отдельная стабилизация достоверности tests. |
-| B | 3 + 4 | 125–165k | Единственная выгодная пара: общий FT-003 edge/browser context. |
-| C | 5 | 70–100k | Малый semantic refactor с отдельным proof. |
-| D | 6 | 100–145k | Отдельный broad import cleanup. |
-| E | 7 | 145–185k | Только один finding; высокий риск переполнения. |
-| F | 8 | 65–95k | Отложить; при необходимости делать после 7 в fresh context. |
+| A | 2 + 3 | 125–165k | Единственная выгодная пара: общий FT-003 edge/browser context. |
+| B | 4 | 70–100k | Малый semantic refactor с отдельным proof. |
+| C | 5 | 145–185k | Только один finding; высокий риск переполнения. |
+| D | 6 | 65–95k | Отложить; при необходимости делать после 5 в fresh context. |
 
 Практический предел для этого списка — **два findings за раз**, обычный размер
-— **один**. Не рекомендуется объединять 5+6, 5+8 или 7+8: они технически могут
-поместиться при идеальном прогоне, но почти не делят specs/proof и нарушают
-независимые task outcomes. Пакет из findings 2+3+4 оценивается в `170–210k` и
-не оставляет безопасного резерва, поэтому для 200k context не подходит.
+— **один**. Не рекомендуется объединять оставшиеся несвязанные items: они
+почти не делят specs/proof и нарушают независимые task outcomes.
 
 ## Неопределённость
 
 Оценки не являются tokenizer-exact: фактический расход зависит от формы task
 card, количества полностью task-linked specs и объёма failure output. Для
-finding 2 неизвестно, сколько из оставшихся 22 full-suite failures окажутся
-реальными regressions, а для finding 7 нет production load measurement. Эти
-неопределённости уже учтены верхней границей и резервом, а не основанием
-объединять больше работы.
+finding 5 нет production load measurement. Эта неопределённость уже учтена
+верхней границей и резервом, а не основанием объединять больше работы.

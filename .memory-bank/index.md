@@ -82,6 +82,9 @@ status: active
 
 - [.memory-bank/domains/index.md](domains/index.md): subject-based domain
   models, storage, schemas, migrations and persistence rules.
+- [.memory-bank/domains/calibration.md](domains/calibration.md): immutable
+  Calibration datasets/runs/results, offline evaluation, manual apply and
+  retention.
 - [.memory-bank/contracts/index.md](contracts/index.md): canonical boundary and
   API contract router.
 - [.memory-bank/contracts/boundary-map.md](contracts/boundary-map.md): Canonical

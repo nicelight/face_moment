@@ -100,7 +100,7 @@ def test_cleanup_expires_only_server_events_strictly_before_technical_cutoff(
         outcome = run_retention_cleanup(session, now=NOW)
 
         assert outcome.exit_code == 0
-        assert outcome.counts[2] == 2
+        assert outcome.counts.technical_logs_deleted == 2
         assert set(session.scalars(select(ServerEvent.event_id)).all()) == retained_ids
         latest = session.get(RetentionCleanupLatest, 1)
         assert latest is not None
@@ -108,7 +108,7 @@ def test_cleanup_expires_only_server_events_strictly_before_technical_cutoff(
 
         rerun = run_retention_cleanup(session, now=NOW)
         assert rerun.exit_code == 0
-        assert rerun.counts[2] == 0
+        assert rerun.counts.technical_logs_deleted == 0
         assert set(session.scalars(select(ServerEvent.event_id)).all()) == retained_ids
         assert old_ids.isdisjoint(retained_ids)
 

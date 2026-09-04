@@ -17,7 +17,10 @@ from sqlalchemy import create_engine, func, select
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session
 
-from face_moment.diagnostics import DiagnosticEvidence, DiagnosticEvidenceRepository
+from face_moment.diagnostics.evidence import (
+    DiagnosticEvidence,
+    DiagnosticEvidenceRepository,
+)
 from face_moment.entrypoints import backend
 from face_moment.entrypoints import realtime
 from face_moment.infrastructure.settings import Settings

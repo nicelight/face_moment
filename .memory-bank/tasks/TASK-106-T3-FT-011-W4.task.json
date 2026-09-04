@@ -1,0 +1,103 @@
+{
+  "id": "TASK-106-T3-FT-011-W4",
+  "title": "Expose promoted Calibration case actions",
+  "status": "planned",
+  "wave": "W4",
+  "feature": "FT-011",
+  "reqs": [
+    "REQ-DATA-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-098-T3-FT-010-W2",
+    "TASK-104-T3-FT-011-W3",
+    "TASK-105-T3-FT-011-W2"
+  ],
+  "touched_files": [
+    "src/face_moment/diagnostics/calibration_http.py",
+    "src/face_moment/diagnostics/evidence.py",
+    "tests/diagnostics/test_calibration_promoted_actions.py",
+    "tests/diagnostics/test_ground_truth_annotation_promotion.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Promoted Calibration action tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/diagnostics/test_calibration_promoted_actions.py tests/diagnostics/test_ground_truth_annotation_promotion.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-011.md",
+    ".memory-bank/domains/calibration.md",
+    ".memory-bank/domains/diagnostic-evidence.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/testing/calibration.md",
+    ".memory-bank/tasks/plans/IMPL-FT-011.md"
+  ],
+  "evidence_required": [
+    "FT-011-AC-008 RED: the Calibration detail flow cannot invoke the existing selected promotion or whole-subset deletion operations; GREEN: separately confirmed developer actions resolve the selected current evidence server-side, promote only the curated NFR-DATA-03 subset, preserve it through ordinary cleanup and delete the whole subset idempotently; decisive comparison: disposable selected/unselected evidence is inspected before promotion, after ordinary cleanup, after explicit deletion and after one safe repeat, including denied/unconfirmed requests and forbidden-payload absence; artifact: redacted application/destructive output under .tasks/TASK-106-T3-FT-011-W4/."
+  ],
+  "purpose": "Expose only the two developer actions needed to retain and later delete one curated Calibration case through the existing diagnostics owner operations.",
+  "success_outcome": "A separately confirmed developer can promote only a selected curated subset, ordinary cleanup preserves it, and a separately confirmed repeated whole-subset deletion safely removes it.",
+  "anti_goals": [
+    "Do not implement ordinary Calibration-run retention or change its cleanup selection/result.",
+    "Do not add a promotion route, archive/history table or retain the whole run, unselected evidence, screenshots, logs, credentials, sessions, embeddings or object-store keys.",
+    "Do not delete promo-owned rows directly, restore ordinary data or touch production/operator state."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production PostgreSQL/MinIO, operator/default Attempts/evidence/runs and real participant names",
+      "Ordinary run cleanup implementation, direct diagnostics deletion of promo rows and ownership-crossing cascades",
+      "New route, scheduler/timer/history/archive state and unrelated serving or retention behavior"
+    ],
+    "stop_conditions": [
+      "Promotion/delete cannot reuse the existing Calibration detail POST and diagnostic_evidence promoted_subset operations.",
+      "The curated case cannot survive ordinary cleanup without retaining extra data or changing ordinary lifetimes.",
+      "T3 action/deletion probes cannot use disposable synthetic state, one safe repeat, redacted artifacts and complete cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-011.md#FT-011-AC-008",
+    ".protocols/FT-011/plan.md",
+    ".protocols/FT-011/decision-log.md",
+    ".memory-bank/tasks/plans/IMPL-FT-011.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/calibration.md#minimal-developer-surface",
+    ".memory-bank/domains/calibration.md#ordinary-and-promoted-retention",
+    ".memory-bank/domains/diagnostic-evidence.md#promoted-subset",
+    ".memory-bank/contracts/boundary-map.md#diagnostic-evidence-and-access",
+    ".memory-bank/contracts/boundary-map.md#retention-cleanup",
+    ".memory-bank/states/lifecycle-map.md#diagnostic-and-calibration-retention",
+    ".memory-bank/testing/calibration.md#worker-recovery-and-retention-proof"
+  ],
+  "constraints": [
+    "Expose promote and delete_promoted only as exact confirmed actions through POST /staff/calibrations/{calibration_id}; reuse TASK-104 authorization, CSRF and failure mapping without a new route.",
+    "Resolve selected current evidence and annotations server-side, then call the existing diagnostics-owned promoted_subset and idempotent whole-subset deletion operations.",
+    "Use disposable selected/unselected evidence with synthetic names, denied/unconfirmed cases, one safe repeated delete and complete task-owned cleanup."
+  ],
+  "invariants": [
+    "Promotion preserves only the selected currently available NFR-DATA-03 subset and never extends ordinary run/evidence/annotation/log lifetime.",
+    "Whole-subset deletion is idempotent, clears promoted_subset plus promoted_at together and never restores ordinary data.",
+    "Only diagnostics writes its promoted representation; no cascade or direct foreign write crosses ownership."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-011.md#FT-011-AC-008",
+    "Application fixtures prove current-developer plus matching-confirmation success and unauthenticated/wrong-role/revoked/CSRF/unconfirmed/invalid selection denial without mutation or existence disclosure.",
+    "Selected/unselected fixtures prove only curated fields enter promoted_subset, ordinary cleanup preserves them, and explicit whole-subset deletion plus one repeat clears them without restoration.",
+    "Ownership and payload inspection proves reuse of the existing detail route and owner operations with no direct promo delete, extra route, archive/history model or forbidden retained data."
+  ]
+}

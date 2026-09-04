@@ -1,0 +1,109 @@
+{
+  "id": "TASK-100-T2-FT-011-W1",
+  "title": "Create reproducible durable Calibration runs",
+  "status": "ready",
+  "wave": "W1",
+  "feature": "FT-011",
+  "reqs": [
+    "REQ-CAL-002",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-019-T2-FT-002-W2",
+    "TASK-020-T2-FT-002-W2",
+    "TASK-096-T3-FT-010-W1"
+  ],
+  "touched_files": [
+    "migrations/versions/0020_calibration_runs.py",
+    "src/face_moment/diagnostics/calibration_runs.py",
+    "src/face_moment/processing/offline_calibration.py",
+    "src/face_moment/diagnostics/__init__.py",
+    "tests/diagnostics/test_calibration_runs.py",
+    "tests/processing/test_offline_calibration.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Calibration run and offline-evaluation tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/diagnostics/test_calibration_runs.py tests/processing/test_offline_calibration.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-011.md",
+    ".memory-bank/domains/calibration.md",
+    ".memory-bank/domains/ground-truth-annotations.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/testing/calibration.md",
+    ".memory-bank/tasks/plans/IMPL-FT-011.md"
+  ],
+  "evidence_required": [
+    "FT-011-AC-003 RED: no diagnostics-owned Calibration run can freeze existing Photo identities/digests plus applicable annotated Attempts, evaluate the same verified JPEG bytes through the named native adapters, or retain separately attributable same-dataset results; GREEN: one next-linear run store and diagnostics-to-processing operation persist the immutable bounded snapshot, pass identical verified source bytes and selection to SFace and Buffalo M without reupload, keep results separate by run/dataset/revision, fail unavailable input without shrinking, and compare only complete results with the same dataset hash; decisive comparison: disposable migration/repository plus two-adapter fixtures inspect byte digests, selection, stored identities/results, mismatch rejection and unchanged Photo/Attempt/annotation/serving state; artifact: focused redacted output under .tasks/TASK-100-T2-FT-011-W1/."
+  ],
+  "purpose": "Provide the smallest durable Calibration execution result that later recommendation, worker and developer-flow tasks can consume without inventing a dataset catalog or experiment platform.",
+  "success_outcome": "One immutable selected dataset is evaluated through the two existing native pipelines from identical verified Photo bytes, and its separate reproducible results support only same-dataset before/after comparison.",
+  "anti_goals": [
+    "Do not implement threshold or quality recommendations, staff routes, worker scheduling, apply, promotion or retention.",
+    "Do not add a model registry, dataset/history table, generic job system, upload path, embedding store or arbitrary optimizer.",
+    "Do not mutate inventory Photos, Promo Attempts, annotations or serving settings."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production PostgreSQL/MinIO, operator/default data and real participant names in task artifacts",
+      "Direct writes to inventory, promo, annotation or serving-control owner state",
+      "Worker scheduling/recovery, recommendation algorithms, staff HTTP, apply and retention behavior"
+    ],
+    "stop_conditions": [
+      "The immutable run cannot reuse existing Photo originals and annotation/Attempt projections without a new upload or dataset platform.",
+      "Offline evaluation requires a new model registry, combined cross-pipeline embeddings/results or an ownership edge outside the accepted boundary map.",
+      "The migration cannot remain next-linear in the shared schema/Base/Alembic stream."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-011.md#FT-011-AC-003",
+    ".protocols/FT-011/plan.md",
+    ".protocols/FT-011/decision-log.md",
+    ".memory-bank/tasks/plans/IMPL-FT-011.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/calibration.md#immutable-input-and-evaluation",
+    ".memory-bank/domains/calibration.md#persistence-and-run-state",
+    ".memory-bank/domains/calibration.md#recommendation-result",
+    ".memory-bank/contracts/boundary-map.md#calibration-and-serving-change",
+    ".memory-bank/contracts/boundary-map.md#processing-input-projections",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/domains/ground-truth-annotations.md#calculation-ready-owner-boundary",
+    ".memory-bank/testing/calibration.md#fixed-evaluation-input",
+    ".memory-bank/testing/calibration.md#beforeafter-and-manual-apply-proof"
+  ],
+  "constraints": [
+    "Primary owner is diagnostics at src/face_moment/diagnostics/; processing resolves inventory-owned originals and executes only its existing direct SFace/Buffalo M adapters through the accepted edge.",
+    "Create one next-linear calibration_runs migration from the execution-time direct predecessor and prove only this revision's upgrade/downgrade, schema transition and preserved predecessor data.",
+    "Freeze one SPA, unique Photo UUID/digest pairs, applicable Attempt/annotation input, the two eligible revision identities, current settings and finite candidate lists in a bounded canonical snapshot.",
+    "Read and digest-check each selected original once; missing or changed required input records dataset_unavailable and never silently changes the dataset.",
+    "Use only synthetic/disposable selections and redacted artifacts, with safe rerun and complete fixture cleanup."
+  ],
+  "invariants": [
+    "Dataset input and terminal result remain immutable and contain no embeddings, secrets, tokens, arbitrary request bodies or object-store keys.",
+    "Results remain separate by run, dataset hash and pipeline revision; no cross-pipeline result or embedding is published.",
+    "Diagnostics, processing, inventory, promo and serving_control retain their accepted write ownership."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-011.md#FT-011-AC-003",
+    "Disposable migration/repository fixtures prove the one-table bounded shape, valid transitions, immutable snapshot/result and upgrade/downgrade with linear ancestry.",
+    "Cross-slice fixtures prove one verified read of each selected JPEG, byte-identical input plus the same applicable Attempt selection for both native adapters, separate stored revision results and no reupload or foreign writes.",
+    "Application fixtures prove dataset_unavailable on missing/digest-mismatched input and dataset_mismatch for before/after across unequal hashes while valid same-hash aggregates reconcile to contributing Attempts."
+  ]
+}
+

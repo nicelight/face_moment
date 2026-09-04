@@ -4,24 +4,23 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from datetime import date, datetime, timedelta, timezone
-import os
 from threading import Event, Thread
 import uuid
 
-from alembic import command as alembic_command
-from alembic.config import Config
 import pytest
-from sqlalchemy import create_engine, event
-from sqlalchemy.engine import Engine, make_url
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from face_moment.diagnostics import (
+from face_moment.diagnostics.evidence import (
     DiagnosticEvidenceProvider,
     DiagnosticEvidenceRepository,
+)
+from face_moment.diagnostics.ground_truth_annotations import (
     GroundTruthAnnotationProvider,
 )
-from face_moment.infrastructure.settings import Settings
 from face_moment.promo.attempt import PromoAttempt
+from tests.disposable_postgresql import disposable_postgresql_engine
 
 
 _NOW = datetime(2026, 9, 4, 8, 0, tzinfo=timezone.utc)
@@ -29,33 +28,8 @@ _NOW = datetime(2026, 9, 4, 8, 0, tzinfo=timezone.utc)
 
 @pytest.fixture(scope="module")
 def disposable_promotion_engine() -> Iterator[Engine]:
-    base_url = Settings.from_env().database_url
-    probe_database = f"task098_{uuid.uuid4().hex}"
-    probe_url = make_url(base_url).set(database=probe_database)
-    admin_engine = create_engine(
-        base_url,
-        pool_pre_ping=True,
-        isolation_level="AUTOCOMMIT",
-    )
-    with admin_engine.connect() as connection:
-        connection.exec_driver_sql(f"CREATE DATABASE {probe_database}")
-    previous_url = os.environ.get("DATABASE_URL")
-    os.environ["DATABASE_URL"] = probe_url.render_as_string(hide_password=False)
-    engine = create_engine(os.environ["DATABASE_URL"], pool_pre_ping=True)
-    try:
-        alembic_command.upgrade(Config("alembic.ini"), "head")
+    with disposable_postgresql_engine("task098") as engine:
         yield engine
-    finally:
-        engine.dispose()
-        if previous_url is None:
-            os.environ.pop("DATABASE_URL", None)
-        else:
-            os.environ["DATABASE_URL"] = previous_url
-        with admin_engine.connect() as connection:
-            connection.exec_driver_sql(
-                f"DROP DATABASE IF EXISTS {probe_database} WITH (FORCE)"
-            )
-        admin_engine.dispose()
 
 
 def test_selected_current_annotations_promote_exactly_and_delete_idempotently(

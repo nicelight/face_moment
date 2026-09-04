@@ -346,6 +346,30 @@ low threshold and observation time. It uses its own configured read-only
 filesystem view and the same minimal observation mechanism without coupling
 its result to PostgreSQL.
 
+## Inventory Purge Cleanup Boundary
+
+For one inventory-authorized inactive Photo, `processing` publishes one typed
+cleanup operation that stages deletion of every owned `photo_faces` and
+`photo_pipeline_states` row and identifies every owned preview/thumbnail key
+for idempotent private-object deletion. It covers all pipeline revisions for
+that Photo, not only the current serving or admission revision.
+
+`inventory` supplies the Photo UUID and owns the enclosing hard-purge
+orchestration. Processing MUST NOT select purge targets, change Photo
+visibility, delete the Photo/original, update purge progress, or mutate Promo,
+Attempt or diagnostics state. The final owned-row deletion may join the short
+inventory transaction only through this public application boundary; no
+ownership-crossing database cascade is allowed.
+
+Repeating derived-object deletion or cleanup after an interrupted step is safe.
+A failure stages no false terminal result and leaves the inventory run eligible
+to retry the same target.
+
+Verification starts with multiple state/face rows and derived objects for one
+inactive disposable Photo, repeats cleanup around an injected pre-commit
+failure, and proves convergence without changing the Photo/original or any
+foreign-owned row.
+
 ## Errors And Invariants
 
 - A missing original, incompatible/unvalidated revision, engine failure,

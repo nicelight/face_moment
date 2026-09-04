@@ -14,6 +14,7 @@ from face_moment.infrastructure.database import APP_SCHEMA
 from face_moment.infrastructure.settings import Settings
 
 _PRE_CUTOVER_REVISION = "0007_photo_pipeline_pending"
+_PROCESSING_REVISION = "0008_processing_persistence"
 
 
 def _config() -> Config:
@@ -137,10 +138,10 @@ def test_empty_cutover_round_trip_preserves_prerequisite_rows_and_shape() -> Non
 
         alembic_command.upgrade(_config(), "head")
         script = ScriptDirectory.from_config(_config())
-        head = script.get_revision("head")
-        assert head is not None
-        assert head.down_revision == _PRE_CUTOVER_REVISION
-        assert tuple(script.get_heads()) == (head.revision,)
+        processing_revision = script.get_revision(_PROCESSING_REVISION)
+        assert processing_revision is not None
+        assert processing_revision.down_revision == _PRE_CUTOVER_REVISION
+        assert len(script.get_heads()) == 1
 
         inspector = inspect(engine)
         assert {
@@ -308,11 +309,12 @@ def test_empty_cutover_round_trip_preserves_prerequisite_rows_and_shape() -> Non
                     INSERT INTO face_moment.photos
                         (id, spa_id, visit_date, captured_at, captured_at_source,
                          uploader_id, checksum_sha256, original_object_key,
-                         original_byte_size, width, height)
+                         original_byte_size, width, height,
+                         admission_pipeline_revision_id)
                     VALUES (:id, :spa_id, DATE '2026-08-12', CURRENT_TIMESTAMP,
                             'upload_started_at', :uploader_id,
                             decode('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'hex'),
-                            :object_key, 1, 1, 1)
+                            :object_key, 1, 1, 1, :revision_id)
                     """
                 ),
                 {
@@ -320,6 +322,7 @@ def test_empty_cutover_round_trip_preserves_prerequisite_rows_and_shape() -> Non
                     "spa_id": spa_id,
                     "uploader_id": uuid.uuid4(),
                     "object_key": f"private/task018-{photo_id.hex}",
+                    "revision_id": revision_id,
                 },
             )
             connection.execute(

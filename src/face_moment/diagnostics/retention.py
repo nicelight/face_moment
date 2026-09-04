@@ -70,6 +70,7 @@ class DiagnosticRetentionProvider:
         annotation_repository = GroundTruthAnnotationRepository(self._session)
 
         for attempt_id in unique_ids:
+            annotation_repository.acquire_attempt_transaction_barrier(attempt_id)
             evidence = self._repository.get(attempt_id, for_update=True)
             annotation_repository.delete_for_attempt(attempt_id)
             if evidence is None:

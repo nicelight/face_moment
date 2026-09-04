@@ -1,0 +1,136 @@
+{
+  "id": "TASK-110-T3-FT-012-W3",
+  "title": "Run resumable global Photo purge",
+  "status": "planned",
+  "wave": "W3",
+  "feature": "FT-012",
+  "reqs": [
+    "REQ-INV-003",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-101-T3-FT-011-W2",
+    "TASK-107-T3-FT-012-W2",
+    "TASK-109-T3-FT-012-W1",
+    "TASK-081-T3-FT-006-W2",
+    "TASK-084-T2-FT-007-W2"
+  ],
+  "touched_files": [
+    "migrations/versions/0021_inventory_hard_purge_run.py",
+    "migrations/env.py",
+    "src/face_moment/inventory/hard_purge.py",
+    "src/face_moment/inventory/http.py",
+    "src/face_moment/processing/worker_claims.py",
+    "src/face_moment/processing/worker_runtime.py",
+    "src/face_moment/entrypoints/background_worker.py",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/inventory/test_hard_purge.py",
+    "tests/inventory/test_photo_inventory_api.py",
+    "tests/processing/test_shared_worker.py",
+    "tests/promo/test_qr_continuation_api.py",
+    "tests/diagnostics/test_evidence_persistence.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Global Photo purge tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/inventory/test_hard_purge.py tests/inventory/test_photo_inventory_api.py tests/processing/test_shared_worker.py tests/promo/test_qr_continuation_api.py tests/diagnostics/test_evidence_persistence.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-012.md",
+    ".memory-bank/contracts/photo-inventory-api.md",
+    ".memory-bank/domains/photo-inventory.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/testing/photo-inventory.md",
+    ".memory-bank/tasks/plans/IMPL-FT-012.md"
+  ],
+  "evidence_required": [
+    "FT-012-AC-003, FT-012-AC-004, FT-012-AC-005 and FT-012-AC-007 RED: no durable confirmed Photo snapshot, restore exclusion, purge API/UI or restartable inventory orchestration exists; GREEN: one next-linear singleton row freezes the sorted inactive-Photo UUID set, restore/restore-all exclude its non-terminal members, the existing worker waits without preemption then reports completed/total and resumes the same prefix after two crash points, and owner boundaries remove all snapshot Photo/media/face/pipeline state while retaining Promo sessions/results, core Attempts, diagnostic evidence and historical N; decisive comparison: one shared disposable PostgreSQL/MinIO/worker matrix distinguishes each AC by snapshot membership, waiting/progress observations, before/after restart prefix and complete owned-versus-retained state inventory; artifact: migration output, runtime traces, object/row manifests and focused redacted results under .tasks/TASK-110-T3-FT-012-W3/.",
+    "REQ-INV-003 project-wide authorization RED: no restore-all or hard-purge surface currently enforces the accepted administrative access and mutation guard; GREEN: active operator and developer principals can read purge state and mutate with matching CSRF, while a missing, invalid, expired or revoked session returns 401 and a photographer, unauthorized principal or missing/mismatched CSRF returns 403 without changing Photo visibility, purge-run or worker state; decisive comparison: disposable role/session/CSRF fixtures snapshot all three state owners before and after each allowed and denied request; artifact: focused redacted authorization results under .tasks/TASK-110-T3-FT-012-W3/."
+  ],
+  "purpose": "Deliver the accepted project-wide restore-all and irreversible hard purge as one minimal fixed-snapshot operation on the existing worker.",
+  "success_outcome": "An active operator or developer can restore every eligible inactive Photo or confirm one global purge that waits, progresses and resumes to complete owner-safe deletion, while unauthorized requests leave all state unchanged.",
+  "anti_goals": [
+    "Do not add per-photo purge state, a purge jobs/targets/history table, generic retry framework, extra worker, priority or preemption.",
+    "Do not add statistics behavior, production deployment/configuration or an external cleanup service.",
+    "Do not delete, rebuild or recalculate Promo results/sessions, core Attempts, diagnostic evidence, Calibration input or issued N."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production PostgreSQL/MinIO, operator/default Photos, live worker processes and external backups",
+      "Promo result/session, core Attempt, diagnostic evidence, Calibration and serving-control writes",
+      "Per-photo purge state, jobs/targets/history tables, new worker/service, scheduler, priority and preemption",
+      "Production deployment, ports, credentials, timers and destructive host operations"
+    ],
+    "stop_conditions": [
+      "The fixed snapshot and restart prefix cannot fit one singleton run row without a jobs/targets subsystem or architecture change.",
+      "Correct cleanup requires direct foreign writes, ownership-crossing cascades or deletion/recalculation of retained session/Attempt/evidence state.",
+      "Shared-worker precedence conflicts with the accepted Calibration operation or requires preemption/another worker.",
+      "Any destructive or restart probe cannot use explicit disposable state, safe rerun and complete owned cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-012.md#FT-012-AC-003",
+    ".memory-bank/features/FT-012.md#FT-012-AC-004",
+    ".memory-bank/features/FT-012.md#FT-012-AC-005",
+    ".memory-bank/features/FT-012.md#FT-012-AC-007",
+    ".protocols/FT-012/plan.md",
+    ".protocols/FT-012/decision-log.md",
+    ".memory-bank/tasks/plans/IMPL-FT-012.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/photo-inventory-api.md#restore-all-and-hard-purge-surfaces",
+    ".memory-bank/contracts/photo-inventory-api.md#failure-security-and-verification",
+    ".memory-bank/domains/photo-inventory.md#singleton-hard-purge-persistence",
+    ".memory-bank/domains/photo-inventory.md#purge-orchestration",
+    ".memory-bank/domains/photo-inventory.md#retained-foreign-state-and-errors",
+    ".memory-bank/domains/photo-processing.md#inventory-purge-cleanup-boundary",
+    ".memory-bank/contracts/boundary-map.md#photo-inventory-operations",
+    ".memory-bank/contracts/boundary-map.md#processing-status-projections",
+    ".memory-bank/contracts/boundary-map.md#postgresql-and-minio-convergence",
+    ".memory-bank/states/lifecycle-map.md#global-hard-purge-run",
+    ".memory-bank/testing/photo-inventory.md#fixed-snapshot-restart-and-retention-matrix"
+  ],
+  "constraints": [
+    "Primary orchestration owner and expected code root are inventory at src/face_moment/inventory/; crossed public boundary is inventory -> processing and HTTP/entrypoints remain adapters.",
+    "Processing remains the only writer of ProcessingRuntimeStatus and exposes the guarded enter/leave hard_purge operations that inventory orchestration calls.",
+    "Create one next-linear inventory_hard_purge_run migration from the execution-time direct predecessor; prove only its upgrade/downgrade, schema transition and preserved prerequisite data.",
+    "Persist one sorted target UUID array and completed prefix in a singleton row; replace only a completed prior run and never append late soft deletes.",
+    "Worker ticks check confirmed/running purge before ordinary Photo claims after the active Photo/Calibration operation ends; uploads may still commit pending work.",
+    "Require an active operator or developer for every project-wide route and matching CSRF for restore-all and purge confirmation; denied requests never mutate inventory, purge-run or worker state.",
+    "Use only synthetic disposable PostgreSQL rows, private test object prefixes and deterministic backend/worker restart with safe rerun and complete cleanup."
+  ],
+  "invariants": [
+    "Non-terminal snapshot members cannot be restored and the fixed target set never changes.",
+    "Progress advances only with the transaction that removes the target Photo after owner-approved object and processing cleanup.",
+    "Restart resumes the same run and completed prefix; it never restarts from a new snapshot or silently abandons a target.",
+    "Only snapshot Photo-owned data is deleted; late soft deletes, Promo/session, Attempt, diagnostics, Calibration and issued N remain unchanged.",
+    "The accepted singleton worker and direct owner boundaries remain the only runtime and coordination mechanisms."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-012.md#FT-012-AC-003",
+    ".memory-bank/features/FT-012.md#FT-012-AC-004",
+    ".memory-bank/features/FT-012.md#FT-012-AC-005",
+    ".memory-bank/features/FT-012.md#FT-012-AC-007",
+    "A disposable migration fixture proves the singleton UUID-array/prefix constraints, execution-time linear predecessor, upgrade/downgrade/re-upgrade and preservation of existing prerequisite data.",
+    "A disposable operator/developer/photographer/session/CSRF matrix proves authorized reads and mutations, exact 401/403 denial classes and unchanged Photo, purge-run and worker state after every denial.",
+    "One fixed-snapshot scenario proves individual/global restore exclusion, late soft-delete omission, safe empty snapshot, overlapping-confirmation rejection and exact waiting/progress API/UI state.",
+    "Idle, Photo-busy and Calibration-busy worker traces prove no preemption, purge precedence after release, concurrent upload continuity and no extra worker/scheduler.",
+    "Two injected crash points plus backend/worker restart prove the same run_id, target array and prefix converge without duplicate progress; final row/object inventory proves complete owned deletion and retained Promo/session/Attempt/evidence state with missing-media skip and unchanged N."
+  ]
+}

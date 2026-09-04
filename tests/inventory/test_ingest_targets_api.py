@@ -150,13 +150,11 @@ def test_authenticated_ingest_targets_are_owner_filtered_and_redacted(
     assert photographer_cookies["fm_staff_session"] not in caplog.text
 
     caddyfile = Path("deploy/Caddyfile").read_text()
+    normalized_caddyfile = " ".join(caddyfile.split())
     assert (
-        "\thandle /api/inventory/* {\n"
-        "\t\treverse_proxy backend:8000 {\n"
-        "\t\t\theader_up X-Forwarded-For {remote_host}\n"
-        "\t\t}\n"
-        "\t}"
-    ) in caddyfile
+        "handle /api/inventory/* { reverse_proxy backend:8000 { "
+        "header_up X-Forwarded-For {remote_host} } }"
+    ) in normalized_caddyfile
     assert "handle_path /api/inventory/" not in caddyfile
 
     assert _request(app, "GET", "/api/inventory/ingest-targets")[0] == 401

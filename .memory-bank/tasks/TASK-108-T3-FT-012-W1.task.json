@@ -1,0 +1,97 @@
+{
+  "id": "TASK-108-T3-FT-012-W1",
+  "title": "Expose exact recent Photo statistics",
+  "status": "ready",
+  "wave": "W1",
+  "feature": "FT-012",
+  "reqs": [
+    "REQ-INV-004"
+  ],
+  "depends_on": [
+    "TASK-023-T3-FT-002-W3",
+    "TASK-036-T3-FT-002-W7"
+  ],
+  "touched_files": [
+    "src/face_moment/inventory/recent_statistics.py",
+    "src/face_moment/inventory/http.py",
+    "tests/inventory/test_recent_statistics.py",
+    "tests/inventory/test_photo_inventory_ui.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Recent Photo statistics tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/inventory/test_recent_statistics.py tests/inventory/test_photo_inventory_ui.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-012.md",
+    ".memory-bank/contracts/photo-inventory-api.md",
+    ".memory-bank/domains/photo-inventory.md",
+    ".memory-bank/testing/photo-inventory.md",
+    ".memory-bank/tasks/plans/IMPL-FT-012.md"
+  ],
+  "evidence_required": [
+    "FT-012-AC-006 RED: the staff application has processing-health aggregates but no accepted active-Photo 1/5/60-minute new/unprocessed/processed/failed response or polling view; GREEN: one authorized direct query uses one observed_at, joins each active Photo only to its immutable admission state, returns the exact three windows and polls every five seconds without stored counters; decisive comparison: a controlled-clock independent SQL/oracle fixture covers both boundaries, every status, inactive/restore behavior and an extra revision row while access tests deny photographers; artifact: oracle inputs, response and focused redacted output under .tasks/TASK-108-T3-FT-012-W1/."
+  ],
+  "purpose": "Provide the accepted recent per-SPA operational counters through one direct read instead of introducing metrics storage or realtime delivery.",
+  "success_outcome": "Authorized operator/developer reads exact active-Photo 1/5/60-minute counters from one observation time and the staff view refreshes them every five seconds.",
+  "anti_goals": [
+    "Do not store counters, buckets, metric events or refresh state.",
+    "Do not add WebSocket, SSE, a monitoring service or a new processing-state selector.",
+    "Do not implement Photo visibility mutation, restore-all or hard purge."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production PostgreSQL and operator/default Photo or staff data",
+      "Processing state mutation, worker claims and inventory visibility/purge commands",
+      "Metrics persistence, background refresh, WebSocket and SSE"
+    ],
+    "stop_conditions": [
+      "Exact counters cannot be derived from existing Photo and immutable admission-state timestamps without new durable metric state.",
+      "The accepted rolling-window boundary or admission-state selector conflicts with current canonical processing lineage.",
+      "A role or time-boundary probe cannot use a controlled disposable database and complete cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-012.md#FT-012-AC-006",
+    ".protocols/FT-012/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-012.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/photo-inventory-api.md#recent-statistics",
+    ".memory-bank/domains/photo-inventory.md#recent-statistics-projection",
+    ".memory-bank/contracts/boundary-map.md#recent-statistics-read-contract",
+    ".memory-bank/domains/photo-processing.md#persisted-processing-shape",
+    ".memory-bank/testing/photo-inventory.md#recent-counter-oracle"
+  ],
+  "constraints": [
+    "Primary owner is inventory at src/face_moment/inventory/; processing state remains read-only and HTTP only adapts the result.",
+    "Anchor all windows to one server observed_at and count each Photo through only admission_pipeline_revision_id.",
+    "Return minutes 1, 5 and 60 in fixed order and poll exactly every five seconds.",
+    "Use synthetic controlled timestamps and active/inactive Photos in a disposable database."
+  ],
+  "invariants": [
+    "Every result excludes inactive Photos and a restored Photo uses only preserved timestamps.",
+    "A later pipeline revision row neither replaces nor duplicates the Photo's counter contribution.",
+    "The implementation remains one direct PostgreSQL aggregate with no durable counter state or realtime transport."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-012.md#FT-012-AC-006",
+    "An independent controlled-clock SQL/oracle matrix compares every category for 1/5/60 minutes at exact and just-outside boundaries.",
+    "API/HTML tests cover exact shape/order, operator/developer access, photographer denial, unknown SPA and five-second polling.",
+    "Schema/import inspection proves no counter table, metric event, background refresh, WebSocket or SSE was added."
+  ]
+}

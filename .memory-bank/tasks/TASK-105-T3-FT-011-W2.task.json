@@ -1,0 +1,101 @@
+{
+  "id": "TASK-105-T3-FT-011-W2",
+  "title": "Expire terminal ordinary Calibration runs",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-011",
+  "reqs": [
+    "REQ-DATA-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-099-T3-FT-010-W2",
+    "TASK-100-T2-FT-011-W1"
+  ],
+  "touched_files": [
+    "src/face_moment/diagnostics/calibration_runs.py",
+    "src/face_moment/diagnostics/retention.py",
+    "tests/diagnostics/test_calibration_retention.py",
+    "tests/diagnostics/test_retention_cleanup.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Calibration run retention tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/diagnostics/test_calibration_retention.py tests/diagnostics/test_retention_cleanup.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-011.md",
+    ".memory-bank/domains/calibration.md",
+    ".memory-bank/contracts/diagnostic-retention-api.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/states/lifecycle-map.md",
+    ".memory-bank/testing/calibration.md",
+    ".memory-bank/tasks/plans/IMPL-FT-011.md"
+  ],
+  "evidence_required": [
+    "FT-011-AC-007 RED: terminal ordinary Calibration runs are absent from the existing 90-day cleanup; GREEN: diagnostics deletes only terminal runs strictly before the fixed cutoff, preserves equal/new terminal and active requested/running rows, leaves the public cleanup result unchanged and converges on rerun; decisive comparison: fixed-time disposable old/equal/new terminal plus active rows and latest-result state are inspected before cleanup, after cleanup and after one safe repeat; artifact: redacted destructive-probe output under .tasks/TASK-105-T3-FT-011-W2/."
+  ],
+  "purpose": "Add terminal ordinary Calibration runs to the existing diagnostics cleanup step without another retention surface or lifecycle.",
+  "success_outcome": "Terminal ordinary runs obey the existing strict-before 90-day cutoff while active/equal/new runs and the public cleanup result remain unchanged across safe rerun.",
+  "anti_goals": [
+    "Do not implement staff promote/delete actions or modify promoted_subset behavior.",
+    "Do not add a cleanup command/timer, history/jobs/archive/tombstone table, Calibration-specific cutoff or public result count.",
+    "Do not delete promo-owned rows directly or touch production/operator state."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production PostgreSQL/MinIO and operator/default Attempts, evidence or Calibration runs",
+      "Promoted-subset creation/deletion, staff Calibration actions and direct diagnostics deletion of promo rows",
+      "New scheduler/timer/history/archive state and changes to the public latest-cleanup result"
+    ],
+    "stop_conditions": [
+      "Terminal ordinary run expiry cannot reuse the existing diagnostics step and fixed 90-day cutoff without another cleanup surface.",
+      "Correct owner convergence requires a cross-owner cascade or changing existing event/Attempt/evidence/annotation ordering.",
+      "The destructive proof cannot use fixed-time disposable rows, one safe repeat, redacted artifacts and complete cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-011.md#FT-011-AC-007",
+    ".protocols/FT-011/plan.md",
+    ".protocols/FT-011/decision-log.md",
+    ".memory-bank/tasks/plans/IMPL-FT-011.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/calibration.md#ordinary-and-promoted-retention",
+    ".memory-bank/contracts/diagnostic-retention-api.md#idempotent-cleanup-command",
+    ".memory-bank/contracts/diagnostic-retention-api.md#failure-and-rerun-rules",
+    ".memory-bank/contracts/boundary-map.md#retention-cleanup",
+    ".memory-bank/states/lifecycle-map.md#diagnostic-and-calibration-retention",
+    ".memory-bank/testing/calibration.md#worker-recovery-and-retention-proof"
+  ],
+  "constraints": [
+    "Extend the existing owner-ordered cleanup so diagnostics selects terminal ordinary Calibration runs strictly before the shared 90-day cutoff; active requested/running and equal/newer terminal rows are ineligible.",
+    "Keep the latest cleanup result shape unchanged and preserve existing event/Attempt/evidence/annotation deletion order and ownership.",
+    "Use fixed-time disposable rows, one safe repeat and complete task-owned cleanup."
+  ],
+  "invariants": [
+    "Diagnostics deletes only its owned run rows and no ownership-crossing cascade or direct foreign write is introduced.",
+    "Cleanup never deletes active, equal-cutoff or newer runs and never changes serving state.",
+    "Repeated cleanup is safe and adds no lifecycle, history or public count."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-011.md#FT-011-AC-007",
+    "Fixed-cutoff fixtures prove old terminal run deletion, equal/new terminal plus active-run preservation, unchanged public cleanup result and one safe rerun.",
+    "Ownership/source inspection proves reuse of the existing diagnostics cleanup step with no direct promo delete, cascade, extra timer/command/result field or archive/history model."
+  ]
+}
+

@@ -154,21 +154,16 @@ def _set_cookies(cookies: list[str]) -> dict[str, str]:
 
 def test_staff_session_root_paths_preserve_https_edge_routing() -> None:
     caddyfile = Path("deploy/Caddyfile").read_text()
+    normalized_caddyfile = " ".join(caddyfile.split())
 
     assert (
-        "\thandle /api/staff/* {\n"
-        "\t\treverse_proxy backend:8000 {\n"
-        "\t\t\theader_up X-Forwarded-For {remote_host}\n"
-        "\t\t}\n"
-        "\t}"
-    ) in caddyfile
+        "handle /api/staff/* { reverse_proxy backend:8000 { "
+        "header_up X-Forwarded-For {remote_host} } }"
+    ) in normalized_caddyfile
     assert (
-        "\thandle /staff/login {\n"
-        "\t\treverse_proxy backend:8000 {\n"
-        "\t\t\theader_up X-Forwarded-For {remote_host}\n"
-        "\t\t}\n"
-        "\t}"
-    ) in caddyfile
+        "handle /staff/login { reverse_proxy backend:8000 { "
+        "header_up X-Forwarded-For {remote_host} } }"
+    ) in normalized_caddyfile
     assert "handle_path /api/staff/" not in caddyfile
     assert "handle_path /staff/login" not in caddyfile
 

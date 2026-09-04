@@ -1,0 +1,110 @@
+{
+  "id": "TASK-104-T3-FT-011-W3",
+  "title": "Deliver the developer Calibration flow and manual apply",
+  "status": "planned",
+  "wave": "W3",
+  "feature": "FT-011",
+  "reqs": [
+    "REQ-CAL-002",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-042-T2-FT-003-W1",
+    "TASK-097-T3-FT-010-W2",
+    "TASK-101-T3-FT-011-W2",
+    "TASK-102-T2-FT-011-W2",
+    "TASK-103-T2-FT-011-W2"
+  ],
+  "touched_files": [
+    "src/face_moment/diagnostics/calibration_http.py",
+    "src/face_moment/diagnostics/calibration_runs.py",
+    "src/face_moment/serving_control/realtime_context.py",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/diagnostics/test_calibration_http.py",
+    "tests/serving_control/test_calibration_apply.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Developer Calibration flow tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/diagnostics/test_calibration_http.py tests/serving_control/test_calibration_apply.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-011.md",
+    ".memory-bank/domains/calibration.md",
+    ".memory-bank/domains/staff-access.md",
+    ".memory-bank/domains/realtime-search.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/testing/calibration.md",
+    ".memory-bank/testing/index.md",
+    ".memory-bank/tasks/plans/IMPL-FT-011.md"
+  ],
+  "evidence_required": [
+    "FT-011-AC-004 RED: no active developer can select/create/inspect a Calibration run and no separately confirmed stored recommendation can cross the serving-control command, while direct viewing must not mutate settings; GREEN: the bounded no-store HTML flow authorizes only current developers, creates only validated immutable selections, displays stored run/results/drill-down, and a CSRF-protected confirmed apply resolves one stored recommendation then atomically updates the existing settings row/revision/calibration_id through serving_control while every view, create, rejection and unconfirmed action preserves serving state; decisive comparison: role/CSRF/form/failure fixtures plus before/after settings inspect denied, view/create, invalid/stale/unconfirmed and successful apply paths; artifact: .tasks/TASK-104-T3-FT-011-W3/pytest.txt, .tasks/TASK-104-T3-FT-011-W3/playwright-transcript.txt and .tasks/TASK-104-T3-FT-011-W3/calibration-applied.png."
+  ],
+  "purpose": "Expose the smallest developer-only same-origin Calibration workflow and its one explicit manual serving-setting action.",
+  "success_outcome": "An active developer can create and inspect reproducible runs, then only a separately confirmed stored recommendation can update the existing serving settings with Calibration provenance.",
+  "anti_goals": [
+    "Do not add a JSON API, SPA framework, generic form/action framework, settings history/audit table or automatic apply.",
+    "Do not allow browser-supplied scores, thresholds, quality values, annotations, media paths or result bundles.",
+    "Do not implement promotion/deletion or ordinary retention in this task, and do not change pipeline revision selection."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production staff accounts, settings, Calibration runs, Photos, Attempts and real participant data",
+      "Automatic apply, direct diagnostics writes to serving_control rows, pipeline-revision switch bypass and new audit/history persistence",
+      "Promotion/delete actions, ordinary retention and unrelated staff/participant routes"
+    ],
+    "stop_conditions": [
+      "The flow cannot remain the four accepted same-origin routes with existing staff session/CSRF primitives.",
+      "Manual apply cannot resolve a complete run's stored recommendation and call serving_control without diagnostics directly writing owner state.",
+      "T3 role/mutation probes cannot use disposable principals/settings/runs, safe rerun, redacted artifacts and full cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-011.md#FT-011-AC-004",
+    ".protocols/FT-011/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-011.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/calibration.md#minimal-developer-surface",
+    ".memory-bank/domains/calibration.md#manual-apply",
+    ".memory-bank/contracts/boundary-map.md#calibration-and-serving-change",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/domains/staff-access.md",
+    ".memory-bank/domains/realtime-search.md#active-search-context-persistence",
+    ".memory-bank/testing/calibration.md#beforeafter-and-manual-apply-proof",
+    ".memory-bank/testing/index.md#ui-verification"
+  ],
+  "constraints": [
+    "Diagnostics owns selection, authorization and recommendation resolution; HTTP and backend registration remain adapters, and only serving_control validates/writes settings.",
+    "Expose only GET/POST /staff/calibrations and GET/POST /staff/calibrations/{calibration_id}; use existing developer session, CSRF pair, no-store and sanitized 401/403/404/409/422/500 behavior.",
+    "Accept only stored selection/recommendation keys and matching confirmation; successful apply increments settings_revision, updates updated_at and records calibration_id in the existing row.",
+    "Use disposable current/revoked/wrong-role principals and isolated settings/runs with safe rerun, redacted artifacts and complete cleanup.",
+    "Use the installed playwright cli for one real-browser smoke in which an active developer creates a disposable run, inspects its completed detail and confirms one stored apply; browser-free HTTP/DOM probes are not substitutes."
+  ],
+  "invariants": [
+    "Creating, viewing or rejecting a Calibration action never changes serving settings or pipeline revision.",
+    "Diagnostics never writes serving_control state directly and the browser cannot replace stored evidence or recommendation values.",
+    "No secrets, tokens, protected payloads or arbitrary form bodies enter URLs, logs, server events or retained task evidence."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-011.md#FT-011-AC-004",
+    "Application fixtures prove exact bounded routes, redirects/no-store, escaped output, current-developer authorization, CSRF, validation and sanitized rollback mappings.",
+    "Before/after owner-state fixtures prove view/create/unconfirmed/rejected paths preserve settings and only one confirmed stored recommendation succeeds through serving_control with revision and calibration_id provenance.",
+    "playwright cli creates one disposable run, inspects separate results/drill-down and confirms one stored apply; retain the redacted transcript and post-apply screenshot at .tasks/TASK-104-T3-FT-011-W3/playwright-transcript.txt and .tasks/TASK-104-T3-FT-011-W3/calibration-applied.png; source inspection proves no generic API/framework, direct foreign write or automatic path."
+  ]
+}

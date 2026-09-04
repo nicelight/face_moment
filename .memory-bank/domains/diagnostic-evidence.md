@@ -229,8 +229,10 @@ Diagnostics validates it against current owner rows; callers cannot inject an
 unrelated name or annotation. A diagnostics-owned application operation
 explicitly deletes the whole promoted subset by clearing both
 `promoted_subset` and `promoted_at`; repeating it after both fields are clear is
-a no-op success. This does not restore ordinary evidence or annotations and
-exposes no public deletion route.
+a no-op success. This does not restore ordinary evidence or annotations.
+FT-010 exposes no deletion route; FT-011 may invoke the same owner operation
+only through the developer-only action in the
+[Calibration contract](calibration.md#minimal-developer-surface).
 
 Promotion does not extend `ordinary_manifest` or ordinary-annotation lifetime.
 Retention cleanup may clear ordinary content and annotation rows while

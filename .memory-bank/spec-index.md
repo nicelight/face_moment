@@ -1,7 +1,7 @@
 ---
 description: Pure SDD spec registry and planned-spec index.
 status: active
-last_updated: 2026-09-03
+last_updated: 2026-09-04
 source_of_truth:
   - .memory-bank/spec-index.md
 ---
@@ -26,6 +26,7 @@ source_of_truth:
 | contract | [.memory-bank/contracts/diagnostic-retention-api.md](contracts/diagnostic-retention-api.md) | active | Owner-ordered cleanup command and authorized latest-result read surface. | /feature-to-tasks |
 | contract | [.memory-bank/contracts/ground-truth-annotation-api.md](contracts/ground-truth-annotation-api.md) | active | Developer-only Attempt annotation HTML routes, mutations, authorization and failure contract. | /feature-to-tasks |
 | contract | [.memory-bank/contracts/photo-admission-api.md](contracts/photo-admission-api.md) | active | Exact authenticated staff uploader, independent per-file response, failure and UI contract. | /feature-to-tasks |
+| contract | [.memory-bank/contracts/photo-inventory-api.md](contracts/photo-inventory-api.md) | active | Exact role-scoped Photo selection, visibility, recent counters, restore-all and hard-purge UI/API contract. | /feature-to-tasks |
 | contract | [.memory-bank/contracts/photo-processing-api.md](contracts/photo-processing-api.md) | active | Exact authenticated per-Photo processing status, SLO and primary-storage health UI/API contract. | /feature-to-tasks |
 | contract | [.memory-bank/contracts/promo-display-api.md](contracts/promo-display-api.md) | active | Exact authenticated display configuration, teaser-media and post-render acknowledgement contract. | /feature-to-tasks |
 | contract | [.memory-bank/contracts/qr-continuation-api.md](contracts/qr-continuation-api.md) | active | Exact public QR ticket exchange, shared browser access, phone-session/media and expiry contract. | /feature-to-tasks |
@@ -33,7 +34,9 @@ source_of_truth:
 | contract | [.memory-bank/contracts/realtime-attempt-api.md](contracts/realtime-attempt-api.md) | active | Exact proposal-attempt endpoint, multipart serialization, validation, idempotency and typed outcome contract. | /feature-to-tasks |
 | contract | [.memory-bank/contracts/server-event-api.md](contracts/server-event-api.md) | active | Exact developer-only bounded structured server-event search page, FT-008 navigation and failure contract. | /feature-to-tasks |
 | data | [.memory-bank/domains/photo-admission.md](domains/photo-admission.md) | active | Photo/original/serving-pending persistence, duplicate arbitration, transaction and crash recovery. | /feature-to-tasks |
+| data | [.memory-bank/domains/photo-inventory.md](domains/photo-inventory.md) | active | Photo visibility, direct recent statistics and singleton fixed-snapshot hard-purge persistence/recovery. | /feature-to-tasks |
 | data | [.memory-bank/domains/photo-processing.md](domains/photo-processing.md) | active | Compatible pipeline revision, background processing, derivatives/faces, searchable truth, recovery and SLO projection. | /feature-to-tasks |
+| data | [.memory-bank/domains/calibration.md](domains/calibration.md) | active | Minimal immutable Calibration run/result, offline evaluation, developer surface, manual apply and retention. | /feature-to-tasks |
 | data | [.memory-bank/domains/staff-access.md](domains/staff-access.md) | active | Staff principals, roles, password hashes, server sessions, CSRF and credential lifecycle. | /feature-to-tasks |
 | data | [.memory-bank/domains/display-client-access.md](domains/display-client-access.md) | active | Serving-control display-client identity, retrievable Admin-visible token plus authentication hash, manual kiosk handoff and lifecycle. | /feature-to-tasks |
 | data | [.memory-bank/domains/diagnostic-evidence.md](domains/diagnostic-evidence.md) | active | Diagnostics-owned versioned evidence bundle, completeness, explicit ordinary removal, promoted subset and retention boundary. | /feature-to-tasks |
@@ -45,6 +48,7 @@ source_of_truth:
 | foundation | [.memory-bank/foundation.md](foundation.md) | active | Explicit Foundation Dev Path decision and minimum substrate evidence. | /spec-design or /foundation-to-tasks |
 | testing | [.memory-bank/testing/index.md](testing/index.md) | active | Bootstrap verification contract and project quality-gate router. | /spec-design or /foundation-to-tasks |
 | testing | [.memory-bank/testing/photo-processing.md](testing/photo-processing.md) | active | FT-002 terminal, compatibility, idempotency, restart, full-population SLO and storage-health verification. | /feature-to-tasks |
+| testing | [.memory-bank/testing/photo-inventory.md](testing/photo-inventory.md) | active | FT-012 role, rolling-counter, fixed-snapshot, restart and ownership-safe purge verification. | /feature-to-tasks |
 | testing | [.memory-bank/testing/client-realtime.md](testing/client-realtime.md) | active | Client proposal, one-clock latency, diagnostics and related media/retention verification. | /spec-auto or /feature-to-tasks |
 | testing | [.memory-bank/testing/calibration.md](testing/calibration.md) | active | FT-011 threshold-profile oracle, one-dimensional quality analysis, manual apply, worker recovery and retention verification. | /spec-auto or /feature-to-tasks |
 | runbook | [.memory-bank/runbooks/diagnostic-retention.md](runbooks/diagnostic-retention.md) | active | Pilot-host installation, daily timer activation, observation and recovery for owner-ordered diagnostic retention. | /feature-to-tasks |

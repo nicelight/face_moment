@@ -6,27 +6,23 @@ import asyncio
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
-import os
 from typing import Any
 import uuid
 
-from alembic import command as alembic_command
-from alembic.config import Config
 from fastapi import FastAPI
 import pytest
-from sqlalchemy import create_engine, select
-from sqlalchemy.engine import Engine, make_url
+from sqlalchemy import select
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from face_moment.diagnostics import (
-    DiagnosticEvidenceRepository,
+from face_moment.diagnostics.evidence import DiagnosticEvidenceRepository
+from face_moment.diagnostics.ground_truth_annotations import (
     GroundTruthAnnotation,
     GroundTruthAnnotationProvider,
-    ServerEvent,
 )
+from face_moment.diagnostics.server_events import ServerEvent
 import face_moment.diagnostics.ground_truth_annotation_http as annotation_http
 from face_moment.entrypoints.backend import create_app
-from face_moment.infrastructure.settings import Settings
 from face_moment.platform.auth.principals import StaffRole, StaffUser, provision_staff_user
 from face_moment.platform.auth.sessions import (
     LoginRateLimiter,
@@ -34,6 +30,7 @@ from face_moment.platform.auth.sessions import (
     revoke_current_browser_session,
 )
 from face_moment.promo.attempt import PromoAttempt
+from tests.disposable_postgresql import disposable_postgresql_engine
 
 
 @dataclass(frozen=True)
@@ -47,17 +44,6 @@ class AnnotationHttpFixture:
 
 @pytest.fixture(scope="module")
 def disposable_annotation_http() -> Iterator[AnnotationHttpFixture]:
-    base_url = Settings.from_env().database_url
-    database_name = f"task097_{uuid.uuid4().hex}"
-    probe_url = make_url(base_url).set(database=database_name)
-    admin_engine = create_engine(
-        base_url, pool_pre_ping=True, isolation_level="AUTOCOMMIT"
-    )
-    with admin_engine.connect() as connection:
-        connection.exec_driver_sql(f"CREATE DATABASE {database_name}")
-    previous_url = os.environ.get("DATABASE_URL")
-    os.environ["DATABASE_URL"] = probe_url.render_as_string(hide_password=False)
-    engine = create_engine(os.environ["DATABASE_URL"], pool_pre_ping=True)
     marker = uuid.uuid4().hex
     password = f"task097-password-{marker}"
     credentials = {
@@ -66,8 +52,7 @@ def disposable_annotation_http() -> Iterator[AnnotationHttpFixture]:
     }
     attempt = _attempt()
     attempt_id = attempt.id
-    try:
-        alembic_command.upgrade(Config("alembic.ini"), "head")
+    with disposable_postgresql_engine("task097") as engine:
         with Session(engine) as session:
             for role_name, role in (
                 ("operator", StaffRole.OPERATOR),
@@ -106,17 +91,6 @@ def disposable_annotation_http() -> Iterator[AnnotationHttpFixture]:
             cookies=cookies,
             credentials=credentials,
         )
-    finally:
-        engine.dispose()
-        if previous_url is None:
-            os.environ.pop("DATABASE_URL", None)
-        else:
-            os.environ["DATABASE_URL"] = previous_url
-        with admin_engine.connect() as connection:
-            connection.exec_driver_sql(
-                f"DROP DATABASE IF EXISTS {database_name} WITH (FORCE)"
-            )
-        admin_engine.dispose()
 
 
 def test_developer_navigates_from_attempt_detail_and_creates_detection_annotation(

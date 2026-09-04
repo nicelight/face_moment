@@ -1,0 +1,91 @@
+{
+  "id": "TASK-103-T2-FT-011-W2",
+  "title": "Calculate one-dimensional quality recommendations",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-011",
+  "reqs": [
+    "REQ-CAL-002"
+  ],
+  "depends_on": [
+    "TASK-100-T2-FT-011-W1"
+  ],
+  "touched_files": [
+    "src/face_moment/diagnostics/calibration_quality.py",
+    "tests/diagnostics/test_calibration_quality.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Quality Calibration tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/diagnostics/test_calibration_quality.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-011.md",
+    ".memory-bank/domains/calibration.md",
+    ".memory-bank/testing/calibration.md",
+    ".memory-bank/tasks/plans/IMPL-FT-011.md"
+  ],
+  "evidence_required": [
+    "FT-011-AC-002 RED: complete run evidence exposes no face-size, detection-confidence, blur, brightness or pose recommendation with required current/proposed and outcome deltas; GREEN: five deterministic analyses each vary exactly one gate, retain every peer gate, and report sample, kept/rejected plus expected correct/false/missed changes; decisive comparison: independent fixed fixtures vary each gate alone and inspect the unchanged peer settings and exact result fields; artifact: focused output under .tasks/TASK-103-T2-FT-011-W2/."
+  ],
+  "purpose": "Implement the accepted quality analyses directly over completed Calibration evidence without introducing a multidimensional optimizer.",
+  "success_outcome": "Each of the five named quality gates can produce an explainable current/proposed recommendation and expected outcome delta while every other gate stays fixed.",
+  "anti_goals": [
+    "Do not jointly optimize gates or introduce weights, a generic optimizer, search-grid product configuration or automatic apply.",
+    "Do not change threshold-profile calculation, worker execution, staff routes, promotion or retention.",
+    "Do not infer missing annotations or combine native pipeline results."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Serving-control state mutation and automatic apply",
+      "Threshold-profile logic, worker runtime, staff HTTP and retention",
+      "Production/operator datasets and unredacted participant information in evidence"
+    ],
+    "stop_conditions": [
+      "A required result cannot be produced without varying more than one quality gate or inventing an unaccepted weighted objective.",
+      "Blur direction cannot be resolved from the named score's existing documented semantics.",
+      "The calculation requires combining pipeline revisions or synthesizing absent ground truth."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-011.md#FT-011-AC-002",
+    ".protocols/FT-011/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-011.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/calibration.md#recommendation-result",
+    ".memory-bank/testing/calibration.md#fixed-evaluation-input",
+    ".memory-bank/testing/calibration.md#one-dimensional-quality-analysis",
+    ".memory-bank/testing/calibration.md#acceptance-evidence-map"
+  ],
+  "constraints": [
+    "Use the completed run's immutable annotation/outcome evidence and retained deterministic candidate values.",
+    "Evaluate face size, detection confidence, blur, brightness and pose separately while holding the threshold and all peer gates fixed.",
+    "Expose current/proposed value, sample size, kept/rejected detections and expected correct/false/missed changes for every result."
+  ],
+  "invariants": [
+    "No result changes more than one quality gate or introduces a weighted/joint objective.",
+    "SFace and Buffalo M results remain separate and derive only from explicit ground truth.",
+    "Calculation never mutates serving settings or revision."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-011.md#FT-011-AC-002",
+    "Five fixed fixtures independently verify cutoff/range direction, exact current/proposed values, sample and kept/rejected plus correct/false/missed deltas.",
+    "Before/after snapshots prove every non-target quality gate and serving setting stays unchanged and no joint optimizer/configuration surface exists."
+  ]
+}
+

@@ -1,7 +1,7 @@
 ---
 description: Стратегия тестирования и верификации (quality gates, anti-cheat, UI/e2e).
 status: active
-last_updated: 2026-09-02
+last_updated: 2026-09-04
 ---
 # Testing & Verification
 
@@ -17,6 +17,8 @@ last_updated: 2026-09-02
 - [Photo processing verification](photo-processing.md): terminal and
   compatibility states, idempotent retry/restart, full-population ingest SLO,
   shared-worker delay and independent PostgreSQL/MinIO capacity evidence.
+- [Photo inventory verification](photo-inventory.md): role-scoped visibility,
+  exact rolling counters and resumable ownership-safe hard purge.
 
 ## Quality gates
 
@@ -37,6 +39,10 @@ commands, substrate shape, scope and exclusions.
 - Python typecheck, relevant tests, migrations and role startup run with
   `uv run --locked` from the editable working tree. Integration commands load
   `.env.local` explicitly.
+- PostgreSQL-backed tests that need a fresh fully migrated database reuse
+  `tests/disposable_postgresql.py` for database creation, environment
+  restoration and forced teardown. Subject-specific seed and assertions remain
+  in their owning test modules.
 - The local Compose overlay starts only PostgreSQL/pgvector and MinIO and
   publishes them on loopback. Python roles and Caddy are not part of the daily
   container loop.

@@ -4,6 +4,31 @@ status: active
 ---
 # Changelog
 
+## [2026-09-04] FT-012 task decomposition closure
+
+- Closed: fresh `/review-tasks-plan FT-012` approved the four-card task plan
+  for Global Backbone Planning Revision `4`; no architecture review was
+  required.
+- Reconciled: `TASK-107..110` retain their reviewed scopes and statuses;
+  `FT-012-AC-001..007` and `REQ-INV-001..004` keep complete, unambiguous
+  task ownership and traceability.
+- Evidence: `.tasks/TASK-MB-REVIEW-TASKS-PLAN/TASK-MB-REVIEW-TASKS-PLAN-S-TASKS-FT-012-final-report-docs-01.md`.
+- Preserved: FT-012 and its requirements remain `planned` until implementation
+  and verification; the applicable `/mb-doctor` gate precedes execution.
+
+## [2026-09-04] Wave 2 / FT-010 feature closure
+
+- Closed: `TASK-097-T3-FT-010-W2`, `TASK-098-T3-FT-010-W2` and
+  `TASK-099-T3-FT-010-W2` are `done` after their required T3 functional
+  `PASS`, task-scoped `semantic-pass` and scheduler-owned closure decisions.
+- Verified: FT-010 is `verified` after all `FT-010-AC-001..005` outcomes and
+  feature-level `semantic-pass`; `REQ-ANN-001` is reconciled to `verified`.
+- Evidence: `.tasks/FT-010/FT-010-S-RED-VERIFY-final-report-docs-01.md` and the
+  durable marker in `.memory-bank/features/FT-010.md#semantic-verification`.
+- Preserved: EP-003 remains `planned` while FT-007 production acceptance and
+  FT-011 are unfinished. Their tasks, all FT-012 work and all production-
+  acceptance task statuses remain unchanged.
+
 ## [2026-09-04] Wave 1 / FT-010 normalized annotation provider closure
 
 - Closed: `TASK-096-T3-FT-010-W1` is `done` after Attempt 2 functional `PASS`,

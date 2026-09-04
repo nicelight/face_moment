@@ -1,0 +1,108 @@
+{
+  "id": "TASK-107-T3-FT-012-W2",
+  "title": "Enforce role-scoped Photo visibility",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-012",
+  "reqs": [
+    "REQ-INV-001",
+    "REQ-INV-002"
+  ],
+  "depends_on": [
+    "TASK-005-T3-FT-001-W3",
+    "TASK-017-T2-FT-001-W8",
+    "TASK-070-T2-FT-004-W2",
+    "TASK-081-T3-FT-006-W2",
+    "TASK-108-T3-FT-012-W1"
+  ],
+  "touched_files": [
+    "src/face_moment/inventory/photo_inventory.py",
+    "src/face_moment/inventory/http.py",
+    "tests/inventory/test_photo_inventory_api.py",
+    "tests/inventory/test_photo_inventory_ui.py",
+    "tests/processing/test_searchable_projection.py",
+    "tests/promo/test_qr_continuation_api.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Role-scoped inventory visibility tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/inventory/test_photo_inventory_api.py tests/inventory/test_photo_inventory_ui.py tests/processing/test_searchable_projection.py tests/promo/test_qr_continuation_api.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-012.md",
+    ".memory-bank/contracts/photo-inventory-api.md",
+    ".memory-bank/domains/photo-inventory.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/testing/photo-inventory.md",
+    ".memory-bank/tasks/plans/IMPL-FT-012.md"
+  ],
+  "evidence_required": [
+    "FT-012-AC-001 and FT-012-AC-002 RED: no staff inventory list/visibility command currently enforces the accepted SPA/date/capture interval and photographer ownership, while the completed search/media/statistics seams only expose existing active-state behavior; GREEN: the exact authenticated API/UI filters persisted captured_at, denies foreign photographer or inaccessible scope, changes only is_active, excludes inactive Photos from new search and counters, preserves existing issued media, and restores without new processing; decisive comparison: fixed role/time fixtures inspect API results, Photo/media/face/state rows, search, counters and phone reads before delete, while inactive and after restore; artifact: focused redacted outputs under .tasks/TASK-107-T3-FT-012-W2/."
+  ],
+  "purpose": "Expose the smallest role-safe inventory selection and visibility operation over the existing Photo model without adding a second deletion lifecycle.",
+  "success_outcome": "Photographers can list and change only their own matching Photos, operator/developer can act within the accepted SPA scope, and soft-delete/restore changes only visibility while preserving stored and issued-session state.",
+  "anti_goals": [
+    "Do not implement restore-all, hard purge, recent-statistics aggregation or worker behavior.",
+    "Do not add deletion history, tombstones, bulk-operation state, a Batch model or per-photo purge fields.",
+    "Do not mutate processing, Promo, Attempt, diagnostics or serving-control state."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production PostgreSQL/MinIO, operator/default Photos and non-disposable staff sessions",
+      "Restore-all, hard-purge run/worker behavior and recent-statistics implementation",
+      "Direct writes to processing, promo, diagnostics or serving-control owner state"
+    ],
+    "stop_conditions": [
+      "Role-safe selection cannot use the existing principal, Photo fields and one-SPA access rules without a new authorization model.",
+      "Soft-delete or restore would require changing any field other than Photo.is_active or rebuilding issued sessions.",
+      "Verification cannot isolate all Photo/media/session fixtures and clean them without touching operator/default data."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-012.md#FT-012-AC-001",
+    ".memory-bank/features/FT-012.md#FT-012-AC-002",
+    ".protocols/FT-012/plan.md",
+    ".protocols/FT-012/decision-log.md",
+    ".memory-bank/tasks/plans/IMPL-FT-012.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/photo-inventory-api.md#staff-inventory-page-and-selection",
+    ".memory-bank/contracts/photo-inventory-api.md#per-photo-visibility",
+    ".memory-bank/domains/photo-inventory.md#visibility-and-selection",
+    ".memory-bank/contracts/boundary-map.md#photo-inventory-operations",
+    ".memory-bank/contracts/qr-continuation-api.md#phone-shell-and-session-read",
+    ".memory-bank/testing/photo-inventory.md#role-and-visibility-matrix"
+  ],
+  "constraints": [
+    "Primary owner is inventory at src/face_moment/inventory/; HTTP remains a thin adapter and staff_access supplies only the principal.",
+    "Use the persisted effective captured_at and half-open selection interval; do not recalculate EXIF or introduce saved filters/pagination.",
+    "Use existing Photo.is_active as the only visibility marker and preserve all acceptance, processing and media fields.",
+    "Run authorization and state probes only against synthetic disposable users, Photos, objects and sessions."
+  ],
+  "invariants": [
+    "A photographer never observes or mutates another photographer's Photo through this surface.",
+    "Inactive Photos do not enter new search/result formation or recent counters, while issued sessions may use existing media.",
+    "Restore preserves timestamps and processing state and creates no new upload or processing claim."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-012.md#FT-012-AC-001",
+    ".memory-bank/features/FT-012.md#FT-012-AC-002",
+    "Exact API/HTML tests cover persisted capture-time filters, ordering, every role/ownership case, CSRF, idempotency and task-owned 401/403/404/422/5xx behavior; snapshot-conflict 409 belongs to TASK-110.",
+    "A disposable integration matrix compares Photo/media/face/state rows, exact compatible search, recent-counter eligibility and issued phone media before delete, while inactive and after restore.",
+    "Import/state inspection proves inventory owns authorization and visibility with no transport orchestration, foreign write or new lifecycle field."
+  ]
+}

@@ -24,6 +24,7 @@ from face_moment.promo.attempt_queries import (
 
 TargetKind = Literal["detection", "person"]
 AnnotationOutcome = Literal["correct", "false", "missed"]
+_ATTEMPT_TRANSACTION_BARRIER_NAMESPACE = 99_099
 
 
 class GroundTruthAnnotationError(ValueError):
@@ -52,7 +53,11 @@ class GroundTruthAnnotation(Base):
             name="ck_ground_truth_annotations_outcome",
         ),
         CheckConstraint(
-            "char_length(btrim(participant_name)) BETWEEN 1 AND 200",
+            r"char_length(btrim(participant_name, "
+            r"U&'\0009\000A\000B\000C\000D\001C\001D\001E\001F\0020"
+            r"\0085\00A0\1680\2000\2001\2002\2003\2004\2005\2006"
+            r"\2007\2008\2009\200A\2028\2029\202F\205F\3000')) "
+            "BETWEEN 1 AND 200",
             name="ck_ground_truth_annotations_participant_name",
         ),
         CheckConstraint(
@@ -104,6 +109,21 @@ class GroundTruthAnnotationRepository:
 
     def __init__(self, session: Session) -> None:
         self._session = session
+
+    def acquire_attempt_transaction_barrier(self, attempt_id: uuid.UUID) -> None:
+        """Serialize annotation creation and retention for one Attempt."""
+
+        self._session.execute(
+            text(
+                "SELECT pg_advisory_xact_lock("
+                "hashtextextended(CAST(:attempt_id AS text), :namespace)"
+                ")"
+            ),
+            {
+                "attempt_id": str(_require_uuid(attempt_id, "attempt_id")),
+                "namespace": _ATTEMPT_TRANSACTION_BARRIER_NAMESPACE,
+            },
+        )
 
     def get(
         self,
@@ -221,6 +241,7 @@ class GroundTruthAnnotationProvider:
         participant_name: str,
         outcome: AnnotationOutcome | str,
     ) -> GroundTruthAnnotationSnapshot:
+        self._repository.acquire_attempt_transaction_barrier(attempt_id)
         self._require_attempt(attempt_id)
         evidence = self._require_writable_evidence(attempt_id)
         normalized_target, normalized_index, normalized_name, normalized_outcome = (

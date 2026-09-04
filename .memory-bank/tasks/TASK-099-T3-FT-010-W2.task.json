@@ -1,7 +1,7 @@
 {
   "id": "TASK-099-T3-FT-010-W2",
   "title": "Integrate ordinary annotation retention",
-  "status": "in_progress",
+  "status": "done",
   "wave": "W2",
   "feature": "FT-010",
   "reqs": [
@@ -61,6 +61,47 @@
         ".tasks/TASK-099-T3-FT-010-W2/TASK-099-T3-FT-010-W2-S-RED-VERIFY-targeted-probe-01.md"
       ],
       "resume_route": "/feature-doctor FT-010"
+    },
+    {
+      "stage": "verify-attempt-2",
+      "verdict": "PASS",
+      "summary": "Fresh T3 Attempt 2 verification independently passed both supported no-evidence annotation-create/retention orderings: writer-first cleanup deletes the committed annotation, while cleanup-first creation revalidates after core deletion and rejects. Fixed-cutoff scheduled/explicit removal, safe reruns, promoted-subset preservation, existing state/result contracts and adjacent diagnostics regressions passed in disposable PostgreSQL state; lifecycle remains unchanged pending fresh task-scoped red verification.",
+      "report": ".tasks/TASK-099-T3-FT-010-W2/TASK-099-T3-FT-010-W2-S-VERIFY-final-report-docs-02.md",
+      "protocol": ".protocols/TASK-099-T3-FT-010-W2/verification.md",
+      "evidence": [
+        ".tasks/TASK-099-T3-FT-010-W2/TASK-099-T3-FT-010-W2-S-VERIFY-targeted-probe-02.md",
+        ".tasks/TASK-099-T3-FT-010-W2/verify_attempt_2_cleanup_first_probe.py",
+        ".tasks/TASK-099-T3-FT-010-W2/attempt-2-green.md",
+        ".tasks/TASK-099-T3-FT-010-W2/attempt-1-red.md",
+        ".tasks/TASK-099-T3-FT-010-W2/attempt-1-green.md",
+        ".tasks/TASK-099-T3-FT-010-W2/TASK-099-T3-FT-010-W2-S-RED-VERIFY-targeted-probe-01.md",
+        ".protocols/FT-010/clarification.md#2026-09-04-task-099-attempt-1-semantic-failure"
+      ],
+      "resume_route": "/red-verify TASK-099-T3-FT-010-W2"
+    },
+    {
+      "stage": "red-verify-attempt-2",
+      "verdict": "semantic-pass",
+      "summary": "Fresh Attempt 2 adversarial verification found no material semantic defect or operator question after independently exercising both supported no-evidence annotation-create/retention orderings. Writer-first cleanup deletes the committed annotation, cleanup-first creation revalidates after core deletion and rejects, and fixed cutoff, explicit removal, same-cutoff convergence, promoted-subset preservation, public contracts and owner boundaries remain intact.",
+      "report": ".tasks/TASK-099-T3-FT-010-W2/TASK-099-T3-FT-010-W2-S-RED-VERIFY-final-report-docs-02.md",
+      "protocol": ".protocols/TASK-099-T3-FT-010-W2/red-verification.md",
+      "evidence": [
+        ".tasks/TASK-099-T3-FT-010-W2/TASK-099-T3-FT-010-W2-S-RED-VERIFY-targeted-probe-02.md",
+        ".tasks/TASK-099-T3-FT-010-W2/verify_attempt_2_cleanup_first_probe.py"
+      ],
+      "resume_route": "scheduler closure"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Autopilot closed TASK-099 after Attempt 2 functional PASS, task-scoped semantic-pass and post-retry Judge SUPPORT. Ordinary annotation retention now serializes supported no-evidence annotation creation with scheduled deletion, converges without orphan rows in either ordering, preserves strict-before and explicit-removal behavior, and leaves promoted snapshots, public result/state contracts and ownership unchanged.",
+      "evidence": [
+        ".tasks/TASK-099-T3-FT-010-W2/TASK-099-T3-FT-010-W2-S-VERIFY-final-report-docs-02.md",
+        ".tasks/TASK-099-T3-FT-010-W2/TASK-099-T3-FT-010-W2-S-RED-VERIFY-final-report-docs-02.md",
+        ".protocols/FT-010/clarification.md#2026-09-04-task-099-attempt-1-semantic-failure",
+        ".protocols/AUTONOMOUS-RUN/status.md"
+      ],
+      "owner_lifecycle_closure": "autopilot_scheduler"
     }
   ],
   "docs": [

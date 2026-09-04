@@ -16,6 +16,8 @@ status: active
   Attempt annotation routes, mutations, authorization and failures.
 - [Photo Admission API](photo-admission-api.md): authenticated staff uploader,
   per-file responses, standard failures and UI behavior.
+- [Photo Inventory API](photo-inventory-api.md): role-scoped Photo selection,
+  visibility, recent counters, restore-all and global hard-purge surfaces.
 - [Photo Processing API](photo-processing-api.md): authenticated per-Photo
   processing status, controlled-interval SLO and primary-storage health.
 - [Promo Display API](promo-display-api.md): authenticated display

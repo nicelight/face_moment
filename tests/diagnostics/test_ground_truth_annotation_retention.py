@@ -4,25 +4,25 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from datetime import datetime, timedelta, timezone
-import os
+from threading import Event, Thread
 import uuid
 
-from alembic import command as alembic_command
-from alembic.config import Config
 import pytest
-from sqlalchemy import create_engine, select
-from sqlalchemy.engine import Engine, make_url
+from sqlalchemy import event, select
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from face_moment.diagnostics import (
+from face_moment.diagnostics.evidence import (
     DiagnosticEvidenceProvider,
     DiagnosticEvidenceRepository,
+)
+from face_moment.diagnostics.ground_truth_annotations import (
     GroundTruthAnnotation,
     GroundTruthAnnotationProvider,
 )
-from face_moment.infrastructure.settings import Settings
 from face_moment.promo.attempt import PromoAttempt
-from face_moment.promo.retention import run_retention_cleanup
+from face_moment.promo.retention import RetentionCleanupOutcome, run_retention_cleanup
+from tests.disposable_postgresql import disposable_postgresql_engine
 
 
 _NOW = datetime(2026, 9, 4, 9, 0, tzinfo=timezone.utc)
@@ -30,33 +30,8 @@ _NOW = datetime(2026, 9, 4, 9, 0, tzinfo=timezone.utc)
 
 @pytest.fixture(scope="module")
 def disposable_annotation_retention_engine() -> Iterator[Engine]:
-    base_url = Settings.from_env().database_url
-    probe_database = f"task099_{uuid.uuid4().hex}"
-    probe_url = make_url(base_url).set(database=probe_database)
-    admin_engine = create_engine(
-        base_url,
-        pool_pre_ping=True,
-        isolation_level="AUTOCOMMIT",
-    )
-    with admin_engine.connect() as connection:
-        connection.exec_driver_sql(f"CREATE DATABASE {probe_database}")
-    previous_url = os.environ.get("DATABASE_URL")
-    os.environ["DATABASE_URL"] = probe_url.render_as_string(hide_password=False)
-    engine = create_engine(os.environ["DATABASE_URL"], pool_pre_ping=True)
-    try:
-        alembic_command.upgrade(Config("alembic.ini"), "head")
+    with disposable_postgresql_engine("task099") as engine:
         yield engine
-    finally:
-        engine.dispose()
-        if previous_url is None:
-            os.environ.pop("DATABASE_URL", None)
-        else:
-            os.environ["DATABASE_URL"] = previous_url
-        with admin_engine.connect() as connection:
-            connection.exec_driver_sql(
-                f"DROP DATABASE IF EXISTS {probe_database} WITH (FORCE)"
-            )
-        admin_engine.dispose()
 
 
 def test_scheduled_cleanup_deletes_old_annotations_and_preserves_cutoff_rows(
@@ -232,6 +207,91 @@ def test_explicit_removal_deletes_annotations_and_preserves_promoted_snapshot(
         assert evidence.updated_at == first_updated_at
         assert evidence.promoted_subset == promoted_before
         assert not session.scalars(
+            select(GroundTruthAnnotation).where(
+                GroundTruthAnnotation.attempt_id == attempt_id
+            )
+        ).all()
+
+
+def test_scheduled_cleanup_serializes_with_in_flight_no_evidence_creation(
+    disposable_annotation_retention_engine: Engine,
+) -> None:
+    engine = disposable_annotation_retention_engine
+    attempt = _attempt(_NOW - timedelta(days=91))
+    attempt_id = attempt.id
+    with Session(engine) as setup_session:
+        setup_session.add(attempt)
+        setup_session.commit()
+
+    cleanup_reached_barrier = Event()
+    cleanup_finished = Event()
+    cleanup_outcomes: list[RetentionCleanupOutcome] = []
+    cleanup_errors: list[BaseException] = []
+
+    def observe_cleanup_barrier(
+        _connection: object,
+        _cursor: object,
+        statement: str,
+        _parameters: object,
+        _context: object,
+        _executemany: bool,
+    ) -> None:
+        if "pg_advisory_xact_lock" in statement:
+            cleanup_reached_barrier.set()
+
+    def cleanup() -> None:
+        try:
+            with Session(engine) as cleanup_session:
+                cleanup_outcomes.append(
+                    run_retention_cleanup(cleanup_session, now=_NOW)
+                )
+        except BaseException as error:  # pragma: no cover - surfaced below
+            cleanup_errors.append(error)
+        finally:
+            cleanup_finished.set()
+
+    writer_session = Session(engine)
+    cleanup_thread = Thread(target=cleanup)
+    try:
+        GroundTruthAnnotationProvider(writer_session).create(
+            attempt_id=attempt_id,
+            target_kind="person",
+            detection_occurrence_index=None,
+            participant_name="Synthetic Concurrent No Evidence 099",
+            outcome="missed",
+        )
+        event.listen(engine, "before_cursor_execute", observe_cleanup_barrier)
+        cleanup_thread.start()
+        assert cleanup_reached_barrier.wait(timeout=5)
+        assert not cleanup_finished.wait(timeout=0.2)
+
+        writer_session.commit()
+        assert cleanup_finished.wait(timeout=5)
+        cleanup_thread.join(timeout=1)
+    finally:
+        writer_session.rollback()
+        writer_session.close()
+        event.remove(engine, "before_cursor_execute", observe_cleanup_barrier)
+        if cleanup_thread.is_alive():
+            cleanup_thread.join(timeout=5)
+
+    assert not cleanup_errors
+    assert len(cleanup_outcomes) == 1
+    assert cleanup_outcomes[0].exit_code == 0
+    assert cleanup_outcomes[0].core_attempts_deleted == 1
+    with Session(engine) as inspection_session:
+        assert inspection_session.get(PromoAttempt, attempt_id) is None
+        assert not inspection_session.scalars(
+            select(GroundTruthAnnotation).where(
+                GroundTruthAnnotation.attempt_id == attempt_id
+            )
+        ).all()
+
+    with Session(engine) as rerun_session:
+        repeated = run_retention_cleanup(rerun_session, now=_NOW)
+        assert repeated.exit_code == 0
+        assert repeated.core_attempts_deleted == 0
+        assert not rerun_session.scalars(
             select(GroundTruthAnnotation).where(
                 GroundTruthAnnotation.attempt_id == attempt_id
             )

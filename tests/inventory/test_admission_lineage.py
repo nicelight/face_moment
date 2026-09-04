@@ -202,11 +202,10 @@ def test_empty_cutover_round_trip_adds_exact_nonnull_restrict_lineage_shape() ->
         alembic_command.upgrade(_config(), "head")
 
         script = ScriptDirectory.from_config(_config())
-        head = script.get_revision("head")
-        assert head is not None
-        assert head.revision == _LINEAGE_REVISION
-        assert head.down_revision == _PRE_LINEAGE_REVISION
-        assert tuple(script.get_heads()) == (_LINEAGE_REVISION,)
+        lineage_revision = script.get_revision(_LINEAGE_REVISION)
+        assert lineage_revision is not None
+        assert lineage_revision.down_revision == _PRE_LINEAGE_REVISION
+        assert len(script.get_heads()) == 1
 
         inspector = inspect(engine)
         lineage_column = next(

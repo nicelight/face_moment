@@ -130,32 +130,41 @@ class RetentionCleanupLatest(Base):
 
 
 @dataclass(frozen=True, slots=True)
+class RetentionCleanupCounts:
+    core_attempts_deleted: int = 0
+    ordinary_evidence_expired: int = 0
+    technical_logs_deleted: int = 0
+    private_artifacts_deleted: int = 0
+    promoted_subsets_preserved: int = 0
+
+
+@dataclass(frozen=True, slots=True)
 class RetentionCleanupOutcome:
     exit_code: int
     state: str
     run_id: uuid.UUID | None = None
-    counts: tuple[int, int, int, int, int] = (0, 0, 0, 0, 0)
+    counts: RetentionCleanupCounts = RetentionCleanupCounts()
     error: str | None = None
 
     @property
     def core_attempts_deleted(self) -> int:
-        return self.counts[0]
+        return self.counts.core_attempts_deleted
 
     @property
     def ordinary_evidence_expired(self) -> int:
-        return self.counts[1]
+        return self.counts.ordinary_evidence_expired
 
     @property
     def technical_logs_deleted(self) -> int:
-        return self.counts[2]
+        return self.counts.technical_logs_deleted
 
     @property
     def private_artifacts_deleted(self) -> int:
-        return self.counts[3]
+        return self.counts.private_artifacts_deleted
 
     @property
     def promoted_subsets_preserved(self) -> int:
-        return self.counts[4]
+        return self.counts.promoted_subsets_preserved
 
 
 class PromoRetentionService:
@@ -231,30 +240,29 @@ def run_retention_cleanup(
                 session, diagnostic_result.eligible_attempt_ids
             )
             session.commit()
+            counts = RetentionCleanupCounts(
+                core_attempts_deleted=deleted,
+                ordinary_evidence_expired=(
+                    diagnostic_result.ordinary_evidence_expired
+                ),
+                technical_logs_deleted=technical_logs_deleted,
+                private_artifacts_deleted=diagnostic_result.private_artifacts_deleted,
+                promoted_subsets_preserved=(
+                    diagnostic_result.promoted_subsets_preserved
+                ),
+            )
             _finish_run(
                 session,
                 status=RetentionCleanupState.SUCCEEDED.value,
                 finished_at=timestamp,
-                counts=(
-                    deleted,
-                    diagnostic_result.ordinary_evidence_expired,
-                    technical_logs_deleted,
-                    diagnostic_result.private_artifacts_deleted,
-                    diagnostic_result.promoted_subsets_preserved,
-                ),
+                counts=counts,
                 error=None,
             )
             return RetentionCleanupOutcome(
                 exit_code=0,
                 state=RetentionCleanupState.SUCCEEDED.value,
                 run_id=run_id,
-                counts=(
-                    deleted,
-                    diagnostic_result.ordinary_evidence_expired,
-                    technical_logs_deleted,
-                    diagnostic_result.private_artifacts_deleted,
-                    diagnostic_result.promoted_subsets_preserved,
-                ),
+                counts=counts,
             )
         except Exception as error:
             session.rollback()
@@ -263,7 +271,7 @@ def run_retention_cleanup(
                 session,
                 status=RetentionCleanupState.FAILED.value,
                 finished_at=timestamp,
-                counts=(0, 0, 0, 0, 0),
+                counts=RetentionCleanupCounts(),
                 error=safe_error,
             )
             return RetentionCleanupOutcome(
@@ -366,7 +374,7 @@ def _finish_run(
     *,
     status: str,
     finished_at: datetime,
-    counts: tuple[int, int, int, int, int],
+    counts: RetentionCleanupCounts,
     error: str | None,
 ) -> None:
     latest = session.get(RetentionCleanupLatest, LATEST_SINGLETON_KEY, with_for_update=True)
@@ -374,13 +382,11 @@ def _finish_run(
         raise RuntimeError("retention result row is missing")
     latest.status = status
     latest.finished_at = finished_at
-    (
-        latest.core_attempts_deleted,
-        latest.ordinary_evidence_expired,
-        latest.technical_logs_deleted,
-        latest.private_artifacts_deleted,
-        latest.promoted_subsets_preserved,
-    ) = counts
+    latest.core_attempts_deleted = counts.core_attempts_deleted
+    latest.ordinary_evidence_expired = counts.ordinary_evidence_expired
+    latest.technical_logs_deleted = counts.technical_logs_deleted
+    latest.private_artifacts_deleted = counts.private_artifacts_deleted
+    latest.promoted_subsets_preserved = counts.promoted_subsets_preserved
     latest.error = error
     session.commit()
 
@@ -407,6 +413,7 @@ __all__ = [
     "ORDINARY_RETENTION_DAYS",
     "TECHNICAL_LOG_RETENTION_DAYS",
     "PromoRetentionService",
+    "RetentionCleanupCounts",
     "RetentionCleanupLatest",
     "RetentionCleanupOutcome",
     "RetentionCleanupState",

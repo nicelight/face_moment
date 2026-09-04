@@ -1,7 +1,7 @@
 ---
 description: Canonical pilot lifecycles for Photo admission, processing, inventory visibility, purge, Promo and diagnostics.
 status: active
-last_updated: 2026-09-03
+last_updated: 2026-09-04
 source_of_truth:
   - .memory-bank/states/lifecycle-map.md
 ---
@@ -262,6 +262,9 @@ complete | incomplete -- explicit diagnostics removal --> removed
 - Ordinary ground-truth annotation rows follow the same Attempt-selected
   90-day cutoff. Diagnostics deletes them before promo deletes the core Attempt;
   annotation creation or correction never extends the Attempt lifetime.
+- Terminal ordinary Calibration runs are diagnostics-owned and expire strictly
+  before the same 90-day cutoff. Active `requested | running` rows are not
+  cleanup candidates and gain no separate retention lifecycle.
 - `diagnostics` alone may create `removed` through the irreversible owner
   transition in
   [Diagnostic Evidence](../domains/diagnostic-evidence.md#explicit-ordinary-removal-transition).

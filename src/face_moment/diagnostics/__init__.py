@@ -1,44 +1,5 @@
-"""Diagnostics-owned evidence persistence boundary."""
+"""Diagnostics package with lightweight server-event exports."""
 
-from face_moment.diagnostics.evidence import (
-    CURRENT_SCHEMA_VERSION,
-    Completeness,
-    DiagnosticEvidence,
-    DiagnosticEvidenceError,
-    DiagnosticEvidenceNotFoundError,
-    DiagnosticEvidenceProvider,
-    DiagnosticEvidenceRepository,
-    EvidenceWriteOutcome,
-    ORDINARY_REMOVED_GAP_REASON,
-)
-from face_moment.diagnostics.attempt_investigation import (
-    AttemptInvestigationAccessDeniedError,
-    AttemptInvestigationNotFoundError,
-    AttemptInvestigationView,
-    DeveloperEvidenceProjection,
-    EvidenceAvailability,
-    authorize_attempt_investigation,
-    read_attempt_detail,
-    read_attempts,
-)
-from face_moment.diagnostics.retention import (
-    DiagnosticRetentionProvider,
-    DiagnosticRetentionResult,
-    RetentionObjectStore,
-    expire_diagnostic_attempts,
-)
-from face_moment.diagnostics.ground_truth_annotations import (
-    AnnotationOutcome,
-    GroundTruthAnnotation,
-    GroundTruthAnnotationConflictError,
-    GroundTruthAnnotationError,
-    GroundTruthAnnotationNotFoundError,
-    GroundTruthAnnotationProvider,
-    GroundTruthAnnotationRepository,
-    GroundTruthAnnotationSnapshot,
-    GroundTruthCalculationSnapshot,
-    TargetKind,
-)
 from face_moment.diagnostics.server_events import (
     EVENT_CATALOG,
     EVENT_QUEUE_CAPACITY,
@@ -51,44 +12,8 @@ from face_moment.diagnostics.server_events import (
     ServerEventSearchFilters,
     ServerEventSink,
 )
-from face_moment.diagnostics.server_event_search import (
-    ServerEventSearchAccessDeniedError,
-    authorize_server_event_search,
-    search_server_events,
-)
 
 __all__ = [
-    "CURRENT_SCHEMA_VERSION",
-    "Completeness",
-    "DiagnosticEvidence",
-    "DiagnosticEvidenceError",
-    "DiagnosticEvidenceNotFoundError",
-    "DiagnosticEvidenceProvider",
-    "DiagnosticEvidenceRepository",
-    "EvidenceWriteOutcome",
-    "ORDINARY_REMOVED_GAP_REASON",
-    "AttemptInvestigationAccessDeniedError",
-    "AttemptInvestigationNotFoundError",
-    "AttemptInvestigationView",
-    "DeveloperEvidenceProjection",
-    "EvidenceAvailability",
-    "authorize_attempt_investigation",
-    "read_attempt_detail",
-    "read_attempts",
-    "DiagnosticRetentionProvider",
-    "DiagnosticRetentionResult",
-    "RetentionObjectStore",
-    "expire_diagnostic_attempts",
-    "AnnotationOutcome",
-    "GroundTruthAnnotation",
-    "GroundTruthAnnotationConflictError",
-    "GroundTruthAnnotationError",
-    "GroundTruthAnnotationNotFoundError",
-    "GroundTruthAnnotationProvider",
-    "GroundTruthAnnotationRepository",
-    "GroundTruthAnnotationSnapshot",
-    "GroundTruthCalculationSnapshot",
-    "TargetKind",
     "EVENT_CATALOG",
     "EVENT_QUEUE_CAPACITY",
     "SERVER_EVENT_SEARCH_LIMIT",
@@ -99,7 +24,4 @@ __all__ = [
     "ServerEventRepository",
     "ServerEventSearchFilters",
     "ServerEventSink",
-    "ServerEventSearchAccessDeniedError",
-    "authorize_server_event_search",
-    "search_server_events",
 ]

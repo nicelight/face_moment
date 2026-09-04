@@ -1,0 +1,94 @@
+{
+  "id": "TASK-102-T2-FT-011-W2",
+  "title": "Calculate explainable threshold profiles",
+  "status": "planned",
+  "wave": "W2",
+  "feature": "FT-011",
+  "reqs": [
+    "REQ-CAL-001",
+    "REQ-CAL-002"
+  ],
+  "depends_on": [
+    "TASK-100-T2-FT-011-W1"
+  ],
+  "touched_files": [
+    "src/face_moment/diagnostics/calibration_thresholds.py",
+    "tests/diagnostics/test_calibration_thresholds.py"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Threshold Calibration tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/diagnostics/test_calibration_thresholds.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-011.md",
+    ".memory-bank/domains/calibration.md",
+    ".memory-bank/testing/calibration.md",
+    ".memory-bank/tasks/plans/IMPL-FT-011.md"
+  ],
+  "evidence_required": [
+    "FT-011-AC-001 RED: complete runs expose no deterministic Best face match, Balance or Minimum missed faces winners with required counts/metrics and contributing-Attempt drill-down; GREEN: each named pipeline result calculates all three profiles with the accepted ranking and complete output, including exact aggregate F1 and full tie-break order; decisive comparison: a fixed snapshot and independent oracle compare every winner/output and reconcile aggregates to Attempt locators; artifact: focused oracle output under .tasks/TASK-102-T2-FT-011-W2/.",
+    "FT-011-AC-006 RED: all-candidates-undefined input can yield NaN/infinity or an unsupported proposal without an explicit sample warning; GREEN: it reports unavailable metrics plus selected/applicable counts, emits no proposal and leaves serving state unchanged; decisive comparison: a zero-denominator fixed fixture inspects serialized output, absent proposal and before/after settings; artifact: focused unavailable-result output under .tasks/TASK-102-T2-FT-011-W2/."
+  ],
+  "purpose": "Implement only the three accepted threshold profiles and their honest undefined-metric behavior over one completed immutable run.",
+  "success_outcome": "Each named pipeline result yields deterministic explainable threshold recommendations and drill-down, while an all-candidates-undefined sample yields no proposal.",
+  "anti_goals": [
+    "Do not implement quality-gate optimization, joint objectives, learned weighting or a configurable search framework.",
+    "Do not invent a minimum sample threshold or hide missing ground truth as an outcome.",
+    "Do not implement staff routes, apply, worker, promotion or retention behavior."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Serving-control state mutation and automatic apply",
+      "Quality-gate analysis, worker runtime, staff HTTP and retention",
+      "Production/operator datasets and unredacted participant information in evidence"
+    ],
+    "stop_conditions": [
+      "A deterministic profile requires an objective or tie-break not accepted in FT-011 and Calibration Verification.",
+      "The calculation requires combining SFace and Buffalo M outcomes or inventing absent annotations.",
+      "A truthful unavailable result requires defining a new minimum sample threshold."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-011.md#FT-011-AC-001",
+    ".memory-bank/features/FT-011.md#FT-011-AC-006",
+    ".protocols/FT-011/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-011.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/calibration.md#recommendation-result",
+    ".memory-bank/testing/calibration.md#fixed-evaluation-input",
+    ".memory-bank/testing/calibration.md#threshold-profile-oracle",
+    ".memory-bank/testing/calibration.md#acceptance-evidence-map"
+  ],
+  "constraints": [
+    "Calculate counts, precision, recall and aggregate F1 only from the completed run's immutable applicable annotation snapshot and retained finite candidates.",
+    "Apply the exact accepted ranking/tie-break order independently for each named pipeline revision and retain stable Attempt locators for every aggregate.",
+    "Represent undefined denominators as unavailable; only the all-candidates-undefined case produces no threshold proposal, with no invented adequacy cutoff."
+  ],
+  "invariants": [
+    "SFace and Buffalo M profile results remain separate and no embeddings or participant-facing results cross revisions.",
+    "Missing ground truth contributes nothing; explicit correct, false and missed rows alone affect counts.",
+    "Calculation and viewing never mutate serving settings or revision."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-011.md#FT-011-AC-001",
+    ".memory-bank/features/FT-011.md#FT-011-AC-006",
+    "A fixed independent oracle proves each ranking, complete tie-break order, counts, precision/recall/F1, sample size and Attempt reconciliation for both native pipeline results.",
+    "Zero-denominator fixtures prove unavailable serialization without NaN/infinity, absent proposal, explicit selected/applicable counts and unchanged serving state."
+  ]
+}

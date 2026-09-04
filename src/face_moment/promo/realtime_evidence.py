@@ -8,7 +8,7 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from face_moment.diagnostics import DiagnosticEvidenceProvider
+from face_moment.diagnostics.evidence import DiagnosticEvidenceProvider
 from face_moment.processing.realtime_search import RealtimeSearchResult
 from face_moment.promo.attempt import PromoAttempt
 from face_moment.promo.realtime_orchestration import RealtimeAttemptExecution

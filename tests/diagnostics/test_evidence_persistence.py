@@ -11,7 +11,7 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session
 
-from face_moment.diagnostics import (
+from face_moment.diagnostics.evidence import (
     DiagnosticEvidence,
     DiagnosticEvidenceProvider,
     DiagnosticEvidenceRepository,

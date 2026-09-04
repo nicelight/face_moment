@@ -12,8 +12,11 @@ from sqlalchemy import create_engine, inspect, select, text
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session
 
-from face_moment.diagnostics import DiagnosticEvidence, DiagnosticEvidenceProvider
-from face_moment.diagnostics.evidence import DiagnosticEvidenceRepository
+from face_moment.diagnostics.evidence import (
+    DiagnosticEvidence,
+    DiagnosticEvidenceProvider,
+    DiagnosticEvidenceRepository,
+)
 from face_moment.infrastructure.database import APP_SCHEMA
 from face_moment.infrastructure.settings import Settings
 from face_moment.promo.attempt import PromoAttempt

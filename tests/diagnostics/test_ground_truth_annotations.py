@@ -18,8 +18,8 @@ from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from face_moment.diagnostics import (
-    DiagnosticEvidenceRepository,
+from face_moment.diagnostics.evidence import DiagnosticEvidenceRepository
+from face_moment.diagnostics.ground_truth_annotations import (
     GroundTruthAnnotation,
     GroundTruthAnnotationConflictError,
     GroundTruthAnnotationError,
@@ -31,8 +31,8 @@ from face_moment.infrastructure.settings import Settings
 from face_moment.promo.attempt import PromoAttempt
 
 
-_REVISION = "0019_ground_truth_annotations"
-_PREDECESSOR = "0018_structured_server_events"
+_REVISION = "0020_annotation_name_whitespace"
+_PREDECESSOR = "0019_ground_truth_annotations"
 _NOW = datetime(2026, 9, 4, 7, 0, tzinfo=timezone.utc)
 
 
@@ -122,7 +122,7 @@ def test_next_linear_migration_has_exact_owner_shape_and_safe_downgrade(
     assert indexes["uq_ground_truth_annotations_detection_target"]["unique"]
 
     alembic_command.downgrade(Config("alembic.ini"), _PREDECESSOR)
-    assert "ground_truth_annotations" not in inspect(
+    assert "ground_truth_annotations" in inspect(
         disposable_annotation_engine
     ).get_table_names(schema=APP_SCHEMA)
     with disposable_annotation_engine.connect() as connection:
@@ -249,6 +249,30 @@ def test_provider_create_correct_remove_list_and_restart_snapshot(
             core.domain_outcome,
             core.client_attempt_id,
         ) == original_core
+
+
+@pytest.mark.parametrize("participant_name", ("\t", "\N{NO-BREAK SPACE}"))
+def test_database_rejects_unicode_whitespace_only_participant_name(
+    disposable_annotation_engine: Engine,
+    participant_name: str,
+) -> None:
+    with disposable_annotation_engine.connect() as connection:
+        with pytest.raises(IntegrityError):
+            with connection.begin():
+                connection.execute(
+                    text(
+                        "INSERT INTO face_moment.ground_truth_annotations "
+                        "(annotation_id, attempt_id, target_kind, "
+                        "detection_occurrence_index, participant_name, outcome) "
+                        "VALUES (:annotation_id, :attempt_id, 'person', NULL, "
+                        ":participant_name, 'missed')"
+                    ),
+                    {
+                        "annotation_id": uuid.uuid4(),
+                        "attempt_id": uuid.uuid4(),
+                        "participant_name": participant_name,
+                    },
+                )
 
 
 def test_absence_is_empty_while_person_missed_needs_no_evidence(

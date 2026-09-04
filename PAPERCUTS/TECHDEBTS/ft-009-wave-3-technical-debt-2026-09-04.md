@@ -38,40 +38,11 @@ state, gates, verdicts или routes.
 
 ## Итог
 
-Подтверждены два материальных технических долга. Они не опровергают закрытие
+Подтверждён один материальный технический долг. Он не опровергает закрытие
 TASK-093: strict 30-day deletion, owner ordering, partial-failure convergence и
 stale-search non-recovery имеют независимые положительные доказательства.
 
 ## Подтверждённые findings
-
-### MEDIUM / P1 — пять разных счётчиков передаются как неразличимый positional tuple
-
-`RetentionCleanupOutcome.counts` объявлен как
-`tuple[int, int, int, int, int]`, а именованные свойства вручную сопоставляют
-позиции `0..4` полям результата
-(`src/face_moment/promo/retention.py:132-158`). Success path дважды собирает
-один и тот же пятиэлементный tuple
-(`src/face_moment/promo/retention.py:238-257`), после чего `_finish_run()` ещё
-раз распаковывает позиции в ORM-поля
-(`src/face_moment/promo/retention.py:364-385`). Новый Wave 3 test также читает
-технический счётчик напрямую как `counts[2]`
-(`tests/diagnostics/test_server_event_retention.py:100-111`), хотя рядом уже
-добавлено именованное свойство `technical_logs_deleted`.
-
-Механизм долга наблюдаем в самом delta: проведение
-`technical_logs_deleted` потребовало синхронно сохранить третью позицию в двух
-конструкторах, отдельной распаковке и тестах. Все элементы имеют тип `int`,
-поэтому перестановка двух счётчиков не обнаруживается typecheck и способна
-тихо исказить persisted/API result.
-
-Практический impact: каждое следующее изменение набора или порядка счётчиков
-требует согласованной правки нескольких positional mappings и увеличивает риск
-регрессии в операторской отчётности при корректном фактическом cleanup.
-
-Минимальное направление: представить counts именованными полями одного
-неизменяемого value object (или непосредственно `RetentionCleanupOutcome`) и
-передавать в `_finish_run()` этот один именованный результат. Существующие
-имена ORM/JSON-полей и публичную response shape менять не требуется.
 
 ### LOW / P2 — Wave 3 добавил ещё одну полную копию disposable PostgreSQL lifecycle
 

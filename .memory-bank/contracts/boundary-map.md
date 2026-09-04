@@ -252,7 +252,9 @@ authentication edge. No new module edge or read model is introduced.
 projection. A recommendation never changes serving state automatically; only a
 separate explicit developer action may ask
 `serving_control` to apply the accepted setting through its audited command.
-The reproducible oracle is owned by
+The exact immutable dataset, typed offline-evaluation boundary, run state,
+minimal developer surface, apply and retention are owned by
+[Calibration](../domains/calibration.md). The reproducible oracle is owned by
 [Calibration verification](../testing/calibration.md).
 
 ### Manual serving-revision switch
@@ -292,9 +294,10 @@ The reproducible oracle is owned by
 
 `promo` owns the project-wide latest cleanup result, selects its own expired
 Attempt candidates and calls `diagnostics` to expire diagnostic-owned data for
-those UUIDs. Diagnostics expires ordinary evidence and annotation rows, then
-confirms both converged owner data and the explicit no-row case before promo
-deletion. Each module deletes only its own
+those UUIDs. Diagnostics also expires its terminal ordinary Calibration runs
+under the same 90-day cutoff. It expires ordinary evidence and annotation rows,
+then confirms both converged owner data and the explicit no-row case before
+promo deletion. Each module deletes only its own
 rows/objects. Exact cutoffs and promoted-subset retention are owned by the
 [lifecycle map](../states/lifecycle-map.md#diagnostic-and-calibration-retention).
 Diagnostics also deletes its structured server events independently by the
@@ -315,8 +318,12 @@ Photo/media and MUST NOT mutate or cascade into Promo sessions/results, core
 Attempts or diagnostic evidence. Exact visibility, session continuity and
 fixed-snapshot purge transitions are owned by the
 [lifecycle map](../states/lifecycle-map.md#photo-inventory-visibility); selection,
-authorization and observable outcomes remain in
-[REQ-INV-001..004](../requirements.md#req-list).
+authorization and observable staff outcomes are owned by the
+[Photo Inventory API](photo-inventory-api.md). The singleton run shape,
+owner-ordered purge flow and restart convergence are owned by
+[Photo Inventory](../domains/photo-inventory.md); processing-owned row and
+derivative deletion is the exact
+[Inventory Purge Cleanup Boundary](../domains/photo-processing.md#inventory-purge-cleanup-boundary).
 
 ### Shared PostgreSQL contract
 

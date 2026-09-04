@@ -4,6 +4,8 @@ status: active
 ---
 # Domain Specifications
 
+- [Calibration](calibration.md): immutable dataset, run, result,
+  offline-evaluation, developer flow, manual apply and retention contract.
 - [Display Client Access](display-client-access.md): SpaPromoClient identity,
   Admin-visible current token, manual kiosk handoff, authentication hash and
   lifecycle.
@@ -19,6 +21,8 @@ status: active
   selection, native query preparation and exact compatible Photo search.
 - [Photo Admission](photo-admission.md): Photo/original/pending data,
   transaction, duplicate arbitration and crash recovery.
+- [Photo Inventory](photo-inventory.md): visibility, recent statistics and the
+  singleton fixed-snapshot hard-purge run.
 - [Photo Processing](photo-processing.md): compatible pipeline revisions,
   processing states, derivatives/faces, searchable truth and worker recovery.
 - [Staff Access](staff-access.md): staff principals, roles, password hashes,

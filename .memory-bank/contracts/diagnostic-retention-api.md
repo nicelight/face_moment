@@ -17,11 +17,12 @@ its own rows/objects. No cross-owner cascade, cleanup history, generic jobs
 table or reliable queue is introduced.
 
 The fixed policy cutoffs are 30 days for structured server events and 90 days
-for ordinary Attempts/evidence/annotations, evaluated in UTC. FT-007 supplies
+for ordinary Attempts/evidence/annotations/Calibration runs, evaluated in UTC. FT-007 supplies
 the ordinary Attempt/evidence command and result; FT-009 extends the same
-diagnostics owner boundary with server-event deletion, and FT-010 extends its
-existing 90-day owner cleanup with annotation rows, without changing the public
-result shape.
+diagnostics owner boundary with server-event deletion, FT-010 extends its
+existing 90-day owner cleanup with annotation rows, and FT-011 extends it with
+terminal ordinary Calibration-run expiry, without changing the public result
+shape.
 
 ## Idempotent Cleanup Command
 
@@ -42,12 +43,14 @@ advisory lock and holds it through terminal result recording. It then:
    30-day cutoff, including uncorrelated rows;
 4. selects promo-owned core Attempts strictly before the 90-day cutoff and
    passes those UUIDs to diagnostics;
-5. asks diagnostics to expire its owned Attempt evidence, delete ordinary
+5. asks diagnostics to expire terminal ordinary Calibration runs strictly
+   before the same 90-day cutoff while preserving promoted subsets;
+6. asks diagnostics to expire its owned Attempt evidence, delete ordinary
    annotation rows and confirm each supplied UUID, including an explicit no-op
    confirmation when neither owner table has a row;
-6. deletes only the confirmed promo-owned Attempts and owner-local expired
+7. deletes only the confirmed promo-owned Attempts and owner-local expired
    sessions;
-7. records `succeeded` with confirmed counts, or a sanitized `failed` result.
+8. records `succeeded` with confirmed counts, or a sanitized `failed` result.
 
 If another invocation cannot acquire the advisory lock, it exits with code `2`
 and leaves the active run and latest-result row unchanged. A completed cleanup
@@ -154,7 +157,11 @@ cross-owner delete. An owner failure is sanitized and the command records
 - A supplied UUID with no diagnostics row is confirmed as an owner-local no-op
   and may be deleted by promo; absence MUST NOT retain the old core Attempt.
 - Annotation deletion is part of diagnostics owner convergence and adds no
-  public count; the existing result shape remains unchanged.
+  annotation-specific public count.
+- Terminal ordinary Calibration runs strictly before the 90-day cutoff are
+  deleted as diagnostics-owned convergence without a new public count;
+  equal/newer terminal rows and active `requested | running` rows are
+  ineligible.
 - A concurrent invocation that observes the advisory lock exits `2` without
   replacing the active run identity, cutoffs, timestamps or counts.
 - Interruption never fabricates success counts. Rerun reuses owner idempotency
@@ -173,7 +180,8 @@ cross-owner delete. An owner failure is sanitized and the command records
 
 - Disposable database/object fixtures prove both fixed cutoffs, owner order,
   correlated and uncorrelated server-event deletion, successful deletion of an
-  old Attempt with no evidence row, promoted preservation, failure isolation,
+  old Attempt with no evidence row, terminal Calibration expiry, active-run
+  preservation, promoted preservation, failure isolation,
   orphaned-running interruption, overlapping-invocation exit `2`, safe rerun
   and exactly one latest-result row.
 - Before/after reads prove operator/developer visibility, photographer and

@@ -1,0 +1,97 @@
+{
+  "id": "TASK-109-T3-FT-012-W1",
+  "title": "Provide processing-owned purge cleanup",
+  "status": "ready",
+  "wave": "W1",
+  "feature": "FT-012",
+  "reqs": [
+    "REQ-INV-003",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-021-T3-FT-002-W2",
+    "TASK-023-T3-FT-002-W3"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/purge_cleanup.py",
+    "tests/processing/test_purge_cleanup.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Processing-owned purge cleanup tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/processing/test_purge_cleanup.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-012.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/domains/photo-inventory.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/testing/photo-inventory.md",
+    ".memory-bank/tasks/plans/IMPL-FT-012.md"
+  ],
+  "evidence_required": [
+    "Photo Processing inventory-purge cleanup obligation RED: processing has no public owner-only operation that removes every revision's faces/state and deterministic derivatives for one inactive Photo; GREEN: one typed processing boundary identifies/deletes all owned derivatives idempotently, stages every owned row deletion and touches no Photo/original or foreign row; decisive comparison: disposable PostgreSQL/MinIO fixtures with multiple revisions inject a pre-commit failure, rerun cleanup and compare every processing object/row plus unchanged inventory, Promo, Attempt and evidence state; artifact: state/object manifest and focused redacted output under .tasks/TASK-109-T3-FT-012-W1/."
+  ],
+  "purpose": "Provide the one processing-owned destructive operation needed by inventory hard purge while preserving capability write ownership.",
+  "success_outcome": "For one authorized inactive Photo, processing cleanup idempotently removes all processing rows and derivatives across revisions without touching another capability's state.",
+  "anti_goals": [
+    "Do not select purge targets, persist a purge run, change Photo visibility/progress or delete the Photo/original.",
+    "Do not add or change worker arbitration, a job, target, retry or operation-history table, worker service, scheduler, priority or preemption.",
+    "Do not mutate Promo sessions/results, core Attempts, diagnostics or serving settings."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production PostgreSQL/MinIO, operator/default media and running worker processes",
+      "Inventory Photo/original/run/progress writes and all Promo/Attempt/diagnostics state",
+      "Worker arbitration, new worker, jobs/targets/history tables, scheduler, priority and preemption"
+    ],
+    "stop_conditions": [
+      "Complete cleanup cannot be exposed through the accepted processing owner without an ownership-crossing cascade or direct inventory write.",
+      "Idempotent derived-object and row cleanup requires a generic jobs/retry subsystem or extra worker.",
+      "The destructive proof cannot be confined to known disposable rows/object prefixes with safe rerun and complete cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/domains/photo-processing.md#inventory-purge-cleanup-boundary",
+    ".protocols/FT-012/plan.md",
+    ".protocols/FT-012/decision-log.md",
+    ".memory-bank/tasks/plans/IMPL-FT-012.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/photo-processing.md#inventory-purge-cleanup-boundary",
+    ".memory-bank/contracts/boundary-map.md#photo-inventory-operations",
+    ".memory-bank/contracts/boundary-map.md#postgresql-and-minio-convergence",
+    ".memory-bank/domains/photo-inventory.md#purge-orchestration",
+    ".memory-bank/testing/photo-inventory.md#processing-cleanup-boundary"
+  ],
+  "constraints": [
+    "Primary owner and expected code root are processing at src/face_moment/processing/; inventory is the only accepted caller/orchestrator.",
+    "Cover every PhotoPipelineState, PhotoFace and preview/thumbnail object for the supplied Photo UUID across all revisions.",
+    "Run destructive probes only against named disposable rows and a private test object prefix, with safe rerun and complete cleanup."
+  ],
+  "invariants": [
+    "Processing deletes only its own rows and derived objects and never changes Photo visibility, purge progress or foreign-owned state.",
+    "No database cascade crosses the processing/inventory or processing/Promo/diagnostics boundary.",
+    "Repeated cleanup after any pre-commit object-deletion interruption converges without false success or duplicate state."
+  ],
+  "verification_targets": [
+    ".memory-bank/domains/photo-processing.md#inventory-purge-cleanup-boundary",
+    "A disposable multi-revision Photo fixture proves complete face/state/preview/thumbnail removal, idempotent object deletion and safe rerun after injected pre-commit failure.",
+    "State comparison proves Photo/original, Promo result/session, core Attempt, diagnostic evidence and serving configuration remain unchanged.",
+    "Import/schema inspection proves the exact processing owner boundary and absence of cross-owner cascade, jobs/targets/history tables, worker changes or a new worker."
+  ]
+}

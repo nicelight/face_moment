@@ -42,46 +42,13 @@ test-infrastructure механизма.
 
 ## Итог
 
-Подтверждены два материальных технических долга. Они не опровергают закрывающие
+Подтверждён один материальный технический долг. Он не опровергает закрывающие
 functional `PASS` и `semantic-pass`: Attempt 1 stale-write race исправлен, а
 Attempt 2 независимо доказал сериализацию всех шести поддержанных interleavings.
 Отчёт advisory-only и не меняет implementation, Memory Bank, tasks, protocols,
 scheduler/lifecycle state, gates, verdicts или routes.
 
 ## Подтверждённые findings
-
-### MEDIUM / P1 — application и PostgreSQL по-разному определяют пустое имя
-
-Provider нормализует `participant_name` через Python `str.strip()` и после
-этого требует длину `1..200`
-(`src/face_moment/diagnostics/ground_truth_annotations.py:319-325`). ORM и
-migration независимо кодируют database check как
-`char_length(btrim(participant_name)) BETWEEN 1 AND 200`
-(`src/face_moment/diagnostics/ground_truth_annotations.py:54-56`,
-`migrations/versions/0019_ground_truth_annotations.py:36-39`). Без второго
-аргумента PostgreSQL `btrim` удаляет обычный пробел, тогда как `str.strip()`
-удаляет более широкий набор whitespace. Поэтому, например, строка только из
-табуляции отклоняется public provider, но удовлетворяет текущему database
-check.
-
-Это наблюдаемое расхождение двух защит одного нового protected field, а не
-стилистическое замечание. Repository/model экспортированы из diagnostics
-package (`src/face_moment/diagnostics/__init__.py:30-39,80-91`), а task test
-явно проверяет database-level rejection прямой вставки, но покрывает только
-невалидную target shape
-(`tests/diagnostics/test_ground_truth_annotations.py:527-542`). Будущий
-owner-local путь, bulk operation или data repair, полагающийся на schema
-invariant, способен сохранить визуально пустое имя и дать provider/database
-разные результаты для одной семантики.
-
-Практический impact: увеличивается data-integrity и regression risk при
-расширении annotation flow в следующих tasks; изменение правил имени требует
-синхронно поддерживать две уже расходящиеся реализации.
-
-Минимальное направление: зафиксировать один набор принимаемого whitespace,
-выровнять database constraint с provider normalization и добавить один прямой
-database regression на whitespace-only значение. Поля, public response shape и
-новый validation layer для этого не нужны.
 
 ### LOW / P2 — Wave 1 добавил ещё одну полную копию disposable PostgreSQL lifecycle
 
@@ -122,8 +89,7 @@ connection options, безопасного URL switching, migration bootstrap, t
   не записана как debt: это явно отложенный и отдельно запланированный outcome
   `TASK-099-T3-FT-010-W2`, а не скрытый долг TASK-096.
 - Экспорт repository и дублирование ORM/migration schema сами по себе не
-  записаны как findings. Материальным является только доказанное расхождение
-  whitespace semantics; прочих самостоятельных последствий текущая evidence
-  не показывает.
+  записаны как findings: самостоятельного материального impact текущая
+  evidence не показывает.
 - Performance provider queries не измерялась, и данных для уверенного
   performance finding в этой Wave 1 границе нет.
