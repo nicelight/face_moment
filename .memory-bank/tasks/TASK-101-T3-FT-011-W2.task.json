@@ -117,7 +117,8 @@
   "invariants": [
     "At most one background operation occupies the singleton worker and Calibration may delay but never preempt Photo work.",
     "Worker restart never fabricates a complete result or automatic rerun.",
-    "Photo processing resumes under its existing claim/recovery rules after Calibration becomes terminal."
+    "Photo processing resumes under its existing claim/recovery rules after Calibration becomes terminal.",
+    "TASK-101 retains the original FT-011-AC-005 ownership only as immutable historical failed evidence; it has no active executable claim or dependent-promotion role."
   ],
   "verification_targets": [
     ".memory-bank/features/FT-011.md#FT-011-AC-005",

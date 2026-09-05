@@ -1,7 +1,7 @@
 {
   "id": "TASK-107-T3-FT-012-W2",
   "title": "Enforce role-scoped Photo visibility",
-  "status": "ready",
+  "status": "done",
   "wave": "W2",
   "feature": "FT-012",
   "reqs": [
@@ -41,7 +41,34 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Independent T3 verification reran the isolated role/visibility matrix, typecheck and Memory Bank lint. It proved persisted half-open selection, role/CSRF/error behavior, idempotent is_active-only mutation, inactive search/counter exclusion, restore continuity and issued-media readability.",
+      "protocol": ".protocols/TASK-107-T3-FT-012-W2/verification.md",
+      "artifacts": [
+        ".tasks/TASK-107-T3-FT-012-W2/red-route-probe.md",
+        ".tasks/TASK-107-T3-FT-012-W2/TASK-107-T3-FT-012-W2-S-VERIFY-final-report-docs-01.md"
+      ]
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "summary": "Independent adversarial verification found no material defect or operator question. It confirmed role/CSRF and thin HTTP boundaries, persisted UTC half-open ordering, locked is_active-only mutation, inactive search/counter exclusion, restore and issued-media continuity.",
+      "protocol": ".protocols/TASK-107-T3-FT-012-W2/red-verification.md",
+      "report": ".tasks/TASK-107-T3-FT-012-W2/TASK-107-T3-FT-012-W2-S-RED-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Autopilot closed TASK-107 after functional PASS and task-scoped semantic-pass. The inventory-owned visibility operation remains role-safe, changes only Photo.is_active and preserves processing, search, counter and issued-media boundaries.",
+      "evidence": [
+        ".tasks/TASK-107-T3-FT-012-W2/TASK-107-T3-FT-012-W2-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-107-T3-FT-012-W2/TASK-107-T3-FT-012-W2-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-012.md",
     ".memory-bank/contracts/photo-inventory-api.md",

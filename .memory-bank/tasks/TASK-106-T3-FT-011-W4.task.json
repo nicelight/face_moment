@@ -50,6 +50,17 @@
         ".protocols/AUTONOMOUS-RUN/status.md"
       ],
       "resume_route": "Resolve TASK-104 through its approved dependency routes, then obtain the required fresh FT-011 task-plan review before scheduler selection."
+    },
+    {
+      "stage": "scheduler-dependency-recovery",
+      "verdict": "blocked",
+      "summary": "This task remains transitively blocked through TASK-104 while TASK-111-T3-FT-011-W2 supplies the normal reviewed repair for TASK-101's immutable failed S3 NoSuchKey path. Its identity, scope, tier, wave and acceptance claim are unchanged.",
+      "evidence": [
+        ".memory-bank/tasks/TASK-104-T3-FT-011-W3.task.json",
+        ".memory-bank/tasks/TASK-111-T3-FT-011-W2.task.json",
+        ".memory-bank/bugs/task-101-calibration-missing-original-terminalization.md"
+      ],
+      "resume_route": "Complete TASK-111, then the scheduler may re-evaluate TASK-104 before this transitive dependent."
     }
   ],
   "docs": [

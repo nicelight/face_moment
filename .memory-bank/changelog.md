@@ -4,6 +4,18 @@ status: active
 ---
 # Changelog
 
+## [2026-09-05] Wave 2 / FT-012 role-scoped Photo visibility
+
+- Closed: `TASK-107-T3-FT-012-W2` is `done` after independent functional
+  `PASS`, task-scoped `semantic-pass` and scheduler-owned closure.
+- Implemented: inventory-owned role-safe half-open Photo selection and
+  idempotent `Photo.is_active` visibility change; inactive Photos leave new
+  search and counters while issued media remains readable.
+- Preserved: FT-012 and `REQ-INV-001..003` remain `planned`; TASK-110 remains
+  blocked through failed TASK-101 and no blocked path was promoted.
+- Evidence: `.memory-bank/tasks/TASK-107-T3-FT-012-W2.task.json` and
+  `.tasks/TASK-107-T3-FT-012-W2/TASK-107-T3-FT-012-W2-S-RED-VERIFY-final-report-docs-01.md`.
+
 ## [2026-09-05] Wave 2 / FT-011 independent completed slices
 
 - Closed: `TASK-102-T2-FT-011-W2`, `TASK-103-T2-FT-011-W2` and

@@ -99,31 +99,35 @@ adapter registry, second worker or automatic retry is introduced.
 | Task | Lifecycle | Tier | Wave | Direct prerequisite | Exact owned claim | Outcome |
 |---|---|---|---|---|---|---|
 | `TASK-100-T2-FT-011-W1` | done | T2 | W1 | done SFace/Buffalo adapters and annotation provider | `FT-011-AC-003` | Persist and execute one immutable cross-revision Calibration run with reproducible same-dataset results and comparison. |
-| `TASK-101-T3-FT-011-W2` | failed | T3 | W2 | `TASK-100` and existing shared-worker seam | `FT-011-AC-005` | Run Calibration through sequential selected SFace then Buffalo M bindings on the singleton worker and recover interruption without blocking later Photo work or creating a replacement run. |
-| `TASK-102-T2-FT-011-W2` | in_progress; verify FAIL | T2 | W2 | `TASK-100` | `FT-011-AC-001`, `FT-011-AC-006` | Produce all three deterministic threshold profiles, drill-down and honest unavailable output. The Judge-approved correction restores the already-required positive-aggregate Attempt locator and focused proof only. |
-| `TASK-103-T2-FT-011-W2` | ready | T2 | W2 | `TASK-100` | `FT-011-AC-002` | Produce the five one-dimensional quality recommendations without joint optimization; `blur_score` is lower-is-better, with a maximum cutoff that keeps `score <= cutoff`. |
-| `TASK-104-T3-FT-011-W3` | blocked | T3 | W3 | `TASK-101..103`, existing staff/settings providers | `FT-011-AC-004` | Deliver the developer list/create/detail flow and allow only a separate confirmed stored recommendation to change serving settings. |
-| `TASK-105-T3-FT-011-W2` | ready | T3 | W2 | `TASK-100`, existing retention seam | `FT-011-AC-007` | Expire terminal ordinary runs without widening retention or the cleanup result. |
+| `TASK-101-T3-FT-011-W2` | failed | T3 | W2 | historical failed record | Historical failed ownership of `FT-011-AC-005` only | Immutable exhausted evidence for the original shared-worker implementation; it owns no active executable proof or dependent-promotion outcome. |
+| `TASK-102-T2-FT-011-W2` | done | T2 | W2 | `TASK-100` | `FT-011-AC-001`, `FT-011-AC-006` | Produce all three deterministic threshold profiles, drill-down and honest unavailable output. |
+| `TASK-103-T2-FT-011-W2` | done | T2 | W2 | `TASK-100` | `FT-011-AC-002` | Produce the five one-dimensional quality recommendations without joint optimization; `blur_score` is lower-is-better, with a maximum cutoff that keeps `score <= cutoff`. |
+| `TASK-105-T3-FT-011-W2` | done | T3 | W2 | `TASK-100`, existing retention seam | `FT-011-AC-007` | Expire terminal ordinary runs without widening retention or the cleanup result. |
+| `TASK-111-T3-FT-011-W2` | ready | T3 | W2 | `TASK-100` | Sole active replacement ownership of `FT-011-AC-005`: supported S3 `NoSuchKey` terminalization | Convert the proved missing-original read failure into the existing terminal `dataset_unavailable` path and prove worker release, without retrying TASK-101 or changing worker/serving behavior. |
+| `TASK-104-T3-FT-011-W3` | blocked | T3 | W3 | `TASK-111`, `TASK-102`, `TASK-103`, existing staff/settings providers | `FT-011-AC-004` | Deliver the developer list/create/detail flow and allow only a separate confirmed stored recommendation to change serving settings. |
 | `TASK-106-T3-FT-011-W4` | blocked | T3 | W4 | `TASK-104`, `TASK-105`, existing promotion seam | `FT-011-AC-008` | Expose confirmed curated promotion/deletion and preserve the subset through ordinary cleanup. |
 
-The four W2 outcomes are independent after the durable run core. The worker
-claim remains separate because restart recovery is an independently observable
-runtime result. Threshold and quality calculations remain separate because they
-implement different accepted algorithms. The developer flow composes their
-completed results without adopting dependency proof. Ordinary-run retention is
-independent of the staff flow; the final promoted-case task composes that flow,
-the existing promotion seam and completed cleanup only to prove its own curated
-lifecycle. Tests, RED/GREEN probes and UAT stay with their owning task.
+The original four W2 outcomes are independent after the durable run core. The
+worker claim remains separate because restart recovery is an independently
+observable runtime result. Threshold and quality calculations remain separate
+because they implement different accepted algorithms. The developer flow
+composes their completed results without adopting dependency proof. Ordinary-run
+retention is independent of the staff flow; the final promoted-case task
+composes that flow, the existing promotion seam and completed cleanup only to
+prove its own curated lifecycle. TASK-111 is not a reslice: it is the one
+normal recovery outcome for the failed worker claim's remaining supported
+storage path. Tests, RED/GREEN probes and UAT stay with their owning task.
 
-TASK-101's exhausted failure blocks TASK-104 directly and TASK-106
-transitively; neither task may be promoted through that failed dependency.
-TASK-102 remains an independent open W2 outcome. Its current functional FAIL
-is a missing locator in an already-required positive aggregate, so the
-Judge-approved correction is confined to its diagnostics-local aggregate
-mapping and focused proof. It does not reopen task slicing, requirements,
-canonical ownership, dependencies, tier or scope. TASK-103 remains locally
-ready, and its complete blur proof continues to use the accepted
-lower-is-better `score <= cutoff` maximum-cutoff rule.
+TASK-101 remains immutable failed after its exhausted attempts. Its
+`FT-011-AC-005` locator is historical failed ownership only: it carries the
+original failure evidence but is not active proof and cannot promote a
+dependent. The single normal successor, TASK-111, is the sole active
+replacement owner of that criterion and corrects only the verified supported
+S3 `NoSuchKey` missing-original terminalization gap; it is not a fourth attempt
+and does not reopen the completed sequential-binding, restart or
+serving-isolation proof.
+TASK-104 remains blocked on TASK-111 and TASK-106 remains blocked transitively
+through TASK-104. Their ownership, claims, tier and scope stay unchanged.
 
 ## Advisory Expected Change Surface
 
@@ -178,8 +182,9 @@ Paths are advisory and non-exhaustive. No hard `write_boundary` is justified.
 
 ## Definition Of Done
 
-All seven indexed cards satisfy their task-owned claims and tier obligations;
-`FT-011-AC-001..008` are each owned exactly once; all affected module edges and
-canonical headings resolve; Foundation remains transitive; Planning Revision
-remains `4`; and fresh `/review-tasks-plan FT-011` returns `APPROVE` before
-execution.
+All eight indexed cards satisfy their task-owned claims and tier obligations;
+each active `FT-011-AC-001..008` owner is exact and unique, while TASK-101
+retains only its explicitly historical failed AC-005 evidence; all affected
+module edges and canonical headings resolve; Foundation remains transitive;
+Planning Revision remains `4`; and fresh `/review-tasks-plan FT-011` returns
+`APPROVE` before execution.

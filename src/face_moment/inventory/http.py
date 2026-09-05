@@ -32,6 +32,13 @@ from face_moment.inventory.photo_processing_status import (
     PhotoProcessingStatusNotFoundError,
     read_photo_processing_status,
 )
+from face_moment.inventory.photo_inventory import (
+    InvalidPhotoInventorySelectionError,
+    PhotoInventoryAccessDeniedError,
+    PhotoInventoryNotFoundError,
+    read_photo_inventory,
+    set_photo_visibility,
+)
 from face_moment.inventory.processing_health import (
     InvalidProcessingHealthIntervalError,
     ProcessingHealthAccessDeniedError,
@@ -145,6 +152,130 @@ def register_ingest_target_routes(
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from error
             except Exception as error:
                 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR) from error
+
+    @app.get("/api/inventory/photos", response_model=None)
+    def photo_inventory(
+        response: Response,
+        spa_id: str | None = None,
+        visit_date: str | None = None,
+        captured_from: str | None = None,
+        captured_before: str | None = None,
+        fm_staff_session: str | None = Cookie(default=None),
+    ) -> dict[str, object]:
+        try:
+            parsed_spa_id = UUID(spa_id) if spa_id is not None else None
+            parsed_visit_date = date.fromisoformat(visit_date) if visit_date else None
+            parsed_from = datetime.fromisoformat(captured_from) if captured_from else None
+            parsed_before = (
+                datetime.fromisoformat(captured_before) if captured_before else None
+            )
+            if (
+                parsed_spa_id is None
+                or parsed_visit_date is None
+                or parsed_from is None
+                or parsed_before is None
+            ):
+                raise ValueError
+        except ValueError as error:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                headers=_NO_STORE_HEADERS,
+            ) from error
+        with _database_session(session_factory) as database_session:
+            try:
+                result = read_photo_inventory(
+                    database_session,
+                    session_token=fm_staff_session,
+                    spa_id=parsed_spa_id,
+                    visit_date=parsed_visit_date,
+                    captured_from=parsed_from,
+                    captured_before=parsed_before,
+                )
+            except InvalidPhotoInventorySelectionError as error:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+            except PhotoInventoryAccessDeniedError as error:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+            except PhotoInventoryNotFoundError as error:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+            except InvalidSessionError as error:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+            except Exception as error:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+        response.headers["Cache-Control"] = "no-store"
+        return result.as_response()
+
+    @app.put("/api/inventory/photos/{photo_id}/visibility", response_model=None)
+    async def photo_visibility(
+        photo_id: str,
+        request: Request,
+        response: Response,
+        fm_staff_session: str | None = Cookie(default=None),
+        fm_staff_csrf: str | None = Cookie(default=None),
+        x_csrf_token: str | None = Header(default=None),
+    ) -> dict[str, object]:
+        try:
+            parsed_photo_id = UUID(photo_id)
+            payload = await request.json()
+            if (
+                not isinstance(payload, dict)
+                or set(payload) != {"schema_version", "active"}
+                or type(payload["schema_version"]) is not int
+                or payload["schema_version"] != 1
+                or type(payload["active"]) is not bool
+            ):
+                raise ValueError
+        except (ValueError, TypeError) as error:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                headers=_NO_STORE_HEADERS,
+            ) from error
+        with _database_session(session_factory) as database_session:
+            try:
+                result = set_photo_visibility(
+                    database_session,
+                    session_token=fm_staff_session,
+                    csrf_cookie_token=fm_staff_csrf,
+                    csrf_header_token=x_csrf_token,
+                    photo_id=parsed_photo_id,
+                    active=payload["active"],
+                )
+            except (CsrfValidationError, PhotoInventoryAccessDeniedError) as error:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+            except PhotoInventoryNotFoundError as error:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+            except InvalidSessionError as error:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+            except Exception as error:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+        response.headers["Cache-Control"] = "no-store"
+        return result.as_response()
 
     @app.get("/api/inventory/processing-health", response_model=None)
     def processing_health(

@@ -10,6 +10,7 @@ import uuid
 
 import cv2
 import numpy as np
+from botocore.exceptions import ClientError
 from numpy.typing import NDArray
 from sqlalchemy.orm import Session
 
@@ -98,6 +99,10 @@ def evaluate_frozen_calibration(
             raise CalibrationDatasetUnavailableError("dataset_unavailable")
         try:
             payload = object_store.read(key=photo.original_object_key)
+        except ClientError as error:
+            if error.response.get("Error", {}).get("Code") != "NoSuchKey":
+                raise
+            raise CalibrationDatasetUnavailableError("dataset_unavailable") from error
         except (KeyError, OSError) as error:
             raise CalibrationDatasetUnavailableError("dataset_unavailable") from error
         if hashlib.sha256(payload).hexdigest() != expected_digest:
@@ -214,6 +219,10 @@ def _load_verified_images(
             raise CalibrationDatasetUnavailableError("dataset_unavailable")
         try:
             payload = object_store.read(key=photo.original_object_key)
+        except ClientError as error:
+            if error.response.get("Error", {}).get("Code") != "NoSuchKey":
+                raise
+            raise CalibrationDatasetUnavailableError("dataset_unavailable") from error
         except (KeyError, OSError) as error:
             raise CalibrationDatasetUnavailableError("dataset_unavailable") from error
         if hashlib.sha256(payload).hexdigest() != expected_digest:

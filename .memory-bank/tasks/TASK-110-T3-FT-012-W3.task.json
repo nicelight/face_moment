@@ -9,7 +9,7 @@
     "REQ-ARCH-001"
   ],
   "depends_on": [
-    "TASK-101-T3-FT-011-W2",
+    "TASK-111-T3-FT-011-W2",
     "TASK-107-T3-FT-012-W2",
     "TASK-109-T3-FT-012-W1",
     "TASK-081-T3-FT-006-W2",
@@ -48,7 +48,19 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "scheduler-dependency-recovery",
+      "verdict": "blocked",
+      "summary": "TASK-101 remains immutable failed. TASK-111-T3-FT-011-W2 is its normal reviewed successor for the narrow S3 NoSuchKey Calibration terminalization repair; this task remains blocked until that dependency and its existing FT-012 dependencies are done. Its identity, scope, tier, wave and acceptance claims are unchanged.",
+      "evidence": [
+        ".memory-bank/tasks/TASK-101-T3-FT-011-W2.task.json",
+        ".memory-bank/tasks/TASK-111-T3-FT-011-W2.task.json",
+        ".memory-bank/bugs/task-101-calibration-missing-original-terminalization.md"
+      ],
+      "resume_route": "Complete TASK-111 through its reviewed T3 route; the scheduler then re-evaluates this task together with its remaining FT-012 dependencies."
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-012.md",
     ".memory-bank/contracts/photo-inventory-api.md",

@@ -63,6 +63,7 @@ def _add_state(
         visit_date=date(2026, 8, 13),
         captured_at=datetime(2026, 8, 13, 9, 0, tzinfo=timezone.utc),
         captured_at_source=CapturedAtSource.UPLOAD_STARTED_AT,
+        admission_pipeline_revision_id=pipeline_revision_id,
         uploader_id=uuid.uuid4(),
         checksum_sha256=hashlib.sha256(marker.encode()).digest(),
         original_object_key=f"private/task-027/{marker}/original.jpg",

@@ -10,6 +10,7 @@ import uuid
 
 import cv2
 import numpy as np
+from botocore.exceptions import ClientError
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -41,6 +42,19 @@ class _Store:
 
     def read(self, *, key: str) -> bytes:
         return self._payloads[key]
+
+
+class _NoSuchKeyStore:
+    """Focused stand-in for PrivateObjectStore's supported missing-key response."""
+
+    def read(self, *, key: str) -> bytes:
+        raise ClientError(
+            {
+                "Error": {"Code": "NoSuchKey", "Message": "The specified key does not exist."},
+                "ResponseMetadata": {"HTTPStatusCode": 404},
+            },
+            "GetObject",
+        )
 
 
 class _Adapter:
@@ -154,6 +168,102 @@ def test_worker_claims_one_requested_calibration_and_releases_for_photo(
     assert runtime is not None
     assert runtime.current_operation == "idle"
     assert runtime.operation_started_at is None
+
+
+def test_s3_missing_original_terminalizes_claim_and_releases_worker_for_photo() -> None:
+    """NoSuchKey is a frozen-dataset failure, never a durable running claim."""
+
+    payload = _jpeg()
+    with disposable_postgresql_engine("task111_no_such_key") as engine:
+        with Session(engine) as session:
+            sface = _revision(session, PipelineCode.OPENCV_SFACE, "task111-sface")
+            buffalo = _revision(session, PipelineCode.INSIGHTFACE_BUFFALO_M, "task111-buffalo")
+            target = IngestTargetRepository(session).configure_spa(
+                name="Task 111", timezone="Asia/Dushanbe", serving_pipeline_revision_id=sface.id
+            )
+            photo = Photo(
+                spa_id=target.spa_id,
+                visit_date=date(2026, 9, 5),
+                captured_at=datetime(2026, 9, 5, tzinfo=UTC),
+                captured_at_source=CapturedAtSource.UPLOAD_STARTED_AT,
+                uploader_id=uuid.uuid4(),
+                checksum_sha256=hashlib.sha256(payload).digest(),
+                original_object_key="task111/missing-original.jpg",
+                original_byte_size=len(payload), width=20, height=12,
+                admission_pipeline_revision_id=sface.id,
+            )
+            session.add(photo)
+            session.flush()
+            InitialPendingRepository(session).create_initial_pending(
+                photo_id=photo.id, pipeline_revision_id=sface.id
+            )
+            attempt = PromoAttempt(
+                id=uuid.uuid4(), spa_id=target.spa_id, client_attempt_id=uuid.uuid4(),
+                trigger_source="test", client_release="task111", detector_id="test",
+                model_version="test", jpeg_quality=85, camera_device_id="test",
+                reference_series_ready_at=datetime(2026, 9, 5, tzinfo=UTC),
+                local_detection_completed_ms=1, request_started_ms=2, response_received_ms=3,
+                proposal_count=0, settings_revision=1, visit_date=date(2026, 9, 5),
+                pipeline_revision_id=sface.id, pipeline_code="opencv_sface", query_source="reference",
+                release_id="test", threshold=0.5, quality_settings={}, calibration_id=None,
+                deadline_ms=3000, slot_decided_at=datetime(2026, 9, 5, tzinfo=UTC),
+                search_started_at=datetime(2026, 9, 5, tzinfo=UTC),
+                search_finished_at=datetime(2026, 9, 5, tzinfo=UTC), processing_status="result_issued",
+                domain_outcome="result", display_status="confirmed",
+                display_expires_at=datetime(2026, 9, 5, tzinfo=UTC),
+                display_reported_at=datetime(2026, 9, 5, tzinfo=UTC), qr_fully_visible_elapsed_ms=1,
+                created_at=datetime(2026, 9, 5, tzinfo=UTC), updated_at=datetime(2026, 9, 5, tzinfo=UTC),
+            )
+            session.add(attempt)
+            session.flush()
+            GroundTruthAnnotationProvider(session).create(
+                attempt_id=attempt.id, target_kind="person", detection_occurrence_index=None,
+                participant_name="Task 111", outcome="missed",
+            )
+            run = _requested_run(
+                session, photo=photo, attempt_id=attempt.id, sface_id=sface.id, buffalo_id=buffalo.id
+            )
+            run_id, photo_id, spa_id = run.id, photo.id, target.spa_id
+            session.commit()
+
+        def claim() -> uuid.UUID | None:
+            with Session(engine) as session:
+                return CalibrationRunService(session).claim_next_requested()
+
+        def execute(run_id: uuid.UUID) -> None:
+            with Session(engine) as session:
+                CalibrationRunService(session).execute_claimed(
+                    run_id=run_id,
+                    bind_selected_adapter=lambda revision: _Adapter(revision.id, "calibration", []),
+                    object_store=_NoSuchKeyStore(),
+                )
+                session.commit()
+
+        worker = BackgroundPhotoWorker(
+            session_factory=lambda: Session(engine),
+            orchestrator=_NoFaceOrchestrator(engine),  # type: ignore[arg-type]
+            bound_pipeline_revision_id=sface.id,
+            claim_requested_calibration=claim,
+            execute_claimed_calibration=execute,
+        )
+
+        assert worker.process_one() is True
+        with Session(engine) as session:
+            failed = session.get(CalibrationRun, run_id)
+            runtime = session.get(ProcessingRuntimeStatus, 1)
+            spa = session.get(Spa, spa_id)
+            assert failed is not None
+            assert failed.status == CalibrationRunStatus.FAILED
+            assert failed.error_code == "dataset_unavailable"
+            assert failed.finished_at is not None
+            assert runtime is not None and runtime.current_operation == "idle"
+            assert spa is not None and spa.serving_pipeline_revision_id == sface.id
+            assert session.query(CalibrationRun).count() == 1
+
+        assert worker.process_one() is True
+        with Session(engine) as session:
+            state = session.get(PhotoPipelineState, (photo_id, sface.id))
+            assert state is not None and state.status == "no_faces"
 
 
 def test_selected_adapters_are_sequential_asset_failures_release_and_restart_interrupts() -> None:

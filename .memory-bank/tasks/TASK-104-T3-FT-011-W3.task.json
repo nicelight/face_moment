@@ -1,7 +1,7 @@
 {
   "id": "TASK-104-T3-FT-011-W3",
   "title": "Deliver the developer Calibration flow and manual apply",
-  "status": "blocked",
+  "status": "ready",
   "wave": "W3",
   "feature": "FT-011",
   "reqs": [
@@ -11,7 +11,7 @@
   "depends_on": [
     "TASK-042-T2-FT-003-W1",
     "TASK-097-T3-FT-010-W2",
-    "TASK-101-T3-FT-011-W2",
+    "TASK-111-T3-FT-011-W2",
     "TASK-102-T2-FT-011-W2",
     "TASK-103-T2-FT-011-W2"
   ],
@@ -53,6 +53,17 @@
         ".protocols/AUTONOMOUS-RUN/status.md"
       ],
       "resume_route": "Resolve the named dependencies through their approved routes, then obtain the required fresh FT-011 task-plan review before scheduler selection."
+    },
+    {
+      "stage": "scheduler-dependency-recovery",
+      "verdict": "blocked",
+      "summary": "TASK-101 remains immutable failed. Its normal successor TASK-111-T3-FT-011-W2 owns only the supported S3 NoSuchKey terminalization repair; this task remains blocked until that reviewed T3 successor is done. Its identity, scope, tier, wave and acceptance claim are unchanged.",
+      "evidence": [
+        ".memory-bank/tasks/TASK-101-T3-FT-011-W2.task.json",
+        ".memory-bank/tasks/TASK-111-T3-FT-011-W2.task.json",
+        ".memory-bank/bugs/task-101-calibration-missing-original-terminalization.md"
+      ],
+      "resume_route": "Complete the reviewed TASK-111 successor, then let the scheduler re-evaluate this still-blocked task under the current FT-011 plan approval."
     }
   ],
   "docs": [

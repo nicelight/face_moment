@@ -1,0 +1,127 @@
+{
+  "id": "TASK-111-T3-FT-011-W2",
+  "title": "Terminalize a missing Calibration original from S3",
+  "status": "done",
+  "wave": "W2",
+  "feature": "FT-011",
+  "reqs": [
+    "REQ-CAL-003",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-100-T2-FT-011-W1"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/offline_calibration.py",
+    "tests/diagnostics/test_calibration_runs.py",
+    "tests/processing/test_calibration_worker.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Calibration missing-original tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/diagnostics/test_calibration_runs.py tests/processing/test_calibration_worker.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Fresh independent T3 verification proved the supported S3 NoSuchKey missing-original path terminalizes the claimed Calibration run as failed/dataset_unavailable with finished_at, releases the existing singleton worker, preserves serving state, permits queued Photo progress and creates no replacement run. Other ClientError values rethrow unchanged; no serving/startup, scheduler, queue, retry, registry or worker-topology change was observed.",
+      "protocol": ".protocols/TASK-111-T3-FT-011-W2/verification.md",
+      "report": ".tasks/TASK-111-T3-FT-011-W2/TASK-111-T3-FT-011-W2-S-VERIFY-final-report-docs-01.md",
+      "evidence": [
+        ".protocols/TASK-111-T3-FT-011-W2/verification.md",
+        ".tasks/TASK-111-T3-FT-011-W2/TASK-111-T3-FT-011-W2-S-EXECUTE-final-report-code-01.md",
+        ".tasks/TASK-111-T3-FT-011-W2/TASK-111-T3-FT-011-W2-S-VERIFY-final-report-docs-01.md"
+      ],
+      "resume_route": "/red-verify TASK-111-T3-FT-011-W2 before T3 lifecycle closure."
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "protocol": ".protocols/TASK-111-T3-FT-011-W2/red-verification.md",
+      "report": ".tasks/TASK-111-T3-FT-011-W2/TASK-111-T3-FT-011-W2-S-RED-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "evidence": [
+        ".tasks/TASK-111-T3-FT-011-W2/TASK-111-T3-FT-011-W2-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-111-T3-FT-011-W2/TASK-111-T3-FT-011-W2-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-011.md",
+    ".memory-bank/domains/calibration.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/testing/calibration.md",
+    ".memory-bank/bugs/task-101-calibration-missing-original-terminalization.md",
+    ".memory-bank/tasks/plans/IMPL-FT-011.md"
+  ],
+  "evidence_required": [
+    "FT-011-AC-005 and .memory-bank/domains/calibration.md#immutable-input-and-evaluation RED: an isolated claimed Calibration run whose selected original read raises the supported PrivateObjectStore S3 ClientError with Error.Code=NoSuchKey escapes the offline input boundary and remains running after the singleton worker releases; GREEN: the identical isolated read records exactly terminal failed/dataset_unavailable with finished_at, releases the existing worker to idle, lets queued Photo work proceed, preserves the committed serving revision and startup adapter, and creates no replacement Calibration run; decisive comparison: a focused fake PrivateObjectStore reproduces the real NoSuchKey response through execute_claimed before and after the repair, snapshots run/worker/Photo/serving state, and retains redacted focused test output under .tasks/TASK-111-T3-FT-011-W2/."
+  ],
+  "purpose": "Act as the sole active replacement owner of FT-011-AC-005's proved missing-original terminalization gap, without retrying failed TASK-101 or changing the shared-worker design.",
+  "success_outcome": "A supported S3 NoSuchKey for a frozen Calibration original becomes the existing terminal dataset_unavailable failure, then the singleton worker releases for ordinary Photo work with no automatic rerun or serving change.",
+  "anti_goals": [
+    "Do not reopen, retry, relabel or alter the failed TASK-101 evidence.",
+    "Do not change adapter binding order, serving/startup binding, worker scheduling, Photo processing semantics or object-store behavior outside the Calibration read failure mapping.",
+    "Do not add a registry, worker, queue, retry policy, fallback, upload, serving switch or broad object-store exception layer."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production worker/processes, operator/default Calibration/Photo rows and real participant data",
+      "Serving-control state, startup adapter selection, model assets and ordinary Photo-processing algorithm/publication behavior",
+      "New worker services, scheduler state, priority/preemption, automatic Calibration rerun, registry or object-store framework changes"
+    ],
+    "stop_conditions": [
+      "The supported NoSuchKey cannot be converted at the existing offline Calibration input boundary without changing PrivateObjectStore's general contract or adding a new error framework.",
+      "The correction requires a second worker, replacement run, automatic retry, serving switch, preload or model registry.",
+      "The proof cannot use an isolated deterministic ClientError fixture, safe rerun and complete cleanup."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-011.md#FT-011-AC-005",
+    ".memory-bank/bugs/task-101-calibration-missing-original-terminalization.md",
+    ".protocols/FT-011/plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-011.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/domains/calibration.md#immutable-input-and-evaluation",
+    ".memory-bank/domains/calibration.md#persistence-and-run-state",
+    ".memory-bank/domains/photo-processing.md#model-asset-admission",
+    ".memory-bank/contracts/boundary-map.md#manual-serving-revision-switch",
+    ".memory-bank/testing/calibration.md#worker-recovery-and-retention-proof"
+  ],
+  "constraints": [
+    "Map only the supported missing-object S3 ClientError at the existing offline Calibration input boundary to CalibrationDatasetUnavailableError; unexpected storage failures remain observable and unchanged.",
+    "Reuse the existing diagnostics-owned failed/dataset_unavailable transition and BackgroundPhotoWorker release path.",
+    "Use an isolated deterministic NoSuchKey fixture and prove safe rerun, worker release and queued Photo progress without production state."
+  ],
+  "invariants": [
+    "A frozen selected dataset never silently shrinks, rebuilds or uploads a replacement original.",
+    "The missing-original path leaves a claimed run terminal and never triggers a replacement Calibration run.",
+    "Calibration remains test-only: the committed serving revision and normal startup binding are unchanged.",
+    "TASK-111 is the sole active replacement owner of FT-011-AC-005; TASK-101 retains only immutable failed historical ownership and evidence."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-011.md#FT-011-AC-005",
+    "A fresh isolated PrivateObjectStore-compatible ClientError(NoSuchKey) fixture reaches execute_claimed and proves failed/dataset_unavailable plus finished_at rather than a durable running run.",
+    "The same focused worker fixture proves release to idle, subsequent queued Photo progress, zero automatic replacement runs, unchanged serving revision and unchanged normal startup adapter binding.",
+    "Focused source inspection proves the correction is the existing offline Calibration failure mapping only: no worker, scheduler, registry, preload, serving-switch, retry or broad object-store behavior is added."
+  ]
+}
