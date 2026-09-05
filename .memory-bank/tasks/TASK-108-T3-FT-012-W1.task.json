@@ -1,7 +1,7 @@
 {
   "id": "TASK-108-T3-FT-012-W1",
   "title": "Expose exact recent Photo statistics",
-  "status": "ready",
+  "status": "done",
   "wave": "W1",
   "feature": "FT-012",
   "reqs": [
@@ -35,7 +35,35 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Independent T3 verification reran the isolated controlled-clock API/oracle and UI probe, typecheck and Memory Bank lint. It proved exact active-Photo 1/5/60-minute counters, roles/failures, immutable admission lineage, visibility/restore behavior, five-second polling and the absence of stored or realtime statistics machinery.",
+      "protocol": ".protocols/TASK-108-T3-FT-012-W1/verification.md",
+      "artifacts": [
+        ".tasks/TASK-108-T3-FT-012-W1/attempt-1-red.txt",
+        ".tasks/TASK-108-T3-FT-012-W1/attempt-1-green.txt"
+      ]
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "summary": "Fresh independent T3 semantic verification found no admitted concern.",
+      "report": ".tasks/TASK-108-T3-FT-012-W1/TASK-108-T3-FT-012-W1-S-RED-VERIFY-final-report-docs-01.md",
+      "protocol": ".protocols/TASK-108-T3-FT-012-W1/red-verification.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Autopilot closed TASK-108 after independent functional PASS and required T3 semantic-pass.",
+      "evidence": [
+        ".protocols/TASK-108-T3-FT-012-W1/verification.md",
+        ".protocols/TASK-108-T3-FT-012-W1/red-verification.md",
+        ".tasks/TASK-108-T3-FT-012-W1/TASK-108-T3-FT-012-W1-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-012.md",
     ".memory-bank/contracts/photo-inventory-api.md",

@@ -1,7 +1,7 @@
 {
   "id": "TASK-106-T3-FT-011-W4",
   "title": "Expose promoted Calibration case actions",
-  "status": "planned",
+  "status": "blocked",
   "wave": "W4",
   "feature": "FT-011",
   "reqs": [
@@ -37,7 +37,21 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "scheduler-dependency-block",
+      "verdict": "blocked",
+      "summary": "This task is transitively blocked: TASK-104-T3-FT-011-W3 is blocked by failed TASK-101-T3-FT-011-W2 and open TASK-102-T2-FT-011-W2. No promotion through the failed dependency is permitted; this task's identity, scope, tier, wave and acceptance claim are unchanged.",
+      "evidence": [
+        ".memory-bank/tasks/TASK-101-T3-FT-011-W2.task.json",
+        ".memory-bank/tasks/TASK-102-T2-FT-011-W2.task.json",
+        ".memory-bank/tasks/TASK-104-T3-FT-011-W3.task.json",
+        ".memory-bank/bugs/task-101-calibration-missing-original-terminalization.md",
+        ".protocols/AUTONOMOUS-RUN/status.md"
+      ],
+      "resume_route": "Resolve TASK-104 through its approved dependency routes, then obtain the required fresh FT-011 task-plan review before scheduler selection."
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-011.md",
     ".memory-bank/domains/calibration.md",

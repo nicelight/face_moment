@@ -15,6 +15,12 @@ and the accepted Attempt projection, then calls `processing` for offline
 evaluation. `processing` alone resolves inventory-owned Photo originals and
 uses the two existing direct SFace and Buffalo M adapters.
 
+While the existing singleton worker holds `current_operation=calibration`,
+`processing` binds those explicitly selected eligible adapters sequentially
+from the configured read-only assets. This test-only operation leaves the
+committed serving revision and normal process binding unchanged; it is neither
+a serving switch nor a model registry or concurrent preload.
+
 Only `serving_control` may change serving settings after a separate explicit
 developer action. The flow adds no model registry, experiment platform,
 generic job system, second worker or automatic apply.
@@ -69,7 +75,10 @@ The existing singleton `BackgroundPhotoWorker` claims one requested run only
 while idle, publishes `current_operation=calibration`, executes it, then
 releases the worker for Photo processing. Startup marks stale `running` rows
 `interrupted`, restores the existing worker to `idle` and never creates a
-replacement run. Rerun is a new explicit developer request.
+replacement run. For one run it binds the selected SFace and Buffalo M direct
+adapters sequentially, releasing each before the next; a binding failure records
+the run failure without changing serving. Rerun is a new explicit developer
+request.
 
 ## Recommendation Result
 

@@ -1,7 +1,7 @@
 ---
 description: Implementation plan for immutable Calibration runs, recommendations, developer control and retention.
 status: active
-last_updated: 2026-09-04
+last_updated: 2026-09-05
 ---
 # IMPL-FT-011 — Explainable Calibration
 
@@ -36,6 +36,9 @@ No behavior JSON is needed because the canonical oracle is deterministic.
   retention.
 - [Calibration Verification](../../testing/calibration.md): extended with the
   accepted same-JPEG dataset oracle and exact claim evidence.
+- [Photo Processing](../../domains/photo-processing.md#model-asset-admission):
+  extended with the Calibration-only, sequential direct-adapter binding rule;
+  ordinary serving, realtime and Photo bindings remain unchanged.
 - [Boundary Map](../../contracts/boundary-map.md): extended in place only to
   point its accepted diagnostics-to-processing/serving and retention edges to
   the Calibration owner; module identity and topology are unchanged.
@@ -52,6 +55,7 @@ No behavior JSON is needed because the canonical oracle is deterministic.
 | Immutable dataset, run, evaluation, staff flow, apply and lifecycle | create | `.memory-bank/domains/calibration.md` | No prior subject spec owned the feature; one document covers the cohesive Calibration boundary. |
 | Deterministic calculation and evidence oracle | extend | `.memory-bank/testing/calibration.md` | Reuse the existing Calibration verification owner and add only accepted dataset-reuse detail. |
 | Cross-module ownership and calls | extend | `.memory-bank/contracts/boundary-map.md` | Existing modules and edges are sufficient; only the exact Calibration contract link changed. |
+| Calibration-only adapter binding | extend | `.memory-bank/domains/photo-processing.md` | The singleton worker binds the explicitly selected direct SFace then Buffalo M adapters sequentially from read-only assets; no serving switch, preload, registry or second worker is added. |
 | Terminal-run cleanup | extend | `.memory-bank/contracts/diagnostic-retention-api.md` | Reuse the existing command, cutoff and public result. |
 | Calibration retention state | extend | `.memory-bank/states/lifecycle-map.md` | Add terminal ordinary runs to the existing 90-day lifecycle without a new state machine. |
 | Annotations, promoted subset, staff sessions, settings and native adapters | reuse | Existing linked subject specs | Existing owners and operations already supply these prerequisites. |
@@ -82,17 +86,25 @@ there is no general optimizer. Before/after accepts complete results with the
 same dataset hash. The existing settings row supplies apply provenance, and the
 existing cleanup/promoted-subset operations supply lifecycle behavior.
 
+For a claimed `current_operation=calibration`, the existing singleton worker
+binds the selected SFace direct adapter and releases it before binding Buffalo
+M from the configured read-only assets. This is a test-only processing boundary:
+it neither changes the committed serving revision or normal startup binding nor
+invokes the serving-switch guard. A missing or mismatched asset fails that run;
+the worker then releases normally for Photo work. No concurrent preload,
+adapter registry, second worker or automatic retry is introduced.
+
 ## Execution-Cohesive Slicing And Claims
 
-| Task | Tier | Wave | Direct prerequisite | Exact owned claim | Outcome |
-|---|---|---|---|---|---|
-| `TASK-100-T2-FT-011-W1` | T2 | W1 | done SFace/Buffalo adapters and annotation provider | `FT-011-AC-003` | Persist and execute one immutable cross-revision Calibration run with reproducible same-dataset results and comparison. |
-| `TASK-101-T3-FT-011-W2` | T3 | W2 | `TASK-100` and existing shared-worker seam | `FT-011-AC-005` | Run Calibration on the singleton worker and recover interruption without blocking later Photo work or creating a replacement run. |
-| `TASK-102-T2-FT-011-W2` | T2 | W2 | `TASK-100` | `FT-011-AC-001`, `FT-011-AC-006` | Produce all three deterministic threshold profiles, drill-down and honest unavailable output. |
-| `TASK-103-T2-FT-011-W2` | T2 | W2 | `TASK-100` | `FT-011-AC-002` | Produce the five one-dimensional quality recommendations without joint optimization. |
-| `TASK-104-T3-FT-011-W3` | T3 | W3 | `TASK-101..103`, existing staff/settings providers | `FT-011-AC-004` | Deliver the developer list/create/detail flow and allow only a separate confirmed stored recommendation to change serving settings. |
-| `TASK-105-T3-FT-011-W2` | T3 | W2 | `TASK-100`, existing retention seam | `FT-011-AC-007` | Expire terminal ordinary runs without widening retention or the cleanup result. |
-| `TASK-106-T3-FT-011-W4` | T3 | W4 | `TASK-104`, `TASK-105`, existing promotion seam | `FT-011-AC-008` | Expose confirmed curated promotion/deletion and preserve the subset through ordinary cleanup. |
+| Task | Lifecycle | Tier | Wave | Direct prerequisite | Exact owned claim | Outcome |
+|---|---|---|---|---|---|---|
+| `TASK-100-T2-FT-011-W1` | done | T2 | W1 | done SFace/Buffalo adapters and annotation provider | `FT-011-AC-003` | Persist and execute one immutable cross-revision Calibration run with reproducible same-dataset results and comparison. |
+| `TASK-101-T3-FT-011-W2` | failed | T3 | W2 | `TASK-100` and existing shared-worker seam | `FT-011-AC-005` | Run Calibration through sequential selected SFace then Buffalo M bindings on the singleton worker and recover interruption without blocking later Photo work or creating a replacement run. |
+| `TASK-102-T2-FT-011-W2` | in_progress; verify FAIL | T2 | W2 | `TASK-100` | `FT-011-AC-001`, `FT-011-AC-006` | Produce all three deterministic threshold profiles, drill-down and honest unavailable output. The Judge-approved correction restores the already-required positive-aggregate Attempt locator and focused proof only. |
+| `TASK-103-T2-FT-011-W2` | ready | T2 | W2 | `TASK-100` | `FT-011-AC-002` | Produce the five one-dimensional quality recommendations without joint optimization; `blur_score` is lower-is-better, with a maximum cutoff that keeps `score <= cutoff`. |
+| `TASK-104-T3-FT-011-W3` | blocked | T3 | W3 | `TASK-101..103`, existing staff/settings providers | `FT-011-AC-004` | Deliver the developer list/create/detail flow and allow only a separate confirmed stored recommendation to change serving settings. |
+| `TASK-105-T3-FT-011-W2` | ready | T3 | W2 | `TASK-100`, existing retention seam | `FT-011-AC-007` | Expire terminal ordinary runs without widening retention or the cleanup result. |
+| `TASK-106-T3-FT-011-W4` | blocked | T3 | W4 | `TASK-104`, `TASK-105`, existing promotion seam | `FT-011-AC-008` | Expose confirmed curated promotion/deletion and preserve the subset through ordinary cleanup. |
 
 The four W2 outcomes are independent after the durable run core. The worker
 claim remains separate because restart recovery is an independently observable
@@ -102,6 +114,16 @@ completed results without adopting dependency proof. Ordinary-run retention is
 independent of the staff flow; the final promoted-case task composes that flow,
 the existing promotion seam and completed cleanup only to prove its own curated
 lifecycle. Tests, RED/GREEN probes and UAT stay with their owning task.
+
+TASK-101's exhausted failure blocks TASK-104 directly and TASK-106
+transitively; neither task may be promoted through that failed dependency.
+TASK-102 remains an independent open W2 outcome. Its current functional FAIL
+is a missing locator in an already-required positive aggregate, so the
+Judge-approved correction is confined to its diagnostics-local aggregate
+mapping and focused proof. It does not reopen task slicing, requirements,
+canonical ownership, dependencies, tier or scope. TASK-103 remains locally
+ready, and its complete blur proof continues to use the accepted
+lower-is-better `score <= cutoff` maximum-cutoff rule.
 
 ## Advisory Expected Change Surface
 
@@ -122,11 +144,13 @@ Paths are advisory and non-exhaustive. No hard `write_boundary` is justified.
 - Disposable migration/repository fixtures prove run shape, immutable bounded
   snapshots, transitions, same-byte adapter input, missing-input failure and
   same-hash comparison.
-- Worker restart fixtures prove visible interruption, no automatic replacement
-  and resumed queued Photo processing.
+- Worker restart fixtures prove sequential selected-adapter binding with
+  unchanged serving, visible interruption, no automatic replacement and
+  resumed queued Photo processing.
 - Independent calculation fixtures prove every threshold ranking/tie-break,
   undefined metrics, Attempt reconciliation and every one-gate-at-a-time
-  quality result.
+  quality result, including the `blur_score` maximum cutoff that keeps only
+  `score <= cutoff`.
 - Application/HTML tests cover exact routes, role/CSRF, validation, rollback,
   no-store and stored-value-only actions. One focused `playwright cli` smoke
   covers run creation, result inspection and confirmed apply, retaining the

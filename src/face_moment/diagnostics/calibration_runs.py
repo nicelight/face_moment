@@ -8,9 +8,10 @@ from enum import StrEnum
 import hashlib
 import json
 import math
-from typing import TYPE_CHECKING, Mapping, Sequence
+from typing import TYPE_CHECKING, Callable, Mapping, Sequence
 import uuid
 
+import cv2
 from sqlalchemy import CheckConstraint, DateTime, String, Uuid, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, Session, mapped_column
@@ -19,12 +20,15 @@ from sqlalchemy.sql import func
 from face_moment.infrastructure.database import Base
 from face_moment.processing.offline_calibration import (
     CalibrationDatasetUnavailableError,
+    CalibrationOfflineInputError,
     CalibrationObjectStore,
     CalibrationPhotoAdapter,
     evaluate_frozen_calibration,
+    evaluate_frozen_calibration_sequential,
     freeze_calibration_photos,
     result_bundle_from_offline,
 )
+from face_moment.processing.model_admission import ModelAdmissionError
 
 _MAX_JSON_BYTES = 1024 * 1024
 _FORBIDDEN_KEYS = frozenset(
@@ -148,6 +152,39 @@ class CalibrationRunRepository:
         self._session.flush()
         return run
 
+    def next_requested_id(self) -> uuid.UUID | None:
+        return self._session.scalar(
+            select(CalibrationRun.id)
+            .where(CalibrationRun.status == CalibrationRunStatus.REQUESTED)
+            .order_by(CalibrationRun.created_at, CalibrationRun.id)
+            .limit(1)
+        )
+
+    def interrupt_running(self, *, now: datetime | None = None) -> int:
+        runs = list(
+            self._session.scalars(
+                select(CalibrationRun)
+                .where(CalibrationRun.status == CalibrationRunStatus.RUNNING)
+                .with_for_update()
+            )
+        )
+        for run in runs:
+            run.status = CalibrationRunStatus.INTERRUPTED
+            run.error_code = "worker_interrupted"
+            run.finished_at = _utc(now)
+        self._session.flush()
+        return len(runs)
+
+    def fail(self, run_id: uuid.UUID, *, error_code: str, now: datetime | None = None) -> CalibrationRun:
+        run = self.require(run_id, for_update=True)
+        if run.status != CalibrationRunStatus.RUNNING:
+            raise CalibrationRunError("Calibration run is not running")
+        run.status = CalibrationRunStatus.FAILED
+        run.error_code = error_code
+        run.finished_at = _utc(now)
+        self._session.flush()
+        return run
+
     def complete(
         self,
         run_id: uuid.UUID,
@@ -265,6 +302,79 @@ class CalibrationRunService:
             )
         except CalibrationDatasetUnavailableError:
             return self._repository.fail_unavailable(run.id)
+        return self._repository.complete(
+            run.id,
+            result_bundle=result_bundle_from_offline(sface=sface, buffalo=buffalo),
+        )
+
+    def has_requested(self) -> bool:
+        return self._repository.next_requested_id() is not None
+
+    def execute_next_requested(
+        self,
+        *,
+        bind_selected_adapter: Callable[[object], CalibrationPhotoAdapter],
+        object_store: CalibrationObjectStore,
+    ) -> CalibrationRun | None:
+        run_id = self.claim_next_requested()
+        if run_id is None:
+            return None
+        return self.execute_claimed(
+            run_id=run_id,
+            bind_selected_adapter=bind_selected_adapter,
+            object_store=object_store,
+        )
+
+    def claim_next_requested(self) -> uuid.UUID | None:
+        run_id = self._repository.next_requested_id()
+        if run_id is None:
+            return None
+        run = self._repository.start(run_id)
+        # The worker must recover a selected run even before it occupies its
+        # Calibration operation, so never leave this claim in a later callback
+        # or evaluation transaction.
+        self._session.commit()
+        return run.id
+
+    def execute_claimed(
+        self,
+        *,
+        run_id: uuid.UUID,
+        bind_selected_adapter: Callable[[object], CalibrationPhotoAdapter],
+        object_store: CalibrationObjectStore,
+    ) -> CalibrationRun:
+        run = self._repository.require(run_id)
+        if run.status != CalibrationRunStatus.RUNNING:
+            raise CalibrationRunError("Calibration run is not running")
+        snapshot = run.dataset_snapshot
+        revisions = snapshot.get("pipeline_revisions")
+        photos = snapshot.get("photos")
+        attempts = snapshot.get("attempts")
+        if not isinstance(revisions, Mapping) or not isinstance(photos, list) or not isinstance(attempts, list):
+            raise CalibrationRunError("stored Calibration snapshot is malformed")
+        sface_id = _snapshot_uuid(revisions.get("sface"), "sface revision")
+        buffalo_id = _snapshot_uuid(revisions.get("buffalo_m"), "Buffalo M revision")
+        attempt_ids = tuple(
+            _snapshot_uuid(item.get("attempt_id"), "attempt")
+            for item in attempts
+            if isinstance(item, Mapping)
+        )
+        if len(attempt_ids) != len(attempts):
+            raise CalibrationRunError("stored Calibration Attempt snapshot is malformed")
+        try:
+            sface, buffalo = evaluate_frozen_calibration_sequential(
+                self._session,
+                photo_snapshot=photos,
+                attempt_ids=attempt_ids,
+                sface_revision_id=sface_id,
+                buffalo_revision_id=buffalo_id,
+                bind_selected_adapter=bind_selected_adapter,
+                object_store=object_store,
+            )
+        except CalibrationDatasetUnavailableError:
+            return self._repository.fail_unavailable(run.id)
+        except (CalibrationOfflineInputError, ModelAdmissionError, cv2.error):
+            return self._repository.fail(run.id, error_code="model_unavailable")
         return self._repository.complete(
             run.id,
             result_bundle=result_bundle_from_offline(sface=sface, buffalo=buffalo),

@@ -4,6 +4,7 @@ import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, cast
+import uuid
 
 from fastapi import FastAPI
 
@@ -78,6 +79,16 @@ async def _worker_lifecycle(
             session_factory=binding.session_factory,
             orchestrator=orchestrator,
             bound_pipeline_revision_id=adapter.pipeline_revision_id,
+            claim_requested_calibration=lambda: _claim_requested_calibration(
+                binding.session_factory
+            ),
+            execute_claimed_calibration=lambda run_id: _execute_claimed_calibration(
+                run_id,
+                binding.session_factory, object_store, settings
+            ),
+            interrupt_running_calibrations=lambda: _interrupt_running_calibrations(
+                binding.session_factory
+            ),
         )
         recovered_count = await asyncio.to_thread(worker.recover_startup)
         state["health"] = {
@@ -105,6 +116,38 @@ async def _worker_lifecycle(
 
 def create_app() -> FastAPI:
     return create_role_app("BackgroundPhotoWorker", lifecycle=_worker_lifecycle)
+
+
+def _claim_requested_calibration(session_factory: Any) -> uuid.UUID | None:
+    from face_moment.diagnostics.calibration_runs import CalibrationRunService
+
+    with session_factory() as session:
+        return CalibrationRunService(session).claim_next_requested()
+
+
+def _execute_claimed_calibration(
+    run_id: uuid.UUID, session_factory: Any, object_store: Any, settings: Settings
+) -> None:
+    from face_moment.diagnostics.calibration_runs import CalibrationRunService
+    from face_moment.processing.model_admission import admit_selected_calibration_adapter
+
+    with session_factory() as session:
+        CalibrationRunService(session).execute_claimed(
+            run_id=run_id,
+            bind_selected_adapter=lambda revision: admit_selected_calibration_adapter(
+                revision=cast(Any, revision), settings=settings
+            ),
+            object_store=object_store,
+        )
+        session.commit()
+
+
+def _interrupt_running_calibrations(session_factory: Any) -> None:
+    from face_moment.diagnostics.calibration_runs import CalibrationRunRepository
+
+    with session_factory() as session:
+        CalibrationRunRepository(session).interrupt_running()
+        session.commit()
 
 
 app = create_app()

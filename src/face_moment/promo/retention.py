@@ -230,6 +230,7 @@ def run_retention_cleanup(
                     select(PromoAttempt.id).where(PromoAttempt.created_at < cutoff)
                 ).all()
             )
+            diagnostic_provider.expire_terminal_calibration_runs(cutoff=cutoff)
             diagnostic_result = diagnostic_provider.expire(
                 attempt_ids,
                 cutoff=cutoff,

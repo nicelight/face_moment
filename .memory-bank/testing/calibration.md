@@ -1,7 +1,7 @@
 ---
 description: Reproducible verification contract for FT-011 threshold profiles, one-dimensional quality analysis and Calibration boundaries.
 status: active
-last_updated: 2026-09-04
+last_updated: 2026-09-05
 source_of_truth:
   - .memory-bank/testing/calibration.md
 ---
@@ -90,7 +90,8 @@ gates fixed:
 - face size and detection confidence use minimum cutoffs;
 - brightness uses one allowed range;
 - pose uses maximum absolute yaw, pitch and roll;
-- blur cutoff direction follows the named score's actual documented semantics.
+- `blur_score`: a lower numeric score means less blur; its gate uses a maximum
+  cutoff and keeps only scores less than or equal to that cutoff.
 
 Each result exposes current/proposed value, sample size, kept/rejected detection
 counts and the expected `correct`/`false`/`missed` changes. The retained run
@@ -120,12 +121,16 @@ is part of this proof.
 The worker scenario starts from isolated test state with queued Photo work and
 one developer-triggered Calibration run:
 
-1. Let Calibration occupy the shared `BackgroundPhotoWorker` and demonstrate
-   that Photo processing may be delayed.
+1. Let Calibration occupy the shared `BackgroundPhotoWorker`, bind the selected
+   SFace then Buffalo M direct adapters sequentially without changing serving,
+   and demonstrate that Photo processing may be delayed.
 2. Restart the worker during the run.
 3. Verify the run is visibly terminal as `failed` or `interrupted`, queued Photo
    processing resumes, and no replacement Calibration run starts automatically.
 4. Verify an explicit developer rerun is required and uses fresh run evidence.
+
+The fixture also proves that no simultaneous dual-pipeline preload, serving
+revision change or extra worker occurs.
 
 The ordinary-run retention scenario applies the existing 90-day cutoff to
 isolated old/equal/new terminal and active Calibration rows. It proves only old

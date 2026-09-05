@@ -1,7 +1,7 @@
 {
   "id": "TASK-109-T3-FT-012-W1",
   "title": "Provide processing-owned purge cleanup",
-  "status": "ready",
+  "status": "done",
   "wave": "W1",
   "feature": "FT-012",
   "reqs": [
@@ -34,7 +34,37 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Independent T3 verification reran the isolated multi-revision PostgreSQL/MinIO cleanup probe, typecheck and Memory Bank lint. It proved owner-local deletion of all processing faces/states and derivatives, idempotent rollback/retry convergence, and retention of Photo/original, Promo, Attempt, diagnostic and serving state.",
+      "protocol": ".protocols/TASK-109-T3-FT-012-W1/verification.md",
+      "artifacts": [
+        ".tasks/TASK-109-T3-FT-012-W1/attempt-1-red.txt",
+        ".tasks/TASK-109-T3-FT-012-W1/attempt-1-green.txt",
+        ".tasks/TASK-109-T3-FT-012-W1/TASK-109-T3-FT-012-W1-S-VERIFY-final-report-docs-01.md"
+      ]
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "summary": "Fresh independent T3 semantic verification found no admitted concern.",
+      "report": ".tasks/TASK-109-T3-FT-012-W1/TASK-109-T3-FT-012-W1-S-RED-VERIFY-final-report-docs-01.md",
+      "protocol": ".protocols/TASK-109-T3-FT-012-W1/red-verification.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Autopilot closed TASK-109 after independent functional PASS and required T3 semantic-pass.",
+      "evidence": [
+        ".protocols/TASK-109-T3-FT-012-W1/verification.md",
+        ".protocols/TASK-109-T3-FT-012-W1/red-verification.md",
+        ".tasks/TASK-109-T3-FT-012-W1/TASK-109-T3-FT-012-W1-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-109-T3-FT-012-W1/TASK-109-T3-FT-012-W1-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-012.md",
     ".memory-bank/domains/photo-processing.md",

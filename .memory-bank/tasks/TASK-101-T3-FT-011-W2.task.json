@@ -1,7 +1,7 @@
 {
   "id": "TASK-101-T3-FT-011-W2",
   "title": "Run Calibration on the shared worker with recovery",
-  "status": "planned",
+  "status": "failed",
   "wave": "W2",
   "feature": "FT-011",
   "reqs": [
@@ -37,7 +37,32 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "FAIL",
+      "summary": "Independent disposable PostgreSQL evidence disproved durable live-run interruption: a crash during sequential evaluation rolls the run back to requested and permits automatic rerun, violating FT-011-AC-005.",
+      "report": ".tasks/TASK-101-T3-FT-011-W2/TASK-101-T3-FT-011-W2-S-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Attempt 3 independently reproduced the disposable live evaluator crash after a durable running claim: startup records interrupted and idle, queued Photo resumes, no Calibration reruns automatically, and only a fresh explicit request completes. Sequential direct binding, fail-closed asset handling, unchanged serving/startup binding and excluded infrastructure were also observed.",
+      "report": ".tasks/TASK-101-T3-FT-011-W2/TASK-101-T3-FT-011-W2-S-VERIFY-final-report-docs-02.md"
+    },
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Attempt 4 independently ran an isolated crash exactly after the durable running claim and before worker operation/evaluation: recovery records interrupted and idle, queued Photo resumes, no Calibration auto-runs, and only an explicit new request completes. The same probe proves sequential direct SFace-release-Buffalo M binding, direct-adapter cv2.error terminal failure, and unchanged serving/startup binding.",
+      "report": ".tasks/TASK-101-T3-FT-011-W2/TASK-101-T3-FT-011-W2-S-VERIFY-final-report-docs-03.md"
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-fail",
+      "summary": "Attempt 4 semantic verification reproduced a real S3 NoSuchKey path that leaves the selected Calibration run running after worker release instead of recording the required terminal dataset_unavailable failure.",
+      "report": ".tasks/TASK-101-T3-FT-011-W2/TASK-101-T3-FT-011-W2-S-RED-VERIFY-final-report-docs-01.md"
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-011.md",
     ".memory-bank/domains/calibration.md",
@@ -48,7 +73,7 @@
     ".memory-bank/tasks/plans/IMPL-FT-011.md"
   ],
   "evidence_required": [
-    "FT-011-AC-005 RED: the existing singleton worker can hold a Calibration operation but cannot claim/execute a durable requested run or terminate that run across restart; GREEN: the same worker claims one requested run only while idle, exposes calibration as its current operation, and startup changes stale running to interrupted, restores idle, resumes queued Photo work and starts no replacement run; decisive comparison: an isolated worker-restart scenario records run/worker/Photo state before interruption and after startup plus absence of any new run; artifact: runtime trace and focused output under .tasks/TASK-101-T3-FT-011-W2/."
+    "FT-011-AC-005 RED (to obtain before production change; none is backfilled for this historical in_progress task): an isolated requested Calibration run cannot complete the selected direct SFace -> release -> Buffalo M binding while preserving the committed serving revision and normal startup adapter binding; GREEN: only while current_operation=calibration, the existing singleton worker binds the selected eligible SFace adapter, releases it, then binds the selected eligible Buffalo M adapter from configured read-only assets, and records missing or identity/checksum-mismatched assets as a failed run before releasing for Photo work; decisive comparison: the same disposable scenario snapshots serving revision and normal startup binding before/after, records binding order/release and terminal run/worker/Photo state, and proves no simultaneous preload, registry, second worker or automatic replacement/retry; artifact: focused worker-test output and runtime trace under .tasks/TASK-101-T3-FT-011-W2/."
   ],
   "purpose": "Connect durable Calibration runs to the already accepted singleton worker and recovery lifecycle without adding scheduling machinery.",
   "success_outcome": "A developer-requested run executes only while the shared worker is idle; restart leaves it visibly interrupted, resumes ordinary Photo processing and requires an explicit new request to rerun.",
@@ -77,9 +102,11 @@
   "normative_inputs": [
     ".memory-bank/domains/calibration.md#persistence-and-run-state",
     ".memory-bank/contracts/boundary-map.md#calibration-and-serving-change",
+    ".memory-bank/contracts/boundary-map.md#manual-serving-revision-switch",
     ".memory-bank/contracts/boundary-map.md#processing-status-projections",
     ".memory-bank/states/lifecycle-map.md",
     ".memory-bank/testing/calibration.md#worker-recovery-and-retention-proof",
+    ".memory-bank/domains/photo-processing.md#model-asset-admission",
     ".memory-bank/domains/photo-processing.md#claiming-processing-and-publication"
   ],
   "constraints": [
@@ -94,8 +121,8 @@
   ],
   "verification_targets": [
     ".memory-bank/features/FT-011.md#FT-011-AC-005",
-    "An isolated run proves requested to running to complete/failed while current_operation truthfully enters and leaves calibration.",
-    "A restart during running proves interrupted, idle restoration, queued Photo progress and zero automatically created replacement runs.",
-    "Import/state inspection proves reuse of the existing worker and accepted diagnostics-to-processing boundary with no second service, queue or scheduling policy."
+    "Focused disposable worker fixture proves selected SFace -> release -> Buffalo M direct binding from configured read-only assets only during current_operation=calibration, with the committed serving revision and normal startup adapter binding unchanged before and after.",
+    "The same fixture proves a missing or identity/checksum-mismatched selected asset fails that Calibration run, releases the worker, preserves serving/startup binding and allows queued Photo work to resume.",
+    "Restart during a running selected-binding scenario proves interrupted, idle restoration, queued Photo progress and zero automatically created replacement runs; focused source/fixture inspection proves reuse of one existing worker/direct adapters with no simultaneous preload, registry, second worker or automatic retry."
   ]
 }

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 import hashlib
 from typing import Protocol, cast
@@ -115,6 +115,52 @@ def evaluate_frozen_calibration(
     )
 
 
+def evaluate_frozen_calibration_sequential(
+    session: Session,
+    *,
+    photo_snapshot: Sequence[Mapping[str, object]],
+    attempt_ids: Sequence[uuid.UUID],
+    sface_revision_id: uuid.UUID,
+    buffalo_revision_id: uuid.UUID,
+    bind_selected_adapter: Callable[[object], CalibrationPhotoAdapter],
+    object_store: CalibrationObjectStore,
+) -> tuple[OfflineCalibrationResult, OfflineCalibrationResult]:
+    """Bind SFace, release it, then bind Buffalo M for one Calibration run."""
+
+    sface = PipelineRevisionRepository(session).resolve_eligible(sface_revision_id)
+    buffalo = PipelineRevisionRepository(session).resolve_eligible(buffalo_revision_id)
+    if (
+        sface.pipeline_code is not PipelineCode.OPENCV_SFACE
+        or buffalo.pipeline_code is not PipelineCode.INSIGHTFACE_BUFFALO_M
+    ):
+        raise CalibrationOfflineInputError("Calibration requires one SFace and one Buffalo M revision")
+    if len(set(attempt_ids)) != len(attempt_ids) or any(
+        not isinstance(value, uuid.UUID) for value in attempt_ids
+    ):
+        raise CalibrationOfflineInputError("Attempt selection must contain unique UUIDs")
+
+    images = _load_verified_images(session, photo_snapshot, object_store)
+    sface_adapter = bind_selected_adapter(sface)
+    if sface_adapter.pipeline_revision_id != sface.id:
+        raise CalibrationOfflineInputError("configured Calibration adapter does not match frozen revision")
+    sface_counts = tuple(
+        (photo_id, len(sface_adapter.process_photo(image))) for photo_id, image in images
+    )
+    del sface_adapter
+
+    buffalo_adapter = bind_selected_adapter(buffalo)
+    if buffalo_adapter.pipeline_revision_id != buffalo.id:
+        raise CalibrationOfflineInputError("configured Calibration adapter does not match frozen revision")
+    buffalo_counts = tuple(
+        (photo_id, len(buffalo_adapter.process_photo(image))) for photo_id, image in images
+    )
+    selected_attempts = tuple(attempt_ids)
+    return (
+        OfflineCalibrationResult(sface.id, sface_counts, selected_attempts),
+        OfflineCalibrationResult(buffalo.id, buffalo_counts, selected_attempts),
+    )
+
+
 def result_bundle_from_offline(
     *,
     sface: OfflineCalibrationResult,
@@ -153,3 +199,27 @@ def _frozen_photo_identity(value: Mapping[str, object]) -> tuple[uuid.UUID, str]
     if len(digest) != 64 or any(character not in "0123456789abcdef" for character in digest):
         raise CalibrationDatasetUnavailableError("dataset_unavailable")
     return parsed_id, digest
+
+
+def _load_verified_images(
+    session: Session,
+    photo_snapshot: Sequence[Mapping[str, object]],
+    object_store: CalibrationObjectStore,
+) -> tuple[tuple[uuid.UUID, NDArray[np.uint8]], ...]:
+    images: list[tuple[uuid.UUID, NDArray[np.uint8]]] = []
+    for frozen_photo in photo_snapshot:
+        photo_id, expected_digest = _frozen_photo_identity(frozen_photo)
+        photo = session.get(Photo, photo_id)
+        if photo is None or photo.checksum_sha256.hex() != expected_digest:
+            raise CalibrationDatasetUnavailableError("dataset_unavailable")
+        try:
+            payload = object_store.read(key=photo.original_object_key)
+        except (KeyError, OSError) as error:
+            raise CalibrationDatasetUnavailableError("dataset_unavailable") from error
+        if hashlib.sha256(payload).hexdigest() != expected_digest:
+            raise CalibrationDatasetUnavailableError("dataset_unavailable")
+        decoded = cv2.imdecode(np.frombuffer(payload, dtype=np.uint8), cv2.IMREAD_COLOR)
+        if decoded is None:
+            raise CalibrationDatasetUnavailableError("dataset_unavailable")
+        images.append((photo_id, cast(NDArray[np.uint8], decoded)))
+    return tuple(images)

@@ -1,7 +1,7 @@
 {
   "id": "TASK-107-T3-FT-012-W2",
   "title": "Enforce role-scoped Photo visibility",
-  "status": "planned",
+  "status": "ready",
   "wave": "W2",
   "feature": "FT-012",
   "reqs": [

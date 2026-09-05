@@ -108,6 +108,17 @@ selection, or any identity/hash mismatch keeps the process unavailable before
 it claims or mutates processing work. It does not fall back to the other
 pipeline.
 
+This startup binding remains the only adapter used for serving, realtime and
+ordinary Photo work. During an already-claimed
+`current_operation=calibration`, the same singleton worker may instead bind the
+two explicitly selected eligible direct adapters one at a time from the same
+read-only configured assets: SFace, then Buffalo M. It releases the first before
+binding the second, does not change the committed serving revision or the
+process startup binding, and does not download, auto-select, register or
+simultaneously preload adapters. Missing or mismatched assets fail that
+Calibration run; Photo work resumes only after the operation releases the
+worker.
+
 A serving-revision change uses the accepted maintenance downtime: the operator
 updates the read-only assets/settings as needed and restarts the model-consuming
 processes. Startup then binds them to the committed revision. The pilot adds no

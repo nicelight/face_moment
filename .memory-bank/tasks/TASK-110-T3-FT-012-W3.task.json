@@ -1,7 +1,7 @@
 {
   "id": "TASK-110-T3-FT-012-W3",
   "title": "Run resumable global Photo purge",
-  "status": "planned",
+  "status": "blocked",
   "wave": "W3",
   "feature": "FT-012",
   "reqs": [

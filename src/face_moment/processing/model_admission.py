@@ -55,6 +55,29 @@ def admit_selected_model(
         raise ModelAdmissionError("committed model assets cannot be admitted") from error
 
 
+def admit_selected_calibration_adapter(
+    *, revision: EligiblePipelineRevision, settings: Settings
+) -> SFacePhotoAdapter | BuffaloPhotoAdapter:
+    """Admit one explicitly selected direct adapter for a held Calibration run."""
+
+    try:
+        adapter: SFacePhotoAdapter | BuffaloPhotoAdapter
+        if revision.pipeline_code is PipelineCode.OPENCV_SFACE:
+            adapter = _admit_sface(revision=revision, settings=settings)
+        elif revision.pipeline_code is PipelineCode.INSIGHTFACE_BUFFALO_M:
+            adapter = _admit_buffalo(revision=revision, settings=settings)
+        else:
+            raise ModelAdmissionError(f"unsupported Calibration pipeline: {revision.pipeline_code}")
+        adapter.warmup()
+        if not adapter.ready:
+            raise ModelAdmissionError("Calibration direct model warmup did not reach readiness")
+        return adapter
+    except ModelAdmissionError:
+        raise
+    except (OSError, ValueError) as error:
+        raise ModelAdmissionError("Calibration model assets cannot be admitted") from error
+
+
 def _admit_sface(
     *, revision: EligiblePipelineRevision, settings: Settings
 ) -> SFacePhotoAdapter:

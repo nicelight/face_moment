@@ -279,15 +279,22 @@ minimal developer surface, apply and retention are owned by
 - Calibration/model comparison is test-only. It neither invokes this command
   nor supplies an exception to its guard; only a separate authenticated manual
   serving-control action can request a revision change.
+- During an existing worker's visible `current_operation=calibration`,
+  `processing` may bind the two explicitly selected eligible direct adapters
+  sequentially from its configured read-only assets solely to evaluate the
+  immutable Calibration snapshot. This does not alter the committed serving
+  revision, invoke the serving-switch command or guard, replace the startup
+  adapter, introduce a registry, or preload both adapters simultaneously.
 - The composition root owns only the deployment binding: it reads the committed
   revision, resolves that pipeline's configured detector/recognizer paths from
   the operator-managed read-only mount and asks `processing` to verify the full
   immutable model identity. It owns no revision-selection or fallback policy.
 - A failure after B commits leaves participant service unavailable and never
   changes the committed revision automatically. Recovery is an explicit retry
-  or manual selection of the prior revision; worker and realtime restart, load
-  only the committed revision and stay unavailable before work if its assets
-  cannot be admitted. The exact admission contract is owned by
+  or manual selection of the prior revision; normal worker and realtime startup
+  load only the committed revision and stay unavailable before work if its
+  assets cannot be admitted. The Calibration-only sequential bindings above do
+  not change that startup rule. The exact admission contract is owned by
   [Photo Processing](../domains/photo-processing.md#model-asset-admission).
 
 ### Retention cleanup

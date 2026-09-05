@@ -4,6 +4,39 @@ status: active
 ---
 # Changelog
 
+## [2026-09-05] Wave 2 / FT-011 independent completed slices
+
+- Closed: `TASK-102-T2-FT-011-W2`, `TASK-103-T2-FT-011-W2` and
+  `TASK-105-T3-FT-011-W2` are `done` after their required task-scoped evidence;
+  TASK-105 additionally has independent `semantic-pass` and scheduler closure.
+- Implemented: threshold-profile locator validation, five independent quality
+  recommendations including lower-is-better `blur_score <= cutoff`, and
+  existing-owner expiry of old terminal ordinary Calibration runs under the
+  shared strict 90-day cutoff.
+- Preserved: FT-011 and its requirements remain `planned`; TASK-101 is failed,
+  TASK-104 and TASK-106 remain blocked, and no dependent is promoted through
+  that failed path.
+- Evidence: task records `TASK-102`, `TASK-103`, `TASK-105`; TASK-105 reports
+  `.tasks/TASK-105-T3-FT-011-W2/TASK-105-T3-FT-011-W2-S-VERIFY-final-report-docs-01.md`
+  and `.tasks/TASK-105-T3-FT-011-W2/TASK-105-T3-FT-011-W2-S-RED-VERIFY-final-report-docs-01.md`.
+
+## [2026-09-05] Wave 1 / FT-012 statistics and processing-cleanup providers
+
+- Closed: `TASK-108-T3-FT-012-W1` and `TASK-109-T3-FT-012-W1` are `done`
+  after their independent T3 functional `PASS`, task-scoped `semantic-pass`
+  and scheduler-owned closure decisions.
+- Implemented: the closed W1 providers cover exact direct recent per-СПА
+  counters (`FT-012-AC-006`) and the processing-owned Photo derivative/row
+  cleanup boundary needed by the later fixed-snapshot purge.
+- Reconciled: `REQ-INV-004` is `verified` through the closed
+  `FT-012-AC-006` slice. FT-012 and `REQ-INV-001..003` remain `planned`
+  because TASK-107 and TASK-110 still own the remaining feature acceptance
+  outcomes; no feature lifecycle transition or dependent promotion is made by
+  this sync.
+- Evidence: `.memory-bank/tasks/TASK-108-T3-FT-012-W1.task.json`,
+  `.memory-bank/tasks/TASK-109-T3-FT-012-W1.task.json` and
+  `.tasks/TASK-AUTONOMOUS/TASK-AUTONOMOUS-S-MB-SYNC-W1-final-report-docs-02.md`.
+
 ## [2026-09-04] FT-012 task decomposition closure
 
 - Closed: fresh `/review-tasks-plan FT-012` approved the four-card task plan

@@ -6,8 +6,10 @@ from datetime import datetime, timezone
 from typing import Protocol
 import uuid
 
+from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
+from face_moment.diagnostics.calibration_runs import CalibrationRun, CalibrationRunStatus
 from face_moment.diagnostics.evidence import DiagnosticEvidenceRepository
 from face_moment.diagnostics.ground_truth_annotations import (
     GroundTruthAnnotationRepository,
@@ -43,6 +45,24 @@ class DiagnosticRetentionProvider:
         deleted = ServerEventRepository(self._session).delete_before(cutoff)
         self._session.commit()
         return deleted
+
+    def expire_terminal_calibration_runs(self, *, cutoff: datetime) -> int:
+        """Delete only terminal ordinary Calibration rows before the shared cutoff."""
+
+        result = self._session.execute(
+            delete(CalibrationRun).where(
+                CalibrationRun.status.in_(
+                    (
+                        CalibrationRunStatus.COMPLETE,
+                        CalibrationRunStatus.FAILED,
+                        CalibrationRunStatus.INTERRUPTED,
+                    )
+                ),
+                CalibrationRun.created_at < _utc(cutoff),
+            )
+        )
+        self._session.commit()
+        return int(result.rowcount or 0)
 
     def expire(
         self,

@@ -2,6 +2,10 @@
 
 from face_moment.processing.face_engine import FaceEngine, FakeFaceEngine
 from face_moment.processing.initial_pending import InitialPendingRepository
+from face_moment.processing.purge_cleanup import (
+    ProcessingPurgeCleanup,
+    ProcessingPurgeCleanupResult,
+)
 from face_moment.processing.revisions import (
     EligiblePipelineRevision,
     IneligiblePipelineRevisionError,
@@ -39,6 +43,8 @@ __all__ = [
     "IneligiblePipelineRevisionError",
     "PipelineCode",
     "PipelineRevisionRepository",
+    "ProcessingPurgeCleanup",
+    "ProcessingPurgeCleanupResult",
     "PhotoMatchObservation",
     "RealtimeSearchResult",
     "RealtimeSearchService",

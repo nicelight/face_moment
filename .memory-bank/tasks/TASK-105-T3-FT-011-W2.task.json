@@ -1,7 +1,7 @@
 {
   "id": "TASK-105-T3-FT-011-W2",
   "title": "Expire terminal ordinary Calibration runs",
-  "status": "planned",
+  "status": "done",
   "wave": "W2",
   "feature": "FT-011",
   "reqs": [
@@ -36,7 +36,37 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Fresh independent T3 verification proved strictly-before expiry of only old terminal ordinary Calibration runs, equal/new and active preservation, unchanged public cleanup result shape, and safe repeat in disposable PostgreSQL. Required tests, mypy, Memory Bank lint and diff check passed; no forbidden retention or owner-crossing behavior was observed.",
+      "protocol": ".protocols/TASK-105-T3-FT-011-W2/verification.md",
+      "report": ".tasks/TASK-105-T3-FT-011-W2/TASK-105-T3-FT-011-W2-S-VERIFY-final-report-docs-01.md",
+      "evidence": [
+        ".protocols/TASK-105-T3-FT-011-W2/verification.md",
+        ".tasks/TASK-105-T3-FT-011-W2/TASK-105-T3-FT-011-W2-S-EXECUTE-final-report-code-01.md",
+        ".tasks/TASK-105-T3-FT-011-W2/TASK-105-T3-FT-011-W2-S-VERIFY-final-report-docs-01.md"
+      ],
+      "resume_route": "/red-verify TASK-105-T3-FT-011-W2 before T3 lifecycle closure."
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "summary": "Independent adversarial verification found no material semantic defect: the existing diagnostics cleanup uses the shared strict-before 90-day cutoff for terminal ordinary Calibration runs only, preserves equal/new and active rows plus the public result shape, converges on rerun, and introduces no direct promo deletion, cascade or retention surface.",
+      "protocol": ".protocols/TASK-105-T3-FT-011-W2/red-verification.md",
+      "report": ".tasks/TASK-105-T3-FT-011-W2/TASK-105-T3-FT-011-W2-S-RED-VERIFY-final-report-docs-01.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Autopilot closed TASK-105 after fresh functional PASS, task-scoped semantic-pass and Judge SUPPORT. The existing diagnostics cleanup now expires only old terminal ordinary Calibration runs under the shared cutoff while preserving active/equal/new rows, ownership boundaries, public cleanup output and rerun safety.",
+      "evidence": [
+        ".tasks/TASK-105-T3-FT-011-W2/TASK-105-T3-FT-011-W2-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-105-T3-FT-011-W2/TASK-105-T3-FT-011-W2-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-011.md",
     ".memory-bank/domains/calibration.md",
@@ -98,4 +128,3 @@
     "Ownership/source inspection proves reuse of the existing diagnostics cleanup step with no direct promo delete, cascade, extra timer/command/result field or archive/history model."
   ]
 }
-

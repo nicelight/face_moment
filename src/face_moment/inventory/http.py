@@ -39,8 +39,21 @@ from face_moment.inventory.processing_health import (
     authorize_processing_health_access,
     read_processing_health,
 )
+from face_moment.inventory.recent_statistics import (
+    RecentStatisticsAccessDeniedError,
+    RecentStatisticsNotFoundError,
+    authorize_recent_statistics_access,
+    read_recent_statistics,
+)
 from face_moment.inventory.validation import InvalidJpegCandidateError
-from face_moment.platform.auth.sessions import CsrfValidationError, InvalidSessionError
+from face_moment.platform.auth.sessions import (
+    CsrfValidationError,
+    InvalidSessionError,
+    get_current_principal,
+)
+
+
+_NO_STORE_HEADERS = {"Cache-Control": "no-store"}
 
 
 def register_ingest_target_routes(
@@ -77,6 +90,25 @@ def register_ingest_target_routes(
             except InvalidSessionError as error:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from error
         return HTMLResponse(_processing_health_page_html())
+
+    @app.get("/staff/photo-inventory", response_class=HTMLResponse)
+    def photo_inventory_page(
+        fm_staff_session: str | None = Cookie(default=None),
+    ) -> HTMLResponse:
+        with _database_session(session_factory) as database_session:
+            try:
+                get_current_principal(
+                    database_session,
+                    session_token=fm_staff_session,
+                )
+            except InvalidSessionError as error:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+        response = HTMLResponse(_photo_inventory_page_html())
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
     @app.get("/api/inventory/ingest-targets", response_model=None)
     def ingest_targets(
@@ -142,6 +174,54 @@ def register_ingest_target_routes(
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from error
             except Exception as error:
                 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR) from error
+
+    @app.get("/api/inventory/recent-statistics", response_model=None)
+    def recent_statistics(
+        response: Response,
+        spa_id: str | None = None,
+        fm_staff_session: str | None = Cookie(default=None),
+    ) -> dict[str, object]:
+        try:
+            parsed_spa_id = UUID(spa_id) if spa_id is not None else None
+        except ValueError as error:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                headers=_NO_STORE_HEADERS,
+            ) from error
+        if parsed_spa_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                headers=_NO_STORE_HEADERS,
+            )
+        with _database_session(session_factory) as database_session:
+            try:
+                result = read_recent_statistics(
+                    database_session,
+                    session_token=fm_staff_session,
+                    spa_id=parsed_spa_id,
+                )
+            except RecentStatisticsAccessDeniedError as error:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+            except RecentStatisticsNotFoundError as error:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+            except InvalidSessionError as error:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+            except Exception as error:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    headers=_NO_STORE_HEADERS,
+                ) from error
+        response.headers["Cache-Control"] = "no-store"
+        return result.as_response()
 
     @app.post("/api/inventory/photos", response_model=None)
     async def photo_upload(
@@ -635,6 +715,67 @@ def _processing_health_page_html() -> str:
 
     loadInitialQuery();
     setInterval(loadHealth, 5000);
+  </script>
+</body>
+</html>"""
+
+
+def _photo_inventory_page_html() -> str:
+    return """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Photo inventory</title>
+</head>
+<body>
+  <main>
+    <h1>Photo inventory</h1>
+    <form id="recent-statistics-query">
+      <label for="recent-statistics-spa-id">SPA ID</label>
+      <input id="recent-statistics-spa-id" name="spa_id" required>
+      <button type="submit">Refresh statistics</button>
+    </form>
+    <p id="recent-statistics-message" role="alert"></p>
+    <section aria-label="Recent photo statistics">
+      <h2>Recent photo statistics</h2>
+      <ol id="recent-statistics-windows"></ol>
+    </section>
+  </main>
+  <script>
+    const recentStatisticsForm = document.querySelector("#recent-statistics-query");
+    const recentStatisticsSpaId = document.querySelector("#recent-statistics-spa-id");
+    const recentStatisticsMessage = document.querySelector("#recent-statistics-message");
+    const recentStatisticsWindows = document.querySelector("#recent-statistics-windows");
+
+    function renderWindow(window) {
+      const item = document.createElement("li");
+      item.textContent = `${window.minutes} minutes: new ${window.new}, unprocessed ${window.unprocessed}, processed ${window.processed}, failed ${window.failed}`;
+      recentStatisticsWindows.append(item);
+    }
+
+    async function loadRecentStatistics() {
+      const spaId = recentStatisticsSpaId.value.trim();
+      if (!spaId) return;
+      try {
+        const response = await fetch(`/api/inventory/recent-statistics?spa_id=${encodeURIComponent(spaId)}`, {
+          credentials: "same-origin",
+        });
+        if (!response.ok) throw new Error("Statistics request failed");
+        const payload = await response.json();
+        recentStatisticsWindows.replaceChildren();
+        payload.windows.forEach(renderWindow);
+        recentStatisticsMessage.textContent = `Observed at ${payload.observed_at}`;
+      } catch (error) {
+        recentStatisticsMessage.textContent = error.message;
+      }
+    }
+
+    recentStatisticsForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      await loadRecentStatistics();
+    });
+    setInterval(loadRecentStatistics, 5000);
   </script>
 </body>
 </html>"""

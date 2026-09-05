@@ -1,7 +1,7 @@
 {
   "id": "TASK-102-T2-FT-011-W2",
   "title": "Calculate explainable threshold profiles",
-  "status": "planned",
+  "status": "done",
   "wave": "W2",
   "feature": "FT-011",
   "reqs": [
@@ -33,7 +33,34 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "FAIL",
+      "summary": "The current functional evidence found one positive profile aggregate without the stable contributing-Attempt locator required by FT-011-AC-001. The Judge-approved correction stays inside this task: restore that existing aggregate-to-locator mapping and its focused proof; do not change profile semantics, task scope, dependencies, tier, serving state, worker, quality analysis, HTTP, promotion or retention.",
+      "protocol": ".protocols/TASK-102-T2-FT-011-W2/verification.md",
+      "report": ".tasks/TASK-102-T2-FT-011-W2/TASK-102-T2-FT-011-W2-S-VERIFY-final-report-docs-01.md",
+      "evidence": [
+        ".protocols/AUTONOMOUS-RUN/status.md",
+        ".protocols/TASK-102-T2-FT-011-W2/verification.md",
+        ".tasks/TASK-102-T2-FT-011-W2/TASK-102-T2-FT-011-W2-S-VERIFY-final-report-docs-01.md"
+      ],
+      "resume_route": "/exe TASK-102-T2-FT-011-W2 -> /verify TASK-102-T2-FT-011-W2"
+    },
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Fresh Attempt 3 verification independently proved rejection of every non-zero aggregate with no contributing-Attempt locator, complete separate SFace/Buffalo M profile outputs and the all-undefined no-proposal path. Required focused tests, mypy, Memory Bank lint and diff check passed; no forbidden-scope behavior was observed.",
+      "protocol": ".protocols/TASK-102-T2-FT-011-W2/verification.md",
+      "report": ".tasks/TASK-102-T2-FT-011-W2/TASK-102-T2-FT-011-W2-S-VERIFY-final-report-docs-02.md",
+      "evidence": [
+        ".protocols/TASK-102-T2-FT-011-W2/verification.md",
+        ".tasks/TASK-102-T2-FT-011-W2/TASK-102-T2-FT-011-W2-S-EXECUTE-final-report-code-03.md",
+        ".tasks/TASK-102-T2-FT-011-W2/TASK-102-T2-FT-011-W2-S-VERIFY-final-report-docs-02.md"
+      ],
+      "resume_route": "Lifecycle owner may close TASK-102 after this T2 PASS."
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-011.md",
     ".memory-bank/domains/calibration.md",
@@ -41,7 +68,7 @@
     ".memory-bank/tasks/plans/IMPL-FT-011.md"
   ],
   "evidence_required": [
-    "FT-011-AC-001 RED: complete runs expose no deterministic Best face match, Balance or Minimum missed faces winners with required counts/metrics and contributing-Attempt drill-down; GREEN: each named pipeline result calculates all three profiles with the accepted ranking and complete output, including exact aggregate F1 and full tie-break order; decisive comparison: a fixed snapshot and independent oracle compare every winner/output and reconcile aggregates to Attempt locators; artifact: focused oracle output under .tasks/TASK-102-T2-FT-011-W2/.",
+    "FT-011-AC-001 RED: complete runs expose no deterministic Best face match, Balance or Minimum missed faces winners with required counts/metrics and contributing-Attempt drill-down; GREEN: each named pipeline result calculates all three profiles with the accepted ranking and complete output, including exact aggregate F1, full tie-break order and stable contributing-Attempt locator for every positive aggregate; decisive comparison: a fixed snapshot and independent oracle compare every winner/output and reconcile every positive aggregate to its Attempt locators; artifact: focused oracle output under .tasks/TASK-102-T2-FT-011-W2/. The current missing-locator correction is bounded to this existing proof and mapping obligation; it does not authorize a scope expansion.",
     "FT-011-AC-006 RED: all-candidates-undefined input can yield NaN/infinity or an unsupported proposal without an explicit sample warning; GREEN: it reports unavailable metrics plus selected/applicable counts, emits no proposal and leaves serving state unchanged; decisive comparison: a zero-denominator fixed fixture inspects serialized output, absent proposal and before/after settings; artifact: focused unavailable-result output under .tasks/TASK-102-T2-FT-011-W2/."
   ],
   "purpose": "Implement only the three accepted threshold profiles and their honest undefined-metric behavior over one completed immutable run.",
