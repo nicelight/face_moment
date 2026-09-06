@@ -1,7 +1,7 @@
 {
   "id": "TASK-106-T3-FT-011-W4",
   "title": "Expose promoted Calibration case actions",
-  "status": "blocked",
+  "status": "ready",
   "wave": "W4",
   "feature": "FT-011",
   "reqs": [
@@ -61,6 +61,20 @@
         ".memory-bank/bugs/task-101-calibration-missing-original-terminalization.md"
       ],
       "resume_route": "Complete TASK-111, then the scheduler may re-evaluate TASK-104 before this transitive dependent."
+    },
+    {
+      "stage": "scheduler-dependency-unblock",
+      "verdict": "ready",
+      "summary": "TASK-104-T3-FT-011-W3 and every other declared dependency are done. The resumed scheduler removed the stale transitive block after TASK-104 Attempt 3 functional PASS, task semantic-pass, closure-evidence normalization and strict-doctor PASS; task identity, scope, tier, wave and acceptance claims are unchanged.",
+      "evidence": [
+        ".memory-bank/tasks/TASK-098-T3-FT-010-W2.task.json",
+        ".memory-bank/tasks/TASK-104-T3-FT-011-W3.task.json",
+        ".memory-bank/tasks/TASK-105-T3-FT-011-W2.task.json",
+        ".protocols/TASK-104-T3-FT-011-W3/verification.md",
+        ".protocols/TASK-104-T3-FT-011-W3/red-verification.md",
+        ".protocols/AUTONOMOUS-RUN/status.md"
+      ],
+      "resume_route": "Eligible for canonical scheduler selection after the current strict gate; stable wave order selects any remaining Wave 3 ready task first."
     }
   ],
   "docs": [
