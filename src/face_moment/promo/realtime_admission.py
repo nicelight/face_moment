@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
+from io import BytesIO
 import json
 import math
 from collections.abc import Mapping
@@ -11,9 +12,10 @@ from typing import Any, TypedDict
 import uuid
 
 import cv2
-import numpy as np
 from multipart import MultipartParser
 from multipart.multipart import MultipartParseError, parse_options_header
+import numpy as np
+from PIL import Image, UnidentifiedImageError
 
 from face_moment.infrastructure.settings import DEFAULT_REALTIME_DEADLINE_MS
 from face_moment.processing.revisions import PipelineCode
@@ -369,6 +371,19 @@ def _require_int(value: object, field_name: str, *, exact: int | None = None, mi
 def _validate_jpeg(body: bytes) -> None:
     if b"Exif\x00\x00" in body or b"http://ns.adobe.com/xap/1.0/" in body:
         raise RealtimePayloadError("JPEG metadata is not allowed")
+    try:
+        with Image.open(BytesIO(body), formats=["JPEG"]) as image:
+            width, height = image.size
+    except (
+        Image.DecompressionBombError,
+        UnidentifiedImageError,
+        OSError,
+        SyntaxError,
+        ValueError,
+    ) as error:
+        raise RealtimePayloadError("crop is not a valid JPEG header") from error
+    if width <= 0 or height <= 0 or width > 512 or height > 512:
+        raise RealtimePayloadError("crop dimensions exceed the accepted geometry")
     decoded = cv2.imdecode(np.frombuffer(body, dtype=np.uint8), cv2.IMREAD_COLOR)
     if decoded is None or decoded.ndim < 2:
         raise RealtimePayloadError("crop is not a decodable JPEG")

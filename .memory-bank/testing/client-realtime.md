@@ -256,6 +256,33 @@ validation.
   purchase page. Development closure uses deterministic browser/API session
   fixtures for this contract and does not require the physical phone.
 
+## FT-003 AC-021 Admission Hardening
+
+- The focused realtime API fixture uses a disposable PostgreSQL database and
+  synthetic JPEGs to compare auth/rate/geometry rejection with OpenCV decode
+  call counts and persisted Attempt counts. The claim-specific transcript is
+  retained under `.tasks/TASK-112-T3-FT-003-W4/`; it proves that auth/rate,
+  header-geometry and header-format rejections perform no full decode, while a
+  bounded but undecodable JPEG reaches the existing full-decodability check and
+  is rejected before Attempt creation. A valid `512x512` crop retains ordinary
+  admission.
+
+## FT-003 AC-022 Concurrent Admission
+
+- The real ASGI integration fixture holds one controlled search while health,
+  a distinct `busy` request and an active/racing duplicate `in_progress` finish.
+  PostgreSQL rows and worker Session/thread traces establish the ordering;
+  elapsed time is diagnostic, not a new latency SLO.
+- A separate repository probe forces both reads to miss before unique insertion
+  and checks that the loser returns while the winner holds its Attempt row
+  lock. The route's serving-context snapshot serializes its short admission
+  transaction; no inference waiting queue or auth-limiter rewrite is involved.
+- Controlled success, search exception, deadline and raised worker failure
+  exercise Session cleanup and subsequent fresh admission. Simultaneous token,
+  IP and real-route auth probes retain the configured positive budget.
+  Evidence lives under `.tasks/TASK-113-T3-FT-003-W5/`; independent verification
+  and semantic review remain due before task closure.
+
 ## Data-policy Checks
 
 - If the implementation logs, caches, stores or delivers capture-derived

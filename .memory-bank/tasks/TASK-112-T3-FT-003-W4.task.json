@@ -1,0 +1,145 @@
+{
+  "status": "done",
+  "feature": "FT-003",
+  "tier": "T3",
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Root independently verified FT-003-AC-021: 15 ASGI tests, geometry boundary probe, mypy and lint; two fresh Luna co-reviews found no material defects.",
+      "protocol": ".protocols/TASK-112-T3-FT-003-W4/verification.md",
+      "report": ".tasks/TASK-112-T3-FT-003-W4/TASK-112-T3-FT-003-W4-S-VERIFY-final-report-docs-01.md",
+      "evidence": [
+        ".tasks/TASK-112-T3-FT-003-W4/root-verification-tests.txt",
+        ".tasks/TASK-112-T3-FT-003-W4/root-geometry-probe.txt",
+        ".tasks/TASK-112-T3-FT-003-W4/root-verification-mypy.txt",
+        ".tasks/TASK-112-T3-FT-003-W4/root-verification-lint.txt"
+      ]
+    },
+    {
+      "stage": "red-verify",
+      "semantic_verdict": "semantic-pass",
+      "summary": "Independent Reviewer inspected normative contracts and actual diff; synthetic header/compatibility probes and two fresh Luna xhigh focuses found no material defects. Lifecycle remains with root.",
+      "protocol": ".protocols/TASK-112-T3-FT-003-W4/red-verification.md",
+      "report": ".tasks/TASK-112-T3-FT-003-W4/TASK-112-T3-FT-003-W4-S-RED-VERIFY-final-report-docs-01.md",
+      "evidence": [
+        ".tasks/TASK-112-T3-FT-003-W4/red-review-header-probes.txt"
+      ]
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "owner": "manual_explicit_owner: root / ROLE GENERAL",
+      "summary": "User-authorized audit finding 1 completed; root reviewed corrected diff and independently reproduced functional proof, then accepted separate T3 semantic-pass. No deployment or production acceptance remains in this card.",
+      "evidence": [
+        ".protocols/TASK-112-T3-FT-003-W4/verification.md",
+        ".protocols/TASK-112-T3-FT-003-W4/red-verification.md"
+      ]
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-003.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md",
+    ".memory-bank/contracts/realtime-attempt-api.md",
+    ".memory-bank/testing/client-realtime.md"
+  ],
+  "id": "TASK-112-T3-FT-003-W4",
+  "title": "Guard realtime JPEG decoding behind authentication and header bounds",
+  "wave": "W4",
+  "reqs": [
+    "REQ-SEC-001",
+    "REQ-CAP-002"
+  ],
+  "depends_on": [
+    "TASK-045-T3-FT-003-W3"
+  ],
+  "purpose": "Correct audit finding 1: prevent unauthorized or geometry-invalid realtime crops from allocating decoded image arrays.",
+  "success_outcome": "The existing endpoint authenticates and rate-limits before crop processing, rejects oversized JPEG headers before decode, and preserves valid bounded admission and standard failure responses.",
+  "touched_files": [
+    "src/face_moment/entrypoints/realtime.py",
+    "src/face_moment/promo/realtime_admission.py",
+    "tests/promo/test_realtime_attempt_api.py",
+    "pyproject.toml",
+    "uv.lock",
+    ".memory-bank/testing/client-realtime.md"
+  ],
+  "gates": [
+    {
+      "name": "Current-source Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Focused current-source regression tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_realtime_attempt_api.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "source_artifacts": [
+    ".memory-bank/features/FT-003.md#FT-003-AC-021",
+    "PAPERCUTS/TECHDEBTS/ASTRA-consolidated-review-2026-09-06.md#1-распаковка-изображений-до-authrate-limit",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md",
+    ".protocols/FT-003/plan.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-003.md#ft-003-ac-021--reject-unsafe-crop-work-before-decode",
+    ".memory-bank/contracts/realtime-attempt-api.md",
+    ".memory-bank/domains/display-client-access.md#authentication-contract",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/contracts/boundary-map.md#http-failure-contract",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/architecture/system-architecture.md",
+    ".memory-bank/testing/index.md",
+    ".memory-bank/guides/local-development.md"
+  ],
+  "anti_goals": [
+    "Do not change authentication internals, allowed credentials, request/response fields, body limit, geometry limit or metadata policy.",
+    "Do not perform finding 2 threadpool work, Buffalo changes, EXIF inventory changes, edge deployment or other audit fixes.",
+    "Do not add a bespoke JPEG parser, pixel/manifest/per-crop-byte limits, download models or alter operator data."
+  ],
+  "runtime_context": {
+    "write_boundary": [
+      "src/face_moment/entrypoints/realtime.py",
+      "src/face_moment/promo/realtime_admission.py",
+      "tests/promo/test_realtime_attempt_api.py",
+      "pyproject.toml",
+      "uv.lock",
+      ".memory-bank/testing/client-realtime.md"
+    ],
+    "forbidden_scope": [
+      "Client, deployment, migrations and processing/model implementation",
+      "Auth credential/limiter internals and lifecycle",
+      "Runtime concurrency and singleton/result orchestration changes owned by TASK-113"
+    ],
+    "stop_conditions": [
+      "A correct fix requires changing accepted public limits or compatibility instead of enforcing them.",
+      "Header inspection cannot reliably reject oversized inputs before full decoding, or changes require paths outside the hard boundary."
+    ]
+  },
+  "constraints": [
+    "Owner is promo (src/face_moment/promo/); entrypoints/realtime.py only adapts HTTP and calls the existing serving_control auth and promo boundaries; no foreign-state writes.",
+    "Keep readiness check and bounded body reading first; then existing Session/auth/rate check, then multipart/JPEG validation before core Attempt creation. Preserve 413 for an oversized body, 401 for bounded invalid-credential requests, 429 for rate rejection and 422 for authenticated invalid payloads.",
+    "Promote the already locked Pillow 12.3.0 to a direct dependency without broad lock upgrades. Open BytesIO with Image.open(..., formats=[\"JPEG\"]), inspect only size without load/convert, reject dimensions outside 1..512, and only then run existing OpenCV decode and final shape validation. Convert malformed-header/unsupported-format/decompression-bomb exceptions to RealtimePayloadError; retain metadata rejection.",
+    "Use existing disposable PostgreSQL fixture in tests/promo/test_realtime_attempt_api.py, not a default/operator database; generate synthetic JPEGs and no personal media. Review fixture teardown and run via .env.local.",
+    "Execution obtains honest RED before production edits; the audit probe is source evidence, not a substituted current execution result. Run verify and per-task red-verify before the explicit owner closes this T3 task."
+  ],
+  "invariants": [
+    "Rejected auth/rate/geometry requests invoke no full crop decode and create no Attempt.",
+    "No body field supplies spa_id or credentials; auth remains authoritative.",
+    "Total body remains 20,971,520 bytes, zero to twenty crops, positive dimensions no side above 512; no new payload limit or domain outcome."
+  ],
+  "verification_targets": [
+    "FT-003-AC-021 / REQ-SEC-001 and REQ-CAP-002: real ASGI multipart requests with spy on OpenCV decode; prove zero calls for missing/invalid token and exhausted deterministic limiter, and zero calls for authenticated 4096x4096 JPEG under the body cap. Inspect zero persisted Attempts for all rejections.",
+    "FT-003-AC-021: malformed/truncated JPEG headers and a non-JPEG disguised as image/jpeg return 422 without full decode; malformed entropy with a bounded valid header fails existing decoding validation. A valid 512x512 control reaches decode and ordinary admission.",
+    "Run existing exact body-boundary, metadata, zero-proposal, idempotency and standard-status tests as regression only; do not inherit original AC-006 or TASK-057 acceptance proof.",
+    "Retain synthetic-input sizes, returned status, decode call counts and Attempt counts; fixture-owned database teardown proves safe rerun. No OOM/stress attack or production probe is required."
+  ],
+  "evidence_required": [
+    "FT-003-AC-021 RED: current bounded unauthorized 4096x4096 JPEG reaches OpenCV decoding and authenticated oversized geometry is checked after allocation; GREEN: identical cases and rate rejection call no decoder, invalid payloads create no Attempt, while a valid 512x512 JPEG reaches ordinary admission; decisive comparison: HTTP statuses, decode-call trace and persisted Attempt count for the controlled input matrix; artifact: focused regression transcript under .tasks/TASK-112-T3-FT-003-W4/."
+  ]
+}

@@ -174,3 +174,67 @@ def test_promo_attempt_migration_round_trip(
     assert "promo_attempts" in inspect(
         disposable_attempt_engine
     ).get_table_names(schema=APP_SCHEMA)
+
+
+def test_unique_insert_loser_returns_while_winner_holds_row_lock(
+    disposable_attempt_engine: Engine, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from threading import Event
+    from concurrent.futures import wait, FIRST_COMPLETED
+
+    values = _attempt_values(uuid.uuid4())
+    both_missing = Barrier(2, timeout=3)
+    locked, release = Event(), Event()
+    original_find = PromoAttemptRepository._find
+    misses: list[int] = []
+
+    def synchronized_find(self: PromoAttemptRepository, *args: object) -> object:
+        found = original_find(self, *args)
+        if found is None:
+            misses.append(1)
+            both_missing.wait()
+        return found
+
+    monkeypatch.setattr(PromoAttemptRepository, "_find", synchronized_find)
+
+    def admit() -> tuple[uuid.UUID, bool, str, object]:
+        with Session(disposable_attempt_engine) as session:
+            repository = PromoAttemptRepository(session)
+            attempt, inserted = repository.create_or_get_with_admission(**values)
+            session.commit()
+            if inserted:
+                attempt = repository.get_by_admission_key(
+                    spa_id=values["spa_id"], client_attempt_id=values["client_attempt_id"],
+                    for_update=True,
+                )
+                repository.mark_search_started(attempt)
+                locked.set()
+                assert release.wait(4)
+                repository.mark_insufficient_results(attempt)
+                session.commit()
+            else:
+                assert locked.wait(3)
+            return attempt.id, inserted, attempt.processing_status, attempt.domain_outcome
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(admit) for _ in range(2)]
+        try:
+            assert locked.wait(3)
+            done, _ = wait(futures, timeout=1, return_when=FIRST_COMPLETED)
+            assert len(done) == 1
+            loser = next(iter(done)).result()
+            assert loser[1:] == (False, "accepted", None)
+            assert len(misses) == 2
+            print({"missing_reads": len(misses), "loser_returned_before_release": True,
+                   "loser_status": loser[2], "loser_outcome": loser[3]})
+        finally:
+            release.set()
+        results = [future.result(timeout=4) for future in futures]
+    assert results[0][0] == results[1][0]
+    assert sum(result[1] for result in results) == 1
+    with Session(disposable_attempt_engine) as session:
+        row_count = session.execute(text("SELECT count(*) FROM face_moment.promo_attempts")).scalar_one()
+        assert row_count == 1
+        repeated = PromoAttemptRepository(session).create_or_get(**values)
+        assert repeated.processing_status == "no_success"
+        assert repeated.domain_outcome == "insufficient_results"

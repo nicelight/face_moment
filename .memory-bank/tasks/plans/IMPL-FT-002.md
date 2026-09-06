@@ -1,7 +1,7 @@
 ---
 description: Implementation plan for compatible Photo processing and searchable readiness in FT-002.
 status: active
-last_updated: 2026-08-14
+last_updated: 2026-09-06
 ---
 # IMPL-FT-002 — Processing And Searchable Readiness
 
@@ -17,7 +17,7 @@ scheduler, monitoring service or cross-store transaction mechanism.
 
 ## Normative Basis
 
-- [FT-002](../../features/FT-002.md): `FT-002-AC-001..008` and governing
+- [FT-002](../../features/FT-002.md): `FT-002-AC-001..009` and governing
   `REQ-ING-003..004`, `REQ-SRCH-001`, `REQ-REL-002`, `REQ-SEC-001` and
   `REQ-ARCH-001`.
 - [System Architecture](../../architecture/system-architecture.md): AD-002,
@@ -163,6 +163,49 @@ sequential even where tasks share a wave.
 | [TASK-035-T3-FT-002-W6](../TASK-035-T3-FT-002-W6.task.json) | T3 | W6 | TASK-028, TASK-032, TASK-034, TASK-005 | `photo-processing-api.md#processing-health-and-slo` | Authenticated processing-health API. |
 | [TASK-036-T3-FT-002-W7](../TASK-036-T3-FT-002-W7.task.json) | T3 | W7 | TASK-029, TASK-035 | `FT-002-AC-006` | Processing-health UI and real-browser UAT. |
 
+## Buffalo Native Readiness Maintenance
+
+[TASK-114](../TASK-114-T3-FT-002-W6.task.json) owns only `FT-002-AC-009`,
+grounded in the operator-requested [audit finding 5](../../../PAPERCUTS/TECHDEBTS/ASTRA-consolidated-review-2026-09-06.md).
+The twenty-three completed baseline cards and their proof remain unchanged.
+Its T3/W6 route depends on completed TASK-026/W5, which transitively includes
+TASK-020 and the Foundation gate. T3 follows actual runtime-readiness impact.
+There is no dependency on realtime maintenance; canonical execution remains
+sequential despite separate source/test write boundaries.
+
+One processing-owned adapter correction includes its proof: native detector
+preparation and detector-plus-recognizer inference precede readiness. Use
+InsightFace's CPU `prepare` with a 640-by-640 size for dynamic inputs, preserving
+embedded fixed sizes. Warmup uses discarded synthetic input and native
+five-point alignment, validates finite normalized embeddings and opens readiness
+only after both calls succeed. Translate native failures at the Buffalo adapter
+boundary so the existing serving and Calibration admissions remain closed.
+Do not change SFace, deployment, model identity, persistence or dependencies.
+
+Canonical concerns are `reuse`: [native adapter and model-asset admission](../../domains/photo-processing.md#model-asset-admission),
+[capability ownership](../../contracts/boundary-map.md#capability-application-boundaries),
+[Participant Promo](../../contracts/boundary-map.md#participant-promo) and
+[Calibration](../../contracts/boundary-map.md#calibration-and-serving-change)
+already define compatible consumers. Propagation stops at the existing admitted
+adapter/error boundary. Global Backbone Planning Revision stays 4; no new
+shared specification, architecture unit or schema is needed.
+
+The card names four allowed paths: Buffalo implementation, its tests, admission
+tests and the existing Photo-processing testing document. Both actual local
+ONNX files are read-only inputs, paired with a matching temporary in-memory
+revision. The required native test must execute, never count a skip as success,
+and prove dynamic detector setup, both native calls and subsequent 320-by-320
+Photo processing. Negative tests separately exercise detector and recognizer
+failure through serving and Calibration admission. Existing role failures and
+SFace tests are regressions, not new historical claims.
+
+Run current-source mypy, focused pytest and the explicit native test node via
+`uv run --locked`; admission tests load `.env.local` and use only disposable
+fixtures. Run `node .memory-bank/scripts/mb-lint.mjs`. Keep honest pre-change
+native RED and equivalent GREEN, then independent verify and per-task
+red-verify before owner closure. The next boundary is fresh
+`/review-tasks-plan FT-002`, followed by the conditional T3 doctor gate.
+
 ## Advisory Expected Change Surface
 
 - `src/face_moment/processing/`
@@ -250,8 +293,10 @@ head or hard task write boundary is inferred.
 
 ## Definition Of Done
 
-All twenty-three indexed tasks independently satisfy their task-owned exact claims
-and tier obligations, every `FT-002-AC-001..008` has complete task-owned
+The twenty-three baseline tasks retain their original claims/evidence; the
+TASK-114 maintenance follow-up independently satisfies AC-009. All indexed
+tasks satisfy their task-owned exact claims
+and tier obligations, every `FT-002-AC-001..009` has complete task-owned
 coverage, and both model-consuming roles pass the selected-revision
 admission/fail-closed matrix,
 the two staff UAT flows pass, and fresh review can approve the queue without

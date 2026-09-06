@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse, Response
 import numpy as np
 from numpy.typing import NDArray
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from face_moment.entrypoints.common import bind_server_events, create_role_app, run
 from face_moment.entrypoints.model_consumers import bind_model_consumer
@@ -149,160 +150,14 @@ def create_app() -> FastAPI:
         if not state.get("ready") or "session_factory" not in state:
             raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
         body = await _read_limited_body(request)
-        try:
-            payload = parse_realtime_multipart(
-                body, request.headers.get("content-type")
-            )
-        except RealtimeBodyTooLargeError as error:
-            raise HTTPException(
-                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
-            ) from error
-        except RealtimePayloadError as error:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
-            ) from error
-
-        session_factory = state["session_factory"]
-        limiter = state["display_client_rate_limiter"]
-        with session_factory() as database_session:
-            try:
-                principal = authenticate_display_client(
-                    database_session,
-                    authorization=request.headers.get("authorization"),
-                    ip_address=_client_ip(request),
-                    rate_limiter=limiter,
-                )
-            except DisplayClientRateLimitError as error:
-                raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS) from error
-            except InvalidDisplayClientCredentials as error:
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from error
-            repository = PromoAttemptRepository(database_session)
-            try:
-                existing = repository.get_by_admission_key(
-                    spa_id=principal.spa_id,
-                    client_attempt_id=payload.attempt_id,
-                    for_update=True,
-                )
-            except PromoAttemptNotFoundError:
-                existing = None
-            if existing is not None:
-                database_session.commit()
-                return _response_for_attempt(
-                    existing,
-                    database_session=database_session,
-                    qr_ticket_secret=state.get(
-                        "qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
-                    ),
-                )
-
-            try:
-                context = RealtimeContextRepository(
-                    database_session
-                ).resolve_realtime_context(
-                    spa_id=principal.spa_id,
-                    admitted_pipeline_revision_id=state["admitted_pipeline_revision_id"],
-                    release_id=os.environ.get("FACE_MOMENT_RELEASE_ID", "face-moment-runtime"),
-                )
-            except (RealtimeReadinessClosedError, UnknownRealtimeContextSpaError) as error:
-                database_session.rollback()
-                emit_runtime_readiness_closed(state.get("server_event_emitter"))
-                raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE) from error
-
-            attempt = repository.create_or_get(
-                **admission_values(
-                    payload,
-                    context,
-                    deadline_ms=state.get(
-                        "realtime_deadline_ms", DEFAULT_REALTIME_DEADLINE_MS
-                    ),
-                ),
-            )
-            admitted_attempt_id = attempt.id
-            admitted_correlation_id = attempt.client_attempt_id
-            database_session.commit()
-            emit_attempt_admitted(
-                state.get("server_event_emitter"),
-                attempt_id=admitted_attempt_id,
-                correlation_id=admitted_correlation_id,
-            )
-            attempt = repository.get_by_admission_key(
-                spa_id=principal.spa_id,
-                client_attempt_id=payload.attempt_id,
-                for_update=True,
-            )
-            if attempt.processing_status != "accepted":
-                database_session.commit()
-                return _response_for_attempt(
-                    attempt,
-                    database_session=database_session,
-                    qr_ticket_secret=state.get(
-                        "qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
-                    ),
-                )
-            execution = None
-            if payload.proposal_count == 0:
-                repository.mark_no_proposals(attempt)
-                execution = RealtimeAttemptExecution(outcome="no_proposals")
-            else:
-                adapter = state.get("model_adapter")
-                if adapter is None or "object_store" not in state:
-                    repository.mark_internal_failure(attempt)
-                    execution = RealtimeAttemptExecution(outcome="internal_failure")
-                else:
-                    engine = cast(FaceEngine, adapter)
-
-                    def process_search() -> RealtimeSearchResult:
-                        return search_realtime_references(
-                            repository=ExactCompatibleSearchRepository(database_session),
-                            object_store=state["object_store"],
-                            context=context,
-                            engine=engine,
-                            occurrences=_reference_occurrences(payload),
-                        )
-
-                    execution = execute_realtime_attempt(
-                        repository=repository,
-                        attempt=attempt,
-                        search=process_search,
-                        qr_ticket_secret=state.get(
-                            "qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
-                        ),
-                        result_display_ms=state["realtime_result_display_ms"],
-                    )
-            assert execution is not None
-            # Attempt transitions use SQL UPDATE statements so the repository
-            # remains the only owner of core state. Reload the owner row before
-            # projecting diagnostics, otherwise the SQLAlchemy identity map can
-            # still contain the pre-terminal ``accepted`` snapshot.
-            database_session.refresh(attempt)
-            evidence_manifest, evidence_gap, evidence_tags = project_realtime_evidence(
-                attempt,
-                execution=execution,
-            )
-            evidence_attempt_id = attempt.id
-            terminal_correlation_id = attempt.client_attempt_id
-            terminal_processing_status = attempt.processing_status
-            database_session.commit()
-            emit_attempt_terminal(
-                state.get("server_event_emitter"),
-                attempt_id=evidence_attempt_id,
-                correlation_id=terminal_correlation_id,
-                processing_status=terminal_processing_status,
-            )
-            attach_realtime_evidence(
-                session_factory,
-                attempt_id=evidence_attempt_id,
-                ordinary_manifest=evidence_manifest,
-                gap_reason=evidence_gap,
-                issue_tags=evidence_tags,
-            )
-            return _response_for_attempt(
-                attempt,
-                database_session=database_session,
-                qr_ticket_secret=state.get(
-                    "qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
-                ),
-            )
+        return await run_in_threadpool(
+            _admit_realtime_attempt,
+            body=body,
+            content_type=request.headers.get("content-type"),
+            authorization=request.headers.get("authorization"),
+            client_ip=_client_ip(request),
+            state=dict(state),
+        )
 
     @app.post("/api/realtime/attempts/{attempt_id}/client-timing")
     async def report_client_timing(request: Request, attempt_id: str) -> Response:
@@ -401,6 +256,177 @@ def create_app() -> FastAPI:
         return response
 
     return app
+
+
+def _admit_realtime_attempt(
+    *,
+    body: bytes,
+    content_type: str | None,
+    authorization: str | None,
+    client_ip: str,
+    state: dict[str, Any],
+) -> Response:
+    """Adapt copied transport inputs using a Session owned by this worker."""
+    session_factory = state["session_factory"]
+    limiter = state["display_client_rate_limiter"]
+    with session_factory() as database_session:
+        try:
+            principal = authenticate_display_client(
+                database_session,
+                authorization=authorization,
+                ip_address=client_ip,
+                rate_limiter=limiter,
+            )
+        except DisplayClientRateLimitError as error:
+            raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS) from error
+        except InvalidDisplayClientCredentials as error:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from error
+        try:
+            payload = parse_realtime_multipart(
+                body, content_type
+            )
+        except RealtimeBodyTooLargeError as error:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+            ) from error
+        except RealtimePayloadError as error:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
+            ) from error
+        repository = PromoAttemptRepository(database_session)
+        try:
+            existing = repository.get_by_admission_key(
+                spa_id=principal.spa_id,
+                client_attempt_id=payload.attempt_id,
+            )
+        except PromoAttemptNotFoundError:
+            existing = None
+        if existing is not None:
+            database_session.commit()
+            return _response_for_attempt(
+                existing,
+                database_session=database_session,
+                qr_ticket_secret=state.get(
+                    "qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
+                ),
+            )
+
+        try:
+            context = RealtimeContextRepository(
+                database_session
+            ).resolve_realtime_context(
+                spa_id=principal.spa_id,
+                admitted_pipeline_revision_id=state["admitted_pipeline_revision_id"],
+                release_id=os.environ.get("FACE_MOMENT_RELEASE_ID", "face-moment-runtime"),
+            )
+        except (RealtimeReadinessClosedError, UnknownRealtimeContextSpaError) as error:
+            database_session.rollback()
+            emit_runtime_readiness_closed(state.get("server_event_emitter"))
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE) from error
+
+        attempt, inserted = repository.create_or_get_with_admission(
+            **admission_values(
+                payload,
+                context,
+                deadline_ms=state.get(
+                    "realtime_deadline_ms", DEFAULT_REALTIME_DEADLINE_MS
+                ),
+            ),
+        )
+        admitted_attempt_id = attempt.id
+        admitted_correlation_id = attempt.client_attempt_id
+        database_session.commit()
+        if not inserted:
+            return _response_for_attempt(
+                attempt,
+                database_session=database_session,
+                qr_ticket_secret=state.get(
+                    "qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
+                ),
+            )
+        emit_attempt_admitted(
+            state.get("server_event_emitter"),
+            attempt_id=admitted_attempt_id,
+            correlation_id=admitted_correlation_id,
+        )
+        attempt = repository.get_by_admission_key(
+            spa_id=principal.spa_id,
+            client_attempt_id=payload.attempt_id,
+            for_update=True,
+        )
+        if attempt.processing_status != "accepted":
+            database_session.commit()
+            return _response_for_attempt(
+                attempt,
+                database_session=database_session,
+                qr_ticket_secret=state.get(
+                    "qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
+                ),
+            )
+        execution = None
+        if payload.proposal_count == 0:
+            repository.mark_no_proposals(attempt)
+            execution = RealtimeAttemptExecution(outcome="no_proposals")
+        else:
+            adapter = state.get("model_adapter")
+            if adapter is None or "object_store" not in state:
+                repository.mark_internal_failure(attempt)
+                execution = RealtimeAttemptExecution(outcome="internal_failure")
+            else:
+                engine = cast(FaceEngine, adapter)
+
+                def process_search() -> RealtimeSearchResult:
+                    return search_realtime_references(
+                        repository=ExactCompatibleSearchRepository(database_session),
+                        object_store=state["object_store"],
+                        context=context,
+                        engine=engine,
+                        occurrences=_reference_occurrences(payload),
+                    )
+
+                execution = execute_realtime_attempt(
+                    repository=repository,
+                    attempt=attempt,
+                    search=process_search,
+                    qr_ticket_secret=state.get(
+                        "qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
+                    ),
+                    result_display_ms=state["realtime_result_display_ms"],
+                )
+        assert execution is not None
+        # Attempt transitions use SQL UPDATE statements so the repository
+        # remains the only owner of core state. Reload the owner row before
+        # projecting diagnostics, otherwise the SQLAlchemy identity map can
+        # still contain the pre-terminal ``accepted`` snapshot.
+        database_session.refresh(attempt)
+        evidence_manifest, evidence_gap, evidence_tags = project_realtime_evidence(
+            attempt,
+            execution=execution,
+        )
+        evidence_attempt_id = attempt.id
+        terminal_correlation_id = attempt.client_attempt_id
+        terminal_processing_status = attempt.processing_status
+        database_session.commit()
+        emit_attempt_terminal(
+            state.get("server_event_emitter"),
+            attempt_id=evidence_attempt_id,
+            correlation_id=terminal_correlation_id,
+            processing_status=terminal_processing_status,
+        )
+        attach_realtime_evidence(
+            session_factory,
+            attempt_id=evidence_attempt_id,
+            ordinary_manifest=evidence_manifest,
+            gap_reason=evidence_gap,
+            issue_tags=evidence_tags,
+        )
+        return _response_for_attempt(
+            attempt,
+            database_session=database_session,
+            qr_ticket_secret=state.get(
+                "qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
+            ),
+        )
 
 
 async def _read_limited_body(request: Request) -> bytes:

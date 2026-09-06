@@ -21,6 +21,8 @@ from face_moment.processing.terminal_publication import TerminalFace
 
 
 class SCRFDDetector(Protocol):
+    def prepare(self, *, ctx_id: int, input_size: tuple[int, int]) -> None: ...
+
     def detect(
         self,
         photo: NDArray[np.uint8],
@@ -121,6 +123,7 @@ class BuffaloPhotoAdapter:
         self._assets = assets
         self._detector = detector
         self._recognizer = recognizer
+        self._ready = False
 
     @classmethod
     def from_configured_assets(
@@ -130,15 +133,28 @@ class BuffaloPhotoAdapter:
         assets: BuffaloModelAssets,
     ) -> BuffaloPhotoAdapter:
         assets.verify_revision(revision)
-        detector = get_model(str(assets.detector_path), download=False)
-        recognizer = get_model(str(assets.recognizer_path), download=False)
-        if (
-            detector is None
-            or getattr(detector, "taskname", None) != "detection"
-            or recognizer is None
-            or getattr(recognizer, "taskname", None) != "recognition"
-        ):
-            raise BuffaloModelAssetMismatchError(str(revision.id))
+        try:
+            detector = get_model(str(assets.detector_path), download=False)
+            recognizer = get_model(str(assets.recognizer_path), download=False)
+            if (
+                detector is None
+                or getattr(detector, "taskname", None) != "detection"
+                or recognizer is None
+                or getattr(recognizer, "taskname", None) != "recognition"
+            ):
+                raise BuffaloModelAssetMismatchError(str(revision.id))
+            prepare = getattr(detector, "prepare", None)
+            if not callable(prepare):
+                raise BuffaloModelAssetMismatchError(
+                    f"Buffalo detector cannot be prepared: {revision.id}"
+                )
+            prepare(ctx_id=-1, input_size=(640, 640))
+        except BuffaloAdapterError:
+            raise
+        except Exception as error:
+            raise BuffaloAdapterError(
+                "configured Buffalo native models cannot be loaded or prepared"
+            ) from error
         return cls(
             revision=revision,
             assets=assets,
@@ -148,14 +164,33 @@ class BuffaloPhotoAdapter:
 
     @property
     def ready(self) -> bool:
-        return True
+        return self._ready
 
     @property
     def pipeline_revision_id(self) -> uuid.UUID:
         return self._revision.id
 
     def warmup(self) -> None:
-        self._assets.verify_revision(self._revision)
+        self._ready = False
+        try:
+            self._assets.verify_revision(self._revision)
+            photo = np.zeros((320, 320, 3), dtype=np.uint8)
+            self._detector.detect(photo)
+            warmup_face = Face(
+                bbox=np.array([0, 0, 320, 320], dtype=np.float32),
+                kps=np.array(
+                    [[80, 110], [240, 110], [160, 165], [100, 240], [220, 240]],
+                    dtype=np.float32,
+                ),
+                det_score=1.0,
+            )
+            self._recognizer.get(photo, warmup_face)
+            self._validated_embedding(warmup_face)
+        except BuffaloAdapterError:
+            raise
+        except Exception as error:
+            raise BuffaloAdapterError("Buffalo native warmup failed") from error
+        self._ready = True
 
     def process_photo(
         self, photo: NDArray[np.uint8]
@@ -175,18 +210,7 @@ class BuffaloPhotoAdapter:
                 det_score=native_detection[4],
             )
             self._recognizer.get(photo, native_face)
-            native_embedding = native_face.normed_embedding
-            if native_embedding is None:
-                raise BuffaloEmbeddingDimensionMismatchError("missing native embedding")
-            embedding = np.asarray(native_embedding, dtype=np.float32).reshape(-1)
-            if embedding.size != self._revision.embedding_dimension:
-                raise BuffaloEmbeddingDimensionMismatchError(
-                    f"expected {self._revision.embedding_dimension}, got {embedding.size}"
-                )
-            if not np.isfinite(embedding).all():
-                raise BuffaloEmbeddingDimensionMismatchError(
-                    "native normed_embedding must be finite"
-                )
+            embedding = self._validated_embedding(native_face)
             faces.append(
                 BuffaloPhotoFace(
                     pipeline_revision_id=self._revision.id,
@@ -195,6 +219,26 @@ class BuffaloPhotoAdapter:
                 )
             )
         return tuple(faces)
+
+    def _validated_embedding(self, face: Face) -> NDArray[np.float32]:
+        native_embedding = face.normed_embedding
+        if native_embedding is None:
+            raise BuffaloEmbeddingDimensionMismatchError("missing native embedding")
+        embedding = np.asarray(native_embedding, dtype=np.float32).reshape(-1)
+        if embedding.size != self._revision.embedding_dimension:
+            raise BuffaloEmbeddingDimensionMismatchError(
+                f"expected {self._revision.embedding_dimension}, got {embedding.size}"
+            )
+        norm = float(np.linalg.norm(embedding))
+        if (
+            not np.isfinite(embedding).all()
+            or not np.isfinite(norm)
+            or not np.isclose(norm, 1.0, rtol=1e-3, atol=1e-3)
+        ):
+            raise BuffaloEmbeddingDimensionMismatchError(
+                "native normed_embedding must be finite and normalized"
+            )
+        return embedding
 
     def inspect_reference_crop(
         self,

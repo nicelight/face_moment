@@ -4,6 +4,18 @@ status: active
 ---
 # Changelog
 
+## [2026-09-06] Wave 5 / Responsive realtime admission
+
+- Closed: [TASK-113-T3-FT-003-W5](tasks/TASK-113-T3-FT-003-W5.task.json), audit finding 2, after root functional PASS and independent semantic-pass.
+- Fixed: blocking request work owns Sessions inside framework worker threads; only the unique insert winner starts processing. Concurrent health, same-key in_progress and distinct-key busy responses arrive before inference release.
+- Evidence: 47 tests, real PostgreSQL insert/row-lock arbitration, Session cleanup, terminal replay and unchanged rate budgets; mypy/lint passed. JPEG hardening from TASK-112 is preserved. No deployment occurred.
+
+## [2026-09-06] Wave 4 / Realtime JPEG admission hardening
+
+- Closed: [TASK-112-T3-FT-003-W4](tasks/TASK-112-T3-FT-003-W4.task.json), audit finding 1, after root functional PASS and independent semantic-pass.
+- Fixed: auth/rate checks precede multipart/crop work; JPEG header dimensions reject oversized crops before allocation. Existing full decode still validates bounded input before Attempt creation.
+- Evidence: 15 current-source ASGI tests, independent 513x1/1x513/512x512 probes, mypy and lint. TASK-113 owns the remaining concurrent realtime fix; no runtime deployment occurred.
+
 ## [2026-09-06] TASK-104 KISS repair closed
 
 - Repaired: production Calibration completion now composes one stored

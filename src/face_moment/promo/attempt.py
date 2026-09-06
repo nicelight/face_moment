@@ -4,7 +4,7 @@ from collections.abc import Callable, Mapping
 from datetime import date, datetime, timezone
 import json
 import math
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 import uuid
 
 from sqlalchemy import (
@@ -220,10 +220,7 @@ class PromoAttemptRepository:
         deadline_ms: int,
         calibration_id: uuid.UUID | None = None,
     ) -> PromoAttempt:
-        existing = self._find(spa_id, client_attempt_id)
-        if existing is not None:
-            return existing
-        values = self._validated_values(
+        attempt, _ = self.create_or_get_with_admission(
             spa_id=spa_id,
             client_attempt_id=client_attempt_id,
             trigger_source=trigger_source,
@@ -247,6 +244,20 @@ class PromoAttemptRepository:
             deadline_ms=deadline_ms,
             calibration_id=calibration_id,
         )
+        return attempt
+
+    def create_or_get_with_admission(self, **values: Any) -> tuple[PromoAttempt, bool]:
+        """Return the unique row and whether this transaction inserted it.
+
+        Only the insert winner owns processing after committing admission.
+        Existing rows are read without waiting for an inference-held row lock.
+        """
+        spa_id, client_attempt_id = values["spa_id"], values["client_attempt_id"]
+        existing = self._find(spa_id, client_attempt_id)
+        if existing is not None:
+            return existing, False
+        values.setdefault("calibration_id", None)
+        values = self._validated_values(**values)
         attempt = PromoAttempt(**values)
         try:
             with self._session.begin_nested():
@@ -255,9 +266,9 @@ class PromoAttemptRepository:
         except IntegrityError:
             existing = self._find(spa_id, client_attempt_id)
             if existing is not None:
-                return existing
+                return existing, False
             raise
-        return attempt
+        return attempt, True
 
     def get(self, attempt_id: uuid.UUID) -> PromoAttempt:
         attempt = self._session.get(PromoAttempt, attempt_id)

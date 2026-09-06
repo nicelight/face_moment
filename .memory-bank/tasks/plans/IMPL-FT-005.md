@@ -1,7 +1,7 @@
 ---
 description: Implementation plan for truthful Promo presentation, display outcome and visible-QR acceptance in FT-005.
 status: active
-last_updated: 2026-08-29
+last_updated: 2026-09-06
 ---
 # IMPL-FT-005 — Promo Presentation And Display Outcome
 
@@ -14,7 +14,7 @@ lifetimes and prove the same-twenty-Attempt visible/scannable QR gate.
 
 ## Normative Basis
 
-- [FT-005](../../features/FT-005.md): `FT-005-AC-001..005` and governing
+- [FT-005](../../features/FT-005.md): `FT-005-AC-001..006` and governing
   `REQ-UX-001`, `REQ-UX-003`, `REQ-UX-004`, `REQ-PERF-001`, `REQ-REL-001`,
   `REQ-SEC-001` and `REQ-ARCH-001`.
 - [System Architecture](../../architecture/system-architecture.md): AD-001,
@@ -120,6 +120,53 @@ identities as the controlled corpus, but FT-005 reports only its independent
 QR/latency count: it does not filter on correctness, calculate a joint
 intersection or joint pass set, consume FT-004 correctness evidence, or depend
 on `TASK-075-T3-FT-004-W5`.
+
+## Canonical Public Edge Correction
+
+[TASK-115](../TASK-115-T3-FT-005-W4.task.json), T3/W4, owns AC-006 only,
+from operator-requested audit finding 3. The completed display, active-date,
+retention, Calibration and inventory providers are prerequisites; their claims
+and terminal evidence stay unchanged. FT-005 owns the Promo display integration,
+while the single common edge matcher also restores the explicitly listed staff
+paths without moving any provider's authorization or state ownership.
+
+The staff-route GREEN matrix follows the existing provider contracts:
+search settings and GET/PUT active-date are operator-only (developer and
+photographer receive `403`); retention permits operator/developer; Calibration
+is developer-only; the inventory page admits all staff roles. The bounded
+[planning repair basis](../../../.protocols/FT-005/clarification.md) preserves
+these rights and routes the corrected cards to fresh task-plan review.
+
+Add backend forwarding for `/api/promo/*`,
+`/api/serving/spas/*/active-visit-date`, `/api/diagnostics/retention`,
+`/staff/search-settings`, `/staff/photo-inventory`, `/staff/calibrations`,
+`/staff/calibrations/*` and `/staff/diagnostics-retention`. Preserve full paths,
+realtime-specific dispatch, X-Forwarded-For, upload prechecks and both body caps.
+No catch-all API route, deployment or runtime-handler change is required.
+
+Concern actions are `reuse`: [Promo Display API](../../contracts/promo-display-api.md),
+[staff active date](../../contracts/boundary-map.md#staff-active-date-surface),
+[Photo inventory page](../../contracts/photo-inventory-api.md#staff-inventory-page-and-selection),
+[retention read](../../contracts/diagnostic-retention-api.md#staff-read-contract)
+and [Calibration routes](../../domains/calibration.md#minimal-developer-surface)
+already own exact methods, auth/errors and shapes. The accepted
+[external/runtime boundary](../../contracts/boundary-map.md#external-and-runtime-boundaries)
+owns transport; no graph or Planning Revision 4 change is needed.
+
+The hard boundary is deploy/Caddyfile, one focused live-edge test and the
+existing central-shell routing test. Proof uses real pinned Caddy, current-source
+backend/auth, disposable PostgreSQL and synthetic preview/session fixtures;
+no model-consuming role startup or production deployment is needed. Require
+happy config/media/ack, each restored staff route group, auth/role/CSRF denial,
+realtime upstream/caps and preserved path prefixes. A dedicated dispatch-only
+realtime fixture does not claim inference readiness. All processes, networks,
+TLS files and DB rows are task-owned and cleaned on failure.
+
+Retain honest real-edge RED/GREEN, Caddy validate, focused pytest and Memory
+Bank lint; then fresh task-plan review, conditional T3 doctor, execution,
+verify and per-task red-verify. Static matching or direct ASGI evidence alone
+cannot close the live-edge criterion. Deferred production acceptance remains
+separate and untouched.
 
 ## Advisory Expected Change Surface
 

@@ -1,7 +1,7 @@
 ---
 description: Implementation plan for independent authenticated Photo admission in FT-001.
 status: active
-last_updated: 2026-08-08
+last_updated: 2026-09-06
 ---
 # IMPL-FT-001 — Independent Photo Admission
 
@@ -14,7 +14,7 @@ duplicate semantics.
 
 ## Normative Basis
 
-- [FT-001](../../features/FT-001.md): `FT-001-AC-001..012` and governing
+- [FT-001](../../features/FT-001.md): `FT-001-AC-001..013` and governing
   `REQ-ING-001..003`, `REQ-SEC-001` and `REQ-ARCH-001`.
 - [System Architecture](../../architecture/system-architecture.md): AD-002,
   AD-003, AD-009, AD-010 and AD-011.
@@ -140,3 +140,48 @@ All fifteen indexed tasks independently satisfy their task-owned claims and
 tier obligations, every FT-001 AC has one owner, the complete photographer UAT
 passes, and later feature-completion review/semantic verification can proceed
 without guessing or changing Planning Revision `4`.
+
+## Staff Login Maintenance
+
+[TASK-116](../TASK-116-T3-FT-001-W9.task.json), T3/W9, owns AC-013 only,
+from operator-requested audit finding 4. It depends on existing sessions,
+uploader and all-role inventory page, plus TASK-115's canonical edge route.
+The completed baseline and its evidence stay unchanged; the new flow awaits
+its own browser proof. T3 follows actual authentication UI impact.
+
+Primary owner remains staff_access at `src/face_moment/platform/auth/`. Replace
+the existing placeholder in its HTTP module with a small labeled form using
+the same plain HTML/inline-script approach as staff pages. POST exactly
+username/password JSON to the existing session endpoint; consume 204 and its
+browser-set cookies without JSON parsing. Show generic recoverable 401/429
+and technical errors. Prevent duplicate pending submissions and keep secrets
+out of browser storage, URLs, logs and reflected text.
+
+Success navigates to the fixed same-origin `/staff/photo-inventory`: its
+[accepted page contract](../../contracts/photo-inventory-api.md#staff-inventory-page-and-selection)
+admits all staff roles, unlike the photographer-only uploader. No role router
+or untrusted return URL is needed. A photographer then opens the existing
+uploader with the newly issued cookie; target authorization remains inventory's.
+
+Concern actions are `reuse`: [session API](../../contracts/photo-admission-api.md#staff-session-endpoints),
+[staff cookies/auth](../../domains/staff-access.md#browser-session-contract),
+[uploader](../../contracts/photo-admission-api.md#independent-uploader-page)
+and [capability ownership](../../contracts/boundary-map.md#capability-application-boundaries)
+already define the boundary. The selected landing is an existing published
+consumer, not a new API or ownership edge. Planning Revision stays 4.
+
+Only `platform/auth/http.py` and `tests/staff_access/test_sessions.py` are
+inside the code/test write boundary. Required browser setup/evidence lives in
+the normal task artifact directory. Use installed playwright cli against an
+isolated local HTTPS Caddy/current-source backend and fresh owner-provisioned
+users in a disposable DB; start with no cookies or imported storage state.
+Require real success/401/429 API responses, secure cookies and fixed landing,
+photographer uploader access, recoverable technical failure and usable keyboard
+submission. Existing API tests cannot substitute for that browser journey.
+
+Run current-source mypy, session pytest and Memory Bank lint, retain honest
+real-page RED/equivalent browser GREEN, then verify and per-task red-verify.
+No browser runner installation, UI redesign, deployment, persistent credentials
+or business authorization change is in scope. Next: fresh
+`/review-tasks-plan FT-001`, conditional T3 doctor, then owner-selected execution
+once TASK-115 has completed.

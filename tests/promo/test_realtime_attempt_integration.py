@@ -4,6 +4,8 @@ import asyncio
 from collections.abc import Iterator
 from datetime import datetime, timezone
 import json
+import threading
+import time
 from typing import Any, Callable
 import uuid
 
@@ -26,7 +28,9 @@ from face_moment.processing import (
     PipelineRevisionRepository,
     RealtimeSearchResult,
 )
-from face_moment.promo import PromoAttempt, PromoSession
+from face_moment.promo import (
+    PromoAttempt, PromoSession, PromoAttemptRepository, PromoAttemptNotFoundError,
+)
 from face_moment.serving_control import IngestTargetRepository
 from face_moment.serving_control.display_client_access import DisplayClientRepository
 from face_moment.serving_control.display_client_auth import DisplayClientRateLimiter
@@ -348,6 +352,12 @@ def _multipart(manifest: dict[str, Any], *, crops: list[bytes] | None = None) ->
 def _request(
     app: FastAPI, body: bytes, content_type: str, token: str | None
 ) -> tuple[int, dict[str, str], dict[str, Any]]:
+    return asyncio.run(_async_request(app, body, content_type, token))
+
+
+async def _async_request(
+    app: FastAPI, body: bytes, content_type: str, token: str | None, *, path: str = "/api/realtime/attempts"
+) -> tuple[int, dict[str, str], dict[str, Any]]:
     messages: list[dict[str, Any]] = []
     delivered = False
 
@@ -368,16 +378,15 @@ def _request(
     ]
     if token is not None:
         headers.append((b"authorization", f"Bearer {token}".encode()))
-    asyncio.run(
-        app(
+    await app(
             {
                 "type": "http",
                 "asgi": {"version": "3.0"},
                 "http_version": "1.1",
-                "method": "POST",
+                "method": "GET" if path == "/healthz" else "POST",
                 "scheme": "https",
-                "path": "/api/realtime/attempts",
-                "raw_path": b"/api/realtime/attempts",
+                "path": path,
+                "raw_path": path.encode(),
                 "query_string": b"",
                 "headers": headers,
                 "client": ("127.0.0.1", 51515),
@@ -386,7 +395,6 @@ def _request(
             receive,
             send,
         )
-    )
     start = next(message for message in messages if message["type"] == "http.response.start")
     response_body = b"".join(
         message.get("body", b"")
@@ -394,3 +402,182 @@ def _request(
         if message["type"] == "http.response.body"
     )
     return int(start["status"]), {}, json.loads(response_body or b"{}")
+
+
+@pytest.mark.parametrize("racing_key,first_outcome", [
+    (False, "result"), (True, "result"),
+    (False, "internal_failure"), (False, "deadline"),
+])
+def test_concurrent_real_route_returns_before_inference_release(
+    realtime_state: tuple[FastAPI, Engine, uuid.UUID, str],
+    monkeypatch: pytest.MonkeyPatch,
+    racing_key: bool,
+    first_outcome: str,
+) -> None:
+    app, engine, spa_id, token = realtime_state
+    started, release = threading.Event(), threading.Event()
+    probe_started = time.monotonic()
+    calls: list[int] = []
+    trace: list[str] = []
+    sessions: list[Session] = []
+    closed: list[Session] = []
+    thread_ids: dict[int, int] = {}
+    loop_thread = threading.get_ident()
+
+    class TrackedSession(Session):
+        def __init__(self) -> None:
+            super().__init__(engine)
+            sessions.append(self)
+            thread_ids[id(self)] = threading.get_ident()
+
+        def get_bind(self, *args: Any, **kwargs: Any) -> Any:
+            assert thread_ids[id(self)] == threading.get_ident()
+            return super().get_bind(*args, **kwargs)
+
+        def close(self) -> None:
+            assert thread_ids[id(self)] == threading.get_ident()
+            closed.append(self)
+            super().close()
+
+    app.state.role_state["session_factory"] = TrackedSession
+    app.state.role_state["realtime_deadline_ms"] = 10000
+
+    clock = [0.0]
+    original_execute = realtime.execute_realtime_attempt
+    def execute_with_clock(**kwargs: Any) -> Any:
+        return original_execute(**kwargs, clock=lambda: clock[0])
+    monkeypatch.setattr(realtime, "execute_realtime_attempt", execute_with_clock)
+
+    def search(**_: object) -> RealtimeSearchResult:
+        calls.append(threading.get_ident())
+        trace.append("search_started")
+        started.set()
+        release.wait(4)
+        trace.append("search_released")
+        if len(calls) == 1:
+            if first_outcome == "internal_failure":
+                raise RuntimeError("controlled search failure")
+            if first_outcome == "deadline":
+                clock[0] = 11.0
+        return _successful_search_result()
+
+    monkeypatch.setattr(realtime, "search_realtime_references", search)
+    if racing_key:
+        # Both transport reads miss before serving-context admission serialization.
+        barrier = threading.Barrier(2, timeout=3)
+        original_get = PromoAttemptRepository.get_by_admission_key
+        def synchronized_get(self: Any, **kwargs: Any) -> Any:
+            try:
+                return original_get(self, **kwargs)
+            except PromoAttemptNotFoundError:
+                barrier.wait()
+                raise
+        monkeypatch.setattr(PromoAttemptRepository, "get_by_admission_key", synchronized_get)
+
+    owner_id, other_id = uuid.uuid4(), uuid.uuid4()
+    owner_body, content_type = _multipart(_manifest(owner_id, count=2))
+    other_body, _ = _multipart(_manifest(other_id, count=2))
+
+    async def scenario() -> None:
+        pending: list[asyncio.Task[Any]] = []
+        # A separate watchdog makes pre-fix loop blocking finite too.
+        watchdog = threading.Timer(4, release.set)
+        watchdog.start()
+        try:
+            owner = asyncio.create_task(_async_request(app, owner_body, content_type, token))
+            pending.append(owner)
+            if racing_key:
+                duplicate = asyncio.create_task(_async_request(app, owner_body, content_type, token))
+                pending.append(duplicate)
+            assert await asyncio.to_thread(started.wait, 3)
+            assert not release.is_set(), "event loop stayed blocked until inference release"
+            health = await asyncio.wait_for(_async_request(app, b"", "", None, path="/healthz"), 1)
+            assert health[0] == 200 and not release.is_set()
+            trace.append("health_before_release")
+            if racing_key:
+                done, _ = await asyncio.wait(pending, timeout=1, return_when=asyncio.FIRST_COMPLETED)
+                assert len(done) == 1, "duplicate waited on inference-held PostgreSQL row lock"
+                duplicate_response = next(iter(done)).result()
+                # Do not apply the missing-read barrier to the distinct request.
+                monkeypatch.setattr(PromoAttemptRepository, "get_by_admission_key", original_get)
+            else:
+                duplicate_response = await asyncio.wait_for(_async_request(app, owner_body, content_type, token), 1)
+            assert duplicate_response[0] == 200
+            assert duplicate_response[2]["outcome"] == "in_progress"
+            trace.append("duplicate_in_progress_before_release")
+            competing = await asyncio.wait_for(_async_request(app, other_body, content_type, token), 1)
+            assert competing[0] == 200 and competing[2]["outcome"] == "busy"
+            assert not release.is_set() and len(calls) == 1
+            trace.append("distinct_busy_before_release")
+            with Session(engine) as session:
+                rows = session.scalars(select(PromoAttempt).where(PromoAttempt.spa_id == spa_id)).all()
+                assert len(rows) == 2
+                by_key = {row.client_attempt_id: row for row in rows}
+                assert by_key[owner_id].processing_status == "accepted"
+                assert by_key[owner_id].domain_outcome is None
+                assert by_key[other_id].domain_outcome == "busy"
+            release.set()
+            responses = await asyncio.gather(*pending)
+            terminal = next(response for response in responses if response[2].get("outcome") != "in_progress")
+            if first_outcome == "internal_failure":
+                assert terminal[0] == 500
+            else:
+                assert terminal[0] == 200 and terminal[2]["outcome"] == first_outcome
+            replay = await _async_request(app, owner_body, content_type, token)
+            assert replay == terminal and len(calls) == 1
+            fresh_body, _ = _multipart(_manifest(uuid.uuid4(), count=2))
+            fresh = await _async_request(app, fresh_body, content_type, token)
+            assert fresh[2]["outcome"] == "result" and len(calls) == 2
+            def fail_parse(*_: Any) -> Any:
+                raise RuntimeError("controlled worker failure")
+            monkeypatch.setattr(realtime, "parse_realtime_multipart", fail_parse)
+            with pytest.raises(RuntimeError, match="controlled worker failure"):
+                await _async_request(app, owner_body, content_type, token)
+        finally:
+            release.set()
+            watchdog.cancel()
+            await asyncio.gather(*pending, return_exceptions=True)
+            watchdog.join()
+
+    try:
+        asyncio.run(scenario())
+    finally:
+        print({"racing_key": racing_key, "first_outcome": first_outcome, "events": trace, "search_calls": len(calls),
+               "elapsed_seconds": round(time.monotonic() - probe_started, 3),
+               "session_count": len(sessions), "closed_count": len(closed),
+               "worker_threads": sorted(set(thread_ids.values())), "loop_thread": loop_thread})
+    assert len(sessions) == len(closed) and set(sessions) == set(closed)
+    assert all(thread_id != loop_thread for thread_id in thread_ids.values())
+    assert len(set(thread_ids.values())) >= 2
+
+
+def test_concurrent_route_auth_workers_keep_rate_budget(
+    realtime_state: tuple[FastAPI, Engine, uuid.UUID, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app, engine, _, token = realtime_state
+    callers, limit = 12, 3
+    barrier = threading.Barrier(callers, timeout=3)
+    original_auth = realtime.authenticate_display_client
+    app.state.role_state["display_client_rate_limiter"] = DisplayClientRateLimiter(
+        limit=limit, window_seconds=60,
+    )
+
+    def synchronized_auth(*args: Any, **kwargs: Any) -> Any:
+        barrier.wait()
+        return original_auth(*args, **kwargs)
+
+    monkeypatch.setattr(realtime, "authenticate_display_client", synchronized_auth)
+    async def scenario() -> list[Any]:
+        requests = []
+        for _ in range(callers):
+            body, content_type = _multipart(_manifest(uuid.uuid4(), count=0))
+            requests.append(_async_request(app, body, content_type, token))
+        return await asyncio.gather(*requests)
+
+    responses = asyncio.run(scenario())
+    statuses = [response[0] for response in responses]
+    assert statuses.count(200) == limit and statuses.count(429) == callers - limit
+    with Session(engine) as session:
+        assert session.scalar(select(func.count()).select_from(PromoAttempt)) == limit
+    print({"worker_auth_allowed": statuses.count(200), "worker_auth_denied": statuses.count(429)})

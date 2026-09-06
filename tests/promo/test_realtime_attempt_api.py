@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from face_moment.entrypoints import realtime
 from face_moment.infrastructure.settings import Settings
 from face_moment.processing import PipelineCode, PipelineRevisionRepository
+from face_moment.processing.realtime_search import RealtimeSearchResult
 from face_moment.promo import PromoAttempt
 from face_moment.serving_control import IngestTargetRepository
 from face_moment.serving_control.display_client_access import DisplayClientRepository
@@ -197,6 +198,242 @@ def test_realtime_attempt_admits_exact_body_limit_before_nonzero_seam(
     assert row.domain_outcome is None
 
 
+def test_realtime_attempt_authenticates_before_oversized_jpeg_decode(
+    realtime_state: tuple[FastAPI, Engine, uuid.UUID, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app, engine, _, _ = realtime_state
+    decode_calls: list[bytes] = []
+    original_imdecode = realtime.cv2.imdecode
+
+    def spy_imdecode(buffer: Any, flags: int) -> Any:
+        decode_calls.append(bytes(buffer))
+        return original_imdecode(buffer, flags)
+
+    monkeypatch.setattr(realtime.cv2, "imdecode", spy_imdecode)
+    body, content_type = _multipart(
+        _manifest(uuid.uuid4(), occurrences=[_occurrence(0)]),
+        crops=[_jpeg(width=4096, height=4096)],
+    )
+
+    status, _, _ = _request(app, body, content_type, token=None)
+
+    assert status == 401
+    assert decode_calls == []
+    with Session(engine) as session:
+        assert session.scalar(select(func.count()).select_from(PromoAttempt)) == 0
+
+
+def test_realtime_attempt_rejects_invalid_token_before_bounded_jpeg_decode(
+    realtime_state: tuple[FastAPI, Engine, uuid.UUID, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app, engine, _, _ = realtime_state
+    decode_calls: list[bytes] = []
+    original_imdecode = realtime.cv2.imdecode
+
+    def spy_imdecode(buffer: Any, flags: int) -> Any:
+        decode_calls.append(bytes(buffer))
+        return original_imdecode(buffer, flags)
+
+    monkeypatch.setattr(realtime.cv2, "imdecode", spy_imdecode)
+    body, content_type = _multipart(
+        _manifest(uuid.uuid4(), occurrences=[_occurrence(0)]), crops=[_jpeg()]
+    )
+
+    status, _, _ = _request(app, body, content_type, token="invalid-token")
+
+    assert status == 401
+    assert decode_calls == []
+    with Session(engine) as session:
+        assert session.scalar(select(func.count()).select_from(PromoAttempt)) == 0
+
+
+def test_realtime_attempt_rejects_oversized_jpeg_header_before_decode(
+    realtime_state: tuple[FastAPI, Engine, uuid.UUID, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app, engine, _, token = realtime_state
+    decode_calls: list[bytes] = []
+    original_imdecode = realtime.cv2.imdecode
+
+    def spy_imdecode(buffer: Any, flags: int) -> Any:
+        decode_calls.append(bytes(buffer))
+        return original_imdecode(buffer, flags)
+
+    monkeypatch.setattr(realtime.cv2, "imdecode", spy_imdecode)
+    body, content_type = _multipart(
+        _manifest(uuid.uuid4(), occurrences=[_occurrence(0)]),
+        crops=[_jpeg(width=4096, height=4096)],
+    )
+
+    status, _, _ = _request(app, body, content_type, token)
+
+    assert status == 422
+    assert decode_calls == []
+    with Session(engine) as session:
+        assert session.scalar(select(func.count()).select_from(PromoAttempt)) == 0
+
+
+def test_realtime_attempt_rate_rejection_precedes_jpeg_decode(
+    realtime_state: tuple[FastAPI, Engine, uuid.UUID, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app, engine, _, token = realtime_state
+    app.state.role_state["display_client_rate_limiter"] = DisplayClientRateLimiter(
+        limit=1, window_seconds=60
+    )
+    first_body, first_content_type = _multipart(
+        _manifest(uuid.uuid4(), occurrences=[])
+    )
+    assert _request(app, first_body, first_content_type, token)[0] == 200
+
+    decode_calls: list[bytes] = []
+    original_imdecode = realtime.cv2.imdecode
+
+    def spy_imdecode(buffer: Any, flags: int) -> Any:
+        decode_calls.append(bytes(buffer))
+        return original_imdecode(buffer, flags)
+
+    monkeypatch.setattr(realtime.cv2, "imdecode", spy_imdecode)
+    body, content_type = _multipart(
+        _manifest(uuid.uuid4(), occurrences=[_occurrence(0)]),
+        crops=[_jpeg(width=4096, height=4096)],
+    )
+
+    status, _, _ = _request(app, body, content_type, token)
+
+    assert status == 429
+    assert decode_calls == []
+    with Session(engine) as session:
+        assert session.scalar(select(func.count()).select_from(PromoAttempt)) == 1
+
+
+@pytest.mark.parametrize("crop", [b"not-a-jpeg", b"\xff\xd8\xff\xe0\x00\x10JFIF"])
+def test_realtime_attempt_rejects_malformed_jpeg_before_full_decode(
+    realtime_state: tuple[FastAPI, Engine, uuid.UUID, str],
+    monkeypatch: pytest.MonkeyPatch,
+    crop: bytes,
+) -> None:
+    app, engine, _, token = realtime_state
+    decode_calls: list[bytes] = []
+    original_imdecode = realtime.cv2.imdecode
+
+    def spy_imdecode(buffer: Any, flags: int) -> Any:
+        decode_calls.append(bytes(buffer))
+        return original_imdecode(buffer, flags)
+
+    monkeypatch.setattr(realtime.cv2, "imdecode", spy_imdecode)
+    body, content_type = _multipart(
+        _manifest(uuid.uuid4(), occurrences=[_occurrence(0)]), crops=[crop]
+    )
+
+    status, _, _ = _request(app, body, content_type, token)
+
+    assert status == 422
+    assert decode_calls == []
+    with Session(engine) as session:
+        assert session.scalar(select(func.count()).select_from(PromoAttempt)) == 0
+
+
+def test_realtime_attempt_rejects_bounded_header_with_undecodable_entropy(
+    realtime_state: tuple[FastAPI, Engine, uuid.UUID, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app, engine, _, token = realtime_state
+    decode_calls: list[bytes] = []
+    original_imdecode = realtime.cv2.imdecode
+
+    def spy_imdecode(buffer: Any, flags: int) -> Any:
+        decode_calls.append(bytes(buffer))
+        return original_imdecode(buffer, flags)
+
+    monkeypatch.setattr(realtime.cv2, "imdecode", spy_imdecode)
+    body, content_type = _multipart(
+        _manifest(uuid.uuid4(), occurrences=[_occurrence(0)]),
+        crops=[_jpeg()[:-2]],
+    )
+
+    status, _, _ = _request(app, body, content_type, token)
+
+    assert status == 422
+    assert len(decode_calls) == 1
+    with Session(engine) as session:
+        assert session.scalar(select(func.count()).select_from(PromoAttempt)) == 0
+
+
+def test_realtime_attempt_rejects_png_disguised_as_jpeg_before_decode(
+    realtime_state: tuple[FastAPI, Engine, uuid.UUID, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app, engine, _, token = realtime_state
+    decode_calls: list[bytes] = []
+    original_imdecode = realtime.cv2.imdecode
+
+    def spy_imdecode(buffer: Any, flags: int) -> Any:
+        decode_calls.append(bytes(buffer))
+        return original_imdecode(buffer, flags)
+
+    monkeypatch.setattr(realtime.cv2, "imdecode", spy_imdecode)
+    image = np.zeros((32, 32, 3), dtype=np.uint8)
+    encoded = cv2.imencode(".png", image)[1]
+    body, content_type = _multipart(
+        _manifest(uuid.uuid4(), occurrences=[_occurrence(0)]),
+        crops=[encoded.tobytes()],
+    )
+
+    status, _, _ = _request(app, body, content_type, token)
+
+    assert status == 422
+    assert decode_calls == []
+    with Session(engine) as session:
+        assert session.scalar(select(func.count()).select_from(PromoAttempt)) == 0
+
+
+def test_realtime_attempt_valid_512_jpeg_reaches_ordinary_decode_and_admission(
+    realtime_state: tuple[FastAPI, Engine, uuid.UUID, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app, engine, _, token = realtime_state
+    app.state.role_state.update(
+        {
+            "model_adapter": object(),
+            "object_store": object(),
+            "realtime_result_display_ms": 30_000,
+        }
+    )
+    seen_shapes: list[tuple[int, ...]] = []
+
+    def fake_search(**kwargs: Any) -> RealtimeSearchResult:
+        occurrences = tuple(kwargs["occurrences"])
+        seen_shapes.extend(tuple(item.crop.shape) for item in occurrences)
+        return RealtimeSearchResult(detections=())
+
+    monkeypatch.setattr(realtime, "search_realtime_references", fake_search)
+    decode_calls: list[bytes] = []
+    original_imdecode = realtime.cv2.imdecode
+
+    def spy_imdecode(buffer: Any, flags: int) -> Any:
+        decode_calls.append(bytes(buffer))
+        return original_imdecode(buffer, flags)
+
+    monkeypatch.setattr(realtime.cv2, "imdecode", spy_imdecode)
+    attempt_id = uuid.uuid4()
+    body, content_type = _multipart(
+        _manifest(attempt_id, occurrences=[_occurrence(0)]),
+        crops=[_jpeg(width=512, height=512)],
+    )
+
+    status, _, response = _request(app, body, content_type, token)
+
+    assert status == 200
+    assert response["outcome"] == "insufficient_results"
+    assert len(decode_calls) == 2
+    assert seen_shapes == [(512, 512, 3)]
+    with Session(engine) as session:
+        assert session.scalar(select(func.count()).select_from(PromoAttempt)) == 1
+
+
 def _manifest(attempt_id: uuid.UUID, *, occurrences: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "schema_version": 1,
@@ -226,8 +463,8 @@ def _occurrence(index: int) -> dict[str, Any]:
     }
 
 
-def _jpeg() -> bytes:
-    image = np.zeros((32, 32, 3), dtype=np.uint8)
+def _jpeg(*, width: int = 32, height: int = 32) -> bytes:
+    image = np.zeros((height, width, 3), dtype=np.uint8)
     image[:, :, 1] = 120
     encoded = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 85])[1]
     return encoded.tobytes()

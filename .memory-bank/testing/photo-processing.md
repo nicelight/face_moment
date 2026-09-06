@@ -1,7 +1,7 @@
 ---
 description: Reproducible verification contract for FT-002 processing, recovery, SLO and storage-health behavior.
 status: active
-last_updated: 2026-08-14
+last_updated: 2026-09-07
 source_of_truth:
   - .memory-bank/testing/photo-processing.md
 ---
@@ -11,7 +11,7 @@ source_of_truth:
 
 This specification defines deterministic proof for `REQ-ING-003..004`,
 `REQ-SRCH-001`, `REQ-REL-002`, `REQ-SEC-001`, `REQ-ARCH-001` and
-`FT-002-AC-001..008`. Product outcomes remain owned by the
+`FT-002-AC-001..009`. Product outcomes remain owned by the
 [PRD](../prd.md) and [FT-002](../features/FT-002.md); the persisted/worker rules
 come from [Photo Processing](../domains/photo-processing.md), and the staff
 surface comes from the [Photo Processing API](../contracts/photo-processing-api.md).
@@ -80,6 +80,18 @@ to the other pipeline's assets all keep the worker unavailable before startup
 recovery, claim or Photo-state mutation. A serving-revision change remains
 unavailable until a restart binds the process to matching assets; no fallback
 or download is allowed.
+
+The Buffalo native-readiness regression uses the actual local SCRFD and Buffalo
+M ONNX files with an in-memory compatible revision. It records CPU detector
+preparation at `(640, 640)`, detector inference, recognizer `get` on a
+discarded BGR image with valid five-point landmarks, and a finite normalized
+512-dimensional result. Readiness is false before warmup, remains false after
+independent native detector/recognizer or invalid-embedding failures, and only
+opens after both native calls succeed. The same dynamic detector then processes
+a 320-by-320 synthetic Photo without the prior `input_size` assertion. Existing
+serving and Calibration admission tests prove a `BuffaloAdapterError` remains
+closed as `ModelAdmissionError`; no skip, fallback or model download is valid
+evidence.
 
 ## Idempotency And Restart Matrix
 
@@ -170,6 +182,7 @@ read-only and PostgreSQL, MinIO and internal service ports remain private.
 | `FT-002-AC-006` | Authenticated health matrix exposes failures/recovery plus independent normal/low/unavailable PostgreSQL and MinIO capacity, while `REQ-SEC-001` private-topology and redaction proof remains satisfied. |
 | `FT-002-AC-007` | The configured SFace adapter records the YuNet plus `alignCrop`/SFace path, revision/dimension match and rejection of Buffalo-derived or mismatched input. |
 | `FT-002-AC-008` | The configured Buffalo M adapter records the SCRFD/native alignment/`normed_embedding` path, revision/dimension match and rejection of SFace-derived or mismatched input. |
+| `FT-002-AC-009` | The actual local dynamic-input Buffalo detector and recognizer complete native warmup, readiness stays closed on native failure, and existing serving/Calibration admissions fail closed with `ModelAdmissionError`. |
 
 Project-native build/typecheck/tests and tier-routed verification remain owned
 by the [testing index](index.md). This subject specification adds no lifecycle,

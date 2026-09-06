@@ -21,9 +21,15 @@ from face_moment.entrypoints.model_consumers import (
     bind_model_consumer,
 )
 from face_moment.infrastructure.settings import Settings
+from face_moment.processing.buffalo_adapter import (
+    BuffaloAdapterError,
+    BuffaloModelAssets,
+    BuffaloPhotoAdapter,
+)
 from face_moment.processing.model_admission import (
     AdmittedModelAdapter,
     ModelAdmissionError,
+    admit_selected_calibration_adapter,
     admit_selected_model,
 )
 from face_moment.processing.revisions import (
@@ -111,6 +117,66 @@ def _set_sface_environment(
     return Settings.from_env()
 
 
+def _buffalo_assets(tmp_path: Path) -> BuffaloModelAssets:
+    detector_path = tmp_path / "scrfd.onnx"
+    recognizer_path = tmp_path / "w600k_r50.onnx"
+    detector_path.write_bytes(b"task-114-scrfd")
+    recognizer_path.write_bytes(b"task-114-buffalo")
+    return BuffaloModelAssets(
+        detector_path=detector_path,
+        detector_id="scrfd",
+        detector_version="10g-bnkps",
+        recognizer_path=recognizer_path,
+        recognizer_id="w600k_r50",
+        recognizer_version="buffalo-m",
+        preprocessing_version="insightface-bgr-v1",
+        alignment_version="insightface-norm-crop-v1",
+        normalization_version="insightface-normed-embedding-v1",
+        embedding_dimension=3,
+    )
+
+
+def _buffalo_revision(assets: BuffaloModelAssets) -> EligiblePipelineRevision:
+    now = datetime.now(UTC)
+    return EligiblePipelineRevision(
+        id=uuid.uuid4(),
+        pipeline_code=PipelineCode.INSIGHTFACE_BUFFALO_M,
+        detector_id=assets.detector_id,
+        detector_version=assets.detector_version,
+        recognizer_id=assets.recognizer_id,
+        recognizer_version=assets.recognizer_version,
+        weights_sha256=assets.weights_sha256(),
+        preprocessing_version=assets.preprocessing_version,
+        alignment_version=assets.alignment_version,
+        normalization_version=assets.normalization_version,
+        embedding_dimension=assets.embedding_dimension,
+        created_at=now,
+        validated_at=now,
+    )
+
+
+def _set_buffalo_environment(
+    monkeypatch: pytest.MonkeyPatch, assets: BuffaloModelAssets
+) -> Settings:
+    monkeypatch.setenv("BUFFALO_DETECTOR_PATH", str(assets.detector_path))
+    monkeypatch.setenv("BUFFALO_DETECTOR_ID", assets.detector_id)
+    monkeypatch.setenv("BUFFALO_DETECTOR_VERSION", assets.detector_version)
+    monkeypatch.setenv("BUFFALO_RECOGNIZER_PATH", str(assets.recognizer_path))
+    monkeypatch.setenv("BUFFALO_RECOGNIZER_ID", assets.recognizer_id)
+    monkeypatch.setenv("BUFFALO_RECOGNIZER_VERSION", assets.recognizer_version)
+    monkeypatch.setenv(
+        "BUFFALO_PREPROCESSING_VERSION", assets.preprocessing_version
+    )
+    monkeypatch.setenv("BUFFALO_ALIGNMENT_VERSION", assets.alignment_version)
+    monkeypatch.setenv(
+        "BUFFALO_NORMALIZATION_VERSION", assets.normalization_version
+    )
+    monkeypatch.setenv(
+        "BUFFALO_EMBEDDING_DIMENSION", str(assets.embedding_dimension)
+    )
+    return Settings.from_env()
+
+
 def _patch_sface_loader(
     monkeypatch: pytest.MonkeyPatch, created: list[_RecordingAdapter]
 ) -> None:
@@ -182,6 +248,29 @@ def test_admission_rejects_other_pipeline_without_fallback(
         )
 
     assert created == []
+
+
+@pytest.mark.parametrize(
+    "admit",
+    [admit_selected_model, admit_selected_calibration_adapter],
+    ids=["serving", "calibration"],
+)
+def test_buffalo_native_failure_is_wrapped_by_existing_admission_boundary(
+    admit: object, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assets = _buffalo_assets(tmp_path)
+    revision = _buffalo_revision(assets)
+    settings = _set_buffalo_environment(monkeypatch, assets)
+
+    def fail(*, revision: EligiblePipelineRevision, assets: BuffaloModelAssets) -> object:
+        raise BuffaloAdapterError("native Buffalo warmup failed")
+
+    monkeypatch.setattr(BuffaloPhotoAdapter, "from_configured_assets", fail)
+
+    with pytest.raises(ModelAdmissionError) as error:
+        admit(revision=revision, settings=settings)  # type: ignore[operator]
+
+    assert isinstance(error.value.__cause__, BuffaloAdapterError)
 
 
 @pytest.fixture

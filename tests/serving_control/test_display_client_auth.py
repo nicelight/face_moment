@@ -334,3 +334,27 @@ def test_authentication_does_not_log_credential_material(
     assert fixture.active_token not in caplog.text
     assert digest not in caplog.text
     assert "198.18.0.10" not in caplog.text
+
+
+@pytest.mark.parametrize("shared_key", ["token", "ip"])
+def test_concurrent_limiter_reserves_exact_budget(shared_key: str) -> None:
+    from concurrent.futures import ThreadPoolExecutor
+    import threading
+
+    limit, callers = 3, 12
+    barrier = threading.Barrier(callers, timeout=3)
+    limiter = DisplayClientRateLimiter(limit=limit, window_seconds=60)
+    now = datetime(2026, 9, 6, tzinfo=timezone.utc)
+
+    def reserve(index: int) -> bool:
+        barrier.wait()
+        return limiter.allow(
+            token_digest=b"shared" if shared_key == "token" else str(index).encode(),
+            ip_address="198.18.0.1" if shared_key == "ip" else f"198.18.0.{index + 1}",
+            now=now,
+        )
+
+    with ThreadPoolExecutor(max_workers=callers) as executor:
+        results = list(executor.map(reserve, range(callers)))
+    print({"shared_key": shared_key, "allowed": sum(results), "denied": callers - sum(results)})
+    assert sum(results) == limit

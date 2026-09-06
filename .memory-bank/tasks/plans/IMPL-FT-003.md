@@ -1,7 +1,7 @@
 ---
 description: Implementation plan for sensor-triggered reference capture and attempt control in FT-003.
 status: active
-last_updated: 2026-09-01
+last_updated: 2026-09-06
 ---
 # IMPL-FT-003 — Sensor-Triggered Capture And Attempt Control
 
@@ -19,7 +19,7 @@ mandatory offline-metadata delivery path.
 ## Normative Basis
 
 - [FT-003](../../features/FT-003.md): `FT-003-AC-001..017` plus
-  `FT-003-AC-019..020` and their governing
+  `FT-003-AC-019..022` and their governing
   `REQ-*` set.
 - [System Architecture](../../architecture/system-architecture.md): AD-001,
   AD-002, AD-006, AD-009, AD-010 and `Deployment And Recovery`.
@@ -53,7 +53,9 @@ FT-004 owns singleton inference, deadline orchestration, proposal selection,
 search, result assembly and sessions. FT-005 owns Promo rendering and success
 cooldown. FT-007 owns detailed diagnostic evidence. ESP32 firmware, production
 deployment, automatic token handoff/rotation, reliable delivery queues and an
-offline-metadata outbox are out of scope.
+offline-metadata outbox are out of scope. The explicitly requested maintenance
+below corrects integration with the existing FT-004 singleton; it does not
+reassign or reopen the completed FT-004 outcomes.
 
 ## Architecture And Ownership
 
@@ -112,6 +114,67 @@ Feature claim ownership is therefore exact: `AC-001..013` are owned by
 `TASK-062,052,067,063,065,059` respectively.
 Dependency-consuming integration checks may exercise a prerequisite but do not
 adopt its claim.
+
+## Realtime Admission Maintenance
+
+Source: [consolidated audit findings 1 and 2](../../../PAPERCUTS/TECHDEBTS/ASTRA-consolidated-review-2026-09-06.md),
+explicitly authorized by the operator on 2026-09-06. The baseline task records,
+closure evidence and deferred production tasks are preserved. Two new exact
+feature criteria record only the corrective integration delta.
+
+| Task | Tier | Wave | Prerequisites | Owned claim | Outcome |
+|---|---|---|---|---|---|
+| [TASK-112](../TASK-112-T3-FT-003-W4.task.json) | T3 | W4 | TASK-045 | FT-003-AC-021 | Auth/rate precedes decode; JPEG header bounds precede pixel allocation. |
+| [TASK-113](../TASK-113-T3-FT-003-W5.task.json) | T3 | W5 | TASK-112, TASK-073 | FT-003-AC-022 | Worker-local blocking execution with timely busy and non-waiting duplicate responses. |
+
+TASK-112 precedes TASK-113 because both change `entrypoints/realtime.py` and
+threadpool extraction must retain the corrected validation order. Their
+Foundation dependency is transitive through the existing completed admission
+and singleton tasks. Both are T3: the first changes security-sensitive request
+admission; the second changes runtime concurrency across that auth boundary.
+
+Primary owner remains `promo`, rooted in `src/face_moment/promo/`. Reuse the
+[capability application boundaries](../../contracts/boundary-map.md#capability-application-boundaries)
+and [Participant Promo edges](../../contracts/boundary-map.md#participant-promo):
+`serving_control` supplies auth/context, `processing` supplies search, and
+`diagnostics` supplies best-effort evidence. The HTTP wrapper adapts transport;
+it does not take over business decisions or foreign writes. Existing browser
+submission, client-timing and persisted-result consumers keep their contracts.
+
+TASK-112 retains bounded body reading, then existing auth/rate checks, then
+multipart validation. Promote the already locked Pillow 12.3.0 dependency to
+read JPEG-only headers from bounded bytes, inspect `.size` without loading
+pixels, and reject outside 1..512 before the existing OpenCV validation. Keep
+metadata rejection and decode validation; add no body or aggregate limit.
+
+TASK-113 uses `run_in_threadpool` for one synchronous request operation with
+Session construction/use/closure inside the worker. The existing semaphore
+remains nonblocking. Existing-key reads avoid `FOR UPDATE`; the owner repository
+reports whether the unique insert created the row, preserving existing
+`create_or_get` callers. Only the creator enters inference. A uniqueness loser
+returns the existing response without waiting on an inference-held lock. The
+already locked rate limiter needs concurrent regression proof, not a rewrite.
+
+Canonical concern actions are `reuse`: realtime API shape/errors/idempotency,
+Promo state/publication/singleton, display auth and accepted graph all define
+sufficient behavior. No new shared contract, schema, migration or Planning
+Revision is required. The simple probe methods remain in AC-021/022 and their
+cards, with existing testing/index and client-realtime specs as constraints.
+
+Expected source/test paths and deliberately bounded writes are in the cards.
+Run current-source mypy and focused pytest via `uv run --locked` with
+`.env.local` for disposable PostgreSQL; use the actual architecture gate
+`node .memory-bank/scripts/mb-lint.mjs`. The security probe compares decoder
+calls/status/Attempt count; the concurrency probe uses bounded inference
+barriers with real ASGI and PostgreSQL, requiring busy, health and in_progress
+before release, one creator and correctly closed worker-local Sessions. Existing
+limiter GREEN remains preserved. These local regressions do not claim the
+production 19/20 performance gate or require deployment.
+
+Each task retains honest pre-change evidence, equivalent post-change proof,
+`/verify` and per-task `/red-verify`. The next boundary is a fresh
+`/review-tasks-plan FT-003`, followed by the T3 conditional `/mb-doctor` before
+manual execution. No completed baseline task is retasked.
 
 ## Advisory Expected Change Surface
 
@@ -179,10 +242,17 @@ scope.
 
 ## Definition Of Done
 
-All twenty-six indexed tasks independently satisfy their exact owned claims
+The twenty-six baseline tasks retain their original claims and evidence. The
+two maintenance tasks independently satisfy AC-021/022 and their tier
+obligations. All indexed tasks satisfy their exact owned claims
 and tier obligations, every `FT-003-AC-001..017` and
-`FT-003-AC-019..020` has one and only one task
+`FT-003-AC-019..022` has one and only one task
 owner, every root retains the completed Foundation gate directly or
 transitively, the review-directed dependencies and disposable-probe semantics
 hold, and a fresh `/review-tasks-plan FT-003` can evaluate the queue at Global
 Backbone Planning Revision `4`.
+
+## Maintenance execution evidence
+
+- [TASK-112-T3-FT-003-W4](../TASK-112-T3-FT-003-W4.task.json): closed by root after independent functional PASS and per-task semantic-pass. Auth/rate and JPEG header bounds now precede decoding; bounded full decode remains before Attempt admission.
+- [TASK-113-T3-FT-003-W5](../TASK-113-T3-FT-003-W5.task.json): closed by root after 47 current-source tests and separate semantic-pass; worker-local Sessions and insert ownership preserve timely busy/in_progress responses.

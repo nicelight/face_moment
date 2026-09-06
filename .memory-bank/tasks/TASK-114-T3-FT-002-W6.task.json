@@ -1,0 +1,119 @@
+{
+  "id": "TASK-114-T3-FT-002-W6",
+  "title": "Require successful Buffalo native warmup before readiness",
+  "status": "in_progress",
+  "wave": "W6",
+  "feature": "FT-002",
+  "tier": "T3",
+  "reqs": [
+    "REQ-SRCH-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-026-T3-FT-002-W5"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/buffalo_adapter.py",
+    "tests/processing/test_buffalo_adapter.py",
+    "tests/processing/test_model_asset_admission.py",
+    ".memory-bank/testing/photo-processing.md"
+  ],
+  "purpose": "Correct audit finding 5: configure the actual dynamic-input Buffalo detector and prevent readiness from admitting native inference failures.",
+  "success_outcome": "Buffalo becomes ready only after both native model paths infer successfully; dynamic-input local ONNX models then process a synthetic Photo, and native failure rejects serving/Calibration admission without fallback.",
+  "gates": [
+    {
+      "name": "Current-source Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Buffalo and model-admission regressions",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/processing/test_buffalo_adapter.py tests/processing/test_model_asset_admission.py",
+      "required": true
+    },
+    {
+      "name": "Required real dynamic-input Buffalo regression",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/processing/test_buffalo_adapter.py::test_buffalo_native_dynamic_model_warmup",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md"
+  ],
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-009",
+    "PAPERCUTS/TECHDEBTS/ASTRA-consolidated-review-2026-09-06.md#5-buffalo-m-падает-при-readytrue",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md",
+    ".protocols/FT-002/plan.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-002.md#ft-002-ac-009--buffalo-readiness-requires-native-inference",
+    ".memory-bank/domains/photo-processing.md#insightface-buffalo-m-photo-adapter",
+    ".memory-bank/domains/photo-processing.md#model-asset-admission",
+    ".memory-bank/domains/photo-processing.md#compatibility-identity",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/contracts/boundary-map.md#calibration-and-serving-change",
+    ".memory-bank/architecture/system-architecture.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/testing/index.md",
+    ".memory-bank/guides/local-development.md"
+  ],
+  "anti_goals": [
+    "Do not change SFace, EXIF orientation, Photo admission/derivatives, realtime request/concurrency, search semantics or Calibration datasets/calculations.",
+    "Do not add model downloads, new dependencies, model files to Git, mutable model/revision identity, configuration layers, runtime registries, fallback or simultaneous dual-pipeline preload.",
+    "Do not change deployment, process counts, database state/schema, operator assets or selected serving revision; do not reopen historical task evidence."
+  ],
+  "runtime_context": {
+    "write_boundary": [
+      "src/face_moment/processing/buffalo_adapter.py",
+      "tests/processing/test_buffalo_adapter.py",
+      "tests/processing/test_model_asset_admission.py",
+      ".memory-bank/testing/photo-processing.md"
+    ],
+    "forbidden_scope": [
+      "Runtime files outside buffalo_adapter.py, including model_admission.py and all entrypoints",
+      "SFace, EXIF/inventory/derivative implementation, realtime tasks TASK-112/TASK-113, FT-003 and testing/client-realtime.md",
+      "Dependencies/lockfiles, models directory writes, migrations, deployment and production data"
+    ],
+    "stop_conditions": [
+      "Required local ONNX files are absent or the native regression cannot execute; do not replace its proof with skipped tests or doubles.",
+      "Correctness requires changing accepted pipeline identity, selecting/deploying assets, changing a public contract or writing outside the hard boundary."
+    ]
+  },
+  "constraints": [
+    "Owner is processing at src/face_moment/processing/. Consumers are existing Photo worker/realtime model binding and the held Calibration direct-adapter admission; propagate errors through their current ModelAdmissionError boundary, without changes to foreign owners or entrypoints.",
+    "In from_configured_assets, retain exact asset/revision checks and native taskname validation, then prepare the detector for CPU with input_size=(640, 640). Installed InsightFace RetinaFace.prepare sets dynamic dimensions and preserves a model-embedded fixed size. Keep native detection/alignment/normalization and no download/fallback.",
+    "Track adapter readiness false initially. warmup resets it false, verifies assets, performs actual detector inference, and separately calls the native recognizer get path using a synthetic BGR image and valid five-point landmarks. A blank detector result must not skip recognizer warmup. Validate finite normalized embedding with the revision dimension; only then set ready true. This discarded synthetic inference creates no Photo, face rows, query or result.",
+    "Wrap native load/prepare/warmup failures at the Buffalo boundary as BuffaloAdapterError (a ValueError), preserving the cause; both existing admit_selected_model and admit_selected_calibration_adapter already translate ValueError to ModelAdmissionError. Keep false on failure, including a failed repeated warmup. No generic admission refactor is necessary.",
+    "Use actual read-only local models/insightface_buffalo_m/scrfd.onnx and w600k_r50.onnx, currently present. Build only a temporary in-memory EligiblePipelineRevision matching the actual assets/identity/checksums and dimension 512, reusing existing test helpers. Do not persist, alter or infer a production serving revision.",
+    "Add the exact native test node named in gates. It must execute and pass for task closure; a skip is not acceptance. Preserve ordinary native-path/mismatch tests, adjusting doubles only to implement the real prepare/warmup contract rather than masking calls. No claimed recognition-accuracy benchmark is required.",
+    "Read fixture setup before DB-backed admission tests and run with .env.local; any fixture-owned databases/assets are disposed/removed without touching operator/default state. Native probe itself needs no database, commercial image or production restart.",
+    "Execute sequentially after the owner selects this reviewed task. Runtime implementation has no dependency on TASK-112/TASK-113; shared consumers do not authorize parallel canonical execution. Initial execution records honest RED, then verify and per-task red-verify precede explicit owner closure."
+  ],
+  "invariants": [
+    "ready is false until both native model calls succeed and remains false after native load/warmup failure.",
+    "Configured assets, revision/checksums, native alignment and embedding isolation remain authoritative; no fallback or cross-pipeline data is used.",
+    "Synthetic warmup is discarded and never mutates Photo/Attempt/Calibration state or the selected serving revision."
+  ],
+  "verification_targets": [
+    "FT-002-AC-009 / REQ-SRCH-001: real local dynamic-input ONNX detector and recognizer through BuffaloPhotoAdapter.from_configured_assets; observe unready-before-warmup, both real session inference calls, ready-after-success and process_photo(np.zeros((320,320,3), uint8)) without AssertionError. Record dynamic input shape, configured detector size, asset checksum identity and finite normalized 512-dimensional recognizer result, not embedding values.",
+    "FT-002-AC-009: detector-empty warmup still runs the recognizer; independent load/prepare/detector/recognizer failure, invalid embedding dimension/nonfinite normalization, and failed repeated warmup leave readiness false. Through existing serving and Calibration admission functions, verify these Buffalo failures become ModelAdmissionError and no adapter is returned.",
+    "Use existing role-admission fail-closed tests as affected-consumer regression; preserve SFace, asset mismatch and native processing tests without adopting original AC-007/008 or TASK-026 restart proof. Scope is actual native readiness only.",
+    "RED is the production configured dynamic detector with input_size None and reported ready despite no inference; GREEN uses the same real assets and comparable synthetic input after correction. Do not use malformed fake weights or a skip as the native RED/GREEN. Retain finite test outcomes and readiness/native-call trace under the task artifact directory.",
+    "No new mutable persistence is introduced: in-memory revision and discarded arrays suffice for native proof. Existing admission fixture setup/teardown establishes safe rerun when database-backed consumer tests run."
+  ],
+  "evidence_required": [
+    "FT-002-AC-009 RED: the current configured native dynamic-input detector reports ready without inference and processing the synthetic 320x320 image raises AssertionError; GREEN: the same real local models complete detector and recognizer warmup before readiness and process the image without that failure, while injected native failures close serving/Calibration admission; decisive comparison: native-call trace, detector input size, ready transitions, dimension/finite-normalization checks and admission exception type; artifact: non-skipped native regression plus focused failure-matrix transcript under .tasks/TASK-114-T3-FT-002-W6/."
+  ]
+}

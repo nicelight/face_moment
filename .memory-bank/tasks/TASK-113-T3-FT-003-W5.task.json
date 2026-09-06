@@ -1,0 +1,163 @@
+{
+  "status": "done",
+  "feature": "FT-003",
+  "tier": "T3",
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Root independently reran 47 tests with actual PostgreSQL concurrency observations, mypy and lint; inspected task-specific delta and two fresh Luna co-reviews. FT-003-AC-022 passes.",
+      "protocol": ".protocols/TASK-113-T3-FT-003-W5/verification.md",
+      "report": ".tasks/TASK-113-T3-FT-003-W5/TASK-113-T3-FT-003-W5-S-VERIFY-final-report-docs-01.md",
+      "evidence": [
+        ".tasks/TASK-113-T3-FT-003-W5/root-verification-tests.txt",
+        ".tasks/TASK-113-T3-FT-003-W5/root-verification-mypy.txt",
+        ".tasks/TASK-113-T3-FT-003-W5/root-verification-lint.txt"
+      ]
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "summary": "Independent semantic review found no material break in concurrent admission, insert ownership, worker Session lifetime, terminal replay or atomic publication. One fresh Luna xhigh co-review approved; second launch failed twice at thread limit under permitted fallback.",
+      "protocol": ".protocols/TASK-113-T3-FT-003-W5/red-verification.md",
+      "report": ".tasks/TASK-113-T3-FT-003-W5/TASK-113-T3-FT-003-W5-S-RED-VERIFY-final-report-docs-01.md",
+      "evidence": [
+        ".tasks/TASK-113-T3-FT-003-W5/execution-delta.patch",
+        ".tasks/TASK-113-T3-FT-003-W5/root-verification-tests.txt"
+      ]
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "owner": "manual_explicit_owner: root / ROLE GENERAL",
+      "summary": "Audit finding 2 closed after root-owned actual PostgreSQL concurrency verification, 47 tests and separate semantic-pass. No production deployment is part of this card.",
+      "evidence": [
+        ".protocols/TASK-113-T3-FT-003-W5/verification.md",
+        ".protocols/TASK-113-T3-FT-003-W5/red-verification.md"
+      ]
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-003.md",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md",
+    ".memory-bank/contracts/realtime-attempt-api.md",
+    ".memory-bank/testing/client-realtime.md"
+  ],
+  "id": "TASK-113-T3-FT-003-W5",
+  "title": "Keep concurrent realtime admission responsive during inference",
+  "wave": "W5",
+  "reqs": [
+    "REQ-REL-001",
+    "REQ-SEC-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-112-T3-FT-003-W4",
+    "TASK-073-T3-FT-004-W3"
+  ],
+  "purpose": "Correct audit finding 2 at the real endpoint while preserving the accepted singleton and duplicate-attempt contract under concurrent worker threads.",
+  "success_outcome": "Blocking realtime work runs off the event loop in worker-local Sessions; a distinct key returns busy and an existing active key returns in_progress before the first inference completes, with one inference owner per key and effective existing rate limits.",
+  "touched_files": [
+    "src/face_moment/entrypoints/realtime.py",
+    "src/face_moment/promo/attempt.py",
+    "src/face_moment/promo/realtime_orchestration.py",
+    "tests/promo/test_realtime_attempt_api.py",
+    "tests/promo/test_realtime_attempt_integration.py",
+    "tests/promo/test_promo_attempt_persistence.py",
+    "tests/promo/test_realtime_orchestration.py",
+    "tests/serving_control/test_display_client_auth.py",
+    ".memory-bank/testing/client-realtime.md"
+  ],
+  "gates": [
+    {
+      "name": "Current-source Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Focused current-source regression tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_realtime_attempt_api.py tests/promo/test_realtime_attempt_integration.py tests/promo/test_promo_attempt_persistence.py tests/promo/test_realtime_orchestration.py tests/serving_control/test_display_client_auth.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "source_artifacts": [
+    ".memory-bank/features/FT-003.md#FT-003-AC-022",
+    "PAPERCUTS/TECHDEBTS/ASTRA-consolidated-review-2026-09-06.md#2-блокировка-event-loop-в-realtime",
+    ".memory-bank/tasks/plans/IMPL-FT-003.md",
+    ".protocols/FT-003/plan.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-003.md#ft-003-ac-022--responsive-concurrent-realtime-admission",
+    ".memory-bank/domains/promo-attempt.md#admission-and-transitions",
+    ".memory-bank/domains/promo-attempt.md#singleton-runtime-orchestration",
+    ".memory-bank/domains/promo-attempt.md#atomic-result-session-publication",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/contracts/realtime-attempt-api.md",
+    ".memory-bank/domains/display-client-access.md#authentication-contract",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/contracts/boundary-map.md#http-failure-contract",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/architecture/system-architecture.md",
+    ".memory-bank/testing/index.md",
+    ".memory-bank/guides/local-development.md"
+  ],
+  "anti_goals": [
+    "Do not replace the semaphore, add an inference waiter queue, process/distributed workers, durable replay, new Attempt state or schema migration.",
+    "Do not change model inference, search/ranking, deadline policy, result/session semantics or client behavior.",
+    "Do not rewrite the already thread-safe auth limiter or re-prove complete historical FT-004/FT-003 acceptance."
+  ],
+  "runtime_context": {
+    "write_boundary": [
+      "src/face_moment/entrypoints/realtime.py",
+      "src/face_moment/promo/attempt.py",
+      "src/face_moment/promo/realtime_orchestration.py",
+      "tests/promo/test_realtime_attempt_api.py",
+      "tests/promo/test_realtime_attempt_integration.py",
+      "tests/promo/test_promo_attempt_persistence.py",
+      "tests/promo/test_realtime_orchestration.py",
+      "tests/serving_control/test_display_client_auth.py",
+      ".memory-bank/testing/client-realtime.md"
+    ],
+    "forbidden_scope": [
+      "Deployment/worker-count changes, models, client files, migrations and credentials/settings writes",
+      "Auth/limiter production implementation; it already guards its entire reserve operation with threading.Lock",
+      "Other audit findings, new response/domain contracts and production acceptance"
+    ],
+    "stop_conditions": [
+      "Preserving busy/idempotency requires an unaccepted queue, lease, second process or new durable state.",
+      "Concurrent admission cannot distinguish the insert winner without violating existing repository callers or accepted owner boundaries.",
+      "A required fix expands outside the hard write boundary or changes accepted result/session atomicity."
+    ]
+  },
+  "constraints": [
+    "Primary owner is promo; serving_control supplies read-only auth/context, processing is called only through the existing search application boundary, and diagnostics remains best-effort. Use the accepted participant-promo graph edges.",
+    "Read the bounded request body on the event loop, then pass copied body/header/IP/state inputs to one synchronous operation via Starlette run_in_threadpool. Create, use and close every SQLAlchemy Session within that worker. Preserve TASK-112 auth/rate-before-parse/decode ordering. Do not hand a live Session across threads or move domain decisions into a generic thread helper.",
+    "Keep the existing process-local BoundedSemaphore(1) and nonblocking acquisition. The threadpool is the framework transport executor, not an inference waiting mechanism; the competing request must execute admission and return busy while the owner is still blocked in search.",
+    "Initial existing-key lookup must not take FOR UPDATE behind the inference transaction. Preserve the unique key and expose inserted-versus-existing admission from the promo repository with compatibility for existing create_or_get callers; only the insert winner enters processing. A uniqueness-conflict loser returns its stored terminal/in_progress response without a second lock/update held until inference. A short unique-insert arbitration before the initial committed admission is allowed; waiting on inference is not.",
+    "The current DisplayClientRateLimiter.allow already uses threading.Lock over prune/check/reserve. Keep production implementation; verify simultaneous same-token and same-IP callers respect the configured positive budget. Existing client-timing handler shares this limiter and remains a regression consumer, not a new work item.",
+    "Use the real ASGI app, production repositories and task-owned fresh migrated PostgreSQL from existing test fixtures; models/search may be replaced with bounded controlled calls. Never infer row-lock safety from SQLite or only fake Sessions. Use finite waits and always release barriers/close Sessions/drop only the fixture database on failure.",
+    "Keep result/session publication atomic and detailed evidence best-effort. Preserve no-proposals, deadline, exception cleanup, terminal replay, readiness and standard error mappings. Execution records RED before edits, then verify and per-task red-verify precede owner closure."
+  ],
+  "invariants": [
+    "One committed promo_attempts row exists per (spa_id, client_attempt_id); only its admission creator invokes processing.",
+    "A duplicate active key never changes its owner to busy and never waits for inference-held row locks.",
+    "One inference slot remains process-local; competing distinct keys receive their own admitted busy terminal outcome.",
+    "Sessions never cross concurrent worker threads; auth budgets remain atomic; rejected requests retain TASK-112 decoder protection."
+  ],
+  "verification_targets": [
+    "FT-003-AC-022 / REQ-REL-001: drive concurrent real ASGI requests with a bounded search barrier; while first inference is held, assert health/heartbeat completion and distinct-key HTTP 200 busy before release, one processing call and separate committed Attempt rows. Use event ordering as verdict; report timing diagnostically without inventing a new product millisecond SLO.",
+    "FT-003-AC-022: with real PostgreSQL cover an already active duplicate and simultaneous first requests of the same key, including both initial reads missing before unique insertion. Require in_progress before first inference release, exactly one owner/row, unchanged active owner state and identical stored terminal replay afterwards.",
+    "FT-003-AC-022 / REQ-SEC-001: synchronized token/IP limiter calls admit exactly the configured budget; preserve GREEN if the existing Lock already passes. Track distinct worker-local Session/thread identities and ensure every Session closes on success and raised failure.",
+    "Exercise controlled success, processing exception and deadline with subsequent fresh requests proving semaphore release; verify accepted result/session atomicity and existing standard status/no-proposals cases through focused regression tests. These support this transport integration delta, not a new ownership claim over historical FT-004 proofs.",
+    "Read/write assertions target face_moment.promo_attempts and existing promo session rows in the isolated fixture DB. Release blocked calls in finally, dispose engines and force-drop only the generated database; retain a redacted trace without credentials or personal media."
+  ],
+  "evidence_required": [
+    "FT-003-AC-022 RED: current async route serializes two blocking searches, delaying heartbeat and failing timely busy; GREEN: first inference stays held while health and distinct-key busy complete, duplicate active/racing keys return in_progress without a second inference or changed owner, all Sessions remain worker-local and subsequent fresh work runs after cleanup; decisive comparison: barrier/response order, search count, per-key PostgreSQL rows and Session/thread trace; artifact: real-route concurrency transcript under .tasks/TASK-113-T3-FT-003-W5/.",
+    "FT-003-AC-022 RED/GREEN: preserve honest pre-implementation GREEN for the existing locked limiter when concurrent token/IP reservation already admits exactly the configured budget; after moving auth into workers the same budget remains enforced; decisive comparison: allowed/denied counts under synchronized callers; artifact: focused limiter regression transcript under .tasks/TASK-113-T3-FT-003-W5/."
+  ]
+}

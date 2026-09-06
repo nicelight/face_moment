@@ -1,0 +1,118 @@
+{
+  "id": "TASK-115-T3-FT-005-W4",
+  "title": "Restore missing canonical backend routes through the HTTPS edge",
+  "status": "ready",
+  "wave": "W4",
+  "feature": "FT-005",
+  "tier": "T3",
+  "reqs": [
+    "REQ-UX-001",
+    "REQ-SEC-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-077-T3-FT-005-W2",
+    "TASK-078-T3-FT-005-W2",
+    "TASK-068-T3-FT-004-W1",
+    "TASK-086-T3-FT-007-W3",
+    "TASK-104-T3-FT-011-W3",
+    "TASK-107-T3-FT-012-W2"
+  ],
+  "touched_files": [
+    "deploy/Caddyfile",
+    "tests/promo/test_public_edge_routes.py",
+    "tests/client/test_central_shell.py"
+  ],
+  "verify": [],
+  "purpose": "Correct audit finding 3: the central edge currently omits registered Promo and staff routes, breaking canonical same-origin flows.",
+  "success_outcome": "Every named missing route reaches its existing backend handler through real Caddy with auth/CSRF and headers preserved; realtime dispatch and upload/realtime body caps remain unchanged.",
+  "gates": [
+    {
+      "name": "Current Caddy configuration validation",
+      "command": "docker run --rm --network none -v \"$PWD/deploy/Caddyfile:/etc/caddy/Caddyfile:ro\" caddy:2.10.0-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile",
+      "required": true
+    },
+    {
+      "name": "Live isolated edge and central-shell regression",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_public_edge_routes.py tests/client/test_central_shell.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-005.md",
+    ".memory-bank/tasks/plans/IMPL-FT-005.md",
+    ".memory-bank/contracts/promo-display-api.md",
+    ".memory-bank/contracts/boundary-map.md"
+  ],
+  "source_artifacts": [
+    ".memory-bank/features/FT-005.md#FT-005-AC-006",
+    "PAPERCUTS/TECHDEBTS/ASTRA-consolidated-review-2026-09-06.md#3-потерянные-публичные-routes",
+    ".memory-bank/tasks/plans/IMPL-FT-005.md",
+    ".protocols/FT-005/plan.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-005.md#ft-005-ac-006--canonical-public-routes-reach-their-owners",
+    ".memory-bank/contracts/promo-display-api.md",
+    ".memory-bank/contracts/realtime-attempt-api.md",
+    ".memory-bank/contracts/photo-admission-api.md",
+    ".memory-bank/contracts/photo-inventory-api.md#staff-inventory-page-and-selection",
+    ".memory-bank/contracts/diagnostic-retention-api.md#staff-read-contract",
+    ".memory-bank/domains/calibration.md#minimal-developer-surface",
+    ".memory-bank/contracts/boundary-map.md#staff-active-date-surface",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/contracts/boundary-map.md#authentication-and-data-specific-delivery",
+    ".memory-bank/architecture/system-architecture.md",
+    ".memory-bank/testing/index.md",
+    ".memory-bank/guides/local-development.md"
+  ],
+  "anti_goals": [
+    "Do not change backend handlers, provider authorization/domain state, API shapes, staff UI, realtime inference/admission or model readiness.",
+    "Do not introduce catch-all /api/* forwarding, prefix stripping, exposed internal stores, a second public origin or frontend route aliases.",
+    "Do not run deployment, production smoke, Calibration calculations/apply/promotion, retention cleanup or inventory destructive actions. Finding 10 packaged smoke remains separate."
+  ],
+  "runtime_context": {
+    "write_boundary": [
+      "deploy/Caddyfile",
+      "tests/promo/test_public_edge_routes.py",
+      "tests/client/test_central_shell.py"
+    ],
+    "forbidden_scope": [
+      "Application runtime source, other test files, model assets, package dependencies and migrations",
+      "compose.yaml, VPS/FRP Caddy configuration and production infrastructure",
+      "TASK-112/TASK-113/TASK-114 records and FT-003 documents"
+    ],
+    "stop_conditions": [
+      "The named existing canonical handlers cannot be tested through their published contracts without runtime repair outside the boundary.",
+      "Live Caddy proof cannot be isolated to disposable resources/current source, or auth/caps require a changed accepted public contract."
+    ]
+  },
+  "constraints": [
+    "Primary feature owner is promo/FT-005 for its same-origin display APIs; this is shared edge transport wiring only. Serving_control, inventory and diagnostics retain their registered handlers and business authority under the existing graph.",
+    "Restore these exact route groups to backend:8000 without stripping paths: /api/promo/*, /api/serving/spas/*/active-visit-date, /api/diagnostics/retention, /staff/search-settings, /staff/photo-inventory, /staff/calibrations, /staff/calibrations/* and /staff/diagnostics-retention. One named matcher/handle is sufficient; reuse existing proxy header behavior.",
+    "Keep /api/realtime/attempts and /api/realtime/attempts/*/client-timing on realtime:8002 with 20MiB cap, upload Content-Length prechecks and /api/inventory/photos 11MiB cap, existing phone/client/staff paths and X-Forwarded-For behavior. /api/promo/* maps the existing GET config/media and PUT display routes.",
+    "Use the pinned caddy:2.10.0-alpine image and current deploy/Caddyfile in a unique disposable Docker network/test harness, with loopback-only HTTPS access and task-owned temp TLS/data files. Any fixture substitution is limited to listen/upstream addresses for isolated ports; keep the actual matchers/order/header and cap directives.",
+    "Drive real current-source backend route registration and auth using task-owned disposable PostgreSQL users, display tokens, SPA, Attempt/session and synthetic preview fixtures. Backend alone does not need selected-model warmup. A deterministic private object-store test adapter may supply preview bytes; a clearly instrumented realtime upstream may prove dispatch/caps without claiming model inference or production readiness.",
+    "Read existing fixture conventions and tests/disposable_postgresql.py before setup. No operator/default row or object is changed. Teardown always stops only owned containers/processes, removes their network/TLS directories and drops only the generated database; no global Docker cleanup.",
+    "Initial RED uses actual requests through current Caddy proving routes are not forwarded; GREEN repeats equivalent route/auth probes after edit. Static config checks alone are not closure. Verify and per-task red-verify precede explicit owner closure."
+  ],
+  "invariants": [
+    "Canonical paths retain their full prefix and existing owner authorization; edge adds no auth bypass or backend business decision.",
+    "Realtime dispatch and both existing byte caps remain intact; internal stores stay unreachable from the public edge.",
+    "No underlying domain outcome or completed baseline task is re-owned by this routing correction."
+  ],
+  "verification_targets": [
+    "FT-005-AC-006: through live isolated Caddy, valid display token receives GET /api/promo/display/config 200, authorized GET /api/promo/media/{media_ref} 200 image/jpeg and PUT /api/promo/sessions/{session_id}/display 200 with the stored display result. Missing/invalid token remains 401; unknown/foreign media remains 404; no-store and Authorization forwarding hold.",
+    "FT-005-AC-006 / REQ-SEC-001: each added staff route group reaches the real backend. Without session expect 401; authorized role reads yield 200 or canonical resource-not-found responses; denied roles yield 403. Exercise GET/PUT active-visit-date and one non-destructive invalid Calibration POST with valid identity but missing CSRF to prove 403 without mutation; do not run calculations/apply/delete. Inventory page admits all staff roles. Search settings and GET/PUT active-visit-date are operator-only; developer and photographer receive 403. Retention allows operator/developer and rejects photographer with 403; Calibration is developer-only.",
+    "FT-005-AC-006: instrumented upstream observations prove realtime requests and client-timing reach the realtime service, /api/promo goes to backend, prefixes are preserved, missing-length/over-cap uploads are rejected before backend receipt, and realtime body above 20,971,520 bytes yields 413. Include a valid small request to each dispatch path; check existing phone/client routes and internal-service privacy as regression.",
+    "Persist task-owned known fixtures only; compare authorized ack/active-date mutation via owner projections in the fixture DB, preserve unrelated rows and prove safe teardown. Record status/content-type/cache headers and sanitized upstream route counters; exclude credentials, result payloads and raw media from logs/artifacts."
+  ],
+  "evidence_required": [
+    "FT-005-AC-006 RED: current real Caddy fails to forward the listed canonical routes despite registered handlers; GREEN: equivalent authenticated config/media/ack and staff route-group requests reach their existing owners, unauthorized/role/CSRF cases retain canonical rejections, realtime dispatch and upload/realtime caps are preserved; decisive comparison: HTTP status/header matrix, sanitized upstream observations and task-owned state before/after permitted mutations; artifact: isolated live-Caddy regression transcript and teardown record under .tasks/TASK-115-T3-FT-005-W4/."
+  ]
+}

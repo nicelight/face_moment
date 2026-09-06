@@ -1,0 +1,113 @@
+{
+  "id": "TASK-116-T3-FT-001-W9",
+  "title": "Provide a working staff login form over the existing session API",
+  "status": "planned",
+  "wave": "W9",
+  "feature": "FT-001",
+  "tier": "T3",
+  "reqs": [
+    "REQ-ING-001",
+    "REQ-SEC-001"
+  ],
+  "depends_on": [
+    "TASK-004-T3-FT-001-W2",
+    "TASK-017-T2-FT-001-W8",
+    "TASK-107-T3-FT-012-W2",
+    "TASK-115-T3-FT-005-W4"
+  ],
+  "touched_files": [
+    "src/face_moment/platform/auth/http.py",
+    "tests/staff_access/test_sessions.py"
+  ],
+  "verify": [],
+  "purpose": "Correct audit finding 4: staff cannot authenticate through the shipped login placeholder despite a working session API.",
+  "success_outcome": "A clean browser can submit credentials through the real login form, receive canonical session cookies and reach the fixed authorized staff page; invalid/rate-limited and technical failures remain recoverable without navigation or credential leakage.",
+  "gates": [
+    {
+      "name": "Current-source Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Staff page/session API regression",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/staff_access/test_sessions.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank architecture lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-001.md",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md",
+    ".memory-bank/contracts/photo-admission-api.md",
+    ".memory-bank/domains/staff-access.md",
+    ".memory-bank/contracts/photo-inventory-api.md"
+  ],
+  "source_artifacts": [
+    ".memory-bank/features/FT-001.md#FT-001-AC-013",
+    "PAPERCUTS/TECHDEBTS/ASTRA-consolidated-review-2026-09-06.md#4-нет-рабочей-страницы-входа-сотрудников",
+    ".memory-bank/tasks/plans/IMPL-FT-001.md",
+    ".protocols/FT-001/plan.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/features/FT-001.md#ft-001-ac-013--usable-staff-login-from-a-clean-browser",
+    ".memory-bank/contracts/photo-admission-api.md#staff-session-endpoints",
+    ".memory-bank/contracts/photo-admission-api.md#independent-uploader-page",
+    ".memory-bank/domains/staff-access.md#browser-session-contract",
+    ".memory-bank/domains/staff-access.md",
+    ".memory-bank/contracts/photo-inventory-api.md#staff-inventory-page-and-selection",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/boundary-map.md#independent-photo-admission",
+    ".memory-bank/architecture/system-architecture.md",
+    ".memory-bank/testing/index.md#ui-verification",
+    ".memory-bank/guides/local-development.md"
+  ],
+  "anti_goals": [
+    "Do not redesign staff pages, create a UI framework, new route/role router, registration/reset/password-recovery flow or new authentication mechanism.",
+    "Do not change the existing session JSON shape, cookie attributes, CSRF, role policy, rate limiter, provisioning/session persistence or credential lifecycle.",
+    "Do not change Caddy, inventory page/uploader implementation, browser runner/packages/lockfiles, model/runtime deployment or any earlier maintenance task."
+  ],
+  "runtime_context": {
+    "write_boundary": [
+      "src/face_moment/platform/auth/http.py",
+      "tests/staff_access/test_sessions.py"
+    ],
+    "forbidden_scope": [
+      "Auth implementation outside platform/auth/http.py; all session/principal/limiter logic and migrations",
+      "Inventory/client/deployment/model runtime and dependencies",
+      "TASK-112/TASK-113/TASK-114/TASK-115 cards or implementations, FT-003 docs and unrelated features"
+    ],
+    "stop_conditions": [
+      "The login flow cannot use existing JSON session/cookie contracts or the fixed landing without changing accepted auth or business authorization.",
+      "Real-browser proof cannot run with disposable users/data and clean profile on isolated HTTPS, or requires changing browser runner/dependencies."
+    ]
+  },
+  "constraints": [
+    "Primary owner is staff_access at src/face_moment/platform/auth/. Keep page rendering and transport in its existing HTTP module; the target inventory capability alone authorizes business actions.",
+    "Replace only the placeholder page with a complete small document matching current plain staff HTML: labeled required username and password inputs, password type, username/current-password autocomplete, submit button and accessible error/status region. Use the existing inline-script pattern; add no styling framework or redesign.",
+    "On submit prevent normal navigation, send exactly username/password JSON to /api/staff/sessions with same-origin credentials, and handle status 204 without parsing an empty response body. The browser receives the existing cookies; do not read/store/copy the HttpOnly session token or persist passwords. Disable duplicate submissions only while the request is pending and restore controls on failure.",
+    "On 204 navigate only to the literal /staff/photo-inventory path. Its canonical page admits photographer/operator/developer; /staff/photo-upload would reject non-photographer staff. Ignore user-controlled return URLs and add no role-routing mechanism. TASK-115 is a prerequisite for this path through the edge.",
+    "Map 401 to a generic invalid-credentials message and 429 to a retry-later message; network/non-success technical failures show a generic retryable error and keep the form available without navigation. Keep credentials out of URLs, storage, logs, reflected error messages and retained artifacts.",
+    "Use installed playwright cli (available as /usr/local/bin/playwright) with a unique temporary browser session/profile and local isolated HTTPS Caddy/current-source backend. Reuse fixture conventions and TASK-115 edge setup as read-only guidance; do not install a package/runner or modify browser configuration globally. Trust the local fixture certificate only within the disposable browser context.",
+    "Provision disposable users via the real owner helper in a fresh migrated fixture database, start without cookies or imported storage state and use real POST /api/staff/sessions for success/401/429; do not fake authentication or preseed a browser session. After login, use the browser-created cookie to open the landing and photographer uploader. Owner repositories/Session API provide session evidence in face_moment.staff_sessions.",
+    "The browser check is mandatory verification_targets evidence alongside pytest, even though its fixture URL is generated at execution. Retain the installed CLI command transcript, redacted screenshot/status results and cleanup evidence under the task directory; do not capture plaintext password/cookie values or unredacted HAR bodies. Close only the generated browser/server/Caddy resources and drop only the fixture DB.",
+    "Execution records real-page RED before edits and equivalent browser GREEN afterward. The absent form is RED, not an unrelated browser-launch failure. Verify and per-task red-verify precede explicit owner closure; no production or external service is used."
+  ],
+  "invariants": [
+    "Only the established session API creates staff sessions and canonical Secure cookies; page code never owns auth or business authorization.",
+    "Success has one fixed same-origin landing and failure never navigates; credentials never enter URLs, storage or logs.",
+    "Clean-browser success must be proved without manually adding cookies; existing role/CSRF/expiry behavior stays unchanged."
+  ],
+  "verification_targets": [
+    "FT-001-AC-013 / REQ-ING-001: installed playwright cli opens /staff/login on the actual local HTTPS backend/edge with an empty profile, fills disposable credentials and submits via keyboard/button; observe real 204, browser-managed cookies, fixed /staff/photo-inventory 200 and photographer /staff/photo-upload 200. Inspect accessible form/error state and existing simple staff-page styling.",
+    "FT-001-AC-013 / REQ-SEC-001: real wrong credentials produce visible generic 401 handling without navigation; deterministic fixture rate limits produce visible 429 handling. Network or server failure leaves a usable form and no redirect. The successful 204 path never tries to parse JSON from its empty body or stores the password/session token.",
+    "Verify canonical Secure/HttpOnly/SameSite cookie attributes without printing token values, one owner-created active session from the real API, and no browser console/application log/URL credential leakage. Confirm all staff roles can reach the fixed inventory landing while uploader authorization remains photographer-only.",
+    "Existing session/logout/expiry/CSRF and edge path tests are regressions only. Use disposable owner-provisioned principals and fixture DB teardown; preserve original AC-007 and TASK-017 proof ownership. Static HTML assertions or direct API sessions do not substitute for the clean-browser login flow."
+  ],
+  "evidence_required": [
+    "FT-001-AC-013 RED: the real /staff/login page has no credential form and a clean browser cannot sign in through it; GREEN: the same clean-browser flow submits to the real API, receives 204/cookies and reaches the fixed staff landing/uploader, with observable recoverable 401/429 and technical-failure branches; decisive comparison: actual browser action/response/navigation sequence, canonical cookie attributes and owner session projection; artifact: redacted installed-playwright-cli transcript, screenshot and cleanup record under .tasks/TASK-116-T3-FT-001-W9/."
+  ]
+}
