@@ -29,6 +29,10 @@ from face_moment.serving_control.display_client_admin import (
     read_display_client_admin,
 )
 from face_moment.serving_control.realtime_context import (
+    CalibrationRecommendationConflictError,
+    CalibrationServingRecommendation,
+    CalibrationServingSnapshot,
+    InvalidCalibrationRecommendationError,
     QuerySource,
     RealtimeContext,
     ReferenceSearchSettings,
@@ -40,6 +44,10 @@ from face_moment.serving_control.realtime_context import (
 )
 
 __all__ = [
+    "CalibrationRecommendationConflictError",
+    "CalibrationServingRecommendation",
+    "CalibrationServingSnapshot",
+    "InvalidCalibrationRecommendationError",
     "InactiveIngestTargetError",
     "IneligibleIngestTargetError",
     "IngestTarget",

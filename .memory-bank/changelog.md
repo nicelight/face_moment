@@ -4,6 +4,45 @@ status: active
 ---
 # Changelog
 
+## [2026-09-06] TASK-104 KISS repair closed
+
+- Repaired: production Calibration completion now composes one stored
+  `Balance` threshold recommendation only from homogeneous selected Attempts
+  for the exact current serving revision and their one common finite historical
+  threshold; mixed or undefined input truthfully produces no recommendation.
+- Preserved: the proposal changes only the threshold. Current server-owned
+  query-quality and quality-gate settings remain unchanged; no grid search,
+  weighting, inferred outcome, quality candidate or automatic apply was added.
+- Repaired: the post-apply success notice now requires the current owner state
+  to match both the returned settings revision and Calibration run ID, so a
+  forged query value cannot report success.
+- Hardened within the same KISS boundary: the stored recommendation now retains
+  the exact calibrated `pipeline_revision_id`. A supported switch to another
+  revision with the same pipeline code makes the old recommendation stale;
+  owner apply and the success notice both reject that mismatch.
+- Closed: `TASK-104-T3-FT-011-W3` is `done` after fresh focused and adjacent
+  tests, mypy, Memory Bank lint, `git diff --check`, the required real-browser
+  flow, independent functional `PASS` and task-scoped `semantic-pass`.
+- Adversarial proof covers both switch-before-apply rejection and
+  switch-after-apply stale-success suppression. No dependent was promoted and
+  no unrelated workflow stage was run.
+
+## [2026-09-05] Wave 2 / Calibration missing-original recovery
+
+- Closed: `TASK-111-T3-FT-011-W2` is `done` after independent functional
+  `PASS`, task-scoped `semantic-pass` and scheduler-owned closure.
+- Reconciled: the supported S3 `NoSuchKey` path now terminalizes the claimed
+  Calibration run as `failed/dataset_unavailable`, releases the singleton
+  worker and permits queued Photo progress without replacement execution or a
+  serving change; `REQ-CAL-003` is `verified` through `FT-011-AC-005`.
+- Dependency state: TASK-104 is authoritatively `ready`; TASK-106 remains
+  blocked on TASK-104. TASK-110 retains `blocked` status even though its former
+  TASK-111 dependency condition is satisfied, pending the scheduler-owned
+  post-sync gate and promotion pass. No task status was changed by this sync.
+- Evidence: `.memory-bank/tasks/TASK-111-T3-FT-011-W2.task.json`,
+  `.tasks/TASK-111-T3-FT-011-W2/TASK-111-T3-FT-011-W2-S-VERIFY-final-report-docs-01.md`
+  and `.tasks/TASK-111-T3-FT-011-W2/TASK-111-T3-FT-011-W2-S-RED-VERIFY-final-report-docs-01.md`.
+
 ## [2026-09-05] Wave 2 / FT-012 role-scoped Photo visibility
 
 - Closed: `TASK-107-T3-FT-012-W2` is `done` after independent functional

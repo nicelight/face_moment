@@ -1,7 +1,7 @@
 {
   "id": "TASK-110-T3-FT-012-W3",
   "title": "Run resumable global Photo purge",
-  "status": "blocked",
+  "status": "ready",
   "wave": "W3",
   "feature": "FT-012",
   "reqs": [
@@ -59,6 +59,20 @@
         ".memory-bank/bugs/task-101-calibration-missing-original-terminalization.md"
       ],
       "resume_route": "Complete TASK-111 through its reviewed T3 route; the scheduler then re-evaluates this task together with its remaining FT-012 dependencies."
+    },
+    {
+      "stage": "scheduler-dependency-unblock",
+      "verdict": "ready",
+      "summary": "TASK-111-T3-FT-011-W2 and every other declared dependency are done. After the completed Wave 2 semantic, sync, lint, strict-doctor, advisory and Judge gates, the scheduler removed the stale dependency block without changing this task's identity, scope, tier, wave or acceptance claims.",
+      "evidence": [
+        ".memory-bank/tasks/TASK-111-T3-FT-011-W2.task.json",
+        ".memory-bank/tasks/TASK-107-T3-FT-012-W2.task.json",
+        ".memory-bank/tasks/TASK-109-T3-FT-012-W1.task.json",
+        ".memory-bank/tasks/TASK-081-T3-FT-006-W2.task.json",
+        ".memory-bank/tasks/TASK-084-T2-FT-007-W2.task.json",
+        ".protocols/AUTONOMOUS-RUN/status.md"
+      ],
+      "resume_route": "Eligible for canonical scheduler selection after recovery-first strict validation; stable Wave 3 order selects TASK-104 first."
     }
   ],
   "docs": [

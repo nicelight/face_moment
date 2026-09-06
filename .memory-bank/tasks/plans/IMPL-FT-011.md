@@ -103,8 +103,8 @@ adapter registry, second worker or automatic retry is introduced.
 | `TASK-102-T2-FT-011-W2` | done | T2 | W2 | `TASK-100` | `FT-011-AC-001`, `FT-011-AC-006` | Produce all three deterministic threshold profiles, drill-down and honest unavailable output. |
 | `TASK-103-T2-FT-011-W2` | done | T2 | W2 | `TASK-100` | `FT-011-AC-002` | Produce the five one-dimensional quality recommendations without joint optimization; `blur_score` is lower-is-better, with a maximum cutoff that keeps `score <= cutoff`. |
 | `TASK-105-T3-FT-011-W2` | done | T3 | W2 | `TASK-100`, existing retention seam | `FT-011-AC-007` | Expire terminal ordinary runs without widening retention or the cleanup result. |
-| `TASK-111-T3-FT-011-W2` | ready | T3 | W2 | `TASK-100` | Sole active replacement ownership of `FT-011-AC-005`: supported S3 `NoSuchKey` terminalization | Convert the proved missing-original read failure into the existing terminal `dataset_unavailable` path and prove worker release, without retrying TASK-101 or changing worker/serving behavior. |
-| `TASK-104-T3-FT-011-W3` | blocked | T3 | W3 | `TASK-111`, `TASK-102`, `TASK-103`, existing staff/settings providers | `FT-011-AC-004` | Deliver the developer list/create/detail flow and allow only a separate confirmed stored recommendation to change serving settings. |
+| `TASK-111-T3-FT-011-W2` | done | T3 | W2 | `TASK-100` | Closed replacement ownership of `FT-011-AC-005`: supported S3 `NoSuchKey` terminalization | Converts the proved missing-original read failure into the existing terminal `dataset_unavailable` path and proves worker release, without retrying TASK-101 or changing worker/serving behavior. |
+| `TASK-104-T3-FT-011-W3` | ready | T3 | W3 | `TASK-111`, `TASK-102`, `TASK-103`, existing staff/settings providers | `FT-011-AC-004` | Deliver the developer list/create/detail flow and allow only a separate confirmed stored recommendation to change serving settings. |
 | `TASK-106-T3-FT-011-W4` | blocked | T3 | W4 | `TASK-104`, `TASK-105`, existing promotion seam | `FT-011-AC-008` | Expose confirmed curated promotion/deletion and preserve the subset through ordinary cleanup. |
 
 The original four W2 outcomes are independent after the durable run core. The
@@ -126,8 +126,10 @@ replacement owner of that criterion and corrects only the verified supported
 S3 `NoSuchKey` missing-original terminalization gap; it is not a fourth attempt
 and does not reopen the completed sequential-binding, restart or
 serving-isolation proof.
-TASK-104 remains blocked on TASK-111 and TASK-106 remains blocked transitively
-through TASK-104. Their ownership, claims, tier and scope stay unchanged.
+TASK-111 is now done with functional `PASS`, task-scoped `semantic-pass` and
+scheduler closure evidence. The scheduler has recorded TASK-104 as `ready`;
+TASK-106 remains blocked transitively through TASK-104. Their ownership,
+claims, tier and scope stay unchanged.
 
 ## Advisory Expected Change Surface
 

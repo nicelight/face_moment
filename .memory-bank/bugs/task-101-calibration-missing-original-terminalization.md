@@ -25,3 +25,16 @@ recording the required terminal `dataset_unavailable` failure. This violates
 Any repair must use the normal FT-011 planning, review and readiness route.
 It must preserve the selected direct-adapter, singleton-worker, manual-rerun
 and serving-boundary constraints already proven by TASK-101.
+
+## Resolution
+
+`TASK-111-T3-FT-011-W2` completed the reviewed successor route with independent
+functional `PASS`, task-scoped `semantic-pass` and scheduler-owned closure. The
+supported S3 `NoSuchKey` path now reaches the existing terminal
+`failed/dataset_unavailable` transition, releases the singleton worker and lets
+queued Photo work continue without a replacement Calibration run or serving
+change. TASK-101 remains immutable failed history.
+
+- [Authoritative closed successor](../tasks/TASK-111-T3-FT-011-W2.task.json)
+- [Functional verification](../../.tasks/TASK-111-T3-FT-011-W2/TASK-111-T3-FT-011-W2-S-VERIFY-final-report-docs-01.md)
+- [Semantic verification](../../.tasks/TASK-111-T3-FT-011-W2/TASK-111-T3-FT-011-W2-S-RED-VERIFY-final-report-docs-01.md)

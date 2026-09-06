@@ -46,6 +46,9 @@ status: active
   and wave-boundary reconciliation record.
 - [.memory-bank/bugs/task-090-realtime-event-post-commit-sql.md](bugs/task-090-realtime-event-post-commit-sql.md):
   archived TASK-090 failure evidence and verified TASK-094 resolution.
+- [.memory-bank/bugs/task-101-calibration-missing-original-terminalization.md](bugs/task-101-calibration-missing-original-terminalization.md):
+  immutable TASK-101 failure evidence and verified TASK-111 successor
+  resolution.
 - [.memory-bank/epics/index.md](epics/index.md): router for the three product
   epics (C4 L2).
 - [.memory-bank/features/index.md](features/index.md): router for the twelve product

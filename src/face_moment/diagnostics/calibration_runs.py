@@ -23,12 +23,31 @@ from face_moment.processing.offline_calibration import (
     CalibrationOfflineInputError,
     CalibrationObjectStore,
     CalibrationPhotoAdapter,
+    OfflineCalibrationResult,
     evaluate_frozen_calibration,
     evaluate_frozen_calibration_sequential,
     freeze_calibration_photos,
     result_bundle_from_offline,
 )
 from face_moment.processing.model_admission import ModelAdmissionError
+from face_moment.processing.revisions import (
+    IneligiblePipelineRevisionError,
+    PipelineCode,
+    PipelineRevisionRepository,
+)
+from face_moment.diagnostics.calibration_thresholds import (
+    ThresholdCandidate,
+    ThresholdProfileResult,
+    calculate_threshold_profiles,
+)
+from face_moment.platform.auth.principals import StaffPrincipal, StaffRole
+from face_moment.serving_control.realtime_context import (
+    CalibrationRecommendationConflictError,
+    CalibrationServingRecommendation,
+    InvalidCalibrationRecommendationError,
+    RealtimeContextRepository,
+    UnknownRealtimeContextSpaError,
+)
 
 _MAX_JSON_BYTES = 1024 * 1024
 _FORBIDDEN_KEYS = frozenset(
@@ -69,6 +88,24 @@ class CalibrationRunNotFoundError(LookupError):
 
 class DatasetMismatchError(CalibrationRunError):
     pass
+
+
+class CalibrationAccessDeniedError(PermissionError):
+    pass
+
+
+class CalibrationSelectionNotFoundError(LookupError):
+    pass
+
+
+class CalibrationSelectionConflictError(CalibrationRunError):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class StoredServingRecommendation:
+    key: str
+    recommendation: CalibrationServingRecommendation
 
 
 class CalibrationRun(Base):
@@ -142,6 +179,17 @@ class CalibrationRunRepository:
         if run is None:
             raise CalibrationRunNotFoundError(str(run_id))
         return run
+
+    def list_recent(self, *, limit: int = 50) -> tuple[CalibrationRun, ...]:
+        if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 100:
+            raise CalibrationRunError("Calibration list limit must be between 1 and 100")
+        return tuple(
+            self._session.scalars(
+                select(CalibrationRun)
+                .order_by(CalibrationRun.created_at.desc(), CalibrationRun.id.desc())
+                .limit(limit)
+            )
+        )
 
     def start(self, run_id: uuid.UUID, *, now: datetime | None = None) -> CalibrationRun:
         run = self.require(run_id, for_update=True)
@@ -252,7 +300,11 @@ class CalibrationRunService:
         spa_id, photos = freeze_calibration_photos(self._session, photo_ids=photo_ids)
         from face_moment.diagnostics.ground_truth_annotations import GroundTruthAnnotationProvider
 
-        attempts = _frozen_attempts(GroundTruthAnnotationProvider(self._session), selected_attempt_ids)
+        attempts = _frozen_attempts(
+            self._session,
+            GroundTruthAnnotationProvider(self._session),
+            selected_attempt_ids,
+        )
         snapshot: dict[str, object] = {
             "spa_id": str(spa_id),
             "photos": list(photos),
@@ -267,6 +319,258 @@ class CalibrationRunService:
         return self._repository.create_requested(
             requested_by_staff_id=requested_by_staff_id,
             dataset_snapshot=snapshot,
+        )
+
+    def request_from_selection(
+        self,
+        *,
+        requested_by_staff_id: uuid.UUID,
+        photo_ids: Sequence[uuid.UUID],
+        selected_attempt_ids: Sequence[uuid.UUID],
+        sface_revision_id: uuid.UUID,
+        buffalo_revision_id: uuid.UUID,
+    ) -> CalibrationRun:
+        """Resolve only server-owned values around the submitted UUID selection."""
+
+        photo_ids = _unique_uuid_selection(photo_ids, "Photo")
+        selected_attempt_ids = _unique_uuid_selection(
+            selected_attempt_ids, "Attempt"
+        )
+        try:
+            spa_id, _photos = freeze_calibration_photos(
+                self._session, photo_ids=photo_ids
+            )
+        except CalibrationOfflineInputError as error:
+            if "missing" in str(error):
+                raise CalibrationSelectionNotFoundError from error
+            raise CalibrationSelectionConflictError(str(error)) from error
+
+        from face_moment.promo.attempt import PromoAttempt
+
+        attempts = tuple(
+            self._session.scalars(
+                select(PromoAttempt).where(PromoAttempt.id.in_(selected_attempt_ids))
+            )
+        )
+        if len(attempts) != len(selected_attempt_ids):
+            raise CalibrationSelectionNotFoundError
+        if any(attempt.spa_id != spa_id for attempt in attempts):
+            raise CalibrationSelectionConflictError(
+                "selected Attempts must belong to the selected SPA"
+            )
+
+        try:
+            sface = PipelineRevisionRepository(self._session).resolve_eligible(
+                sface_revision_id
+            )
+            buffalo = PipelineRevisionRepository(self._session).resolve_eligible(
+                buffalo_revision_id
+            )
+        except IneligiblePipelineRevisionError as error:
+            raise CalibrationSelectionConflictError(
+                "selected Calibration revision is not eligible"
+            ) from error
+        if (
+            sface.pipeline_code is not PipelineCode.OPENCV_SFACE
+            or buffalo.pipeline_code is not PipelineCode.INSIGHTFACE_BUFFALO_M
+        ):
+            raise CalibrationSelectionConflictError(
+                "Calibration requires one SFace and one Buffalo M revision"
+            )
+
+        try:
+            serving = RealtimeContextRepository(
+                self._session
+            ).read_calibration_serving_snapshot(spa_id=spa_id)
+        except (
+            CalibrationRecommendationConflictError,
+            UnknownRealtimeContextSpaError,
+        ) as error:
+            raise CalibrationSelectionConflictError(str(error)) from error
+
+        serving_values: dict[str, object] = {
+            "settings_revision": serving.settings_revision,
+            "pipeline_revision_id": str(serving.pipeline_revision_id),
+            "pipeline_code": serving.pipeline_code.value,
+            "reference_threshold": serving.reference_threshold,
+            "min_query_face_quality": serving.min_query_face_quality,
+            "quality_settings": dict(serving.quality_settings),
+        }
+        candidate_values: dict[str, object] = {
+            "reference_thresholds": sorted(
+                {float(attempt.threshold) for attempt in attempts}
+            ),
+            "quality_settings": [dict(serving.quality_settings)],
+        }
+        try:
+            return self.request(
+                requested_by_staff_id=requested_by_staff_id,
+                photo_ids=photo_ids,
+                selected_attempt_ids=selected_attempt_ids,
+                sface_revision_id=sface.id,
+                buffalo_revision_id=buffalo.id,
+                serving_values=serving_values,
+                candidate_values=candidate_values,
+            )
+        except CalibrationRunNotFoundError as error:
+            raise CalibrationSelectionNotFoundError from error
+        except (CalibrationRunError, CalibrationOfflineInputError) as error:
+            raise CalibrationSelectionConflictError(str(error)) from error
+
+    def list_recent(self) -> tuple[CalibrationRun, ...]:
+        return self._repository.list_recent()
+
+    def require(self, run_id: uuid.UUID) -> CalibrationRun:
+        return self._repository.require(run_id)
+
+    def serving_recommendations(
+        self, run: CalibrationRun
+    ) -> tuple[StoredServingRecommendation, ...]:
+        if run.status != CalibrationRunStatus.COMPLETE or run.result_bundle is None:
+            return ()
+        raw_recommendations = run.result_bundle.get("serving_recommendations")
+        if raw_recommendations is None:
+            return ()
+        if not isinstance(raw_recommendations, list) or len(raw_recommendations) > 64:
+            raise CalibrationSelectionConflictError(
+                "stored Calibration recommendations are malformed"
+            )
+        serving_values = run.dataset_snapshot.get("serving_values")
+        if not isinstance(serving_values, Mapping):
+            raise CalibrationSelectionConflictError(
+                "stored Calibration serving snapshot is malformed"
+            )
+        expected_revision = serving_values.get("settings_revision")
+        if (
+            not isinstance(expected_revision, int)
+            or isinstance(expected_revision, bool)
+            or expected_revision <= 0
+        ):
+            raise CalibrationSelectionConflictError(
+                "stored Calibration settings revision is malformed"
+            )
+
+        resolved: list[StoredServingRecommendation] = []
+        keys: set[str] = set()
+        for value in raw_recommendations:
+            if not isinstance(value, Mapping):
+                raise CalibrationSelectionConflictError(
+                    "stored Calibration recommendation is malformed"
+                )
+            key = value.get("key")
+            pipeline_code = value.get("pipeline_code")
+            quality_settings = value.get("quality_settings")
+            if (
+                not isinstance(key, str)
+                or not key
+                or len(key) > 128
+                or key in keys
+                or not isinstance(pipeline_code, str)
+                or not isinstance(quality_settings, Mapping)
+            ):
+                raise CalibrationSelectionConflictError(
+                    "stored Calibration recommendation is malformed"
+                )
+            try:
+                typed_pipeline = PipelineCode(pipeline_code)
+                pipeline_revision_id = _snapshot_uuid(
+                    value.get("pipeline_revision_id"),
+                    "recommendation pipeline revision",
+                )
+                threshold = _stored_finite(
+                    value.get("reference_threshold"), "reference_threshold"
+                )
+                min_quality = _stored_finite(
+                    value.get("min_query_face_quality"),
+                    "min_query_face_quality",
+                )
+            except (ValueError, TypeError, CalibrationRunError) as error:
+                raise CalibrationSelectionConflictError(
+                    "stored Calibration recommendation is malformed"
+                ) from error
+            keys.add(key)
+            resolved.append(
+                StoredServingRecommendation(
+                    key=key,
+                    recommendation=CalibrationServingRecommendation(
+                        expected_settings_revision=expected_revision,
+                        pipeline_revision_id=pipeline_revision_id,
+                        pipeline_code=typed_pipeline,
+                        reference_threshold=threshold,
+                        min_query_face_quality=min_quality,
+                        quality_settings=dict(quality_settings),
+                    ),
+                )
+            )
+        return tuple(resolved)
+
+    def apply_stored_recommendation(
+        self, *, run_id: uuid.UUID, recommendation_key: str
+    ) -> int:
+        run = self._repository.require(run_id, for_update=True)
+        if run.status != CalibrationRunStatus.COMPLETE:
+            raise CalibrationSelectionConflictError(
+                "only a complete Calibration run can be applied"
+            )
+        recommendations = self.serving_recommendations(run)
+        selected = next(
+            (item for item in recommendations if item.key == recommendation_key),
+            None,
+        )
+        if selected is None:
+            raise CalibrationSelectionNotFoundError
+        spa_id = _snapshot_uuid(run.dataset_snapshot.get("spa_id"), "SPA")
+        try:
+            owner = RealtimeContextRepository(self._session)
+            owner.apply_calibration_recommendation(
+                spa_id=spa_id,
+                calibration_id=run.id,
+                recommendation=selected.recommendation,
+            )
+            applied = owner.read_calibration_serving_snapshot(spa_id=spa_id)
+        except (
+            CalibrationRecommendationConflictError,
+            InvalidCalibrationRecommendationError,
+            UnknownRealtimeContextSpaError,
+        ) as error:
+            raise CalibrationSelectionConflictError(str(error)) from error
+        if applied.calibration_id != run.id:
+            raise CalibrationSelectionConflictError(
+                "the stored Calibration apply result was not committed in owner state"
+            )
+        return applied.settings_revision
+
+    def is_applied_result(
+        self, *, run: CalibrationRun, settings_revision: int | None
+    ) -> bool:
+        if settings_revision is None or settings_revision <= 0:
+            return False
+        spa_id = _snapshot_uuid(run.dataset_snapshot.get("spa_id"), "SPA")
+        try:
+            current = RealtimeContextRepository(
+                self._session
+            ).read_calibration_serving_snapshot(spa_id=spa_id)
+        except (
+            CalibrationRecommendationConflictError,
+            UnknownRealtimeContextSpaError,
+        ) as error:
+            raise CalibrationSelectionConflictError(str(error)) from error
+        serving_values = run.dataset_snapshot.get("serving_values")
+        if not isinstance(serving_values, Mapping):
+            raise CalibrationSelectionConflictError(
+                "stored Calibration serving snapshot is malformed"
+            )
+        try:
+            expected_pipeline_revision_id = _snapshot_uuid(
+                serving_values.get("pipeline_revision_id"),
+                "serving pipeline revision",
+            )
+        except CalibrationRunError as error:
+            raise CalibrationSelectionConflictError(str(error)) from error
+        return (
+            current.settings_revision == settings_revision
+            and current.calibration_id == run.id
+            and current.pipeline_revision_id == expected_pipeline_revision_id
         )
 
     def execute(
@@ -304,7 +608,9 @@ class CalibrationRunService:
             return self._repository.fail_unavailable(run.id)
         return self._repository.complete(
             run.id,
-            result_bundle=result_bundle_from_offline(sface=sface, buffalo=buffalo),
+            result_bundle=_result_bundle_for_run(
+                run.dataset_snapshot, sface=sface, buffalo=buffalo
+            ),
         )
 
     def has_requested(self) -> bool:
@@ -377,7 +683,9 @@ class CalibrationRunService:
             return self._repository.fail(run.id, error_code="model_unavailable")
         return self._repository.complete(
             run.id,
-            result_bundle=result_bundle_from_offline(sface=sface, buffalo=buffalo),
+            result_bundle=_result_bundle_for_run(
+                run.dataset_snapshot, sface=sface, buffalo=buffalo
+            ),
         )
 
 
@@ -444,9 +752,12 @@ def _snapshot_uuid(value: object, field: str) -> uuid.UUID:
 
 
 def _frozen_attempts(
+    session: Session,
     annotation_provider: GroundTruthAnnotationProvider,
     selected_attempt_ids: Sequence[uuid.UUID],
 ) -> list[dict[str, object]]:
+    from face_moment.promo.attempt import PromoAttempt
+
     if not selected_attempt_ids:
         raise CalibrationRunError("Calibration requires applicable annotated Attempts")
     frozen: list[dict[str, object]] = []
@@ -456,12 +767,19 @@ def _frozen_attempts(
         if attempt_id in identifiers:
             raise CalibrationRunError("selected Attempts must be unique")
         identifiers.add(attempt_id)
+        attempt = session.get(PromoAttempt, attempt_id)
+        if attempt is None:
+            raise CalibrationRunError("selected Attempt is missing")
         calculation = annotation_provider.calculation_snapshot(attempt_id=attempt_id)
         if not calculation.annotations:
             continue
+        threshold = _finite_snapshot_value(attempt.threshold, "Attempt threshold")
         frozen.append(
             {
                 "attempt_id": str(calculation.attempt_id),
+                "pipeline_revision_id": str(attempt.pipeline_revision_id),
+                "pipeline_code": attempt.pipeline_code,
+                "reference_threshold": threshold,
                 "annotations": [
                     {
                         "annotation_id": str(annotation.annotation_id),
@@ -480,8 +798,174 @@ def _frozen_attempts(
     return frozen
 
 
+def _result_bundle_for_run(
+    snapshot: Mapping[str, object],
+    *,
+    sface: OfflineCalibrationResult,
+    buffalo: OfflineCalibrationResult,
+) -> dict[str, object]:
+    result = result_bundle_from_offline(sface=sface, buffalo=buffalo)
+    composed = _compose_balance_recommendation(snapshot)
+    if composed is None:
+        return result
+    profile, recommendation = composed
+    result["threshold_profiles"] = [profile.to_dict()]
+    result["serving_recommendations"] = [recommendation]
+    return result
+
+
+def _compose_balance_recommendation(
+    snapshot: Mapping[str, object],
+) -> tuple[ThresholdProfileResult, dict[str, object]] | None:
+    serving = snapshot.get("serving_values")
+    revisions = snapshot.get("pipeline_revisions")
+    attempts = snapshot.get("attempts")
+    if (
+        not isinstance(serving, Mapping)
+        or not isinstance(revisions, Mapping)
+        or not isinstance(attempts, list)
+        or not attempts
+    ):
+        return None
+
+    pipeline_code_value = serving.get("pipeline_code")
+    pipeline_revision_value = serving.get("pipeline_revision_id")
+    if not isinstance(pipeline_code_value, str) or pipeline_revision_value is None:
+        return None
+    try:
+        pipeline_code = PipelineCode(pipeline_code_value)
+        pipeline_revision_id = _snapshot_uuid(
+            pipeline_revision_value, "serving pipeline revision"
+        )
+    except ValueError as error:
+        raise CalibrationRunError("stored serving pipeline code is malformed") from error
+
+    revision_key = (
+        "sface"
+        if pipeline_code is PipelineCode.OPENCV_SFACE
+        else "buffalo_m"
+    )
+    if _snapshot_uuid(revisions.get(revision_key), revision_key) != pipeline_revision_id:
+        return None
+
+    parsed_attempts: list[tuple[str, float, list[object]]] = []
+    for value in attempts:
+        if not isinstance(value, Mapping):
+            raise CalibrationRunError("stored Calibration Attempt is malformed")
+        if (
+            value.get("pipeline_revision_id") != str(pipeline_revision_id)
+            or value.get("pipeline_code") != pipeline_code.value
+        ):
+            return None
+        attempt_id = value.get("attempt_id")
+        annotations = value.get("annotations")
+        if not isinstance(attempt_id, str) or not isinstance(annotations, list):
+            raise CalibrationRunError("stored Calibration Attempt is malformed")
+        threshold = _finite_snapshot_value(
+            value.get("reference_threshold"), "Attempt threshold"
+        )
+        parsed_attempts.append((attempt_id, threshold, annotations))
+
+    thresholds = {threshold for _attempt_id, threshold, _rows in parsed_attempts}
+    if len(thresholds) != 1:
+        return None
+    threshold = next(iter(thresholds))
+    counts = {"correct": 0, "false": 0, "missed": 0}
+    contributing: list[str] = []
+    for attempt_id, _threshold, annotations in parsed_attempts:
+        contributed = False
+        for annotation in annotations:
+            if not isinstance(annotation, Mapping):
+                raise CalibrationRunError("stored Calibration annotation is malformed")
+            outcome = annotation.get("outcome")
+            if outcome not in counts:
+                raise CalibrationRunError("stored Calibration annotation is malformed")
+            counts[outcome] += 1
+            contributed = True
+        if contributed:
+            contributing.append(attempt_id)
+
+    profile = calculate_threshold_profiles(
+        pipeline_revision_id=str(pipeline_revision_id),
+        candidates=(
+            ThresholdCandidate(
+                threshold=threshold,
+                correct=counts["correct"],
+                false=counts["false"],
+                missed=counts["missed"],
+                contributing_attempt_ids=tuple(contributing),
+            ),
+        ),
+        selected_attempt_count=len(attempts),
+        applicable_attempt_count=len(parsed_attempts),
+    )
+    proposal = profile.profiles["balance"].proposal
+    if proposal is None:
+        return None
+    quality_settings = serving.get("quality_settings")
+    if not isinstance(quality_settings, Mapping):
+        raise CalibrationRunError("stored serving quality settings are malformed")
+    key = (
+        "sface-balance"
+        if pipeline_code is PipelineCode.OPENCV_SFACE
+        else "buffalo-m-balance"
+    )
+    return profile, {
+        "key": key,
+        "pipeline_revision_id": str(pipeline_revision_id),
+        "pipeline_code": pipeline_code.value,
+        "reference_threshold": proposal.threshold,
+        "min_query_face_quality": _finite_snapshot_value(
+            serving.get("min_query_face_quality"), "minimum query face quality"
+        ),
+        "quality_settings": dict(quality_settings),
+    }
+
+
 def _utc(value: datetime | None) -> datetime:
     timestamp = datetime.now(timezone.utc) if value is None else value
     if timestamp.tzinfo is None:
         raise CalibrationRunError("timestamps must be timezone-aware")
     return timestamp.astimezone(timezone.utc)
+
+
+def authorize_calibration(principal: StaffPrincipal) -> None:
+    if principal.role is not StaffRole.DEVELOPER:
+        raise CalibrationAccessDeniedError
+
+
+def _unique_uuid_selection(
+    values: Sequence[uuid.UUID], name: str
+) -> tuple[uuid.UUID, ...]:
+    if not values or any(not isinstance(value, uuid.UUID) for value in values):
+        raise CalibrationSelectionConflictError(
+            f"{name} selection must contain UUIDs"
+        )
+    normalized = tuple(values)
+    if len(set(normalized)) != len(normalized):
+        raise CalibrationSelectionConflictError(
+            f"{name} selection must be unique"
+        )
+    return normalized
+
+
+def _finite_snapshot_value(value: object, field: str) -> float:
+    if (
+        not isinstance(value, (int, float))
+        or isinstance(value, bool)
+        or not math.isfinite(value)
+    ):
+        raise CalibrationRunError(f"stored {field} must be finite")
+    return float(value)
+
+
+def _stored_finite(value: object, field: str) -> float:
+    if (
+        not isinstance(value, (int, float))
+        or isinstance(value, bool)
+        or not math.isfinite(value)
+    ):
+        raise CalibrationSelectionConflictError(
+            f"stored {field} must be finite"
+        )
+    return float(value)

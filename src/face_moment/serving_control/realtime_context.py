@@ -86,6 +86,14 @@ class ReferenceSearchSettingsAlreadyExistsError(ValueError):
     pass
 
 
+class CalibrationRecommendationConflictError(ValueError):
+    """A stored Calibration recommendation is stale or not currently applicable."""
+
+
+class InvalidCalibrationRecommendationError(ValueError):
+    """A recommendation crossed the owner boundary with invalid stored values."""
+
+
 class UnknownRealtimeContextSpaError(LookupError):
     pass
 
@@ -115,6 +123,32 @@ class RealtimeContext:
     quality_settings: Mapping[str, object]
     calibration_id: uuid.UUID | None
     release_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class CalibrationServingSnapshot:
+    """Owner-projected serving values frozen into one Calibration run."""
+
+    settings_revision: int
+    spa_id: uuid.UUID
+    pipeline_revision_id: uuid.UUID
+    pipeline_code: PipelineCode
+    reference_threshold: float
+    min_query_face_quality: float
+    quality_settings: Mapping[str, object]
+    calibration_id: uuid.UUID | None
+
+
+@dataclass(frozen=True, slots=True)
+class CalibrationServingRecommendation:
+    """One complete stored setting proposal resolved by diagnostics."""
+
+    expected_settings_revision: int
+    pipeline_revision_id: uuid.UUID
+    pipeline_code: PipelineCode
+    reference_threshold: float
+    min_query_face_quality: float
+    quality_settings: Mapping[str, object]
 
 
 class RealtimeContextRepository:
@@ -256,6 +290,140 @@ class RealtimeContextRepository:
                 )
             )
         )
+
+    def read_calibration_serving_snapshot(
+        self, *, spa_id: uuid.UUID
+    ) -> CalibrationServingSnapshot:
+        """Publish the current complete setting without granting write authority."""
+
+        spa = self._load_spa(spa_id, for_update=True)
+        try:
+            revision = PipelineRevisionRepository(self._session).resolve_eligible(
+                spa.serving_pipeline_revision_id
+            )
+        except IneligiblePipelineRevisionError as error:
+            raise CalibrationRecommendationConflictError(
+                "the committed serving revision is not eligible"
+            ) from error
+        try:
+            settings = self.get_reference_settings(
+                spa_id=spa.id, pipeline_code=revision.pipeline_code
+            )
+            quality_settings = self._quality_settings(settings.quality_settings)
+            threshold = self._finite(
+                settings.reference_threshold, "reference_threshold"
+            )
+            min_quality = self._finite(
+                settings.min_query_face_quality, "min_query_face_quality"
+            )
+        except (ReferenceSearchSettingsNotFoundError, ValueError) as error:
+            raise CalibrationRecommendationConflictError(
+                "complete current serving settings are unavailable"
+            ) from error
+        return CalibrationServingSnapshot(
+            settings_revision=spa.settings_revision,
+            spa_id=spa.id,
+            pipeline_revision_id=revision.id,
+            pipeline_code=revision.pipeline_code,
+            reference_threshold=threshold,
+            min_query_face_quality=min_quality,
+            quality_settings=cast(
+                Mapping[str, object], _freeze_json(quality_settings)
+            ),
+            calibration_id=settings.calibration_id,
+        )
+
+    def apply_calibration_recommendation(
+        self,
+        *,
+        spa_id: uuid.UUID,
+        calibration_id: uuid.UUID,
+        recommendation: CalibrationServingRecommendation,
+        now: datetime | None = None,
+    ) -> ReferenceSearchSettings:
+        """Atomically apply one already-resolved stored recommendation."""
+
+        if not isinstance(calibration_id, uuid.UUID):
+            raise InvalidCalibrationRecommendationError(
+                "calibration_id must be a UUID"
+            )
+        if not isinstance(recommendation, CalibrationServingRecommendation):
+            raise InvalidCalibrationRecommendationError(
+                "a typed Calibration recommendation is required"
+            )
+        if (
+            not isinstance(recommendation.expected_settings_revision, int)
+            or isinstance(recommendation.expected_settings_revision, bool)
+            or recommendation.expected_settings_revision <= 0
+        ):
+            raise InvalidCalibrationRecommendationError(
+                "expected_settings_revision must be positive"
+            )
+        if not isinstance(recommendation.pipeline_revision_id, uuid.UUID):
+            raise InvalidCalibrationRecommendationError(
+                "pipeline_revision_id must be a UUID"
+            )
+
+        spa = self._load_spa(spa_id, for_update=True)
+        if spa.settings_revision != recommendation.expected_settings_revision:
+            raise CalibrationRecommendationConflictError(
+                "the stored recommendation is stale"
+            )
+        try:
+            active_revision = PipelineRevisionRepository(
+                self._session
+            ).resolve_eligible(spa.serving_pipeline_revision_id)
+        except IneligiblePipelineRevisionError as error:
+            raise CalibrationRecommendationConflictError(
+                "the committed serving revision is not eligible"
+            ) from error
+        if active_revision.pipeline_code is not recommendation.pipeline_code:
+            raise CalibrationRecommendationConflictError(
+                "the stored recommendation targets another pipeline"
+            )
+        if active_revision.id != recommendation.pipeline_revision_id:
+            raise CalibrationRecommendationConflictError(
+                "the stored recommendation targets another pipeline revision"
+            )
+
+        settings = self._session.scalar(
+            select(ReferenceSearchSettings)
+            .where(
+                ReferenceSearchSettings.spa_id == spa.id,
+                ReferenceSearchSettings.pipeline_code
+                == recommendation.pipeline_code.value,
+                ReferenceSearchSettings.query_source == QuerySource.REFERENCE.value,
+            )
+            .with_for_update()
+        )
+        if settings is None:
+            raise CalibrationRecommendationConflictError(
+                "the stored recommendation has no current settings row"
+            )
+
+        try:
+            threshold = self._finite(
+                recommendation.reference_threshold, "reference_threshold"
+            )
+            min_quality = self._finite(
+                recommendation.min_query_face_quality,
+                "min_query_face_quality",
+            )
+            quality_settings = self._quality_settings(
+                recommendation.quality_settings
+            )
+        except ValueError as error:
+            raise InvalidCalibrationRecommendationError(str(error)) from error
+
+        updated_at = self._utc(now)
+        settings.reference_threshold = threshold
+        settings.min_query_face_quality = min_quality
+        settings.quality_settings = quality_settings
+        settings.calibration_id = calibration_id
+        settings.updated_at = updated_at
+        self._touch_spa(spa, updated_at)
+        self._session.flush()
+        return settings
 
     def resolve_realtime_context(
         self,

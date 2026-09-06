@@ -89,6 +89,17 @@ selected/applicable counts. Before/after comparison is allowed only between
 complete stored results with the same dataset hash; otherwise it reports
 `dataset_mismatch`.
 
+The production KISS composition uses no new search grid or weighted objective.
+For the currently served pipeline revision, selected annotated Attempts are an
+applicable threshold sample only when they all record that exact revision and
+one common finite historical threshold. Their persisted `correct`, `false` and
+`missed` annotations form the one retained candidate aggregate, and the
+existing `Balance` profile supplies the stored threshold proposal. The proposal
+keeps the current server-owned query-quality and quality-gate settings
+unchanged. Mixed revisions, mixed thresholds or undefined metrics produce no
+serving recommendation rather than an invented value. A later quality-setting
+proposal still requires its separately retained one-dimensional evidence.
+
 ## Minimal Developer Surface
 
 The existing same-origin staff application exposes only:
@@ -120,7 +131,10 @@ and asks `serving_control` to update the existing
 `settings_revision`, updates `updated_at` and stores `calibration_id`; rejection
 returns a bounded reason and preserves the row. These existing fields and the
 command result are the pilot audit evidence; no settings-history or audit table
-is added. Calibration never changes the selected pipeline revision.
+is added. Calibration never changes the selected pipeline revision. A browser
+success notice is shown only when the current server-owned settings revision
+and `calibration_id` confirm that exact apply result; a query parameter alone
+never asserts success.
 
 ## Ordinary And Promoted Retention
 

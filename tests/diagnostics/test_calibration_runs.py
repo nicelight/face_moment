@@ -19,6 +19,7 @@ from face_moment.diagnostics.calibration_runs import (
     CalibrationRunService,
     CalibrationRunStatus,
     DatasetMismatchError,
+    _compose_balance_recommendation,
 )
 from face_moment.diagnostics.ground_truth_annotations import GroundTruthAnnotationProvider
 from face_moment.inventory.photo_persistence import Photo
@@ -48,6 +49,52 @@ class _Adapter:
     def process_photo(self, photo: np.ndarray) -> tuple[object, ...]:
         self.inputs.append(photo)
         return tuple(object() for _ in range(self._result_count))
+
+
+def test_kiss_recommendation_rejects_mixed_attempt_provenance() -> None:
+    sface_id = uuid.uuid4()
+    buffalo_id = uuid.uuid4()
+
+    def snapshot(
+        *, second_revision_id: uuid.UUID = sface_id, second_threshold: float = 0.7
+    ) -> dict[str, object]:
+        return {
+            "serving_values": {
+                "pipeline_revision_id": str(sface_id),
+                "pipeline_code": "opencv_sface",
+                "min_query_face_quality": 0.51,
+                "quality_settings": {"version": 1},
+            },
+            "pipeline_revisions": {
+                "sface": str(sface_id),
+                "buffalo_m": str(buffalo_id),
+            },
+            "attempts": [
+                {
+                    "attempt_id": str(uuid.uuid4()),
+                    "pipeline_revision_id": str(sface_id),
+                    "pipeline_code": "opencv_sface",
+                    "reference_threshold": 0.7,
+                    "annotations": [{"outcome": "correct"}],
+                },
+                {
+                    "attempt_id": str(uuid.uuid4()),
+                    "pipeline_revision_id": str(second_revision_id),
+                    "pipeline_code": "opencv_sface",
+                    "reference_threshold": second_threshold,
+                    "annotations": [{"outcome": "false"}],
+                },
+            ],
+        }
+
+    assert _compose_balance_recommendation(snapshot()) is not None
+    assert (
+        _compose_balance_recommendation(
+            snapshot(second_revision_id=buffalo_id)
+        )
+        is None
+    )
+    assert _compose_balance_recommendation(snapshot(second_threshold=0.8)) is None
 
 
 def _jpeg() -> bytes:
@@ -198,6 +245,9 @@ def test_calibration_run_is_immutable_and_uses_same_verified_photo_once_for_both
             assert completed.dataset_snapshot["attempts"] == [
                 {
                     "attempt_id": str(attempt.id),
+                    "pipeline_revision_id": str(sface.id),
+                    "pipeline_code": "opencv_sface",
+                    "reference_threshold": 0.7,
                     "annotations": [
                         {
                             "annotation_id": str(annotation.annotation_id),

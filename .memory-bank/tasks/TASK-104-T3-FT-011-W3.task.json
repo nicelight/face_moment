@@ -1,7 +1,7 @@
 {
   "id": "TASK-104-T3-FT-011-W3",
   "title": "Deliver the developer Calibration flow and manual apply",
-  "status": "ready",
+  "status": "done",
   "wave": "W3",
   "feature": "FT-011",
   "reqs": [
@@ -64,6 +64,72 @@
         ".memory-bank/bugs/task-101-calibration-missing-original-terminalization.md"
       ],
       "resume_route": "Complete the reviewed TASK-111 successor, then let the scheduler re-evaluate this still-blocked task under the current FT-011 plan approval."
+    },
+    {
+      "stage": "functional-verification",
+      "verdict": "pass",
+      "summary": "VERDICT: PASS — fresh focused tests, source/ownership inspection and an independent Playwright CLI run over unique disposable state prove the exact four developer routes, auth/session/role/CSRF/no-store/sanitized-failure and escaping behavior, immutable selection, stored-only confirmed apply, atomic serving_control mutation with settings revision/timestamp/calibration provenance, unchanged pipeline, state preservation on rejected/failure/safe-rerun paths, complete cleanup and absence of generic, automatic, promotion or retention expansion.",
+      "evidence": [
+        ".protocols/TASK-104-T3-FT-011-W3/verification.md",
+        ".tasks/TASK-104-T3-FT-011-W3/TASK-104-T3-FT-011-W3-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-104-T3-FT-011-W3/verification-gates.txt",
+        ".tasks/TASK-104-T3-FT-011-W3/verification-source-inspection.txt",
+        ".tasks/TASK-104-T3-FT-011-W3/verification-playwright-transcript.txt",
+        ".tasks/TASK-104-T3-FT-011-W3/verification-calibration-applied.png"
+      ],
+      "resume_route": "/red-verify TASK-104-T3-FT-011-W3"
+    },
+    {
+      "stage": "functional-reverification-attempt-2",
+      "verdict": "pass",
+      "summary": "VERDICT: PASS — fresh verifier-owned required gates, source/ownership inspection, a disposable background-worker execute_claimed probe and a separate real Playwright CLI run prove that production creates the bounded stored Balance recommendation, generation/view/rejections preserve serving state, forged success is rejected, and only the confirmed stored apply commits owner revision/time/calibration provenance without changing the pipeline or quality settings.",
+      "evidence": [
+        ".protocols/TASK-104-T3-FT-011-W3/verification.md",
+        ".tasks/TASK-104-T3-FT-011-W3/TASK-104-T3-FT-011-W3-S-VERIFY-final-report-docs-02.md",
+        ".tasks/TASK-104-T3-FT-011-W3/verification-attempt-2-gates.txt",
+        ".tasks/TASK-104-T3-FT-011-W3/verification-attempt-2-source-inspection.txt",
+        ".tasks/TASK-104-T3-FT-011-W3/verification-attempt-2-claimed-production-probe.txt",
+        ".tasks/TASK-104-T3-FT-011-W3/verification-attempt-2-playwright-transcript.txt",
+        ".tasks/TASK-104-T3-FT-011-W3/verification-attempt-2-calibration-applied.png"
+      ],
+      "resume_route": "/red-verify TASK-104-T3-FT-011-W3"
+    },
+    {
+      "stage": "semantic-verification-attempt-2",
+      "verdict": "semantic-fail",
+      "summary": "SEMANTIC_VERDICT: semantic-fail — a supported serving switch from calibrated SFace revision A to another SFace revision B leaves settings_revision unchanged, while the stored recommendation/apply path checks only pipeline_code. The old A-derived threshold can therefore be committed to B and shown as applied, violating exact-current-revision applicability.",
+      "evidence": [
+        ".protocols/TASK-104-T3-FT-011-W3/red-verification.md",
+        ".tasks/TASK-104-T3-FT-011-W3/TASK-104-T3-FT-011-W3-S-RED-VERIFY-final-report-docs-02.md",
+        ".tasks/TASK-104-T3-FT-011-W3/red-verification-attempt-2-probe.txt"
+      ],
+      "resume_route": "/exe TASK-104-T3-FT-011-W3"
+    },
+    {
+      "stage": "functional-reverification-attempt-3",
+      "verdict": "pass",
+      "summary": "VERDICT: PASS — fresh required and adjacent gates, exact same-code revision-switch regression, source/ownership inspection, a real production-backed Playwright flow and two independent co-reviews prove that recommendations and success notices are bound to the exact calibrated pipeline revision while the KISS scope and owner boundary remain intact.",
+      "evidence": [
+        ".protocols/TASK-104-T3-FT-011-W3/verification.md",
+        ".tasks/TASK-104-T3-FT-011-W3/TASK-104-T3-FT-011-W3-S-VERIFY-final-report-docs-03.md",
+        ".tasks/TASK-104-T3-FT-011-W3/verification-attempt-3-gates.txt",
+        ".tasks/TASK-104-T3-FT-011-W3/verification-attempt-3-source-inspection.txt",
+        ".tasks/TASK-104-T3-FT-011-W3/verification-attempt-3-playwright-transcript.txt",
+        ".tasks/TASK-104-T3-FT-011-W3/verification-attempt-3-calibration-applied.png"
+      ],
+      "resume_route": "/red-verify TASK-104-T3-FT-011-W3"
+    },
+    {
+      "stage": "semantic-verification-attempt-3",
+      "verdict": "semantic-pass",
+      "summary": "SEMANTIC_VERDICT: semantic-pass — fresh supported same-code revision-switch probes before and after apply prove that exact frozen pipeline-revision provenance blocks stale mutation and stale success, while two independent adversarial reviews found no remaining security, ownership, rollback, browser-trust or KISS-scope defect.",
+      "evidence": [
+        ".protocols/TASK-104-T3-FT-011-W3/red-verification.md",
+        ".tasks/TASK-104-T3-FT-011-W3/TASK-104-T3-FT-011-W3-S-RED-VERIFY-final-report-docs-03.md",
+        ".tasks/TASK-104-T3-FT-011-W3/red-verification-attempt-3-probe.txt",
+        ".protocols/TASK-104-T3-FT-011-W3/verification.md"
+      ],
+      "resume_route": "Task closure complete; scheduler may evaluate dependents separately."
     }
   ],
   "docs": [
