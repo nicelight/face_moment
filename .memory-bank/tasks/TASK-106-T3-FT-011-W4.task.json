@@ -1,7 +1,7 @@
 {
   "id": "TASK-106-T3-FT-011-W4",
   "title": "Expose promoted Calibration case actions",
-  "status": "ready",
+  "status": "done",
   "wave": "W4",
   "feature": "FT-011",
   "reqs": [
@@ -75,6 +75,30 @@
         ".protocols/AUTONOMOUS-RUN/status.md"
       ],
       "resume_route": "Eligible for canonical scheduler selection after the current strict gate; stable wave order selects any remaining Wave 3 ready task first."
+    },
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Independent reviewer: 11 fresh PostgreSQL application/owner regressions passed; current selected-only payload, authorization/CSRF/confirmation denials, rollback, ordinary cleanup survival and whole-subset delete/repeat proved. Mypy 94 and mb-lint 114 passed. Disposable generated databases cleaned; scheduler retains runtime cleanup ownership. T3 requires fresh red-verify; lifecycle unchanged.",
+      "evidence": [
+        ".protocols/TASK-106-T3-FT-011-W4/verification.md",
+        ".tasks/TASK-106-T3-FT-011-W4/verify-tests.txt",
+        ".tasks/TASK-106-T3-FT-011-W4/verify-mypy.txt",
+        ".tasks/TASK-106-T3-FT-011-W4/verify-mb-lint.txt",
+        ".tasks/TASK-106-T3-FT-011-W4/verify-isolation.txt"
+      ],
+      "resume_route": "/red-verify TASK-106-T3-FT-011-W4"
+    },
+    {
+      "stage": "scheduler-task-closure",
+      "verdict": "done",
+      "summary": "Attempt 1 closed by delegated /autopilot after independent functional PASS and separate task semantic-pass for FT-011-AC-008. Existing Calibration detail actions resolve selected current annotation/evidence through diagnostics owners, enforce confirmation/access, preserve curated subset through ordinary cleanup and delete it idempotently. Fresh11 tests, mypy/lint, rollback and denied-state evidence pass. No production/operator data or new route/archive/lifetime change.",
+      "evidence": [
+        ".protocols/TASK-106-T3-FT-011-W4/progress.md",
+        ".protocols/TASK-106-T3-FT-011-W4/verification.md",
+        ".protocols/TASK-106-T3-FT-011-W4/red-verification.md",
+        ".tasks/TASK-106-T3-FT-011-W4/TASK-106-T3-FT-011-W4-S-RED-VERIFY-final-report-docs-01.md"
+      ]
     }
   ],
   "docs": [

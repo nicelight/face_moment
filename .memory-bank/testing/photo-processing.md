@@ -101,6 +101,8 @@ serving and Calibration admission tests prove a `BuffaloAdapterError` remains
 closed as `ModelAdmissionError`; no skip, fallback or model download is valid
 evidence.
 
+TASK-114 is closed with [independent native readiness verification](../../.protocols/TASK-114-T3-FT-002-W6/verification.md): the real native node, full 26-test adapter/admission gate and 16-case consumer failure matrix pass. [Task semantic verification](../../.protocols/TASK-114-T3-FT-002-W6/red-verification.md) and the current [FT-002 feature verdict](../../.tasks/FT-002/FT-002-S-RED-VERIFY-final-report-docs-01.md) support AC-009 closure.
+
 ## Idempotency And Restart Matrix
 
 The EXIF regression starts at real admission and persistence, then uses real

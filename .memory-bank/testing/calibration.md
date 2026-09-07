@@ -182,3 +182,16 @@ All fixtures must be isolated, deterministic and safe to rerun. Project-native
 build/typecheck and relevant unit/integration tests remain routed by the
 [testing index](index.md); this document does not create a new quality-gate
 category.
+
+## Promoted Detail Action Evidence
+
+`tests/diagnostics/test_calibration_promoted_actions.py` exercises the existing
+detail POST with separate `promote` / `delete_promoted` confirmations. Stable
+annotation selection keys come from the run; the diagnostics service resolves
+current annotation and selected occurrence scores through its evidence owner.
+The current evidence writer stores no media artifacts, so no media is invented.
+Disposable PostgreSQL fixtures inspect exact curated payload, denied requests,
+current annotation correction, SPA checks, sanitized rollback, ordinary cleanup
+survival and whole-subset deletion plus one repeat after the core Attempt is gone.
+The run itself keeps its ordinary lifetime; its existing detail route is the
+action entrypoint while that run remains available.

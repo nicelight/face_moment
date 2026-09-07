@@ -429,6 +429,68 @@ class CalibrationRunService:
     def require(self, run_id: uuid.UUID) -> CalibrationRun:
         return self._repository.require(run_id)
 
+    @staticmethod
+    def case_selections(run: CalibrationRun) -> dict[uuid.UUID, uuid.UUID]:
+        """Stable annotation selection keys stay resolvable after ordinary cleanup."""
+        attempts = run.dataset_snapshot.get("attempts", [])
+        if not isinstance(attempts, list):
+            raise CalibrationSelectionConflictError("invalid case selection")
+        selections: dict[uuid.UUID, uuid.UUID] = {}
+        for attempt in attempts:
+            if not isinstance(attempt, Mapping):
+                raise CalibrationSelectionConflictError("invalid case selection")
+            attempt_id = _snapshot_uuid(attempt.get("attempt_id"), "Attempt")
+            annotations = attempt.get("annotations", [])
+            if not isinstance(annotations, list):
+                raise CalibrationSelectionConflictError("invalid case selection")
+            for annotation in annotations:
+                if not isinstance(annotation, Mapping):
+                    raise CalibrationSelectionConflictError("invalid case selection")
+                if annotation.get("annotation_id") is None:
+                    continue  # Legacy result-only snapshots have no actionable key.
+                annotation_id = _snapshot_uuid(annotation.get("annotation_id"), "annotation")
+                selections[annotation_id] = attempt_id
+        return selections
+
+    def act_on_promoted_case(
+        self, *, run_id: uuid.UUID, selection_key: uuid.UUID, delete: bool
+    ) -> None:
+        from face_moment.diagnostics.evidence import (
+            DiagnosticEvidenceError, DiagnosticEvidenceNotFoundError,
+            DiagnosticEvidenceProvider, DiagnosticEvidenceRepository,
+        )
+        from face_moment.promo.attempt import PromoAttempt
+
+        run = self._repository.require(run_id)
+        attempt_id = self.case_selections(run).get(selection_key)
+        if attempt_id is None:
+            raise CalibrationSelectionNotFoundError("selected case is missing")
+        try:
+            # Lock the same owner row as ordinary cleanup before reading current data.
+            DiagnosticEvidenceRepository(self._session).require(attempt_id, for_update=True)
+            provider = DiagnosticEvidenceProvider(self._session)
+            attempt = self._session.get(PromoAttempt, attempt_id)
+            if attempt is not None and str(attempt.spa_id) != run.dataset_snapshot.get("spa_id"):
+                raise CalibrationSelectionConflictError("selected case is cross-SPA")
+            if delete:
+                outcome = provider.delete_promoted_subset(attempt_id=attempt_id)
+            else:
+                if attempt is None:
+                    raise CalibrationSelectionConflictError("selected case is stale or cross-SPA")
+                outcome = provider.promote_selected_case(
+                    attempt_id=attempt_id, annotation_id=selection_key
+                )
+            if not outcome.accepted:
+                if outcome.error_code == "evidence_not_found":
+                    raise CalibrationSelectionNotFoundError("selected evidence is missing")
+                if outcome.error_code != "invalid_or_conflicting_evidence":
+                    raise RuntimeError("promoted case write failed")
+                raise CalibrationSelectionConflictError("selected case is unavailable")
+        except DiagnosticEvidenceNotFoundError as error:
+            raise CalibrationSelectionNotFoundError from error
+        except DiagnosticEvidenceError as error:
+            raise CalibrationSelectionConflictError from error
+
     def serving_recommendations(
         self, run: CalibrationRun
     ) -> tuple[StoredServingRecommendation, ...]:

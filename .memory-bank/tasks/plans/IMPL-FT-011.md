@@ -5,6 +5,13 @@ last_updated: 2026-09-05
 ---
 # IMPL-FT-011 — Explainable Calibration
 
+Planning is blocked on the [shared query-quality measurement decision](../../../.protocols/FT-011/clarification.md#shared-measurement-boundary--2026-09-07).
+The accepted outcome remains unchanged, but the production evidence cannot
+supply AC-002 from local Calibration inputs. The existing plan below is retained
+as historical design; task JSON remains authoritative for lifecycle. No new
+follow-up is executable until the shared contract decision is resolved through
+`/spec-redesign`, followed by fresh feature tasking and separate review.
+
 ## Goal
 
 Let an authorized developer run reproducible SFace and Buffalo M Calibration

@@ -36,6 +36,7 @@ _NO_STORE_HEADERS = {"Cache-Control": "no-store"}
 _CREATE_FIELDS = frozenset(
     {"photo_ids", "attempt_ids", "sface_revision_id", "buffalo_revision_id"}
 )
+_CASE_FIELDS = frozenset({"action", "selection_key", "confirmation"})
 _APPLY_FIELDS = frozenset({"action", "recommendation_key", "confirmation"})
 
 
@@ -164,18 +165,26 @@ def register_calibration_routes(
                     csrf_header_token=x_csrf_token,
                 )
                 authorize_calibration(principal)
-                values = _exact_form(
-                    list((await request.form()).multi_items()), _APPLY_FIELDS
-                )
-                if values["action"] != "apply" or values["confirmation"] != "apply":
+                pairs = list((await request.form()).multi_items())
+                action = next((value for name, value in pairs if name == "action"), None)
+                fields = _APPLY_FIELDS if action == "apply" else _CASE_FIELDS
+                values = _exact_form(pairs, fields)
+                if action not in ("apply", "promote", "delete_promoted") or values["confirmation"] != action:
                     raise InvalidCalibrationFormError
                 run_id = _uuid(calibration_id)
-                applied_revision = CalibrationRunService(
-                    database_session
-                ).apply_stored_recommendation(
-                    run_id=run_id,
-                    recommendation_key=values["recommendation_key"],
-                )
+                service = CalibrationRunService(database_session)
+                applied_revision = None
+                if action == "apply":
+                    applied_revision = service.apply_stored_recommendation(
+                        run_id=run_id,
+                        recommendation_key=values["recommendation_key"],
+                    )
+                else:
+                    service.act_on_promoted_case(
+                        run_id=run_id,
+                        selection_key=_uuid(values["selection_key"]),
+                        delete=action == "delete_promoted",
+                    )
                 database_session.commit()
         except InvalidSessionError:
             return _empty(status.HTTP_401_UNAUTHORIZED)
@@ -276,6 +285,19 @@ def _render_detail(
         for item in recommendations
     )
     disabled = " disabled" if not recommendations else ""
+    case_options = "".join(
+        f'<option value="{annotation_id}">{attempt_id} / {annotation_id}</option>'
+        for annotation_id, attempt_id in CalibrationRunService.case_selections(run).items()
+    )
+    case_forms = "".join(
+        f"""<section><h2>{label}</h2><p>Type <code>{action}</code> to confirm. Deletion removes the whole promoted subset for the selected Attempt.</p>
+<form data-protected method="post" action="/staff/calibrations/{run.id}">
+<input type="hidden" name="action" value="{action}">
+<label>Selected annotation <select name="selection_key">{case_options}</select></label>
+<label>Confirmation <input name="confirmation" autocomplete="off" required></label>
+<button type="submit">{label}</button></form><output data-form-status role="status"></output></section>"""
+        for action, label in (("promote", "Promote selected case"), ("delete_promoted", "Delete promoted subset"))
+    ) if case_options else ""
     result = "No completed result" if run.result_bundle is None else escape(
         json.dumps(run.result_bundle, sort_keys=True, indent=2, ensure_ascii=True)
     )
@@ -295,7 +317,7 @@ def _render_detail(
 <form data-protected method="post" action="/staff/calibrations/{run.id}"{disabled}>
 <input type="hidden" name="action" value="apply"><label>Stored recommendation <select name="recommendation_key">{options}</select></label>
 <label>Confirmation <input name="confirmation" autocomplete="off" required></label><button type="submit">Apply stored recommendation</button></form>
-<output data-form-status role="status"></output></section><script>{_FORM_SCRIPT}</script></main></body></html>"""
+<output data-form-status role="status"></output></section>{case_forms}<script>{_FORM_SCRIPT}</script></main></body></html>"""
 
 
 def _attempt_ids(snapshot: Mapping[str, object]) -> tuple[str, ...]:

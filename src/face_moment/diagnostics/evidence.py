@@ -598,6 +598,56 @@ class DiagnosticEvidenceProvider:
             ),
         )
 
+    def promote_selected_case(
+        self, *, attempt_id: uuid.UUID, annotation_id: uuid.UUID
+    ) -> EvidenceWriteOutcome:
+        """Curate one current annotation and its occurrence, never a client payload."""
+        from face_moment.diagnostics.ground_truth_annotations import GroundTruthAnnotationRepository
+
+        evidence = self._repository.require(attempt_id, for_update=True)
+        _require_current_ordinary_context(evidence)
+        manifest = evidence.ordinary_manifest
+        if manifest is None:
+            raise DiagnosticEvidenceError("ordinary evidence is unavailable")
+        annotation = GroundTruthAnnotationRepository(self._session).get(
+            attempt_id=attempt_id, annotation_id=annotation_id, for_update=True
+        )
+        if annotation is None:
+            raise DiagnosticEvidenceNotFoundError("selected annotation is missing")
+        serving = manifest.get("serving", {})
+        if not isinstance(serving, Mapping):
+            raise DiagnosticEvidenceError("current parameters are unavailable")
+        parameters = {
+            key: serving[key] for key in (
+                "release_id", "visit_date", "pipeline_revision_id", "pipeline_code",
+                "settings_revision", "threshold", "quality_settings",
+            ) if key in serving
+        }
+        scores: list[dict[str, object]] = []
+        detections = manifest.get("detections", [])
+        if isinstance(detections, list):
+            for detection in detections:
+                if not isinstance(detection, Mapping) or annotation.detection_occurrence_index is None or detection.get("occurrence_index") != annotation.detection_occurrence_index:
+                    continue
+                selected = {
+                    key: detection[key] for key in (
+                        "occurrence_index", "rank", "reference_quality_score",
+                        "quality_gate_passed", "rejection_reason",
+                    ) if key in detection
+                }
+                matches = detection.get("matches")
+                if isinstance(matches, list):
+                    selected["matches"] = [
+                        {key: match[key] for key in ("photo_id", "cosine_similarity", "phash64") if key in match}
+                        for match in matches if isinstance(match, Mapping)
+                    ]
+                scores.append(selected)
+        return self.promote_subset(
+            attempt_id=attempt_id,
+            promoted_subset={"schema_version": 1, "parameters": parameters, "scores": scores},
+            selected_annotation_ids=(annotation_id,),
+        )
+
     def promote_subset(
         self,
         *,

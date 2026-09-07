@@ -4,6 +4,25 @@ status: active
 ---
 # Changelog
 
+## [2026-09-07] Wave 4 / Promoted Calibration case actions and design blocker
+
+- Closed: [TASK-106](tasks/TASK-106-T3-FT-011-W4.task.json), AC-008, after independent functional PASS and task semantic-pass. Existing Calibration detail actions now promote only the selected curated case and delete its whole subset with separate confirmation; 11 tests, mypy and lint passed.
+- Blocked: the [FT-011 feature review](../.tasks/FT-011/FT-011-S-RED-VERIFY-final-report-docs-01.md) proved missing production quality analyses for AC-002. Fresh local tasking traced this to absent shared per-occurrence measurements, not TASK-106 behavior; no follow-up task or implementation contract was invented.
+- Next owner: operator decision and `/spec-redesign` for the bounded [shared measurement proposal](../.protocols/FT-011/clarification.md#shared-measurement-boundary--2026-09-07). Query-image retention and serving changes are not proposed. [Scheduler checkpoint](../.protocols/AUTONOMOUS-RUN/status.md) records `HALT_BLOCKING_QUESTIONS`; TASK-114/106 remain done and TASK-115/116 unselected.
+- Cleanup: owned TASK-106 PostgreSQL and temporary connection file removed; default/operator data untouched. This records the completion/blocker handoff, not a completed wave sync or strict-readiness claim.
+
+## [2026-09-07] Wave 6 / Buffalo native readiness closure
+
+- Closed: [TASK-114](tasks/TASK-114-T3-FT-002-W6.task.json), AC-009, after fresh functional PASS and independent task/feature semantic-pass. Existing committed correction needed no further source change during resume.
+- Verified: 26 tests, actual non-skipped native ONNX warmup, 16 serving/Calibration failure cases, mypy and lint. Dynamic detector preparation and both native inference calls precede readiness; failures remain closed.
+- Reconciled: [FT-002](features/FT-002.md) maintenance completion and [testing evidence](testing/photo-processing.md). All 24 FT-002 tasks are closed; baseline ownership and current Planning Revision 4 approval are preserved. Cross-feature requirement/epic lifecycle is unchanged.
+- Cleanup: task-owned tmpfs PostgreSQL removed after independent reviews; no deployment or default/operator data change. Scheduler owns post-sync lint and strict doctor before TASK-106.
+
+## [2026-09-07] Multipilot prerequisite evidence reconciliation
+
+- Normalized existing RED/GREEN field labels and full acceptance IDs in [TASK-110 progress](../.protocols/TASK-110-T3-FT-012-W3/progress.md), [TASK-110 verification](../.protocols/TASK-110-T3-FT-012-W3/verification.md) and [TASK-113 progress](../.protocols/TASK-113-T3-FT-003-W5/progress.md) so strict readiness can recognize retained closure evidence. Observations, attempts, verdicts, task lifecycle and runtime are unchanged.
+- Explicit GENERAL owner requested this bounded early `/mb-sync` prerequisite for queue 114 → 106 → 115 → 116; scheduler owns subsequent lint and strict-doctor gates.
+
 ## [2026-09-07] ASTRA finding 10 — packaged runtime proof
 
 - Updated smoke-runtime.sh and local-development guide for isolated project/network/volumes, migrated product schema, real SFace serving seed and current role readiness.
