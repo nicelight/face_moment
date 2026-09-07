@@ -1,6 +1,6 @@
 import { getDisplayRequestHeaders } from "./display-client-config.js";
 
-const PROMO_COPY = "Ваши фотографии найдены — откройте по QR-коду";
+const PROMO_COPY = "Ваши фото можно скачать по QR коду или на сайте face-momet.ru";
 const MEDIA_PATH_PREFIX = "/api/promo/media/";
 const DISPLAY_CONFIG_PATH = "/api/promo/display/config";
 const DISPLAY_PATH_PREFIX = "/api/promo/sessions/";
@@ -774,17 +774,36 @@ export class PromoDisplayController {
       card.dataset.view = "result";
       const heading = this.document.createElement("h2");
       heading.textContent = PROMO_COPY;
-      card.append(heading);
+      const copyPanel = this.document.createElement("div");
+      copyPanel.className = "promo-copy";
+      heading.textContent = "";
+      for (const [className, text] of [
+        ["promo-title", "Ваши фото можно скачать"],
+        ["promo-instruction", " по QR коду или на сайте "],
+        ["promo-domain", "face-momet.ru"],
+      ]) {
+        const span = this.document.createElement("span");
+        span.className = className;
+        span.textContent = text;
+        heading.append(span);
+      }
+      copyPanel.append(heading);
       const teaserGrid = this.document.createElement("div");
       teaserGrid.className = "promo-teaser-grid";
-      images.forEach((image) => teaserGrid.append(image));
+      images.forEach((image) => {
+        const photoCard = this.document.createElement("figure");
+        photoCard.className = "promo-photo-card";
+        photoCard.append(image);
+        teaserGrid.append(photoCard);
+      });
       card.append(teaserGrid);
       const qrPanel = this.document.createElement("div");
       qrPanel.className = "promo-qr-panel";
       const qr = createQrSvg(this.document, normalized.qr_url);
       qr.svg.classList.add("promo-qr");
       qrPanel.append(qr.svg);
-      card.append(qrPanel);
+      copyPanel.append(qrPanel);
+      card.append(copyPanel);
       this.container.replaceChildren(card);
       this.renderedCard = card;
       this.isVisible = true;

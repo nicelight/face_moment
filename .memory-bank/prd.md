@@ -350,7 +350,8 @@ pilot actor or blocker.
   expose a partial or stale participant result.
 - **FR-UX-02** — A successful Promo MUST show exactly four low-quality teaser
   photographs without watermark and a high-contrast, fully visible, scannable
-  QR code on the 43-inch landscape, 16:9, logical 1920x1080 baseline. The client
+  QR code in an adaptive full-viewport layout for landscape, square and portrait
+  displays; 1920x1080 is one test viewport, not a hardware restriction. The client
   MUST send an idempotent display acknowledgement only after all four teasers
   are decoded and the QR is fully visible. If the result-display window ends
   without confirmation, `display_status=unconfirmed` is derived on read; no
@@ -362,8 +363,7 @@ pilot actor or blocker.
   `visit_date`, an available low-quality teaser when one remains, the issued
   `N`, and an active `Перейти к покупке` button. Media hard-purged after
   issuance is skipped without invalidating or rebuilding the session.
-- **FR-UX-05** — The Promo display MUST use the truthful copy `Ваши фотографии
-  найдены — откройте по QR-коду`. On the valid phone landing, `Перейти к
+- **FR-UX-05** — The Promo display MUST use the operator-approved copy `Ваши фото можно скачать по QR коду или на сайте face-momet.ru`. On the valid phone landing, `Перейти к
   покупке` MUST navigate to the separately delivered main Face
   Moment selfie-search/purchase page. This pilot owns the navigation link but
   does not implement or accept the target purchase flow.
@@ -811,7 +811,7 @@ pilot actor or blocker.
 
 ## Integrations / Dependencies
 
-- One ESP32 passage sensor, browser-visible camera and 43-inch display; exact
+- One ESP32 passage sensor, browser-visible camera and a display of the selected site; exact
   camera, lens, lighting and maximum input dimensions remain site choices.
 - Managed Chromium, Local Network Access and the BlazeFace model asset are
   client dependencies governed by FR-CAP-13..17 and NFR-SEC-07.
@@ -895,8 +895,8 @@ payment/fiscal providers, external observability stores and message brokers.
 
 ### Controlled pilot setup
 
-- One selected СПА, one configured `SpaPromoClient`, the 43-inch/16:9/1920x1080
-  baseline and validated camera/sensor/lighting geometry at 3-5 metres.
+- One selected СПА, one configured `SpaPromoClient`, an adaptive display (including a 1920x1080 test viewport)
+  and validated camera/sensor/lighting geometry at 3-5 metres.
 - The managed Chromium kiosk has Local Network Access and can reach its
   configured authenticated ESP32 route.
 - A selected serving pipeline is pre-warmed; its reference threshold is
@@ -979,8 +979,7 @@ payment/fiscal providers, external observability stores and message brokers.
   redirects to the main selfie-based search/purchase page without leaking
   expired-session data. The pilot verifies the redirect contract, not the
   target page's implementation.
-- **AC-16** — The Promo display says `Ваши фотографии найдены — откройте по
-  QR-коду` and does not claim that download is already available in the pilot.
+- **AC-16** — The Promo display says `Ваши фото можно скачать по QR коду или на сайте face-momet.ru`. This is operator-approved display copy; implementing download remains outside this change.
 - **AC-17** — Re-uploading a JPEG with the same SHA-256 for the same СПА and
   `visit_date` deletes the new copy, reports it as a duplicate and leaves the
   accepted-photo population, `photo_id` set, processing states, search results,

@@ -79,7 +79,7 @@ test("validates exact four unique same-origin teasers and QR", () => {
   assert.equal(normalized.teasers.length, 4);
   assert.equal(new Set(normalized.teasers.map((item) => item.photo_id)).size, 4);
   assert.equal(normalized.qr_url, `${ORIGIN}/q?ticket=fixture-ticket-076`);
-  assert.equal(PROMO_COPY_TEXT, "Ваши фотографии найдены — откройте по QR-коду");
+  assert.equal(PROMO_COPY_TEXT, "Ваши фото можно скачать по QR коду или на сайте face-momet.ru");
 });
 
 test("rejects partial, duplicate and foreign result shapes", () => {

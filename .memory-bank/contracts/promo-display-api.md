@@ -160,3 +160,7 @@ teaser IDs, union or `N`.
   FT-004 server-correctness rows and records one-clock fully-visible elapsed,
   target-display rendering and representative-phone scan results without
   excluding timeout or no-match.
+
+## Presentation
+
+[Promo presentation](../guides/promo-presentation.md) defines the operator-approved adaptive card layout and copy. API and session semantics are unchanged.

@@ -4,6 +4,12 @@ status: active
 ---
 # Changelog
 
+## [2026-09-07] Adaptive Promo photo cards
+
+- Implemented the operator-approved paper-card presentation and exact download/domain copy in the existing Chromium client. Landscape, square and portrait layouts replace the fixed display assumption; QR remains stationary.
+- [Presentation guide](guides/promo-presentation.md) records visual behavior and supersedes the earlier IDEA_APP six-cell/cursor animation. PRD, FT-005 and display-contract navigation are aligned. No task lifecycle or session/API behavior changed.
+- Validation: 52 client unit tests and all 17 browser tests passed; browser layout coverage at six viewport sizes with synthetic landscape/portrait fixtures, reduced motion and stationary QR checks.
+
 ## [2026-09-07] Extended quality Calibration removed from pilot plans
 
 - Operator explicitly deferred FR-DEV-08 / FT-011-AC-002, including extra measurement collection and shared redesign, outside the pilot. [PRD](prd.md) and [FT-011](features/FT-011.md#ft-011-ac-002--one-dimensional-quality-recommendations) retain the decision and historical criterion identity.

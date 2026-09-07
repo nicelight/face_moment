@@ -119,3 +119,5 @@ status: active
 - [.memory-bank/features/index.md](features/index.md): feature-level outcomes,
   stable `FT-<NNN>-AC-<NNN>` acceptance closure, failure behavior,
   requirement traceability and SDD gate routing.
+
+- [Promo presentation](guides/promo-presentation.md): adaptive paper cards, approved text and display checks.

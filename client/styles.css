@@ -97,61 +97,84 @@ h1 {
   border-color: #4e9f82;
 }
 
+/* Full-screen result; setup and advertising retain their existing layout. */
+body:has(.promo-card) { overflow: hidden; }
 .promo-card {
+  position: fixed; inset: 0; z-index: 2;
+  box-sizing: border-box; width: 100%; height: 100dvh; min-height: 0;
   display: grid;
-  gap: clamp(1.5rem, 3vw, 3rem);
-  min-height: 0;
-  padding: clamp(1.25rem, 2vw, 2rem);
-  border-color: #d8b45a;
-  background: #111a2a;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 5vmin; padding: 6vmin; border: 0; border-radius: 0;
+  background: radial-gradient(ellipse at 30% 40%, #39352f, #242321 45%, #191a19);
+  color: #fdfbf7;
 }
-
-.promo-card h2 {
-  max-width: none;
-  margin-bottom: 0;
-  color: #fff8df;
-  font-size: clamp(2rem, 3.5vw, 3.5rem);
-  line-height: 1.05;
-}
-
 .promo-teaser-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: clamp(0.75rem, 1.5vw, 1.5rem);
-  align-items: center;
+  min-width: 0; min-height: 0; display: grid;
+  grid-template: repeat(2, minmax(0, 1fr)) / repeat(2, minmax(0, 1fr));
+  gap: 4vmin; padding: 1.5vmin;
 }
-
+.promo-photo-card {
+  --tilt: -2deg; --delay: 0ms;
+  box-sizing: border-box; min-width: 0; min-height: 0; margin: 0;
+  padding: 1.3vmin 1.3vmin 4vmin;
+  border: 1px solid #ffffff70; border-radius: 0.25vmin;
+  background: #fdfbf7;
+  box-shadow: 0 1.6vmin 3vmin #0005, 0 0.2vmin 0.3vmin #0004;
+  transform: rotate(var(--tilt));
+  animation: promo-arrive 650ms ease-out both, promo-drift 9s ease-in-out infinite;
+  animation-delay: var(--delay), calc(800ms + var(--delay));
+}
+.promo-photo-card:nth-child(2) { --tilt: 2deg; --delay: 90ms; }
+.promo-photo-card:nth-child(3) { --tilt: 1.5deg; --delay: 180ms; }
+.promo-photo-card:nth-child(4) { --tilt: -1.5deg; --delay: 270ms; }
 .promo-teaser {
-  display: block;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  border: 2px solid #e6d39a;
-  border-radius: 0.75rem;
-  background: #f6f1e5;
-  object-fit: cover;
+  display: block; width: 100%; height: 100%; object-fit: contain; background: #f1ede5;
 }
-
+.promo-copy {
+  min-width: 0; min-height: 0; display: flex; flex-direction: column;
+  justify-content: center; align-items: flex-start; gap: 4vmin;
+}
+.promo-card h2 {
+  margin: 0; font-weight: 400; font-size: 3.1vmin; line-height: 1.4; color: #d6d0c5;
+}
+.promo-title {
+  display: block; margin-bottom: 2vmin; font-size: 5.8vmin; font-weight: 600;
+  letter-spacing: -0.045em; line-height: 1.08; text-wrap: balance; color: #fdfbf7;
+}
+.promo-domain { display: block; font-weight: 600; color: #e7c99b; }
 .promo-qr-panel {
-  display: grid;
-  place-items: center;
-  min-height: clamp(10rem, 18vw, 16rem);
-  border-radius: 1rem;
-  background: #ffffff;
+  flex: none; width: min(28vmin, 100%); aspect-ratio: 1; box-sizing: border-box;
+  padding: 1.4vmin; border-radius: 1vmin; background: #fff;
+  box-shadow: 0 1vmin 3vmin #0003;
 }
-
-.promo-qr {
-  display: block;
-  width: min(100%, 16rem);
-  height: auto;
-  max-height: 16rem;
-  padding: 0.5rem;
-  box-sizing: border-box;
-}
-
-@media (max-width: 900px) {
-  .promo-teaser-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+.promo-qr { display: block; width: 100%; height: 100%; }
+@media (max-aspect-ratio: 6/5) {
+  .promo-card {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 0.42fr);
+    gap: 4vmin; padding: 5vmin;
   }
+  .promo-copy { flex-direction: row; align-items: center; justify-content: space-between; }
+  .promo-copy h2 { flex: 1; }
+  .promo-qr-panel { width: 27vmin; }
+}
+@media (max-aspect-ratio: 2/3) {
+  .promo-card { grid-template-rows: minmax(0, 1fr) minmax(0, 0.6fr); }
+  .promo-copy { flex-direction: column; justify-content: center; gap: 3vmin; text-align: center; }
+  .promo-copy h2 { flex: none; }
+  .promo-title { font-size: 6.5vmin; margin-bottom: 1.5vmin; }
+  .promo-qr-panel { width: 33vmin; }
+}
+@keyframes promo-arrive {
+  from { opacity: 0; transform: translateY(1.5vmin) rotate(var(--tilt)) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) rotate(var(--tilt)) scale(1); }
+}
+@keyframes promo-drift {
+  0%, 100% { transform: translateY(0) rotate(var(--tilt)); }
+  50% { transform: translateY(-0.4vmin) rotate(calc(var(--tilt) + 0.4deg)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .promo-photo-card { animation: none; }
 }
 
 .notice {
