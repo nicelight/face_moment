@@ -4,6 +4,19 @@ status: active
 ---
 # Changelog
 
+## [2026-09-07] Extended quality Calibration removed from pilot plans
+
+- Operator explicitly deferred FR-DEV-08 / FT-011-AC-002, including extra measurement collection and shared redesign, outside the pilot. [PRD](prd.md) and [FT-011](features/FT-011.md#ft-011-ac-002--one-dimensional-quality-recommendations) retain the decision and historical criterion identity.
+- Requirements, Calibration scope/testing and planning checkpoints now exclude that work from current obligations; the shared-measurement blocker is withdrawn. Existing search, threshold Calibration, comparison and manual apply remain in scope.
+- No runtime, task lifecycle, historical verification or Global Backbone Planning Revision changed. Revised-scope semantic acceptance is not claimed.
+
+
+## [2026-09-07] Operator defers measurements; remaining code confirmed
+
+- Operator postponed FT-011 quality measurements/shared redesign and requested implementation-only continuation for TASK-115 → TASK-116. [Decision and code evidence](../.protocols/AUTONOMOUS-RUN/decision-log.md) supersede the earlier immediate design question for this scope.
+- Both implementations already exist in the committed baseline: canonical Caddy forwarding and the working staff login form. Fresh Caddy validation, mypy (94 files), five routing/shell tests and six local login-script cases passed; no duplicate runtime edit was needed.
+- Full acceptance remains deferred; task statuses and accepted criteria are unchanged. The [scheduler checkpoint](../.protocols/AUTONOMOUS-RUN/status.md) distinguishes this completed code handoff from full queue success.
+
 ## [2026-09-07] Wave 4 / Promoted Calibration case actions and design blocker
 
 - Closed: [TASK-106](tasks/TASK-106-T3-FT-011-W4.task.json), AC-008, after independent functional PASS and task semantic-pass. Existing Calibration detail actions now promote only the selected curated case and delete its whole subset with separate confirmation; 11 tests, mypy and lint passed.

@@ -1,0 +1,8 @@
+{
+  "name": "Past Forward",
+  "description": "Your personal time machine. Gemini reimagines you in past decades with character consistency.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

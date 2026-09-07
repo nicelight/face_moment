@@ -74,7 +74,8 @@ separate features.
    pilot participant represented by a processed selected detection. This does
    not require coverage of every unique person in a group.
 6. Capture enough correlated evidence to explain failures, latency breakdown,
-   group-search choices and threshold/quality-gate effects.
+   group-search choices and threshold effects; extended quality-gate analysis
+   is deferred under FR-DEV-08.
 7. Keep the pilot architecture operationally simple and add infrastructure
    complexity only after a measured bottleneck.
 8. Let authorized users safely hide, restore and permanently purge selected
@@ -167,7 +168,7 @@ separate features.
   Calibration under their respective feature boundaries.
 - Adds ground-truth annotations, compares releases/configurations and examines
   group-search decisions.
-- Receives explainable threshold and quality-gate recommendations and applies
+- Receives explainable threshold recommendations and applies
   any accepted serving-setting change manually.
 
 ### System actors
@@ -457,10 +458,11 @@ pilot actor or blocker.
 - **FR-DEV-07** — Every threshold recommendation MUST show the proposed value,
   correct/false/missed counts, precision, recall, annotated sample size and
   drill-down to contributing attempts.
-- **FR-DEV-08** — Face size, detection confidence, blur, brightness and pose
-  quality gates MUST be analysed one at a time, not jointly. Each recommendation
-  MUST show current/proposed values, sample size, kept/rejected detections and
-  expected correct/false/missed changes.
+- **FR-DEV-08 — Deferred outside the pilot (operator decision 2026-09-07).**
+  Extended one-dimensional analysis of face size, detection confidence, blur,
+  brightness and pose, its additional measurement collection and shared
+  redesign are excluded from current plans and acceptance. Resume only by an
+  explicit operator decision prompted by observed search problems.
 - **FR-DEV-09** — Calibration MUST compare before/after release or parameter-set
   results using stored versions, parameters, outcomes and annotations, without
   introducing a separate experimentation platform.
@@ -897,8 +899,9 @@ payment/fiscal providers, external observability stores and message brokers.
   baseline and validated camera/sensor/lighting geometry at 3-5 metres.
 - The managed Chromium kiosk has Local Network Access and can reach its
   configured authenticated ESP32 route.
-- A selected serving pipeline is pre-warmed; its reference threshold and input
-  quality gates are calibrated before the run.
+- A selected serving pipeline is pre-warmed; its reference threshold is
+  calibrated before the run. Existing query-quality settings remain configured;
+  extended quality-gate Calibration under FR-DEV-08 is not a pilot prerequisite.
 - The operator has explicitly set the active working `visit_date`, and it
   matches the independently accepted commercial photos intended for the run.
 - Every tester expected in a run has at least four searchable commercial
@@ -955,8 +958,8 @@ payment/fiscal providers, external observability stores and message brokers.
   query builder, full-text search, live tail, dashboard, export or diagnostic
   read model is required.
 - **AC-11** — An authorized developer can annotate person/detection outcomes and
-  see those annotations reflected in threshold and individual quality-gate
-  recommendation evidence.
+  see those annotations reflected in threshold recommendation evidence.
+  Individual quality-gate analysis is deferred under FR-DEV-08.
 - **AC-12** — Calibration shows all three threshold profiles and required
   measures/drill-down, supports before/after comparison, and never changes a
   serving setting automatically.

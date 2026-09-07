@@ -9,6 +9,8 @@ source_of_truth:
 
 ## Scope And Ownership
 
+Operator decision, 2026-09-07: extended input-quality Calibration (face size, detection confidence, blur, brightness and pose), additional query-measurement collection and the proposed shared measurement redesign are deferred outside the current pilot. They are not current implementation work or pilot acceptance gates. Reconsider only after an explicit operator decision based on observed search problems. Existing search gates, threshold calibration, before/after comparison and manual apply remain in scope; historical code, task records and verification evidence are preserved.
+
 `diagnostics` owns Calibration selection, run state, recommendations,
 drill-down and promoted subsets. It reads its immutable annotation projection
 and the accepted Attempt projection, then calls `processing` for offline

@@ -95,6 +95,10 @@ the linked contributing Attempts.
 
 ## One-Dimensional Quality Analysis
 
+**Deferred outside pilot — operator decision 2026-09-07 (PRD FR-DEV-08).**
+The following method is retained for existing code/tests and possible future
+work; it imposes no current pilot implementation or acceptance obligation.
+
 Quality-gate verification changes exactly one gate per scenario while holding
 the annotated snapshot, pipeline/revision, face threshold and all other quality
 gates fixed:
@@ -170,7 +174,7 @@ their ordinary expiry. Whole-subset deletion remains safe to repeat.
 | Feature criterion | Required proof |
 |---|---|
 | `FT-011-AC-001` | Fixed-snapshot oracle for all three profiles, accepted F1/tie-break ordering, exact metrics and Attempt drill-down. |
-| `FT-011-AC-002` | One-gate-at-a-time fixtures with unchanged peer gates and required current/proposed/count deltas. |
+| `FT-011-AC-002` | Deferred outside pilot by operator decision 2026-09-07; historical method below is not a current acceptance gate. |
 | `FT-011-AC-003` | Two stored release/configuration snapshots consume identical verified Photo original JPEG bytes and applicable Attempt selection without reupload, remain separate by run/dataset/revision and reconcile to annotated Attempts. |
 | `FT-011-AC-004` | Recommendation generation leaves serving state unchanged; only the separate audited command may mutate it. |
 | `FT-011-AC-005` | Shared-worker restart yields visible terminal Calibration, resumed Photo work and no automatic rerun. |

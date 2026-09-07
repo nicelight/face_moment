@@ -1,23 +1,21 @@
 ---
 description: Implementation plan for immutable Calibration runs, recommendations, developer control and retention.
 status: active
-last_updated: 2026-09-05
+last_updated: 2026-09-07
 ---
 # IMPL-FT-011 — Explainable Calibration
 
-Planning is blocked on the [shared query-quality measurement decision](../../../.protocols/FT-011/clarification.md#shared-measurement-boundary--2026-09-07).
-The accepted outcome remains unchanged, but the production evidence cannot
-supply AC-002 from local Calibration inputs. The existing plan below is retained
-as historical design; task JSON remains authoritative for lifecycle. No new
-follow-up is executable until the shared contract decision is resolved through
-`/spec-redesign`, followed by fresh feature tasking and separate review.
+Operator decision, 2026-09-07: extended input-quality Calibration (face size, detection confidence, blur, brightness and pose), additional query-measurement collection and the proposed shared measurement redesign are deferred outside the current pilot. They are not current implementation work or pilot acceptance gates. Reconsider only after an explicit operator decision based on observed search problems. Existing search gates, threshold calibration, before/after comparison and manual apply remain in scope; historical code, task records and verification evidence are preserved.
+
+No measurement/redesign follow-up is scheduled. The existing task table and
+execution notes retain historical scope; task JSON owns lifecycle. TASK-103
+remains historical completed work, not authorization for new integration work.
 
 ## Goal
 
 Let an authorized developer run reproducible SFace and Buffalo M Calibration
 over one selected immutable set of existing Photo originals and annotated
-Attempts, inspect deterministic threshold and one-dimensional quality
-recommendations, and separately apply or retain only an explicitly selected
+Attempts, inspect deterministic threshold recommendations, and separately apply or retain only an explicitly selected
 result. Calibration never changes serving state automatically.
 
 ## Scope And Non-Goals
