@@ -53,6 +53,11 @@ from face_moment.inventory.recent_statistics import (
     read_recent_statistics,
 )
 from face_moment.inventory.validation import InvalidJpegCandidateError
+from face_moment.inventory.hard_purge import (
+    HardPurgeService,
+    InventoryPurgeAccessDeniedError,
+    InventoryPurgeConflictError,
+)
 from face_moment.platform.auth.sessions import (
     CsrfValidationError,
     InvalidSessionError,
@@ -66,6 +71,52 @@ _NO_STORE_HEADERS = {"Cache-Control": "no-store"}
 def register_ingest_target_routes(
     app: FastAPI, *, session_factory: Callable[[], Session]
 ) -> None:
+    def purge_response(operation: Callable[[HardPurgeService], dict[str, object]]) -> Response:
+        from fastapi.responses import JSONResponse
+
+        with _database_session(session_factory) as session:
+            try:
+                payload = operation(HardPurgeService(session))
+            except InvalidSessionError as error:
+                raise HTTPException(401, headers=_NO_STORE_HEADERS) from error
+            except (CsrfValidationError, InventoryPurgeAccessDeniedError) as error:
+                raise HTTPException(403, headers=_NO_STORE_HEADERS) from error
+            except InventoryPurgeConflictError as error:
+                raise HTTPException(409, headers=_NO_STORE_HEADERS) from error
+            except Exception as error:
+                raise HTTPException(500, headers=_NO_STORE_HEADERS) from error
+        return JSONResponse(payload, headers=_NO_STORE_HEADERS)
+
+    @app.get("/api/inventory/hard-purge")
+    def read_hard_purge(fm_staff_session: str | None = Cookie(default=None)) -> Response:
+        return purge_response(lambda service: service.read(session_token=fm_staff_session))
+
+    @app.post("/api/inventory/hard-purge")
+    async def confirm_hard_purge(
+        request: Request,
+        fm_staff_session: str | None = Cookie(default=None),
+        fm_staff_csrf: str | None = Cookie(default=None),
+        x_csrf_token: str | None = Header(default=None),
+    ) -> Response:
+        await _validate_purge_payload(request, confirmation=True)
+        return purge_response(lambda service: service.confirm(
+            session_token=fm_staff_session, csrf_cookie_token=fm_staff_csrf,
+            csrf_header_token=x_csrf_token,
+        ))
+
+    @app.post("/api/inventory/restore-all")
+    async def restore_all_photos(
+        request: Request,
+        fm_staff_session: str | None = Cookie(default=None),
+        fm_staff_csrf: str | None = Cookie(default=None),
+        x_csrf_token: str | None = Header(default=None),
+    ) -> Response:
+        await _validate_purge_payload(request, confirmation=False)
+        return purge_response(lambda service: service.restore_all(
+            session_token=fm_staff_session, csrf_cookie_token=fm_staff_csrf,
+            csrf_header_token=x_csrf_token,
+        ))
+
     @app.get("/staff/photo-upload", response_class=HTMLResponse)
     def photo_upload_page(
         fm_staff_session: str | None = Cookie(default=None),
@@ -254,6 +305,8 @@ def register_ingest_target_routes(
                     photo_id=parsed_photo_id,
                     active=payload["active"],
                 )
+            except InventoryPurgeConflictError as error:
+                raise HTTPException(409, headers=_NO_STORE_HEADERS) from error
             except (CsrfValidationError, PhotoInventoryAccessDeniedError) as error:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -851,6 +904,21 @@ def _processing_health_page_html() -> str:
 </html>"""
 
 
+async def _validate_purge_payload(request: Request, *, confirmation: bool) -> None:
+    try:
+        payload = await request.json()
+        expected = {"schema_version", "confirmed"} if confirmation else {"schema_version"}
+        if (
+            not isinstance(payload, dict) or set(payload) != expected
+            or type(payload["schema_version"]) is not int
+            or payload["schema_version"] != 1
+            or (confirmation and payload["confirmed"] is not True)
+        ):
+            raise ValueError
+    except (ValueError, TypeError) as error:
+        raise HTTPException(422, headers=_NO_STORE_HEADERS) from error
+
+
 def _photo_inventory_page_html() -> str:
     return """<!doctype html>
 <html lang="en">
@@ -871,6 +939,15 @@ def _photo_inventory_page_html() -> str:
     <section aria-label="Recent photo statistics">
       <h2>Recent photo statistics</h2>
       <ol id="recent-statistics-windows"></ol>
+    </section>
+    <section id="inventory-purge" aria-label="Управление скрытыми фото" hidden>
+      <h2>Скрытые фотографии проекта</h2>
+      <div id="inventory-purge-controls">
+        <button id="inventory-restore-all" type="button">Восстановить все скрытые фото</button>
+        <button id="inventory-confirm-purge" type="button">Удалить все скрытые фото навсегда</button>
+      </div>
+      <p id="inventory-purge-progress" role="status" aria-live="polite"></p>
+      <p id="inventory-purge-message" role="alert"></p>
     </section>
   </main>
   <script>
@@ -907,6 +984,70 @@ def _photo_inventory_page_html() -> str:
       await loadRecentStatistics();
     });
     setInterval(loadRecentStatistics, 5000);
+
+    const purgeSection = document.querySelector("#inventory-purge");
+    const purgeControls = document.querySelector("#inventory-purge-controls");
+    const purgeProgress = document.querySelector("#inventory-purge-progress");
+    const purgeMessage = document.querySelector("#inventory-purge-message");
+    const restoreAllButton = document.querySelector("#inventory-restore-all");
+    const confirmPurgeButton = document.querySelector("#inventory-confirm-purge");
+
+    function renderPurge(payload) {
+      purgeSection.hidden = false;
+      const run = payload.run;
+      purgeControls.hidden = Boolean(run && run.state !== "completed");
+      purgeProgress.textContent = !run ? "" : run.waiting_for
+        ? `Начну удаление, как только закончится процесс ${run.waiting_for}`
+        : run.state === "confirmed_waiting" ? `Ожидание удаления: ${run.completed}/${run.total}`
+        : run.state === "completed" ? `Удаление завершено: ${run.completed}/${run.total}`
+        : `Удалено: ${run.completed}/${run.total}`;
+    }
+
+    async function loadPurge() {
+      try {
+        const response = await fetch("/api/inventory/hard-purge", { credentials: "same-origin" });
+        if (response.status === 401 || response.status === 403) {
+          purgeSection.hidden = true;
+          return;
+        }
+        if (!response.ok) throw new Error("Не удалось получить состояние удаления");
+        renderPurge(await response.json());
+      } catch (error) {
+        purgeMessage.textContent = error.message;
+      }
+    }
+
+    async function mutateInventory(path, payload) {
+      restoreAllButton.disabled = confirmPurgeButton.disabled = true;
+      purgeMessage.textContent = "";
+      const csrf = document.cookie.split("; ").find(value => value.startsWith("fm_staff_csrf="));
+      try {
+        const response = await fetch(path, {
+          method: "POST", credentials: "same-origin",
+          headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf ? decodeURIComponent(csrf.slice(14)) : "" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error(response.status === 409
+          ? "Удаление уже выполняется" : "Не удалось выполнить действие");
+        const result = await response.json();
+        if ("run" in result) renderPurge(result);
+        else purgeMessage.textContent = `Восстановлено: ${result.restored_count}. В списке удаления: ${result.excluded_snapshot_count}.`;
+      } catch (error) {
+        purgeMessage.textContent = error.message;
+      } finally {
+        await loadPurge();
+        restoreAllButton.disabled = confirmPurgeButton.disabled = false;
+      }
+    }
+
+    restoreAllButton.addEventListener("click", () => mutateInventory("/api/inventory/restore-all", { schema_version: 1 }));
+    confirmPurgeButton.addEventListener("click", () => {
+      if (window.confirm("Удалить все скрытые фотографии проекта навсегда? Восстановить их будет невозможно.")) {
+        return mutateInventory("/api/inventory/hard-purge", { schema_version: 1, confirmed: true });
+      }
+    });
+    loadPurge();
+    setInterval(loadPurge, 5000);
   </script>
 </body>
 </html>"""

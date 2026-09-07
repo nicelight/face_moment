@@ -7,6 +7,7 @@ from typing import Protocol
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from face_moment.processing.derivatives import derivative_object_key
 from face_moment.processing.initial_pending import PhotoPipelineState
 from face_moment.processing.persistence import PhotoFace
 
@@ -68,6 +69,7 @@ class ProcessingPurgeCleanup:
     def _derivative_object_keys(self, *, photo_id: uuid.UUID) -> tuple[str, ...]:
         rows = self._session.execute(
             select(
+                PhotoPipelineState.pipeline_revision_id,
                 PhotoPipelineState.preview_object_key,
                 PhotoPipelineState.thumbnail_object_key,
             ).where(PhotoPipelineState.photo_id == photo_id)
@@ -75,10 +77,16 @@ class ProcessingPurgeCleanup:
         return tuple(
             sorted(
                 {
-                    key
-                    for preview_key, thumbnail_key in rows
-                    for key in (preview_key, thumbnail_key)
-                    if key is not None
+                    # A processing crash can leave the object published before
+                    # its reference is committed. Its deterministic location is
+                    # still owned by this known Photo/revision pair.
+                    key or derivative_object_key(
+                        photo_id=photo_id,
+                        pipeline_revision_id=revision_id,
+                        artifact_kind=kind,
+                    )
+                    for revision_id, preview_key, thumbnail_key in rows
+                    for kind, key in (("preview", preview_key), ("thumbnail", thumbnail_key))
                 }
             )
         )

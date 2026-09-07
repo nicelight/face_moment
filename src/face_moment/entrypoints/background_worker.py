@@ -46,6 +46,7 @@ async def _worker_lifecycle(
     stop_event = asyncio.Event()
     try:
         from face_moment.infrastructure.object_store import PrivateObjectStore
+        from face_moment.inventory.hard_purge import InventoryHardPurge
         from face_moment.processing.derivatives import (
             DerivativeEncoding,
             DerivativeEncodingConfig,
@@ -79,6 +80,9 @@ async def _worker_lifecycle(
             session_factory=binding.session_factory,
             orchestrator=orchestrator,
             bound_pipeline_revision_id=adapter.pipeline_revision_id,
+            process_inventory_purge=InventoryHardPurge(
+                session_factory=binding.session_factory, object_store=object_store,
+            ).process_one,
             claim_requested_calibration=lambda: _claim_requested_calibration(
                 binding.session_factory
             ),

@@ -21,6 +21,44 @@ _MAX_ATTEMPTS = 3
 _SAFE_FAILURE_MESSAGE = "processing failed"
 
 
+def read_worker_operation(session: Session) -> str:
+    runtime = session.get(ProcessingRuntimeStatus, 1)
+    if runtime is None:
+        raise RuntimeError("processing runtime status is missing")
+    return runtime.current_operation
+
+
+def begin_hard_purge(session: Session) -> bool:
+    """Enter/resume the purge hold only when no other operation owns the worker."""
+    runtime = _locked_runtime_status(session)
+    if runtime.current_operation not in {_IDLE, "hard_purge"}:
+        return False
+    if runtime.current_operation == _IDLE:
+        runtime.current_operation = "hard_purge"
+        runtime.operation_started_at = datetime.now(timezone.utc)
+        session.flush()
+    return True
+
+
+def finish_hard_purge(session: Session) -> None:
+    runtime = _locked_runtime_status(session)
+    if runtime.current_operation != "hard_purge":
+        raise LookupError("hard purge runtime operation is not active")
+    runtime.current_operation = _IDLE
+    runtime.operation_started_at = None
+    session.flush()
+
+
+def _locked_runtime_status(session: Session) -> ProcessingRuntimeStatus:
+    runtime = session.scalar(
+        select(ProcessingRuntimeStatus)
+        .where(ProcessingRuntimeStatus.singleton_id == 1).with_for_update()
+    )
+    if runtime is None:
+        raise RuntimeError("processing runtime status is missing")
+    return runtime
+
+
 class WorkerClaimRepository:
     """Processing-owned atomic claim and bounded failure boundary."""
 
@@ -117,11 +155,4 @@ class WorkerClaimRepository:
         return state
 
     def _locked_runtime_status(self) -> ProcessingRuntimeStatus:
-        runtime = self._session.scalar(
-            select(ProcessingRuntimeStatus)
-            .where(ProcessingRuntimeStatus.singleton_id == 1)
-            .with_for_update()
-        )
-        if runtime is None:
-            raise RuntimeError("processing runtime status is missing")
-        return runtime
+        return _locked_runtime_status(self._session)

@@ -1,7 +1,7 @@
 {
   "id": "TASK-110-T3-FT-012-W3",
   "title": "Run resumable global Photo purge",
-  "status": "ready",
+  "status": "done",
   "wave": "W3",
   "feature": "FT-012",
   "reqs": [
@@ -73,6 +73,41 @@
         ".protocols/AUTONOMOUS-RUN/status.md"
       ],
       "resume_route": "Eligible for canonical scheduler selection after recovery-first strict validation; stable Wave 3 order selects TASK-104 first."
+    },
+    {
+      "stage": "verify",
+      "verdict": "FAIL",
+      "summary": "Independent attempt-1 verification: focused matrix 65 passed, terminal rollback probe passed, mypy/UI/mb-lint passed. A new disposable processing-crash→soft-delete→purge probe proves completed 2/2 while two unpublished deterministic preview/thumbnail objects remain, violating FT-012-AC-005/REQ-INV-003. Lifecycle unchanged; fix through existing processing cleanup owner, then repeat verify. Two Luna xhigh focuses adjudicated; restore race candidate rejected.",
+      "evidence": [
+        ".protocols/TASK-110-T3-FT-012-W3/verification.md",
+        ".tasks/TASK-110-T3-FT-012-W3/verify-matrix.log",
+        ".tasks/TASK-110-T3-FT-012-W3/verify-terminal.log",
+        ".tasks/TASK-110-T3-FT-012-W3/verify_unpublished_media_probe.py",
+        ".tasks/TASK-110-T3-FT-012-W3/verify-unpublished-media.log"
+      ]
+    },
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Independent attempt-2 verification: 69 tests passed in fresh owned PostgreSQL/MinIO, including unchanged AC-005 processing-crash reproducer (0 remaining derivatives), terminal commit rollback probe, complete deletion/retention and cleanup idempotency regression. Mypy, Chromium UI, mb-lint and diff checks passed. Fresh Luna xhigh cleanup co-review has no candidate findings; unchanged prior auth/UI focus retained and functionally rerun. Original FAIL/history preserved; lifecycle unchanged; separate T3 red-verify remains required.",
+      "evidence": [
+        ".protocols/TASK-110-T3-FT-012-W3/verification.md",
+        ".tasks/TASK-110-T3-FT-012-W3/verify-retry-matrix.log",
+        ".tasks/TASK-110-T3-FT-012-W3/verify-retry-typecheck.log",
+        ".tasks/TASK-110-T3-FT-012-W3/verify-retry-ui.log",
+        ".tasks/TASK-110-T3-FT-012-W3/verify-retry-mb-lint.log"
+      ]
+    },
+    {
+      "stage": "manual-task-closure",
+      "verdict": "done",
+      "summary": "Root accepted independent attempt-2 functional PASS and per-task semantic-pass. The verified AC-005 unpublished-derivative defect is repaired within the existing processing cleanup boundary; original FAIL retained. Independent verification ran 69 tests, typecheck and Chromium UI; semantic review added 4 concurrent restore/confirm probes. All destructive proof used disposable owned runtime with cleanup. TASK-110 only is closed; no deployment, commit or FT-012 feature closure.",
+      "evidence": [
+        ".protocols/TASK-110-T3-FT-012-W3/verification.md",
+        ".protocols/TASK-110-T3-FT-012-W3/red-verification.md",
+        ".tasks/TASK-110-T3-FT-012-W3/TASK-110-T3-FT-012-W3-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-110-T3-FT-012-W3/TASK-110-T3-FT-012-W3-S-RED-VERIFY-final-report-docs-01.md"
+      ]
     }
   ],
   "docs": [

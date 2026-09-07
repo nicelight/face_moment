@@ -23,6 +23,7 @@ class BackgroundPhotoWorker:
         claim_requested_calibration: Callable[[], uuid.UUID | None] | None = None,
         execute_claimed_calibration: Callable[[uuid.UUID], object] | None = None,
         interrupt_running_calibrations: Callable[[], object] | None = None,
+        process_inventory_purge: Callable[[], bool | None] | None = None,
     ) -> None:
         self._session_factory = session_factory
         self._orchestrator = orchestrator
@@ -30,6 +31,7 @@ class BackgroundPhotoWorker:
         self._claim_requested_calibration = claim_requested_calibration
         self._execute_claimed_calibration = execute_claimed_calibration
         self._interrupt_running_calibrations = interrupt_running_calibrations
+        self._process_inventory_purge = process_inventory_purge
 
     def recover_startup(self) -> int:
         if self._interrupt_running_calibrations is not None:
@@ -40,6 +42,10 @@ class BackgroundPhotoWorker:
             return recovered_count
 
     def process_one(self) -> bool:
+        if self._process_inventory_purge is not None:
+            purge_result = self._process_inventory_purge()
+            if purge_result is not None:
+                return purge_result
         execute_claimed_calibration = self._execute_claimed_calibration
         if (
             self._claim_requested_calibration is not None

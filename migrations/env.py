@@ -8,6 +8,7 @@ from sqlalchemy import engine_from_config, pool
 from face_moment.infrastructure.database import Base
 from face_moment.infrastructure.settings import Settings
 from face_moment.inventory import photo_persistence
+from face_moment.inventory import hard_purge
 from face_moment.platform.auth import principals as staff_principals
 from face_moment.platform.auth import sessions as staff_sessions
 from face_moment.processing import initial_pending
@@ -22,6 +23,7 @@ from face_moment.promo import attempt as promo_attempt
 from face_moment.promo import retention as promo_retention
 
 _ = staff_principals
+_ = hard_purge
 _ = staff_sessions
 _ = photo_persistence
 _ = initial_pending

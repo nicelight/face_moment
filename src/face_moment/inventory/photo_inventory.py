@@ -10,6 +10,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from face_moment.inventory.photo_persistence import Photo
+from face_moment.inventory.hard_purge import (
+    InventoryPurgeConflictError, current_snapshot, lock_inventory_visibility,
+)
 from face_moment.platform.auth.principals import StaffRole
 from face_moment.platform.auth.sessions import (
     authenticate_unsafe_staff_request,
@@ -127,6 +130,7 @@ def set_photo_visibility(
         csrf_cookie_token=csrf_cookie_token,
         csrf_header_token=csrf_header_token,
     )
+    lock_inventory_visibility(database_session)
     photo = database_session.scalar(
         select(Photo).where(Photo.id == photo_id).with_for_update()
     )
@@ -139,6 +143,8 @@ def set_photo_visibility(
     elif principal.role not in {StaffRole.OPERATOR, StaffRole.DEVELOPER}:
         raise PhotoInventoryAccessDeniedError
 
+    if active and photo.id in current_snapshot(database_session):
+        raise InventoryPurgeConflictError
     if photo.is_active != active:
         photo.is_active = active
         database_session.commit()
