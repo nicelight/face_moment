@@ -143,6 +143,48 @@ def _request(
     return start["status"], set_cookies, json.loads(response_body or b"{}")
 
 
+def _request_html(app: FastAPI, path: str) -> tuple[int, bytes]:
+    messages: list[dict[str, Any]] = []
+    delivered = False
+
+    async def receive() -> dict[str, Any]:
+        nonlocal delivered
+        if delivered:
+            return {"type": "http.disconnect"}
+        delivered = True
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    async def send(message: dict[str, Any]) -> None:
+        messages.append(message)
+
+    asyncio.run(
+        app(
+            {
+                "type": "http",
+                "asgi": {"version": "3.0"},
+                "http_version": "1.1",
+                "method": "GET",
+                "scheme": "https",
+                "path": path,
+                "raw_path": path.encode(),
+                "query_string": b"",
+                "headers": [(b"host", b"testserver")],
+                "client": ("127.0.0.1", 51515),
+                "server": ("testserver", 443),
+            },
+            receive,
+            send,
+        )
+    )
+    start = next(message for message in messages if message["type"] == "http.response.start")
+    body = b"".join(
+        message.get("body", b"")
+        for message in messages
+        if message["type"] == "http.response.body"
+    )
+    return start["status"], body
+
+
 def _set_cookies(cookies: list[str]) -> dict[str, str]:
     values: dict[str, str] = {}
     for header in cookies:
@@ -166,6 +208,30 @@ def test_staff_session_root_paths_preserve_https_edge_routing() -> None:
     ) in normalized_caddyfile
     assert "handle_path /api/staff/" not in caddyfile
     assert "handle_path /staff/login" not in caddyfile
+
+
+def test_staff_login_page_exposes_accessible_session_form(
+    disposable_staff_session_state: tuple[FastAPI, str, str, str],
+) -> None:
+    app, _, _, _ = disposable_staff_session_state
+
+    page_status, page_body = _request_html(app, "/staff/login")
+    page = page_body.decode()
+
+    assert page_status == 200
+    assert '<form id="staff-login-form" method="post">' in page
+    assert '<label for="staff-username">Username</label>' in page
+    assert (
+        '<input id="staff-username" name="username" type="text" '
+        'autocomplete="username" required>'
+    ) in page
+    assert '<label for="staff-password">Password</label>' in page
+    assert (
+        '<input id="staff-password" name="password" type="password" '
+        'autocomplete="current-password" required>'
+    ) in page
+    assert '<button id="staff-login-submit" type="submit">Sign in</button>' in page
+    assert '<p id="staff-login-message" role="alert" aria-live="assertive"></p>' in page
 
 
 def test_login_limit_separates_caddy_forwarded_clients(

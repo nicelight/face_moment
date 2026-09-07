@@ -121,7 +121,7 @@ test("render failure sends best-effort failed acknowledgement without a QR elaps
   });
 
   assert.equal(detail.state, "advertising");
-  assert.equal(detail.reason, "invalid_result");
+  assert.equal(detail.reason, "media_decode_failure");
   assert.deepEqual(detail.acknowledgement, { sent: true, status: 200 });
   assert.equal(calls.length, 5);
   assert.equal(calls[4].url, "/api/promo/sessions/session-077/display");
@@ -498,10 +498,11 @@ test("stalled confirmed acknowledgement aborts, clears its timer and returns to 
     });
     const signal = await acknowledgementStarted;
     assert.equal(calls.length, 5);
-    assert.equal(scheduled.length, 1);
+    assert.equal(scheduled.length, 2);
     assert.equal(scheduled[0].delay, 5_000);
+    assert.equal(scheduled[1].delay, 5_000);
 
-    scheduled[0].callback();
+    scheduled[1].callback();
     const detail = await pending;
 
     assert.equal(signal.aborted, true);
@@ -514,8 +515,60 @@ test("stalled confirmed acknowledgement aborts, clears its timer and returns to 
     assert.equal(controller.isVisible, false);
     assert.deepEqual(completions, []);
     assert.deepEqual(failures, [detail]);
-    assert.deepEqual(cleared, [scheduled[0]]);
+    assert.deepEqual(cleared, [scheduled[0], scheduled[1]]);
     assert.equal(calls.length, 5);
+  } finally {
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearTimeout = originalClearTimeout;
+  }
+});
+
+test("non-cooperative confirmed acknowledgement is settled by the deadline race", async () => {
+  globalThis.localStorage = { getItem: () => "fixture-display-token" };
+  const scheduled = [];
+  const cleared = [];
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
+  let acknowledgementStarted;
+  const started = new Promise((resolve) => {
+    acknowledgementStarted = resolve;
+  });
+  globalThis.setTimeout = (callback, delay) => {
+    const timer = { callback, delay };
+    scheduled.push(timer);
+    return timer;
+  };
+  globalThis.clearTimeout = (timer) => cleared.push(timer);
+
+  try {
+    const controller = new PromoDisplayController({
+      container: new FakeElement(),
+      origin: ORIGIN,
+      documentImpl: displayDocument(),
+      clock: () => 9_421,
+      fetchImpl: async (url) => {
+        if (String(url).includes("/api/promo/media/")) return mediaResponse();
+        acknowledgementStarted();
+        return new Promise(() => {});
+      },
+      imageFactory: () => ({ decode: async () => {} }),
+      urlApi: { createObjectURL: () => "blob:fixture-preview" },
+    });
+
+    const pending = controller.showResult({
+      attemptId: "attempt-077-ack-non-cooperative",
+      result: result(),
+      timing: { referenceSeriesReadyMonotonicMs: 1_000 },
+    });
+    await started;
+    const acknowledgementTimer = scheduled.at(-1);
+    assert.equal(acknowledgementTimer.delay, 5_000);
+    acknowledgementTimer.callback();
+    const detail = await pending;
+
+    assert.equal(detail.state, "advertising");
+    assert.equal(detail.reason, "acknowledgement_failure");
+    assert.equal(cleared.includes(acknowledgementTimer), true);
   } finally {
     globalThis.setTimeout = originalSetTimeout;
     globalThis.clearTimeout = originalClearTimeout;

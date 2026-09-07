@@ -30,6 +30,7 @@ from face_moment.processing.revisions import PipelineRevision
 from face_moment.serving_control import IngestTargetRepository
 from face_moment.serving_control.ingest_target import IngestTarget, Spa
 from tests.pipeline_compatibility import PIPELINE_COMPATIBILITY
+from tests.disposable_postgresql import disposable_postgresql_engine
 
 _FIXTURE_TIME = datetime(2026, 8, 14, 17, 0, tzinfo=timezone.utc)
 
@@ -241,6 +242,86 @@ def _remove_fixture_rows(engine: Engine, fixture: _Fixture) -> None:
         )
 
 
+def test_manual_switch_commits_after_readonly_preread_without_caller_commit() -> None:
+    """The command owns and commits an autobegun dedicated Session transaction."""
+    with disposable_postgresql_engine("astra13_preread") as engine:
+        fixture = _fixture(engine, "astra13_preread")
+
+        with Session(engine) as session:
+            session.execute(text("SELECT 1"))
+            assert session.in_transaction()
+            result = IngestTargetRepository(session).switch_serving_revision(
+                spa_id=fixture.spa_id,
+                target_pipeline_revision_id=fixture.revision_b_id,
+            )
+
+        assert result.outcome == "committed"
+        assert result.committed_pipeline_revision_id == fixture.revision_b_id
+
+        with Session(engine) as fresh_session:
+            spa = fresh_session.get(Spa, fixture.spa_id)
+            assert spa is not None
+            assert spa.serving_pipeline_revision_id == fixture.revision_b_id
+
+
+def test_manual_switch_rolls_back_after_flush_and_can_retry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A post-flush command failure cannot leak the uncommitted revision."""
+    with disposable_postgresql_engine("astra13_rollback") as engine:
+        fixture = _fixture(engine, "astra13_rollback")
+        original_guarded_switch = IngestTargetRepository._guarded_switch_serving_revision
+
+        def fail_after_flush(
+            repository: IngestTargetRepository,
+            *,
+            spa_id: uuid.UUID,
+            target_pipeline_revision_id: uuid.UUID,
+        ) -> object:
+            result = original_guarded_switch(
+                repository,
+                spa_id=spa_id,
+                target_pipeline_revision_id=target_pipeline_revision_id,
+            )
+            spa = repository._session.get(Spa, fixture.spa_id)
+            assert spa is not None
+            assert spa.serving_pipeline_revision_id == fixture.revision_b_id
+            raise RuntimeError("injected switch failure after flush")
+
+        monkeypatch.setattr(
+            IngestTargetRepository,
+            "_guarded_switch_serving_revision",
+            fail_after_flush,
+        )
+        with Session(engine) as session:
+            with pytest.raises(RuntimeError, match="after flush"):
+                IngestTargetRepository(session).switch_serving_revision(
+                    spa_id=fixture.spa_id,
+                    target_pipeline_revision_id=fixture.revision_b_id,
+                )
+            assert not session.in_transaction()
+            spa = session.get(Spa, fixture.spa_id)
+            assert spa is not None
+            assert spa.serving_pipeline_revision_id == fixture.revision_a_id
+            session.rollback()
+
+            monkeypatch.setattr(
+                IngestTargetRepository,
+                "_guarded_switch_serving_revision",
+                original_guarded_switch,
+            )
+            result = IngestTargetRepository(session).switch_serving_revision(
+                spa_id=fixture.spa_id,
+                target_pipeline_revision_id=fixture.revision_b_id,
+            )
+            assert result.outcome == "committed"
+
+        with Session(engine) as fresh_session:
+            spa = fresh_session.get(Spa, fixture.spa_id)
+            assert spa is not None
+            assert spa.serving_pipeline_revision_id == fixture.revision_b_id
+
+
 def test_manual_switch_validates_guards_and_serializes_admission(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -309,12 +390,15 @@ def test_manual_switch_validates_guards_and_serializes_admission(
                         fixture.revision_b_id,
                         fixture.ineligible_revision_id,
                     ),
-                )
+            )
             with Session(engine) as session:
+                session.execute(text("SELECT 1"))
+                assert session.in_transaction()
                 result = IngestTargetRepository(session).switch_serving_revision(
                     spa_id=fixture.spa_id,
                     target_pipeline_revision_id=requested_revision_id,
                 )
+                assert not session.in_transaction()
             with Session(engine) as session:
                 after = _snapshot(
                     session,

@@ -84,7 +84,7 @@ The `inventory` repository owns:
 | `checksum_sha256` | Required 32-byte SHA-256 digest of the exact uploaded JPEG bytes. |
 | `original_object_key` | Required unique opaque key in the configured private MinIO bucket. |
 | `original_byte_size` | Required positive compressed-byte count. |
-| `width`, `height` | Required positive decoded dimensions after JPEG validation. |
+| `width`, `height` | Required positive decoded dimensions after JPEG validation and EXIF orientation, matching the processing image coordinate space. |
 | `is_active` | Required `true` at admission; later visibility transitions belong to FT-012. |
 
 PostgreSQL MUST enforce uniqueness on
@@ -126,8 +126,15 @@ boundary; later physical cleanup calls the processing boundary explicitly.
   upload-start instant, otherwise 01:00 in the СПА timezone on authoritative
   `visit_date`. A reliable EXIF calendar date different from `visit_date`
   yields the API warning but never rewrites or rejects the selected scope.
-- EXIF orientation is validated for safe decoding; original stored bytes are
-  not rewritten by admission.
+- EXIF orientation is validated and applied when decoding dimensions, using
+  the same oriented image space as processing and derivatives. Original stored
+  bytes and their SHA-256 are unchanged; admission does not re-encode the JPEG.
+
+The orientation correction applies to newly admitted Photos. It does not
+repair previously persisted dimensions or restart terminal `failed` states.
+If such rows are established separately, recovery needs its own authorized
+scope; their presence is not assumed here. Same-scope duplicate re-upload
+retains the existing Photo and therefore does not repair its metadata.
 
 ## Admission And Convergence
 

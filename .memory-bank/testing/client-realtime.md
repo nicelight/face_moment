@@ -197,6 +197,16 @@ validation.
   the display boundary, result-aware rendering, local QR, post-render
   acknowledgement, independent display/cooldown timers and optional-asset/
   non-success integration. FT-004 separately owns server-result correctness.
+- Client display configuration requests and complete four-preview preparation
+  use an internal 5-second loading deadline independent of configured display
+  and success-cooldown durations. The client passes an `AbortSignal`, cancels
+  pending transport/render work on failure, expiry or supersede, and races the
+  deadline so non-cooperative `fetch`, `json`, `blob` or image decode doubles
+  cannot hold an Attempt busy. While a result is being prepared, the shared
+  advertising shell remains visible; a loading failure removes only a Promo
+  card owned by the controller, renders no partial Promo and starts no success
+  cooldown. Late continuations are ignored by the existing generation/attempt
+  identity checks.
 - Complete and malformed/incomplete result fixtures at the logical 1920x1080
   target prove exactly four unique decoded teasers, exact truthful copy, a
   fully visible high-contrast locally generated QR and no partial/stale Promo.
@@ -316,3 +326,26 @@ validation.
   `.tasks/<TASK_ID>/`; feature/task records link only the concise result.
 - Use the cheapest fixture, integration or UI proof that demonstrates each
   applicable contract.
+
+## Repository Browser Runner
+
+- The repository browser gate targets Node.js `>=20` and npm `>=9` (the
+  checked environment is Node.js `22.22.1` with npm `9.2.0`). From a fresh
+  checkout, run `npm ci`, then `npx playwright install chromium`; on a Linux
+  host missing Playwright system libraries, use
+  `npx playwright install --with-deps chromium` with the host's normal package
+  installation authority.
+- The repository-managed browser command is
+  `npm run test:browser -- tests/client/test_browser_recovery.spec.mjs tests/client/test_degraded_advertising.spec.mjs`.
+  It uses the pinned `@playwright/test` package and the checked-in
+  `playwright.config.mjs`; browser output belongs under the task-local
+  `.tasks/ASTRA-findings/07-browser-runner/playwright-results/` directory.
+- The ordinary client Node suite is `npm run test:unit`. Its runner discovers
+  `tests/client/test_*.mjs` while excluding `*.spec.mjs`, so browser-only
+  imports cannot break the unit command.
+- The complete local gate is `npm run test:browser` followed by `npm test`.
+- The recovery fixture seeds the same `sensorId` field consumed by the
+  production `readSensorConfig()` reader before first navigation, then reads
+  the persisted value through that production reader after a fresh persistent
+  Chromium launch. API/media/acknowledgement responses remain disposable
+  controlled routes; no production database or service is contacted.

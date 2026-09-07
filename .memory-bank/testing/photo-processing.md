@@ -67,6 +67,14 @@ one serial outcome only: the completed A admission blocks B, or the successful
 B switch makes the admission snapshot B. Calibration/model-comparison fixtures
 remain offline and cannot invoke or bypass the guard.
 
+The transaction contract adds a read-only `SELECT 1` before a successful switch
+and observes the committed B revision from a fresh session without a caller
+commit. A rejection compares the complete serving and Photo snapshot before and
+after the command. A failure injected after assignment and flush must leave A
+durable; the same Session observes A after rollback and retries successfully to
+B. The existing Calibration apply caller remains green with its explicit
+surrounding commit/rollback handling.
+
 The adapter matrix binds one synthetic image independently to the configured
 SFace and Buffalo M adapters. It records revision identity, detector/recognizer
 call path, embedding dimension and proof that neither path consumes the other
@@ -94,6 +102,18 @@ closed as `ModelAdmissionError`; no skip, fallback or model download is valid
 evidence.
 
 ## Idempotency And Restart Matrix
+
+The EXIF regression starts at real admission and persistence, then uses real
+orchestration, terminal publication and derivative creation with a deterministic
+adapter in disposable PostgreSQL/MinIO state. An asymmetric 30-by-10 JPEG with
+orientation 6 or 8 persists as 10-by-30, accepts bbox `(2, 15, 5, 5)` outside
+the former unrotated height, and preserves the adapter's five landmarks.
+Preview and thumbnail pixels prove the correct clockwise/anticlockwise order
+after resizing; original bytes and SHA-256 remain exact. Repeat with no EXIF and
+with genuinely out-of-bounds bbox values to prove ordinary success and unchanged
+rejection without partial ready publication. Admission unit coverage includes
+no EXIF, all orientations 1–8, and invalid orientation 9. These fixtures create
+new Photos; they do not repair or assert the presence of historical bad metadata.
 
 Use one deterministic face/derivative fixture for
 `(photo_id, pipeline_revision_id)`:

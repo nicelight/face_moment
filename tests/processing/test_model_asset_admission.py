@@ -385,15 +385,18 @@ async def _health_during_lifespan(app: Any) -> dict[str, object]:
 
 
 def test_both_model_consumer_roles_bind_before_reporting_readiness(
+    disposable_model_database: Engine,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setenv("REALTIME_RESULT_DISPLAY_MS", "15000")
+    monkeypatch.setenv("REALTIME_SUCCESS_COOLDOWN_MS", "1000")
     settings = Settings.from_env()
     adapter = _RecordingAdapter(uuid.uuid4(), warmed=True)
 
     def bind(_settings: Settings) -> ModelConsumerBinding:
         return ModelConsumerBinding(
-            database_engine=create_engine(settings.database_url),
-            session_factory=lambda: Session(),
+            database_engine=disposable_model_database,
+            session_factory=lambda: Session(disposable_model_database),
             adapter=adapter,
         )
 
@@ -415,6 +418,8 @@ def test_both_model_consumer_roles_bind_before_reporting_readiness(
         "role": "RealtimeFaceService",
         "ready": True,
         "production_model_loaded": True,
+        "recovery_completed": True,
+        "last_recovered_count": 0,
     }
     assert worker_health["production_model_loaded"] is True
     assert worker_health["recovery_completed"] is True
@@ -475,6 +480,9 @@ def test_worker_loop_failure_clears_readiness_and_fails_role_lifecycle(
 def test_both_roles_fail_closed_before_readiness_when_binding_fails(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setenv("REALTIME_RESULT_DISPLAY_MS", "15000")
+    monkeypatch.setenv("REALTIME_SUCCESS_COOLDOWN_MS", "1000")
+
     def fail(_settings: Settings) -> ModelConsumerBinding:
         raise ModelAdmissionError("fixture mismatch")
 

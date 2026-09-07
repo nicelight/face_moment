@@ -28,6 +28,8 @@ Each verification run uses one immutable fixture snapshot containing:
 
 - unique selected existing Photo UUIDs plus the SHA-256 identity of each
   inventory-owned original JPEG;
+- the complete non-empty selected Attempt UUID list in original order and one
+  explicit `missing_ground_truth` exclusion for each unannotated selection;
 - the selected applicable annotated Attempts, their required available input
   evidence and their `correct`, `false` and `missed` ground truth;
 - pipeline code/revision, release and parameter-set identities;
@@ -44,6 +46,16 @@ separate native pipeline evaluation and result rows; the proof never combines
 embeddings or participant-facing results across pipeline revisions. A missing
 or changed original or required Attempt input fails the run visibly instead of
 shrinking or rebuilding the dataset.
+
+The mixed-selection fixture selects two Attempts with one annotation and proves
+selected/applicable counts of `2/1`; the all-unannotated fixture selects two
+Attempts and proves `2/0`, visible exclusions and no recommendation. Adding
+ground truth after request does not change the frozen snapshot. A legacy snapshot
+without `selected_attempt_ids` reports selected count as unavailable and never
+reconstructs it from the retained applicable Attempts. Executing a queued
+legacy snapshot therefore keeps its retained processing input but emits no
+fresh profile or recommendation; a fresh run is required for full selection
+counts, while existing complete results remain unchanged.
 
 ## Threshold Profile Oracle
 
@@ -101,11 +113,22 @@ objective.
 
 ## Before/After And Manual-Apply Proof
 
-- A before/after fixture selects two stored release or parameter-set snapshots
-  over the same dataset hash, verified Photo original JPEG bytes and applicable
-  annotations. Aggregate differences MUST reconcile to the contributing
-  Attempts and stored versions/parameters/outcomes. A different dataset hash is
-  rejected rather than presented as a comparable delta.
+- A before/after fixture selects two complete stored release or parameter-set
+  snapshots over the same frozen data, verified Photo original JPEG bytes and
+  applicable annotations. Different top-level evaluation `pipeline_revisions`,
+  `serving_values` or `candidate_values` remain comparable while each persisted
+  full-input fingerprint stays unchanged. Verify a directly inserted legacy
+  full-input row against a newly created run, including commit/reload checks.
+  The returned comparison hash covers the common data, not evaluation settings.
+  Aggregate differences MUST reconcile to contributing Attempts and stored
+  versions/parameters/outcomes.
+- Changes to Photo ID/checksum, SPA, Attempt ID/annotations, historical Attempt
+  revision/threshold, nested evaluation-named fields, additional dataset fields
+  or frozen array order MUST yield `dataset_mismatch`. Only the three exact
+  top-level evaluation fields are excluded; no live-data reconstruction or
+  recursive key deletion is allowed. Non-complete runs reject before comparison
+  of dataset identity. Snapshots, full-input hashes and result bundles remain
+  immutable, and absent historical selection is not claimed to be recovered.
 - Generating or viewing any recommendation MUST leave the current serving
   settings and revision unchanged.
 - Only a separate authenticated developer action through `serving_control` may

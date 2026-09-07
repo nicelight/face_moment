@@ -127,60 +127,82 @@ class IngestTargetRepository:
         spa_id: uuid.UUID,
         target_pipeline_revision_id: uuid.UUID,
     ) -> ServingRevisionSwitchResult:
-        """Apply one guarded ordinary A-to-B serving-revision decision."""
-        with self._session.begin():
-            spa = self._load_spa(spa_id, for_update=True)
-            current_pipeline_revision_id = spa.serving_pipeline_revision_id
+        """Apply and durably commit one guarded A-to-B decision.
 
-            try:
-                target_revision = self._resolve_eligible_revision(
-                    target_pipeline_revision_id
-                )
-            except IneligibleIngestTargetError:
-                return ServingRevisionSwitchResult(
-                    spa_id=spa.id,
-                    requested_pipeline_revision_id=target_pipeline_revision_id,
-                    committed_pipeline_revision_id=current_pipeline_revision_id,
-                    outcome="rejected",
-                    reason="target_invalid",
-                )
-
-            if target_revision.id == current_pipeline_revision_id:
-                return ServingRevisionSwitchResult(
-                    spa_id=spa.id,
-                    requested_pipeline_revision_id=target_pipeline_revision_id,
-                    committed_pipeline_revision_id=current_pipeline_revision_id,
-                    outcome="rejected",
-                    reason="already_committed",
-                )
-
-            from face_moment.processing.serving_revision_guard import (
-                read_serving_revision_guard,
+        The command owns its session transaction.  A caller may have performed
+        read-only work on this dedicated session first; SQLAlchemy's autobegin
+        is therefore allowed and is completed explicitly here.
+        """
+        try:
+            result = self._guarded_switch_serving_revision(
+                spa_id=spa_id,
+                target_pipeline_revision_id=target_pipeline_revision_id,
             )
+            self._session.commit()
+            return result
+        except Exception:
+            self._session.rollback()
+            raise
 
-            guard = read_serving_revision_guard(
-                self._session,
-                spa_id=spa.id,
-                pipeline_revision_id=current_pipeline_revision_id,
+    def _guarded_switch_serving_revision(
+        self,
+        *,
+        spa_id: uuid.UUID,
+        target_pipeline_revision_id: uuid.UUID,
+    ) -> ServingRevisionSwitchResult:
+        """Evaluate and flush one switch inside the command-owned transaction."""
+        spa = self._load_spa(spa_id, for_update=True)
+        current_pipeline_revision_id = spa.serving_pipeline_revision_id
+
+        try:
+            target_revision = self._resolve_eligible_revision(
+                target_pipeline_revision_id
             )
-            if guard.blocks_revision_change:
-                return ServingRevisionSwitchResult(
-                    spa_id=spa.id,
-                    requested_pipeline_revision_id=target_pipeline_revision_id,
-                    committed_pipeline_revision_id=current_pipeline_revision_id,
-                    outcome="rejected",
-                    reason="current_revision_has_active_processing",
-                )
-
-            spa.serving_pipeline_revision_id = target_revision.id
-            self._session.flush()
+        except IneligibleIngestTargetError:
             return ServingRevisionSwitchResult(
                 spa_id=spa.id,
                 requested_pipeline_revision_id=target_pipeline_revision_id,
-                committed_pipeline_revision_id=target_revision.id,
-                outcome="committed",
-                reason="committed",
+                committed_pipeline_revision_id=current_pipeline_revision_id,
+                outcome="rejected",
+                reason="target_invalid",
             )
+
+        if target_revision.id == current_pipeline_revision_id:
+            return ServingRevisionSwitchResult(
+                spa_id=spa.id,
+                requested_pipeline_revision_id=target_pipeline_revision_id,
+                committed_pipeline_revision_id=current_pipeline_revision_id,
+                outcome="rejected",
+                reason="already_committed",
+            )
+
+        from face_moment.processing.serving_revision_guard import (
+            read_serving_revision_guard,
+        )
+
+        guard = read_serving_revision_guard(
+            self._session,
+            spa_id=spa.id,
+            pipeline_revision_id=current_pipeline_revision_id,
+        )
+        if guard.blocks_revision_change:
+            return ServingRevisionSwitchResult(
+                spa_id=spa.id,
+                requested_pipeline_revision_id=target_pipeline_revision_id,
+                committed_pipeline_revision_id=current_pipeline_revision_id,
+                outcome="rejected",
+                reason="current_revision_has_active_processing",
+            )
+
+        spa.serving_pipeline_revision_id = target_revision.id
+        self._session.flush()
+        return ServingRevisionSwitchResult(
+            spa_id=spa.id,
+            requested_pipeline_revision_id=target_pipeline_revision_id,
+            committed_pipeline_revision_id=target_revision.id,
+            outcome="committed",
+            reason="committed",
+        )
 
     def _load_spa(self, spa_id: uuid.UUID, *, for_update: bool = False) -> Spa:
         statement = select(Spa).where(Spa.id == spa_id)

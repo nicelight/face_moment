@@ -263,6 +263,7 @@ def _render_detail(
     applied: bool,
 ) -> str:
     attempts = _attempt_ids(run.dataset_snapshot)
+    selection = _render_selection(run.dataset_snapshot)
     drill_down = (
         "".join(
             f'<li><a href="/staff/attempts/{attempt_id}">{attempt_id}</a></li>'
@@ -286,7 +287,8 @@ def _render_detail(
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Calibration {run.id}</title></head>
 <body><main><p><a href="/staff/calibrations">Calibration runs</a></p><h1>Calibration detail</h1>{applied_notice}
-<dl><dt>Run ID</dt><dd id="calibration-id">{run.id}</dd><dt>Status</dt><dd id="calibration-status">{escape(run.status)}</dd><dt>Dataset SHA-256</dt><dd>{escape(run.dataset_sha256)}</dd></dl>
+<dl><dt>Run ID</dt><dd id="calibration-id">{run.id}</dd><dt>Status</dt><dd id="calibration-status">{escape(run.status)}</dd><dt>Input snapshot SHA-256 (data + evaluation settings)</dt><dd>{escape(run.dataset_sha256)}</dd></dl>
+{selection}
 <section><h2>Stored results</h2><pre id="calibration-results">{result}</pre></section>
 <section><h2>Attempt drill-down</h2><ul>{drill_down}</ul></section>
 <section><h2>Manual serving apply</h2><p>Type <code>apply</code> to confirm the selected stored recommendation.</p>
@@ -304,6 +306,54 @@ def _attempt_ids(snapshot: Mapping[str, object]) -> tuple[str, ...]:
     for value in values:
         if isinstance(value, Mapping) and isinstance(value.get("attempt_id"), str):
             result.append(value["attempt_id"])
+    return tuple(result)
+
+
+def _render_selection(snapshot: Mapping[str, object]) -> str:
+    selected = _selected_attempt_ids(snapshot)
+    applicable = _attempt_ids(snapshot)
+    exclusions = _selection_exclusions(snapshot)
+    if selected is None:
+        return f"""<section><h2>Attempt selection</h2><dl>
+<dt>Selected Attempt count</dt><dd id="calibration-selected-attempt-count">Unavailable in legacy snapshot</dd>
+<dt>Applicable annotated Attempt count</dt><dd id="calibration-applicable-attempt-count">{len(applicable)}</dd>
+<dt>Excluded Attempt count</dt><dd id="calibration-excluded-attempt-count">Unavailable in legacy snapshot</dd>
+</dl><p>Selected Attempt IDs unavailable in legacy snapshot.</p></section>"""
+    selected_rows = "".join(
+        f'<li><a href="/staff/attempts/{escape(attempt_id)}">{escape(attempt_id)}</a></li>'
+        for attempt_id in selected
+    ) or "<li>No selected Attempts</li>"
+    exclusion_rows = "".join(
+        f'<li><a href="/staff/attempts/{escape(attempt_id)}">{escape(attempt_id)}</a>: {escape(reason)}</li>'
+        for attempt_id, reason in exclusions
+    ) or "<li>No selection exclusions</li>"
+    return f"""<section><h2>Attempt selection</h2><dl>
+<dt>Selected Attempt count</dt><dd id="calibration-selected-attempt-count">{len(selected)}</dd>
+<dt>Applicable annotated Attempt count</dt><dd id="calibration-applicable-attempt-count">{len(applicable)}</dd>
+<dt>Excluded Attempt count</dt><dd id="calibration-excluded-attempt-count">{len(exclusions)}</dd>
+</dl><p>Selected Attempt IDs</p><ul id="calibration-selected-attempts">{selected_rows}</ul>
+<p>Selection exclusions</p><ul id="calibration-selection-exclusions">{exclusion_rows}</ul></section>"""
+
+
+def _selected_attempt_ids(snapshot: Mapping[str, object]) -> tuple[str, ...] | None:
+    values = snapshot.get("selected_attempt_ids")
+    if not isinstance(values, list) or any(not isinstance(value, str) for value in values):
+        return None
+    return tuple(values)
+
+
+def _selection_exclusions(snapshot: Mapping[str, object]) -> tuple[tuple[str, str], ...]:
+    values = snapshot.get("selection_exclusions")
+    if not isinstance(values, list):
+        return ()
+    result: list[tuple[str, str]] = []
+    for value in values:
+        if (
+            isinstance(value, Mapping)
+            and isinstance(value.get("attempt_id"), str)
+            and isinstance(value.get("reason"), str)
+        ):
+            result.append((value["attempt_id"], value["reason"]))
     return tuple(result)
 
 

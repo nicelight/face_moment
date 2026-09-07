@@ -34,7 +34,7 @@ def register_staff_session_routes(
 ) -> None:
     @app.get("/staff/login", response_class=HTMLResponse)
     def staff_login_page() -> HTMLResponse:
-        return HTMLResponse("<main><h1>Staff login</h1></main>")
+        return HTMLResponse(_staff_login_page_html())
 
     @app.post("/api/staff/sessions", status_code=status.HTTP_204_NO_CONTENT)
     def login(request: Request, payload: LoginRequest) -> Response:
@@ -151,3 +151,71 @@ def _client_ip(request: Request) -> str:
         except ValueError:
             pass
     return "unknown" if request.client is None else request.client.host
+
+
+def _staff_login_page_html() -> str:
+    return """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Staff login</title>
+</head>
+<body>
+  <main>
+    <h1>Staff login</h1>
+    <form id="staff-login-form" method="post">
+      <label for="staff-username">Username</label>
+      <input id="staff-username" name="username" type="text" autocomplete="username" required>
+      <label for="staff-password">Password</label>
+      <input id="staff-password" name="password" type="password" autocomplete="current-password" required>
+      <button id="staff-login-submit" type="submit">Sign in</button>
+      <p id="staff-login-message" role="alert" aria-live="assertive"></p>
+    </form>
+  </main>
+  <script>
+    const form = document.querySelector("#staff-login-form");
+    const usernameInput = document.querySelector("#staff-username");
+    const passwordInput = document.querySelector("#staff-password");
+    const submitButton = document.querySelector("#staff-login-submit");
+    const message = document.querySelector("#staff-login-message");
+
+    function setPending(pending) {
+      usernameInput.disabled = pending;
+      passwordInput.disabled = pending;
+      submitButton.disabled = pending;
+      form.setAttribute("aria-busy", pending ? "true" : "false");
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!form.reportValidity() || submitButton.disabled) return;
+      message.textContent = "";
+      setPending(true);
+      try {
+        const response = await fetch("/api/staff/sessions", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({username: usernameInput.value, password: passwordInput.value}),
+        });
+        if (response.status === 204) {
+          window.location.assign("/staff/photo-inventory");
+          return;
+        }
+        if (response.status === 401) {
+          message.textContent = "Invalid username or password.";
+        } else if (response.status === 429) {
+          message.textContent = "Too many login attempts. Please try again later.";
+        } else {
+          message.textContent = "Login is temporarily unavailable. Please try again.";
+        }
+      } catch (_) {
+        message.textContent = "Login is temporarily unavailable. Please try again.";
+      } finally {
+        setPending(false);
+      }
+    });
+  </script>
+</body>
+</html>"""

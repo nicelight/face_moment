@@ -114,15 +114,19 @@ def _validate(
     )
 
 
-def test_valid_jpeg_is_preserved_and_hashed_before_decode() -> None:
-    jpeg = _jpeg()
+@pytest.mark.parametrize("orientation", [None, *range(1, 9)])
+def test_valid_jpeg_is_preserved_and_hashed_before_decode(
+    orientation: int | None,
+) -> None:
+    jpeg = _jpeg(width=30, height=10, orientation=orientation)
 
     candidate = _validate(jpeg)
 
     assert candidate.original_bytes == jpeg
     assert candidate.checksum_sha256 == hashlib.sha256(jpeg).digest()
     assert candidate.byte_size == len(jpeg)
-    assert (candidate.width, candidate.height) == (4, 3)
+    expected_dimensions = (10, 30) if orientation in (5, 6, 7, 8) else (30, 10)
+    assert (candidate.width, candidate.height) == expected_dimensions
     assert candidate.captured_at == UPLOAD_STARTED_AT
     assert candidate.captured_at_source is CapturedAtSource.UPLOAD_STARTED_AT
     assert candidate.warning is None

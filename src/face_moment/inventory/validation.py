@@ -86,7 +86,7 @@ def validate_jpeg_candidate(
 
     image = cv2.imdecode(
         np.frombuffer(original_bytes, dtype=np.uint8),
-        cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION,
+        cv2.IMREAD_COLOR,
     )
     if image is None or image.size == 0:
         raise InvalidJpegCandidateError("decode_failed")

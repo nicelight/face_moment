@@ -1,7 +1,7 @@
 ---
 description: Canonical compatible Photo-processing data, worker, derivative and recovery specification.
 status: active
-last_updated: 2026-08-14
+last_updated: 2026-09-07
 source_of_truth:
   - .memory-bank/domains/photo-processing.md
 ---
@@ -174,6 +174,12 @@ Different revisions produce independent rows even when they detect the same
 physical person. No person identity, cross-revision link, shared crop or
 clustering row is introduced.
 
+Photo dimensions, bbox and landmarks use the decoded original image after EXIF
+orientation. Preview and thumbnail decode that same orientation before resizing;
+stored face coordinates remain in the full decoded image space, not derivative
+pixel dimensions. Terminal bbox bounds checks remain required. The original
+JPEG bytes are preserved by admission and processing.
+
 ### `face_moment.processing_runtime_status`
 
 One well-known singleton row supplies only the durable operational facts that
@@ -265,6 +271,14 @@ must serialize, so an admission commits fully under A before the guard or
 obtains B only after B commits. A rejected guard preserves A and all Photo
 state. Calibration/model comparison remains offline test-only and neither calls
 nor bypasses this projection.
+
+The `switch_serving_revision` command owns the transaction of its dedicated
+`Session` and explicitly commits every guarded result, including a rejection.
+Read-only caller work may have already started SQLAlchemy's autobegin; the
+command adopts that transaction instead of opening a nested `begin` block. Any
+exception, including one after the serving row has been flushed, rolls back the
+command transaction before the error is propagated. The guard and serving-row
+update remain in this one transaction.
 
 ## Searchable Truth And SLO Projection
 

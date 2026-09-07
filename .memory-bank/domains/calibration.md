@@ -30,15 +30,19 @@ generic job system, second worker or automatic apply.
 One run freezes:
 
 - one SPA and unique selected Photo UUIDs with their immutable SHA-256 values;
-- unique selected Attempt UUIDs with current persisted annotations and
+- the complete non-empty selected Attempt UUID list in its original order;
+- a minimal exclusion entry for each selected Attempt without ground truth;
+- applicable Attempts separately, with their current persisted annotations and
   available required diagnostic input;
 - exactly one eligible SFace revision and one eligible Buffalo M revision;
 - current serving values, release/parameter identities and the finite candidate
   values used by the run.
 
 All selected data must belong to the same SPA. Missing ground truth is excluded,
-not invented. An Attempt without required available input remains an explicit
-exclusion in the selected/applicable sample counts.
+not invented. The snapshot stores `selected_attempt_ids` and
+`selection_exclusions` as immutable selection metadata; `attempts` contains only
+the applicable annotated projection. An Attempt without required available input
+remains an explicit exclusion in the selected/applicable sample counts.
 
 For each Photo, `processing` loads and verifies the original JPEG bytes once and
 passes those same bytes and the same frozen applicable-Attempt selection to both
@@ -57,7 +61,7 @@ The next linear Alembic revision creates one diagnostics-owned table,
 | `id` | UUID primary key and Calibration locator. |
 | `requested_by_staff_id` | Developer UUID recorded as a logical reference without cross-owner cascade. |
 | `status` | `requested | running | complete | failed | interrupted`. |
-| `dataset_snapshot`, `dataset_sha256` | Required bounded immutable JSONB input and its canonical SHA-256. |
+| `dataset_snapshot`, `dataset_sha256` | Required bounded immutable full JSONB input and its canonical SHA-256, including evaluation revisions, serving values and candidate values. This persisted fingerprint identifies the complete run input, not just the comparison dataset. |
 | `result_bundle` | Nullable bounded JSONB, present only for `complete`, with separate per-revision results. |
 | `error_code` | Nullable bounded safe code, required for `failed | interrupted`. |
 | `created_at`, `started_at`, `finished_at` | UTC timestamps consistent with state. |
@@ -83,11 +87,33 @@ request.
 ## Recommendation Result
 
 Threshold profiles and one-dimensional quality recommendations follow
-[Calibration Verification](../testing/calibration.md). When accepted metrics
-are undefined for every candidate, the result produces no proposal and shows
-selected/applicable counts. Before/after comparison is allowed only between
-complete stored results with the same dataset hash; otherwise it reports
-`dataset_mismatch`.
+[Calibration Verification](../testing/calibration.md). Selected/applicable
+counts use the full `selected_attempt_ids` list and the separately retained
+annotated `attempts` list. When accepted metrics are undefined for every
+candidate, the result produces no proposal and still shows those counts and
+selection exclusions. Before/after comparison first requires both stored
+results to be complete. It then derives a comparison dataset SHA-256 from each
+frozen snapshot by removing exactly the top-level `pipeline_revisions`,
+`serving_values` and `candidate_values` fields from a shallow copy. All other
+fields remain in the canonical hash, including SPA, Photo IDs/checksums,
+Attempt IDs/annotations, historical Attempt revisions/thresholds, nested fields
+with those same names, and any additional dataset fields. Array order is not
+renormalized. Different derived identities report `dataset_mismatch`.
+
+Thus runs over the same frozen data can compare different evaluation settings
+even when their persisted full-input fingerprints differ. The returned
+`CalibrationRunComparison.dataset_sha256` is the common derived data identity;
+the original snapshots, persisted fingerprints and result bundles are unchanged.
+This read-time rule applies equally to existing and new stored runs without a
+migration or reconstruction from live Photo/Attempt data. It does not restore
+selection information absent from an older snapshot; such a legacy run shows
+the selected count as unavailable rather than deriving it from applicable
+Attempts. If an older requested run is executed, its retained applicable
+Attempts are still processed, but no fresh profile or recommendation is
+emitted because the selected total is unavailable; a fresh run is required for
+full selection counts. Existing complete results remain untouched. The staff
+detail label
+identifies the displayed persisted hash as the full input snapshot SHA-256.
 
 The production KISS composition uses no new search grid or weighted objective.
 For the currently served pipeline revision, selected annotated Attempts are an

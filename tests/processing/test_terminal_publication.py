@@ -108,6 +108,7 @@ def _fixture(engine: Engine, object_store: PrivateObjectStore) -> _Fixture:
         )
         photo = Photo(
             spa_id=target.spa_id,
+            admission_pipeline_revision_id=revision.id,
             visit_date=date(2026, 8, 12),
             captured_at=datetime(2026, 8, 12, 9, 0, tzinfo=timezone.utc),
             captured_at_source=CapturedAtSource.UPLOAD_STARTED_AT,

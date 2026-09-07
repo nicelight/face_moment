@@ -18,7 +18,15 @@ orchestration or directly write capability state.
 
 ## Staff Session Endpoints
 
-- `GET /staff/login` serves the same-origin login page.
+- `GET /staff/login` serves a plain same-origin login form with labelled,
+  required username/password controls, `autocomplete="username"` and
+  `autocomplete="current-password"`. The form submits exactly the entered
+  `username` and `password` as JSON to this session endpoint with same-origin
+  credentials. A `204` response is consumed without parsing a response body
+  and navigates to the fixed `/staff/photo-inventory` path; `401`, `429` and
+  other/network failures leave the form in place with generic accessible
+  messages and re-enable its controls. The page does not persist credentials,
+  read the session cookie or accept a return URL.
 - `POST /api/staff/sessions` accepts exactly `username` and `password` as JSON.
   Success returns `204` and the cookies defined by
   [Staff Access](../domains/staff-access.md). Invalid credentials return a

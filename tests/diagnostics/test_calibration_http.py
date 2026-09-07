@@ -280,6 +280,11 @@ def test_create_view_rejections_and_confirmed_apply_preserve_exact_owner_state(
     assert requested.status_code == 200
     assert requested.headers["cache-control"] == "no-store"
     assert "requested" in requested.body
+    assert "Input snapshot SHA-256 (data + evaluation settings)" in requested.body
+    assert 'id="calibration-selected-attempt-count">1' in requested.body
+    assert 'id="calibration-applicable-attempt-count">1' in requested.body
+    assert 'id="calibration-excluded-attempt-count">0' in requested.body
+    assert "Selection exclusions" in requested.body
     assert f'/staff/attempts/{fixture.attempt_id}' in requested.body
     assert _serving_snapshot(fixture) == before
 
@@ -396,6 +401,76 @@ def test_create_view_rejections_and_confirmed_apply_preserve_exact_owner_state(
     )
     assert (stale.status_code, stale.body) == (409, "")
     assert _serving_snapshot(fixture) == after
+
+
+def test_legacy_snapshot_does_not_reconstruct_selected_attempt_count(
+    disposable_calibration_http: CalibrationHttpFixture,
+) -> None:
+    fixture = disposable_calibration_http
+    with Session(fixture.engine) as session:
+        repository = CalibrationRunRepository(session)
+        run = repository.create_requested(
+            requested_by_staff_id=uuid.uuid4(),
+            dataset_snapshot={
+                "spa_id": str(fixture.spa_id),
+                "photos": [],
+                "attempts": [{"attempt_id": str(fixture.attempt_id), "annotations": []}],
+            },
+        )
+        repository.start(run.id)
+        repository.complete(run.id, result_bundle={"pipeline_results": []})
+        session.commit()
+        run_id = run.id
+
+    detail = _request(
+        fixture.app,
+        "GET",
+        f"/staff/calibrations/{run_id}",
+        cookies=fixture.cookies["developer"],
+    )
+    assert detail.status_code == 200
+    assert 'id="calibration-selected-attempt-count">Unavailable in legacy snapshot' in detail.body
+    assert 'id="calibration-applicable-attempt-count">1' in detail.body
+    assert 'id="calibration-excluded-attempt-count">Unavailable in legacy snapshot' in detail.body
+    assert "Selected Attempt IDs unavailable in legacy snapshot." in detail.body
+
+
+@pytest.mark.parametrize("mode", ["mixed", "all-unannotated"])
+def test_detail_renders_full_selection_and_exclusion_counts(
+    mode: str,
+) -> None:
+    selected_ids = [str(uuid.uuid4()), str(uuid.uuid4())]
+    if mode == "mixed":
+        attempts = [{"attempt_id": selected_ids[0], "annotations": [{"outcome": "missed"}]}]
+        exclusions = [{"attempt_id": selected_ids[1], "reason": "missing_ground_truth"}]
+        applicable_count = 1
+    else:
+        attempts = []
+        exclusions = [
+            {"attempt_id": attempt_id, "reason": "missing_ground_truth"}
+            for attempt_id in selected_ids
+        ]
+        applicable_count = 0
+    run = CalibrationRun(
+        id=uuid.uuid4(),
+        requested_by_staff_id=uuid.uuid4(),
+        status=CalibrationRunStatus.COMPLETE,
+        dataset_snapshot={
+            "selected_attempt_ids": selected_ids,
+            "selection_exclusions": exclusions,
+            "attempts": attempts,
+        },
+        dataset_sha256="0" * 64,
+        result_bundle={"pipeline_results": []},
+    )
+
+    body = calibration_http._render_detail(run, (), applied=False)
+    assert 'id="calibration-selected-attempt-count">2' in body
+    assert f'id="calibration-applicable-attempt-count">{applicable_count}' in body
+    assert f'id="calibration-excluded-attempt-count">{len(exclusions)}' in body
+    for attempt_id in selected_ids:
+        assert attempt_id in body
+    assert "missing_ground_truth" in body
 
 
 def test_unexpected_apply_failure_is_empty_sanitized_and_rolls_back(

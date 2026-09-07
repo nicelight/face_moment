@@ -1,7 +1,7 @@
 ---
 description: Local-first Python development with uv and containerized PostgreSQL/MinIO.
 status: active
-last_updated: 2026-09-02
+last_updated: 2026-09-07
 source_of_truth:
   - .memory-bank/guides/local-development.md
 ---
@@ -58,6 +58,18 @@ committed compatible pipeline revision for the files under `models/`.
 The local capacity paths are `.` because the host process cannot see Docker
 volume mountpoints. Their readings are only a developer approximation; the
 packaged smoke remains authoritative for actual volume-capacity wiring.
+
+Canonical Promo and staff URLs are proxied to the backend through
+`deploy/Caddyfile`. Run the [live edge regression](../../tests/promo/test_public_edge_routes.py)
+with pinned Caddy `2.10.0-alpine` using loopback-only temporary TLS and
+disposable PostgreSQL/DB fixtures:
+
+```bash
+uv run --locked --env-file .env.local python -m pytest tests/promo/test_public_edge_routes.py tests/client/test_central_shell.py
+```
+
+This isolated route proof does not replace the full packaged runtime smoke for
+finding #10.
 
 ## Packaged proof
 

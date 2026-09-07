@@ -1,0 +1,13 @@
+{
+  "name": "face-moment-client-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "npm run test:unit",
+    "test:unit": "node scripts/run-client-unit-tests.mjs",
+    "test:browser": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1"
+  }
+}

@@ -1,24 +1,13 @@
 # ASTRA — findings и порядок исправления
 
-Аудит от 2026-09-06, commit `0a46dc8`. 13 findings. Проверки выполнены локально; работающий deployment не проверялся. Пути и номера строк относятся к версии аудита.
+Аудит от 2026-09-06, commit `0a46dc8`. 2 незакрытых findings. Исходная нумерация сохранена. Проверки выполнены локально; работающий deployment не проверялся. Пути и номера строк относятся к версии аудита.
 
 ## Очередь исправлений
 
 | Порядок | Finding | Исполнитель | Серьёзность | Сложность /10 | Файлы /10 | Примерно файлов | Blast radius /10 |
 |---|---|---|---|---:|---:|---:|---:|
-| 1 | Распаковка изображений до auth/rate limit | **Luna** | HIGH | 5 | 4 | 5–6 | 7 |
-| 2 | Блокировка event loop в realtime | **Astra** | HIGH | 7 | 4 | 5–6 | 8 |
-| 3 | Потерянные публичные routes | **Luna** | HIGH | 3 | 3 | 3–4 | 8 |
-| 4 | Нет рабочей страницы входа сотрудников | **Luna** | HIGH | 3 | 3 | 3–4 | 4 |
-| 5 | Buffalo M падает при ready=True | **Luna** | HIGH | 4 | 4 | 5–6 | 6 |
-| 6 | Несогласованная EXIF orientation | **Astra** | HIGH | 6 | 5 | 7–9 | 7 |
-| 7 | Невоспроизводимые browser recovery tests | **Luna** | MEDIUM | 4 | 4 | 5–6 | 3 |
-| 8 | Неограниченное ожидание config/media | **Luna** | MEDIUM | 5 | 4 | 5–6 | 5 |
 | 9 | Утечка Blob URL | **Luna** | MEDIUM | 4 | 3 | 3–4 | 4 |
 | 10 | Устаревший packaged smoke | **Luna** | MEDIUM | 6 | 4 | 5–6 | 4 |
-| 11 | Calibration запрещает сравнение других параметров | **Astra** | HIGH | 7 | 5 | 7–9 | 6 |
-| 12 | Calibration теряет исходный selected sample | **Luna** | MEDIUM | 4 | 3 | 3–4 | 4 |
-| 13 | Revision switch конфликтует с уже открытой транзакцией | **Luna** | MEDIUM | 4 | 3 | 3–4 | 6 |
 
 Оценки приблизительные, включают реализацию и тесты:
 
@@ -26,45 +15,17 @@
 - **Файлы:** 1 = 1 файл; 2 = 2; 3 = 3–4; 4 = 5–6; 5 = 7–9; 6 = 10–14; 7 = 15–20; 8 = 21–30; 9 = 31–50; 10 = более 50.
 - **Blast radius:** область возможной регрессии от исправления; 1 — изолированный компонент, 10 — весь проект.
 
-**Luna работает под руководством Astra:** Astra задаёт план, границы и критерии проверки, затем проверяет результат. Astra выполняет № 2, 6 и 11 из-за concurrency, изменений координат и контрактов сохранённых данных.
+**Luna работает под руководством Astra:** Astra задаёт план, границы и критерии проверки, затем проверяет результат. № 11 выполнен Astra и принят root; оставшиеся пункты назначены Luna.
 
-Порядок учитывает зависимости: № 1–2 меняют один endpoint; № 7 нужен для browser-проверок № 8–9; № 10 — до выкладки исправлений; решение по snapshot в № 11 — до № 12. Если Buffalo используется в serving, поднять № 5 сразу после № 2.
+Порядок учитывает зависимости: № 7 нужен для browser-проверок № 8–9; № 10 — до выкладки исправлений; решение по snapshot в № 11 — до № 12. Если Buffalo используется в serving, выполнять № 5 первым.
 
 ## Контекст для исполнителя
 
 Перед исправлением конкретного пункта прочитать `AGENTS.md`, связанные с ним контракты и текущую реализацию. Сокращённые Python-пути ниже относительны к `src/face_moment/`; остальные пути — к корню репозитория. Имена функций надёжнее исторических номеров строк.
 
-Этот файл содержит причины дефектов, доказательства и критерии исправления. Указанный способ исправления — направление; детали нужно проверить на текущем коде. Таблица задаёт исполнителя, но не заменяет конкретный план Astra для Luna. Для № 1 нужен выбранный способ чтения JPEG dimensions, для № 10 — serving/model fixture, для № 13 — владелец транзакции.
+Этот файл содержит причины дефектов, доказательства и критерии исправления. Указанный способ исправления — направление; детали нужно проверить на текущем коде. Таблица задаёт исполнителя, но не заменяет конкретный план Astra для Luna. Для № 10 нужен serving/model fixture, для № 13 — владелец транзакции.
 
 Начать с воспроизведения своего дефекта, затем проверить исправление тем же сценарием и связанными regression tests. Приложение содержит изолированные probes исходного аудита; при этой редактуре они не перезапускались. Некоторые repository/API tests создают disposable PostgreSQL через настройки окружения — прочитать fixture setup перед запуском.
-
-## 1. Распаковка изображений до auth/rate limit
-
-**Код:** `entrypoints/realtime.py:151–169`, `promo/realtime_admission.py:369` — относительно `src/face_moment/`.
-
-Сервер полностью декодирует crop до проверки токена, rate limit и размеров 512×512. Посторонний клиент может расходовать CPU и память сервиса.
-
-**Доказательство:** запрос без токена размером 263 557 байт с JPEG 4096×4096 выделил массив 48 МиБ и вернул 422; auth/DB не вызывались. OOM и нагрузочная атака не испытывались.
-
-**Исправление:** auth/rate limit до дорогой обработки; размеры из заголовка до полного decode. Astra выбирает безопасный способ чтения размеров. Проверить, что oversized и повреждённые входы отклоняются без большого выделения памяти, а валидные запросы проходят.
-
-**Контракт и тесты:** `.memory-bank/contracts/realtime-attempt-api.md`, PRD `NFR-SEC-03`; `tests/promo/test_realtime_attempt_api.py`.
-
-**Нюанс:** лимит сжатого body 20 МиБ не защищает от большого decoded image. Перенос auth сам по себе оставляет проблему у валидного клиента, а threadpool из № 2 не ограничивает память. Использовать существующий предел 512×512. В regression отдельно проверить отсутствие decode для запроса без credentials и для oversized crop с валидными credentials; сохранить успешный путь 512×512.
-
-## 2. Блокировка event loop в realtime
-
-**Код:** `entrypoints/realtime.py:147–305`, `promo/realtime_orchestration.py:110–139`.
-
-Async handler синхронно выполняет DB/inference/publication. Второй запрос получает управление после освобождения semaphore и запускает поиск вместо своевременного `busy`; health-запросы также задерживаются.
-
-**Доказательство:** настоящий endpoint/orchestrator с fake DB и search по 120 мс выполнил два поиска без `busy`. Heartbeat на 10 мс сработал примерно через 241 мс. Search намеренно завершался исключением.
-
-**Исправление:** вынести синхронную операцию в threadpool; создавать и закрывать Session внутри неё, сохранить один process и semaphore. Проверить concurrent requests, idempotency, своевременный busy и отзывчивость event loop.
-
-**Контракт и тесты:** `.memory-bank/contracts/realtime-attempt-api.md`, архитектура AD-006; `tests/promo/test_realtime_attempt_api.py`, `tests/promo/test_realtime_orchestration.py`. Готовый исходный probe — в приложении «Concurrent realtime route».
-
-**Нюанс:** один search slot должен немедленно возвращать busy, без очереди ожидания. Нельзя делить одну Session между конкурентными запросами. Проверить освобождение slot при исключении и поведение повторного attempt ID. В probe два `internal_failure` ожидаемы из-за fake search; доказательство дефекта — два запуска вместо одного и задержанный heartbeat. Это конечная операция, а не зависший native inference.
 
 ## 3. Потерянные публичные routes
 
@@ -100,6 +61,8 @@ Promo не может загрузить config/previews; перечисленн
 **Контракт и тесты:** `.memory-bank/contracts/photo-admission-api.md#staff-session-endpoints`, `.memory-bank/domains/staff-access.md`; `tests/staff_access/test_sessions.py`.
 
 **Нюанс:** `POST /api/staff/sessions` принимает JSON ровно с `username` и `password`, возвращает 204 и cookies; неверные credentials — 401, rate limit — 429. Реализовать форму поверх этого API, сохранив cookie/CSRF contract. Дополнить прямые API-тесты пользовательским путём: новый браузер → вход → доступ к staff-сценарию.
+
+**Статус:** исправлен и проверен в текущем исходном коде. Clean-profile Playwright CLI proof подтвердил реальный `401`, `429`, `204` с canonical cookies, переход на `/staff/photo-inventory` (`200`), доступ фотографа к `/staff/photo-upload` (`200`) и восстановимую техническую ошибку Caddy `502`; `mypy`, staff-session pytest (`4 passed`) и `mb-lint` прошли. Redacted evidence: [.tasks/TASK-116-T3-FT-001-W9/playwright-cli-transcript.md](../../.tasks/TASK-116-T3-FT-001-W9/playwright-cli-transcript.md), [cleanup-record.md](../../.tasks/TASK-116-T3-FT-001-W9/cleanup-record.md).
 
 ## 5. Buffalo M падает при ready=True
 
@@ -143,6 +106,8 @@ Specs импортируют `playwright/test`, но project-managed package/loc
 
 **Нюанс:** установить зависимость глобально недостаточно — запуск должен воспроизводиться из репозитория. Проверка raw localStorage с неправильным `sensor_id` не проверяет восстановление конфигурации production reader. Критерий закрытия — specs выполняют browser assertions после restart и обычные Node-тесты остаются запускаемыми.
 
+**Статус:** исправлен и принят root после source-read review. Независимый browser acceptance подтвердил `9 passed`, обычный Node unit acceptance — `42 passed`. [Browser QA transcript](../../.tasks/ASTRA-findings/07-browser-runner/browser-qa-transcript.log).
+
 ## 8. Неограниченное ожидание config/media
 
 **Код:** `client/promo-display.js:403–419,462–471`, `client/app.js:392–430`, `client/realtime-attempt.js:232`.
@@ -157,6 +122,8 @@ Config/media fetch и decode не ограничены deadline. Таймер п
 
 **Нюанс:** `attempt-finished` не наступает до завершения показа; существующий timeout acknowledgement покрывает более позднюю стадию. Проверить по отдельности зависший config, один зависший preview, decode failure и позднее завершение после timeout. Старый ответ не должен менять новый показ. Учесть освобождение URL из № 9. Исходный pending-fetch probe — в приложении «Blob lifecycle и pending configuration».
 
+**Статус:** исправлен и принят root после source-read review. Последние независимые gates подтвердили `47 passed` unit и `11 passed` browser; production capture-controller probe подтвердил переход `searching` → `advertising`, `nextAcceptTrigger: true`, следующий trigger `capturing` и отсутствие success-cooldown timers. Follow-up correction for the shared view container keeps the existing advertising card visible while a result's previews are loading and removes only an owned Promo card after failure or expiry; this is covered by the updated stalled-preview browser assertion. [Evidence](../../.tasks/ASTRA-findings/08-promo-deadline/independent-client-gate-transcript.log), [follow-up gate](../../.tasks/ASTRA-findings/09-blob-lifecycle/browser-gate.log).
+
 ## 9. Утечка Blob URL
 
 **Код:** `client/promo-display.js:414,481–499`.
@@ -170,6 +137,8 @@ Config/media fetch и decode не ограничены deadline. Таймер п
 **Контракт и тесты:** `.memory-bank/contracts/promo-display-api.md`; `tests/client/test_promo_display.mjs`, `test_promo_display_timers.mjs` в той же папке.
 
 **Нюанс:** при отказе одного элемента `Promise.all` другие загрузки продолжаются и могут создать URL уже после общего cleanup. Отслеживать владельца каждого URL и обрабатывать позднее завершение; удаление DOM недостаточно. Regression должен считать созданные/освобождённые URL на успешном цикле и в ветвях отказа. Исходный 100-cycle probe — в приложении.
+
+**Статус:** implementation evidence сохранено, но finding остаётся pending root acceptance из-за incident с out-of-scope database test execution во время executor run. JavaScript evidence (100 циклов `400 created / 400 revoked`, supersede pending render, timeout cleanup и browser-visible advertising) не оценивает влияние на существующие database/volume resources; утверждение о закрытии и об отсутствии production data usage отозвано до read-only fixture audit. [Implementation report](../../.tasks/ASTRA-findings/09-blob-lifecycle/implementation-report.md).
 
 ## 10. Устаревший packaged smoke
 
@@ -201,6 +170,8 @@ Smoke запускает роли без обязательного serving/mode
 
 **Нюанс:** snapshot содержит `photos`, `attempts`, `pipeline_revisions`, `serving_values`, `candidate_values`; `create_requested()` хэширует всё. Существующий тест специально ожидает mismatch при изменении `candidate_values`, поэтому зелёные тесты закрепляют проблему. Полностью одинаковые snapshots сравниваются. Не удалять mismatch-проверку целиком: нужно отделить данные от намеренно изменённых параметров и решить судьбу старых hashes. Исторические annotations как источник одной threshold-рекомендации — отдельное принятое ограничение, не часть этого finding.
 
+**Статус:** исправлен и независимо проверен root. Сравнение complete runs вычисляет hash frozen data без ровно трёх верхнеуровневых evaluation fields; полные snapshots, persisted fingerprints и result bundles сохраняются. Те же данные с другими параметрами сравниваются, изменённые данные отклоняются. Правило работает для старых и новых runs без миграции, но не восстанавливает утраченные selected IDs/exclusions старых snapshots. Изолированные implementer и root gates — по `28 passed`, mypy и mb-lint прошли. [Evidence](../../.tasks/ASTRA-findings/11-calibration-identity/implementation-report.md).
+
 ## 12. Calibration теряет исходный selected sample
 
 **Код:** `diagnostics/calibration_runs.py:754–798,899–900`.
@@ -214,6 +185,8 @@ Smoke запускает роли без обязательного serving/mode
 **Контракт и тесты:** `.memory-bank/domains/calibration.md#immutable-input-and-evaluation`; `tests/diagnostics/test_calibration_runs.py`, `test_calibration_http.py` в той же папке.
 
 **Нюанс:** `_compose_balance_recommendation()` получает уже сокращённый snapshot, поэтому одной правкой отображения исходный выбор не восстановить. Сохранять exclusions, не создавать вымышленные annotations/outcomes для неразмеченных Attempts. Проверить смешанную и полностью неразмеченную выборки: исходные selected IDs/count доступны, applicable соответствует реальным annotations. Исходный probe — в приложении «EXIF и Calibration».
+
+**Статус:** исправлен и принят root. Новые snapshots сохраняют полный `selected_attempt_ids` и `selection_exclusions`, а применимые annotated Attempts остаются отдельной frozen projection. Проверены смешанная выборка `2/1`, полностью неразмеченная `2/0` без recommendation, неизменность после поздней annotation, commit/reload fingerprint и UI rendering IDs/reasons. Legacy snapshots без selection metadata показывают selected count как unavailable; queued legacy execution не реконструирует selection и не создаёт свежую recommendation. Bounded root gate — `35 passed`, disposable UUID database/bucket удалены; mypy, mb-lint и `git diff --check` прошли. [Evidence](../../.tasks/ASTRA-findings/12-calibration-selection/implementation-report.md).
 
 ## 13. Revision switch конфликтует с открытой транзакцией
 
@@ -233,48 +206,6 @@ Smoke запускает роли без обязательного serving/mode
 ## Изолированное воспроизведение
 
 Запускать из корня репозитория с установленными зависимостями. Эти команды сохраняют исходные probes до исправления: assertions и вывод показывают дефект. После правки преобразовать их в проверки ожидаемого поведения. DB/model doubles в них явно ограничивают область доказательства; проверки реальных моделей отмечены отдельно.
-
-### Realtime: decode до auth — № 1
-
-Настоящие ASGI endpoint, multipart parser и OpenCV; DB factory только отмечает
-вызов. Один JPEG 4096×4096, без токена. Исходный результат: 422, decoded array
-48 МиБ, DB/auth не достигнуты. Это проверка выделения массива, не peak RSS.
-
-```bash
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -B - <<'PY'
-import runpy, uuid
-import cv2
-import numpy as np
-import face_moment.promo.realtime_admission as admission
-from face_moment.entrypoints.realtime import create_app
-
-f = runpy.run_path('tests/promo/test_realtime_attempt_api.py')
-_, jpeg = cv2.imencode('.jpg', np.zeros((4096, 4096, 3), dtype=np.uint8))
-body, content_type = f['_multipart'](
-    f['_manifest'](uuid.uuid4(), occurrences=[f['_occurrence'](0)]),
-    crops=[jpeg.tobytes()],
-)
-auth, decoded = [], []
-def db():
-    auth.append(True)
-    raise AssertionError('DB/auth reached')
-original = admission.cv2.imdecode
-def observe(*args, **kwargs):
-    image = original(*args, **kwargs)
-    decoded.append((image.shape, image.nbytes))
-    return image
-admission.cv2.imdecode = observe
-app = create_app()
-app.state.role_state = {'ready': True, 'session_factory': db}
-status, _, _ = f['_request'](app, body, content_type, token=None)
-print('HTTP', status, 'body bytes', len(body),
-      'decoded', decoded, 'DB/auth reached', bool(auth))
-PY
-```
-
-После переноса auth адаптировать test state к новой ветви: корректный отказ
-должен проходить через настоящий auth boundary без вызова decoder. Отдельный
-тест с валидными credentials должен проверять ранний отказ по dimensions.
 
 ### Buffalo: настоящая загрузка модели — № 5
 
@@ -430,87 +361,6 @@ console.log({config,signalPresent:'signal' in options});
 JS
 ```
 
-### Concurrent realtime route
-
-Test doubles заменяют adapters/DB; настоящий async endpoint и semaphore/orchestrator остаются без изменений. Число миллисекунд зависит от машины, но отсутствие своевременного heartbeat и два search вместо busy воспроизводятся.
-
-```bash
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -B - <<'PY'
-import asyncio, time, uuid
-from types import SimpleNamespace as NS
-from fastapi.responses import JSONResponse
-from starlette.requests import Request
-import face_moment.entrypoints.realtime as m
-rows, starts = {}, []
-class DB:
-    def __enter__(self): return self
-    def __exit__(self, *a): pass
-    def commit(self): pass
-    def refresh(self, *a): pass
-class Repo:
-    def __init__(self, db): pass
-    def get_by_admission_key(self, *, client_attempt_id, **kw):
-        if client_attempt_id not in rows:
-            raise m.PromoAttemptNotFoundError("missing")
-        return rows[client_attempt_id]
-    def create_or_get(self, **kw):
-        row = NS(id=uuid.uuid4(), client_attempt_id=kw["key"],
-                 processing_status="accepted", deadline_ms=1000)
-        rows[kw["key"]] = row
-        return row
-    def mark_search_started(self, row, **kw): row.processing_status="searching"
-    def mark_internal_failure(self, row, **kw): row.processing_status="internal_failure"
-    def mark_busy(self, row, **kw): row.processing_status="busy"
-    def mark_deadline(self, row, **kw): row.processing_status="deadline"
-m.PromoAttemptRepository=Repo
-m.parse_realtime_multipart=lambda body, ct: NS(
-    attempt_id=uuid.UUID(body.decode()),proposal_count=1)
-m.authenticate_display_client=lambda *a, **kw: NS(spa_id=uuid.UUID(int=1))
-m.RealtimeContextRepository=lambda db: NS(resolve_realtime_context=lambda **kw: NS())
-m.admission_values=lambda payload, context, **kw: {"key":payload.attempt_id}
-m.ExactCompatibleSearchRepository=lambda db: None
-m._reference_occurrences=lambda payload: ()
-def slow_search(**kw):
-    starts.append(time.monotonic())
-    time.sleep(.12)
-    raise RuntimeError("fake model failure")
-m.search_realtime_references=slow_search
-m.project_realtime_evidence=lambda *a, **kw: ({},None,())
-m.attach_realtime_evidence=lambda *a, **kw: None
-m._response_for_attempt=lambda attempt, **kw: JSONResponse(
-    {"outcome":attempt.processing_status})
-app=m.create_app()
-app.state.role_state={
-    "ready":True,"session_factory":DB,"display_client_rate_limiter":None,
-    "admitted_pipeline_revision_id":None,"model_adapter":object(),
-    "object_store":object(),"realtime_result_display_ms":15000,
-}
-endpoint=next(r.endpoint for r in app.routes
-              if getattr(r,"path",None)=="/api/realtime/attempts")
-def req():
-    body=str(uuid.uuid4()).encode()
-    async def receive():
-        return {"type":"http.request","body":body,"more_body":False}
-    return Request({
-        "type":"http","method":"POST","path":"/api/realtime/attempts",
-        "headers":[(b"content-length",str(len(body)).encode())],"app":app,
-    },receive)
-async def main():
-    start=time.monotonic()
-    beats=[]
-    async def heartbeat():
-        await asyncio.sleep(.01)
-        beats.append(round((time.monotonic()-start)*1000))
-    task=asyncio.create_task(heartbeat())
-    responses=await asyncio.gather(endpoint(req()),endpoint(req()))
-    await task
-    print({"responses":[r.body.decode() for r in responses],
-           "searches":len(starts),"heartbeat_expected_ms":10,
-           "heartbeat_actual_ms":beats[0]})
-asyncio.run(main())
-PY
-```
-
 ### Transaction contract
 
 ```bash
@@ -535,10 +385,11 @@ PY
 
 ## Статус исправлений в текущей сессии
 
-- № 1 исправлен и закрыт: TASK-112-T3-FT-003-W4, root functional PASS + независимый semantic-pass; 15 API-тестов, пограничные JPEG probes, mypy/lint.
-- № 2 исправлен и закрыт: TASK-113-T3-FT-003-W5, root functional PASS + независимый semantic-pass; 47 тестов с PostgreSQL concurrency, idempotency, Session cleanup и rate-limit.
-- № 5: TASK-114-T3-FT-002-W6 реализован Luna, остаётся in_progress. Native ONNX regression и целевые тесты прошли у исполнителя; общий обязательный двухфайловый gate имеет 2 lifecycle failures. Root verification/red-verify не завершены. Продолжение: разобрать fixtures в tests/processing/test_model_asset_admission.py (этот файл входит в write boundary), получить полный GREEN, затем независимые проверки. Подробности: .tasks/TASK-114-T3-FT-002-W6/final-gates.md.
-- № 3: TASK-115-T3-FT-005-W4 готов к выполнению, исправленный план APPROVE; существующие роли сохраняются.
-- № 4: TASK-116-T3-FT-001-W9, план APPROVE, выполнение после TASK-115.
-- № 6: исследован минимальный forward fix admission orientation; реализация ещё не выполнена. Существующие неверные Photo metadata и terminal failed не исправятся автоматически.
-- Deployment не выполнялся. Исходные findings и probes выше сохранены как доказательства состояния до исправления.
+- № 5: исправлен Luna в рамках TASK-114-T3-FT-002-W6; root независимо проверил полный двухфайловый gate (26 passed) и native ONNX node без skip. Индексированный task lifecycle closure отдельно не заявляется. Историческое описание finding и исходный probe сохранены; подробности: .tasks/TASK-114-T3-FT-002-W6/final-gates.md.
+- № 3 закрыт: TASK-115-T3-FT-005-W4; root independently проверил live Caddy и central-shell gate (7 passed), включая authenticated Promo/staff paths, CSRF/role rejection, realtime dispatch, body caps и private-route isolation. Caddy 2.10.0 validate прошёл; deployment не выполнялся.
+- № 4 закрыт: TASK-116-T3-FT-001-W9; clean-profile Playwright CLI, current-source mypy, staff-session pytest (`4 passed`) и Memory Bank lint проверены. Redacted evidence: [.tasks/TASK-116-T3-FT-001-W9/playwright-cli-transcript.md](../../.tasks/TASK-116-T3-FT-001-W9/playwright-cli-transcript.md), [cleanup-record.md](../../.tasks/TASK-116-T3-FT-001-W9/cleanup-record.md).
+- № 6 закрыт для новых загрузок: admission применяет ту же EXIF orientation, что processing и derivatives; original bytes/SHA-256 и bbox validation сохранены. Расширенный изолированный gate — 37 passed, независимый root gate — 29 проверок, mypy и mb-lint прошли. Существующие неверные Photo metadata и terminal failed не исправляются автоматически; duplicate re-upload также не исправляет metadata. [Evidence и ограничение первого неизолированного прогона](../../.tasks/ASTRA-findings/06-exif/implementation-report.md).
+- № 11 закрыт: root принял разделение полного input fingerprint и вычисляемого hash данных для comparison; независимый изолированный gate — `28 passed`, временные БД и bucket удалены. Исторические snapshots не переписываются, утраченная selection не восстанавливается. [Evidence](../../.tasks/ASTRA-findings/11-calibration-identity/implementation-report.md).
+- № 12 закрыт: root принял сохранение полного selected sample и явных exclusions, отдельную applicable projection, честные `2/1` и `2/0` counts и conservative legacy boundary; bounded gate — `35 passed`, временные БД и bucket удалены. [Evidence](../../.tasks/ASTRA-findings/12-calibration-selection/implementation-report.md).
+- № 13 закрыт и принят root: owner transaction contract исправлен, root независимо подтвердил preread→commit, rejection preservation, post-flush rollback/retry, serving guard/concurrency и совместимость Calibration apply — `6 passed`; старый serving-switch matrix сохраняет собственную UUID БД, новые transaction tests и Calibration apply используют disposable PostgreSQL helper. Исторический finding и in-memory probe сохранены выше. [Evidence](../../.tasks/ASTRA-findings/13-revision-transaction/implementation-report.md).
+- Deployment не выполнялся. Оставшиеся findings и probes выше описывают состояние до соответствующих исправлений.

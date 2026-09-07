@@ -381,6 +381,36 @@ def test_buffalo_warmup_runs_recognizer_when_detector_is_empty(
     ]
 
 
+@pytest.mark.parametrize("failure", ["dimension", "nonfinite", "zero"])
+def test_buffalo_warmup_rejects_invalid_embedding_before_readiness(
+    failure: str, tmp_path: Path
+) -> None:
+    assets = _assets(tmp_path)
+    calls: list[str] = []
+    if failure == "dimension":
+        embedding = np.array([3.0, 4.0, 0.0, 1.0], dtype=np.float32)
+    elif failure == "nonfinite":
+        embedding = np.array([np.nan, 0.0, 0.0], dtype=np.float32)
+    else:
+        embedding = np.zeros(3, dtype=np.float32)
+    adapter = BuffaloPhotoAdapter(
+        revision=_revision(assets),
+        assets=assets,
+        detector=_ScrfdFixture(calls),
+        recognizer=_BuffaloRecognizerFixture(calls, embedding),
+    )
+
+    with pytest.raises(BuffaloEmbeddingDimensionMismatchError):
+        adapter.warmup()
+
+    assert adapter.ready is False
+    assert calls == [
+        "scrfd.detect",
+        "buffalo.native_alignment",
+        "buffalo.normed_embedding",
+    ]
+
+
 @pytest.mark.parametrize("failure", ["detector", "recognizer"])
 def test_buffalo_native_warmup_failure_keeps_readiness_closed(
     failure: str, tmp_path: Path

@@ -15,6 +15,7 @@ https://localhost:8443 {
 
 	@realtime_attempts path /api/realtime/attempts /api/realtime/attempts/*/client-timing
 	@phone_continuation path /q /phone /api/phone/*
+	@backend_canonical path /api/promo/* /api/serving/spas/*/active-visit-date /api/diagnostics/retention /staff/search-settings /staff/photo-inventory /staff/calibrations /staff/calibrations/* /staff/diagnostics-retention
 
 	route {
 		respond @inventory_photo_upload_without_length 413
@@ -40,6 +41,12 @@ https://localhost:8443 {
 				max_size 20MiB
 			}
 			reverse_proxy realtime:8002 {
+				header_up X-Forwarded-For {remote_host}
+			}
+		}
+
+		handle @backend_canonical {
+			reverse_proxy backend:8000 {
 				header_up X-Forwarded-For {remote_host}
 			}
 		}

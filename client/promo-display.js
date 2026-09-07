@@ -5,6 +5,7 @@ const MEDIA_PATH_PREFIX = "/api/promo/media/";
 const DISPLAY_CONFIG_PATH = "/api/promo/display/config";
 const DISPLAY_PATH_PREFIX = "/api/promo/sessions/";
 const DISPLAY_ACK_TIMEOUT_MS = 5_000;
+const DISPLAY_LOADING_DEADLINE_MS = 5_000;
 const QR_VERSION = Object.freeze({
   4: Object.freeze({ dimension: 33, dataCodewords: 64, blocks: 2, blockData: 32, ecCodewords: 18, alignment: [6, 26] }),
   5: Object.freeze({ dimension: 37, dataCodewords: 86, blocks: 2, blockData: 43, ecCodewords: 24, alignment: [6, 30] }),
@@ -400,23 +401,56 @@ function createQrSvg(documentImpl, text) {
   return { svg, matrix, text };
 }
 
-async function loadPreview({ teaser, fetchImpl, imageFactory, urlApi }) {
-  const response = await fetchImpl(teaser.media_url, {
-    headers: { ...getDisplayRequestHeaders(), "Cache-Control": "no-cache" },
-    credentials: "same-origin",
-    cache: "no-store",
-  });
-  if (!response?.ok) throw new Error("promo_media_fetch_failed");
-  const blob = await response.blob();
+function operationAbortedError() {
+  const error = new Error("promo_operation_cancelled");
+  error.name = "AbortError";
+  return error;
+}
+
+function throwIfOperationAborted(signal) {
+  if (signal?.aborted) throw operationAbortedError();
+}
+
+async function loadPreview({ teaser, fetchImpl, imageFactory, urlApi, signal, onObjectUrl }) {
+  throwIfOperationAborted(signal);
+  let response;
+  let blob;
+  try {
+    response = await fetchImpl(teaser.media_url, {
+      headers: { ...getDisplayRequestHeaders(), "Cache-Control": "no-cache" },
+      credentials: "same-origin",
+      cache: "no-store",
+      signal,
+    });
+    if (!response?.ok) throw new Error("promo_media_fetch_failed");
+    blob = await response.blob();
+    throwIfOperationAborted(signal);
+  } catch (error) {
+    if (signal?.aborted) throw operationAbortedError();
+    if (error?.message === "promo_media_fetch_failed") throw error;
+    throw new Error("promo_media_fetch_failed");
+  }
   const image = imageFactory();
   image.alt = `Найденная фотография ${teaser.photo_id}`;
   image.className = "promo-teaser";
-  image.src = urlApi.createObjectURL(blob);
-  if (typeof image.decode === "function") await image.decode();
-  else await new Promise((resolve, reject) => {
-    image.addEventListener("load", resolve, { once: true });
-    image.addEventListener("error", () => reject(new Error("promo_media_decode_failed")), { once: true });
-  });
+  const objectUrl = urlApi.createObjectURL(blob);
+  // Register immediately so timeout/stale cleanup also covers previews that
+  // finish after Promise.all has already rejected.
+  onObjectUrl?.(objectUrl);
+  image.src = objectUrl;
+  try {
+    throwIfOperationAborted(signal);
+    if (typeof image.decode === "function") await image.decode();
+    else await new Promise((resolve, reject) => {
+      image.addEventListener("load", resolve, { once: true });
+      image.addEventListener("error", () => reject(new Error("promo_media_decode_failed")), { once: true });
+    });
+    throwIfOperationAborted(signal);
+  } catch (error) {
+    if (signal?.aborted) throw operationAbortedError();
+    if (error?.message === "promo_media_decode_failed") throw error;
+    throw new Error("promo_media_decode_failed");
+  }
   return image;
 }
 
@@ -433,6 +467,9 @@ export class PromoDisplayController {
     clock = () => globalThis.performance?.now?.(),
     setTimeoutImpl = (callback, delay) => globalThis.setTimeout(callback, delay),
     clearTimeoutImpl = (timer) => globalThis.clearTimeout(timer),
+    setLoadingTimeoutImpl = (callback, delay) => globalThis.setTimeout(callback, delay),
+    clearLoadingTimeoutImpl = (timer) => globalThis.clearTimeout(timer),
+    loadingDeadlineMs = DISPLAY_LOADING_DEADLINE_MS,
     requireDisplayConfig = false,
     origin = defaultOrigin(),
   } = {}) {
@@ -452,23 +489,160 @@ export class PromoDisplayController {
     this.clock = clock;
     this.setTimeoutImpl = setTimeoutImpl;
     this.clearTimeoutImpl = clearTimeoutImpl;
+    this.setLoadingTimeoutImpl = setLoadingTimeoutImpl;
+    this.clearLoadingTimeoutImpl = clearLoadingTimeoutImpl;
+    this.loadingDeadlineMs = loadingDeadlineMs;
     this.requireDisplayConfig = requireDisplayConfig;
     this.origin = origin;
     this.generation = 0;
     this.isVisible = false;
     this.displayExpiryTimer = null;
+    this.pendingControllers = new Set();
+    this.displayConfigurationOperations = new Map();
+    this.previewResources = new Set();
+    this.renderedCard = null;
   }
 
-  async loadDisplayConfiguration() {
-    const response = await this.fetchImpl(DISPLAY_CONFIG_PATH, {
-      headers: getDisplayRequestHeaders(),
-      credentials: "same-origin",
-      cache: "no-store",
-    });
-    if (response?.status !== 200 || !response?.ok || typeof response.json !== "function") {
-      throw new Error("promo_display_configuration_unavailable");
+  beginPreviewResource() {
+    const resource = { objectUrls: new Set(), released: false };
+    this.previewResources.add(resource);
+    return resource;
+  }
+
+  registerPreviewObjectUrl(resource, objectUrl) {
+    if (!resource || typeof objectUrl !== "string" || !objectUrl) return;
+    if (resource.released) {
+      this.revokePreviewObjectUrl(objectUrl);
+      return;
     }
-    return validateDisplayConfiguration(await response.json());
+    resource.objectUrls.add(objectUrl);
+  }
+
+  revokePreviewObjectUrl(objectUrl) {
+    if (typeof this.urlApi?.revokeObjectURL !== "function") return;
+    try {
+      this.urlApi.revokeObjectURL(objectUrl);
+    } catch {
+      // Cleanup must not mask the result/failure path.
+    }
+  }
+
+  releasePreviewResource(resource) {
+    if (!resource || resource.released) return;
+    resource.released = true;
+    for (const objectUrl of resource.objectUrls) {
+      this.revokePreviewObjectUrl(objectUrl);
+    }
+    resource.objectUrls.clear();
+    this.previewResources.delete(resource);
+  }
+
+  releasePreviewResources() {
+    for (const resource of [...this.previewResources]) {
+      this.releasePreviewResource(resource);
+    }
+  }
+
+  removeRenderedCard() {
+    const card = this.renderedCard;
+    this.renderedCard = null;
+    if (!card) return;
+    const children = Array.from(
+      this.container.childNodes ?? this.container.children ?? [],
+    );
+    if (!children.includes(card)) return;
+    this.container.replaceChildren(...children.filter((child) => child !== card));
+  }
+
+  beginPendingOperation() {
+    const controller = new AbortController();
+    this.pendingControllers.add(controller);
+    return controller;
+  }
+
+  endPendingOperation(controller) {
+    this.pendingControllers.delete(controller);
+  }
+
+  cancelPendingWork() {
+    const controllers = new Set(this.pendingControllers);
+    for (const operation of this.displayConfigurationOperations.values()) {
+      controllers.add(operation.controller);
+    }
+    for (const controller of controllers) controller.abort();
+  }
+
+  cancelDisplayConfiguration(attemptId) {
+    const operation = this.displayConfigurationOperations.get(String(attemptId ?? ""));
+    operation?.controller.abort();
+  }
+
+  runWithDeadline(operation, { controller, timeoutMs, timeoutError }) {
+    const signal = controller?.signal;
+    const work = Promise.resolve(operation);
+    let timer = null;
+    let abortListener = null;
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const settle = (callback, value) => {
+        if (settled) return;
+        settled = true;
+        callback(value);
+      };
+      work.then(
+        (value) => settle(resolve, value),
+        (error) => settle(reject, error),
+      );
+      if (signal?.aborted) {
+        settle(reject, operationAbortedError());
+        return;
+      }
+      abortListener = () => settle(reject, operationAbortedError());
+      signal?.addEventListener("abort", abortListener, { once: true });
+      timer = this.setLoadingTimeoutImpl(() => {
+        settle(reject, timeoutError);
+        controller?.abort();
+      }, timeoutMs);
+    }).finally(() => {
+      if (timer !== null) this.clearLoadingTimeoutImpl(timer);
+      signal?.removeEventListener("abort", abortListener);
+    });
+  }
+
+  async loadDisplayConfiguration({ attemptId } = {}) {
+    const controller = this.beginPendingOperation();
+    const key = attemptId === undefined ? controller : String(attemptId);
+    if (attemptId !== undefined) this.cancelDisplayConfiguration(attemptId);
+    const operation = { controller };
+    this.displayConfigurationOperations.set(key, operation);
+    const work = Promise.resolve().then(async () => {
+      const response = await this.fetchImpl(DISPLAY_CONFIG_PATH, {
+        headers: getDisplayRequestHeaders(),
+        credentials: "same-origin",
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      throwIfOperationAborted(controller.signal);
+      if (response?.status !== 200 || !response?.ok || typeof response.json !== "function") {
+        throw new Error("promo_display_configuration_unavailable");
+      }
+      const payload = await response.json();
+      throwIfOperationAborted(controller.signal);
+      return validateDisplayConfiguration(payload);
+    });
+    const pending = this.runWithDeadline(work, {
+      controller,
+      timeoutMs: this.loadingDeadlineMs,
+      timeoutError: new Error("promo_display_configuration_timeout"),
+    });
+    const cleanup = () => {
+      if (this.displayConfigurationOperations.get(key) === operation) {
+        this.displayConfigurationOperations.delete(key);
+      }
+      this.endPendingOperation(controller);
+    };
+    pending.then(cleanup, cleanup);
+    return pending;
   }
 
   clearDisplayExpiryTimer() {
@@ -484,9 +658,11 @@ export class PromoDisplayController {
     this.displayExpiryTimer = this.setTimeoutImpl(() => {
       this.displayExpiryTimer = null;
       if (generation !== this.generation || !this.isVisible) return;
+      this.cancelPendingWork();
       this.generation += 1;
       this.isVisible = false;
-      this.container.replaceChildren();
+      this.removeRenderedCard();
+      this.releasePreviewResources();
       this.onExpired(Object.freeze({
         handled: true,
         stale: false,
@@ -507,24 +683,27 @@ export class PromoDisplayController {
           qr_fully_visible_elapsed_ms: qrFullyVisibleElapsedMs,
         }
       : { schema_version: 1, status };
-    const abortController = new AbortController();
-    const timeout = globalThis.setTimeout(
-      () => abortController.abort(),
-      DISPLAY_ACK_TIMEOUT_MS,
-    );
-    try {
+    const controller = this.beginPendingOperation();
+    const work = Promise.resolve().then(async () => {
       const response = await this.fetchImpl(path, {
         method: "PUT",
         headers: getDisplayRequestHeaders({ "Content-Type": "application/json" }),
         credentials: "same-origin",
         cache: "no-store",
-        signal: abortController.signal,
+        signal: controller.signal,
         body: JSON.stringify(body),
       });
       if (!response?.ok) throw new Error("promo_display_acknowledgement_failed");
       return { status: response.status };
+    });
+    try {
+      return await this.runWithDeadline(work, {
+        controller,
+        timeoutMs: DISPLAY_ACK_TIMEOUT_MS,
+        timeoutError: new Error("promo_display_acknowledgement_timeout"),
+      });
     } finally {
-      globalThis.clearTimeout(timeout);
+      this.endPendingOperation(controller);
     }
   }
 
@@ -542,10 +721,14 @@ export class PromoDisplayController {
   }
 
   async showResult({ attemptId, result, timing, displayConfig }) {
+    this.cancelPendingWork();
+    this.removeRenderedCard();
+    this.releasePreviewResources();
     const generation = ++this.generation;
     this.clearDisplayExpiryTimer();
     this.isVisible = false;
     let normalized;
+    let previewResource = null;
     try {
       normalized = validatePromoResult(result, { origin: this.origin });
       const configuration = displayConfig === undefined
@@ -554,15 +737,37 @@ export class PromoDisplayController {
       if (this.requireDisplayConfig && configuration === null) {
         throw new Error("promo_display_configuration_missing");
       }
-      const images = await Promise.all(
-        normalized.teasers.map((teaser) => loadPreview({
-          teaser,
-          fetchImpl: this.fetchImpl,
-          imageFactory: this.imageFactory,
-          urlApi: this.urlApi,
-        })),
-      );
-      if (generation !== this.generation) return { stale: true, attemptId };
+      previewResource = this.beginPreviewResource();
+      const previewController = this.beginPendingOperation();
+      let images;
+      try {
+        images = await this.runWithDeadline(
+          Promise.all(
+            normalized.teasers.map((teaser) => loadPreview({
+              teaser,
+              fetchImpl: this.fetchImpl,
+              imageFactory: this.imageFactory,
+              urlApi: this.urlApi,
+              signal: previewController.signal,
+              onObjectUrl: (objectUrl) => this.registerPreviewObjectUrl(previewResource, objectUrl),
+            })),
+          ),
+          {
+            controller: previewController,
+            timeoutMs: this.loadingDeadlineMs,
+            timeoutError: new Error("promo_media_timeout"),
+          },
+        );
+      } catch (error) {
+        previewController.abort();
+        throw error;
+      } finally {
+        this.endPendingOperation(previewController);
+      }
+      if (generation !== this.generation) {
+        this.releasePreviewResource(previewResource);
+        return { stale: true, attemptId };
+      }
 
       const card = this.document.createElement("section");
       card.className = "view-card promo-card";
@@ -581,6 +786,7 @@ export class PromoDisplayController {
       qrPanel.append(qr.svg);
       card.append(qrPanel);
       this.container.replaceChildren(card);
+      this.renderedCard = card;
       this.isVisible = true;
       const bounds = qr.svg.getBoundingClientRect?.();
       if (bounds && (bounds.width <= 0 || bounds.height <= 0)) {
@@ -598,10 +804,16 @@ export class PromoDisplayController {
             status: "confirmed",
             qrFullyVisibleElapsedMs,
           });
-          if (generation !== this.generation) return { stale: true, attemptId };
+          if (generation !== this.generation) {
+            this.releasePreviewResource(previewResource);
+            return { stale: true, attemptId };
+          }
           acknowledgement = { sent: true, status: 200 };
         } catch {
-          if (generation !== this.generation) return { stale: true, attemptId };
+          if (generation !== this.generation) {
+            this.releasePreviewResource(previewResource);
+            return { stale: true, attemptId };
+          }
           acknowledgement = { sent: false, reason: "acknowledgement_failed" };
           const detail = Object.freeze({
             handled: true,
@@ -616,6 +828,8 @@ export class PromoDisplayController {
             acknowledgement,
           });
           this.isVisible = false;
+          this.removeRenderedCard();
+          this.releasePreviewResource(previewResource);
           this.onFailure(detail);
           return detail;
         }
@@ -639,13 +853,18 @@ export class PromoDisplayController {
       this.onComplete(detail);
       return detail;
     } catch (error) {
-      if (generation !== this.generation) return { stale: true, attemptId };
+      if (generation !== this.generation) {
+        this.releasePreviewResource(previewResource);
+        return { stale: true, attemptId };
+      }
       const reason = error?.message === "promo_qr_not_visible"
         ? "render_failure"
         : error?.message === "promo_media_decode_failed"
           ? "media_decode_failure"
-          : error?.message === "promo_media_fetch_failed"
-            ? "media_failure"
+            : error?.message === "promo_media_fetch_failed"
+              ? "media_failure"
+            : error?.message === "promo_media_timeout"
+              ? "media_failure"
             : error?.message?.startsWith("promo_display_configuration")
               ? "configuration_failure"
             : "invalid_result";
@@ -656,10 +875,16 @@ export class PromoDisplayController {
             sessionId: normalized.session_id,
             status: "failed",
           });
-          if (generation !== this.generation) return { stale: true, attemptId };
+          if (generation !== this.generation) {
+            this.releasePreviewResource(previewResource);
+            return { stale: true, attemptId };
+          }
           acknowledgement = { sent: true, status: 200 };
         } catch {
-          if (generation !== this.generation) return { stale: true, attemptId };
+          if (generation !== this.generation) {
+            this.releasePreviewResource(previewResource);
+            return { stale: true, attemptId };
+          }
           acknowledgement = { sent: false, reason: "acknowledgement_failed" };
         }
       }
@@ -673,6 +898,8 @@ export class PromoDisplayController {
         acknowledgement,
       });
       this.isVisible = false;
+      this.removeRenderedCard();
+      this.releasePreviewResource(previewResource);
       this.onFailure(detail);
       return detail;
     }

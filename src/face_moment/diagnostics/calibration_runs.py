@@ -139,6 +139,8 @@ class CalibrationRun(Base):
 
 @dataclass(frozen=True, slots=True)
 class CalibrationRunComparison:
+    """Stored results sharing a derived data hash, excluding evaluation settings."""
+
     before_run_id: uuid.UUID
     after_run_id: uuid.UUID
     dataset_sha256: str
@@ -266,14 +268,16 @@ class CalibrationRunRepository:
         after = self.require(after_run_id)
         if before.status != CalibrationRunStatus.COMPLETE or after.status != CalibrationRunStatus.COMPLETE:
             raise CalibrationRunError("only complete Calibration runs are comparable")
-        if before.dataset_sha256 != after.dataset_sha256:
+        before_dataset_sha256 = _comparison_dataset_sha256(before.dataset_snapshot)
+        after_dataset_sha256 = _comparison_dataset_sha256(after.dataset_snapshot)
+        if before_dataset_sha256 != after_dataset_sha256:
             raise DatasetMismatchError("dataset_mismatch")
         assert before.result_bundle is not None
         assert after.result_bundle is not None
         return CalibrationRunComparison(
             before_run_id=before.id,
             after_run_id=after.id,
-            dataset_sha256=before.dataset_sha256,
+            dataset_sha256=before_dataset_sha256,
             before_result=before.result_bundle,
             after_result=after.result_bundle,
         )
@@ -300,7 +304,7 @@ class CalibrationRunService:
         spa_id, photos = freeze_calibration_photos(self._session, photo_ids=photo_ids)
         from face_moment.diagnostics.ground_truth_annotations import GroundTruthAnnotationProvider
 
-        attempts = _frozen_attempts(
+        attempts, selected_attempt_snapshot, selection_exclusions = _frozen_attempt_selection(
             self._session,
             GroundTruthAnnotationProvider(self._session),
             selected_attempt_ids,
@@ -308,6 +312,8 @@ class CalibrationRunService:
         snapshot: dict[str, object] = {
             "spa_id": str(spa_id),
             "photos": list(photos),
+            "selected_attempt_ids": selected_attempt_snapshot,
+            "selection_exclusions": selection_exclusions,
             "attempts": attempts,
             "pipeline_revisions": {
                 "sface": str(_require_uuid(sface_revision_id, "sface_revision_id")),
@@ -730,6 +736,14 @@ def _json_sha256(value: Mapping[str, object]) -> str:
     return hashlib.sha256(_canonical_json(value)).hexdigest()
 
 
+def _comparison_dataset_sha256(snapshot: Mapping[str, object]) -> str:
+    """Hash frozen data without changing the persisted full-input fingerprint."""
+    data = dict(snapshot)
+    for field in ("pipeline_revisions", "serving_values", "candidate_values"):
+        data.pop(field, None)
+    return _json_sha256(data)
+
+
 def _canonical_json(value: object) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
 
@@ -751,27 +765,33 @@ def _snapshot_uuid(value: object, field: str) -> uuid.UUID:
         raise CalibrationRunError(f"stored {field} must be a UUID") from error
 
 
-def _frozen_attempts(
+def _frozen_attempt_selection(
     session: Session,
     annotation_provider: GroundTruthAnnotationProvider,
     selected_attempt_ids: Sequence[uuid.UUID],
-) -> list[dict[str, object]]:
+) -> tuple[list[dict[str, object]], list[str], list[dict[str, str]]]:
     from face_moment.promo.attempt import PromoAttempt
 
     if not selected_attempt_ids:
-        raise CalibrationRunError("Calibration requires applicable annotated Attempts")
+        raise CalibrationRunError("Calibration requires selected Attempts")
     frozen: list[dict[str, object]] = []
+    selected: list[str] = []
+    exclusions: list[dict[str, str]] = []
     identifiers: set[uuid.UUID] = set()
     for attempt_id in selected_attempt_ids:
         attempt_id = _require_uuid(attempt_id, "Attempt")
         if attempt_id in identifiers:
             raise CalibrationRunError("selected Attempts must be unique")
         identifiers.add(attempt_id)
+        selected.append(str(attempt_id))
         attempt = session.get(PromoAttempt, attempt_id)
         if attempt is None:
             raise CalibrationRunError("selected Attempt is missing")
         calculation = annotation_provider.calculation_snapshot(attempt_id=attempt_id)
         if not calculation.annotations:
+            exclusions.append(
+                {"attempt_id": str(attempt_id), "reason": "missing_ground_truth"}
+            )
             continue
         threshold = _finite_snapshot_value(attempt.threshold, "Attempt threshold")
         frozen.append(
@@ -793,9 +813,7 @@ def _frozen_attempts(
                 ],
             }
         )
-    if not frozen:
-        raise CalibrationRunError("Calibration requires applicable annotated Attempts")
-    return frozen
+    return frozen, selected, exclusions
 
 
 def _result_bundle_for_run(
@@ -810,23 +828,28 @@ def _result_bundle_for_run(
         return result
     profile, recommendation = composed
     result["threshold_profiles"] = [profile.to_dict()]
-    result["serving_recommendations"] = [recommendation]
+    if recommendation is not None:
+        result["serving_recommendations"] = [recommendation]
     return result
 
 
 def _compose_balance_recommendation(
     snapshot: Mapping[str, object],
-) -> tuple[ThresholdProfileResult, dict[str, object]] | None:
+) -> tuple[ThresholdProfileResult, dict[str, object] | None] | None:
     serving = snapshot.get("serving_values")
     revisions = snapshot.get("pipeline_revisions")
     attempts = snapshot.get("attempts")
+    selected_attempt_ids = snapshot.get("selected_attempt_ids")
     if (
         not isinstance(serving, Mapping)
         or not isinstance(revisions, Mapping)
         or not isinstance(attempts, list)
-        or not attempts
+        or not isinstance(selected_attempt_ids, list)
+        or not selected_attempt_ids
+        or any(not isinstance(attempt_id, str) for attempt_id in selected_attempt_ids)
     ):
         return None
+    selected_attempt_count = len(selected_attempt_ids)
 
     pipeline_code_value = serving.get("pipeline_code")
     pipeline_revision_value = serving.get("pipeline_revision_id")
@@ -867,9 +890,17 @@ def _compose_balance_recommendation(
         parsed_attempts.append((attempt_id, threshold, annotations))
 
     thresholds = {threshold for _attempt_id, threshold, _rows in parsed_attempts}
-    if len(thresholds) != 1:
+    if len(thresholds) > 1:
         return None
-    threshold = next(iter(thresholds))
+    if thresholds:
+        threshold = next(iter(thresholds))
+    else:
+        try:
+            threshold = _finite_snapshot_value(
+                serving.get("reference_threshold"), "serving reference threshold"
+            )
+        except CalibrationRunError:
+            return None
     counts = {"correct": 0, "false": 0, "missed": 0}
     contributing: list[str] = []
     for attempt_id, _threshold, annotations in parsed_attempts:
@@ -896,12 +927,12 @@ def _compose_balance_recommendation(
                 contributing_attempt_ids=tuple(contributing),
             ),
         ),
-        selected_attempt_count=len(attempts),
+        selected_attempt_count=selected_attempt_count,
         applicable_attempt_count=len(parsed_attempts),
     )
     proposal = profile.profiles["balance"].proposal
     if proposal is None:
-        return None
+        return profile, None
     quality_settings = serving.get("quality_settings")
     if not isinstance(quality_settings, Mapping):
         raise CalibrationRunError("stored serving quality settings are malformed")

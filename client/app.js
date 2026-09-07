@@ -254,7 +254,15 @@ function showCommunicationNotice(detail) {
 function discardDisplayConfiguration(attemptId) {
   const pending = displayConfigSnapshots.get(attemptId);
   displayConfigSnapshots.delete(attemptId);
+  promoDisplayController?.cancelDisplayConfiguration?.(attemptId);
   void Promise.resolve(pending).catch(() => {});
+}
+
+function isCurrentResultAttempt(attemptId) {
+  return (
+    attemptOutcomeController?.state === "result" &&
+    String(attemptOutcomeController?.resultAttemptId ?? "") === String(attemptId ?? "")
+  );
 }
 
 function newRealtimeAttemptId() {
@@ -343,13 +351,17 @@ async function submitReadyReferenceSeries(detail, proposals) {
 
 window.addEventListener("face-moment:attempt-request-start", (event) => {
   try {
+    const attemptId = event.detail?.attemptId;
     attemptOutcomeController?.beginAttempt({
-      attemptId: event.detail?.attemptId,
+      attemptId,
       captureId: event.detail?.captureId,
     });
-    const configuration = promoDisplayController?.loadDisplayConfiguration?.();
+    const configuration = promoDisplayController?.loadDisplayConfiguration?.({ attemptId });
     if (configuration) {
-      displayConfigSnapshots.set(event.detail?.attemptId, configuration);
+      // Observe the rejection at request start. The result event may arrive
+      // later, while the display configuration request is still pending.
+      void Promise.resolve(configuration).catch(() => {});
+      displayConfigSnapshots.set(attemptId, configuration);
     }
   } catch {
     document.body.dataset.attemptState =
@@ -394,25 +406,34 @@ window.addEventListener("face-moment:attempt-outcome", (event) => {
   const timing = attemptTimingSnapshots.get(detail?.attemptId);
   attemptTimingSnapshots.delete(detail?.attemptId);
   const configuration = displayConfigSnapshots.get(detail?.attemptId);
-  displayConfigSnapshots.delete(detail?.attemptId);
   if (detail?.outcome !== "result") {
-    void Promise.resolve(configuration).catch(() => {});
+    discardDisplayConfiguration(detail?.attemptId);
     return;
   }
-  void Promise.resolve(configuration)
-    .then((displayConfig) => promoDisplayController?.showResult({
-      attemptId: detail.attemptId,
-      result: detail.result,
-      timing,
-      displayConfig,
-    }))
-    .catch(() => {
-      void promoDisplayController?.showResult({
+  displayConfigSnapshots.delete(detail?.attemptId);
+  const render = Promise.resolve(configuration).then(
+    (displayConfig) => {
+      if (!isCurrentResultAttempt(detail.attemptId)) return;
+      return promoDisplayController?.showResult({
+        attemptId: detail.attemptId,
+        result: detail.result,
+        timing,
+        displayConfig,
+      });
+    },
+    () => {
+      if (!isCurrentResultAttempt(detail.attemptId)) return;
+      // A failed configuration request is a render failure. Keep the
+      // mandatory configuration requirement in force; never render a result
+      // through the old no-config fallback.
+      return promoDisplayController?.showResult({
         attemptId: detail.attemptId,
         result: detail.result,
         timing,
       });
-    });
+    },
+  );
+  void render.catch(() => {});
 });
 
 function returnToAdvertisingAfterPromoFailure(detail) {

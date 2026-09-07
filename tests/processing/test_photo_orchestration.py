@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timezone
 import hashlib
+from io import BytesIO
 import uuid
 
 import cv2
 import numpy as np
 import pytest
+from PIL import Image
 from alembic import command as alembic_command
 from alembic.config import Config
 from sqlalchemy import create_engine, select, text
@@ -18,7 +20,13 @@ from sqlalchemy.orm import Session
 from face_moment.infrastructure.object_store import PrivateObjectStore, ensure_bucket
 from face_moment.infrastructure.settings import Settings
 from face_moment.inventory.photo_persistence import Photo
-from face_moment.inventory.validation import CapturedAtSource
+from face_moment.inventory.admission import AdmissionCandidate, AtomicPhotoAdmission
+from face_moment.inventory.candidate_staging import CandidateStager
+from face_moment.inventory.validation import (
+    CapturedAtSource,
+    JpegValidationLimits,
+    validate_jpeg_candidate,
+)
 from face_moment.processing.derivatives import (
     DerivativeEncoding,
     DerivativeEncodingConfig,
@@ -53,17 +61,22 @@ class _RecordingAdapter:
         label: str,
         terminal_faces: tuple[TerminalFace, ...] = (),
         failure: Exception | None = None,
+        expected_pixels: np.ndarray | None = None,
     ) -> None:
         self.pipeline_revision_id = pipeline_revision_id
         self.label = label
         self.terminal_faces = terminal_faces
         self.failure = failure
+        self.expected_pixels = expected_pixels
         self.calls: list[str] = []
 
     def process_for_terminal(
         self, photo: np.ndarray[tuple[int, int, int], np.dtype[np.uint8]]
     ) -> tuple[TerminalFace, ...]:
-        assert photo.shape == (12, 20, 3)
+        if self.expected_pixels is None:
+            assert photo.shape == (12, 20, 3)
+        else:
+            np.testing.assert_array_equal(photo, self.expected_pixels)
         self.calls.append(self.label)
         if self.failure is not None:
             raise self.failure
@@ -174,6 +187,7 @@ def _claimed_fixture(
         )
         photo = Photo(
             spa_id=target.spa_id,
+            admission_pipeline_revision_id=revision.id,
             visit_date=date(2026, 8, 13),
             captured_at=datetime(2026, 8, 13, 9, 0, tzinfo=timezone.utc),
             captured_at_source=CapturedAtSource.UPLOAD_STARTED_AT,
@@ -379,3 +393,134 @@ def test_orchestration_delegates_an_injected_failure_to_the_claim_boundary(
     assert sface.calls == ["sface"]
     assert buffalo.calls == []
     assert _runtime_snapshot(engine) == _CANONICAL_RUNTIME
+
+
+@pytest.mark.parametrize("orientation", [None, 6, 8])
+@pytest.mark.parametrize("out_of_bounds", [False, True], ids=["valid", "out-of-bounds"])
+def test_admitted_exif_coordinates_reach_terminal_publication(
+    disposable_processing_state: tuple[Engine, PrivateObjectStore, str, list[str]],
+    orientation: int | None,
+    out_of_bounds: bool,
+) -> None:
+    engine, object_store, run_prefix, derivative_prefixes = disposable_processing_state
+    # An asymmetric left/right pattern distinguishes clockwise from anticlockwise.
+    pixels = np.zeros((10, 30, 3), dtype=np.uint8)
+    pixels[:, :10] = (240, 30, 20)
+    pixels[:, 10:20] = (20, 220, 30)
+    pixels[:, 20:] = (20, 30, 240)
+    exif = Image.Exif()
+    if orientation is not None:
+        exif[0x0112] = orientation
+    output = BytesIO()
+    Image.fromarray(pixels).save(output, format="JPEG", quality=100, exif=exif)
+    original = output.getvalue()
+    encoded_pixels = cv2.imdecode(
+        np.frombuffer(original, dtype=np.uint8),
+        cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION,
+    )
+    expected_pixels = (
+        np.rot90(encoded_pixels, k=-1 if orientation == 6 else 1).copy()
+        if orientation in (6, 8)
+        else encoded_pixels
+    )
+    expected_height, expected_width = expected_pixels.shape[:2]
+    now = datetime(2026, 8, 13, 9, 0, tzinfo=timezone.utc)
+    with Session(engine) as session:
+        revision = PipelineRevisionRepository(session).publish_eligible(
+            pipeline_code=PipelineCode.OPENCV_SFACE,
+            validated_at=now,
+            detector_id="exif-detector", detector_version="v1",
+            recognizer_id="exif-recognizer", recognizer_version="v1",
+            weights_sha256="0" * 64,
+            preprocessing_version="v1", alignment_version="v1",
+            normalization_version="v1", embedding_dimension=3,
+        )
+        target = IngestTargetRepository(session).configure_spa(
+            name=f"exif-{uuid.uuid4().hex}", timezone="Asia/Dushanbe",
+            serving_pipeline_revision_id=revision.id,
+        )
+        session.commit()
+    staged = CandidateStager(object_store, key_prefix=run_prefix).stage(original)
+    validated = validate_jpeg_candidate(
+        original, visit_date=now.date(), spa_timezone="Asia/Dushanbe",
+        upload_started_at=now, limits=JpegValidationLimits(50_000, 32, 800),
+    )
+    with Session(engine) as session:
+        photo = AtomicPhotoAdmission(session).publish(
+            ingest_target=target, uploader_id=uuid.uuid4(),
+            candidate=AdmissionCandidate(staged, validated),
+        )
+        photo_id, revision_id = photo.id, photo.admission_pipeline_revision_id
+    derivative_prefixes.append(f"private/derivatives/{photo_id}/{revision_id}/")
+    with Session(engine) as session:
+        claim = WorkerClaimRepository(
+            session, bound_pipeline_revision_id=revision_id
+        ).claim_oldest_pending()
+        assert claim is not None and claim.photo_id == photo_id
+        session.commit()
+
+    face_y = 15.0 if orientation in (6, 8) else 2.0
+    landmarks = [[2.0, face_y], [6.0, face_y], [4.0, face_y + 2],
+                 [3.0, face_y + 4], [5.0, face_y + 4]]
+    face = replace(
+        _terminal_face(), bbox_x=float(expected_width - 2) if out_of_bounds else 2.0,
+        bbox_y=face_y, bbox_w=5.0, bbox_h=5.0, landmarks_json=landmarks,
+    )
+    adapter = _RecordingAdapter(
+        pipeline_revision_id=revision_id, label="sface", terminal_faces=(face,),
+        expected_pixels=expected_pixels,
+    )
+    result = PhotoProcessingOrchestrator(
+        session_factory=lambda: Session(engine), object_store=object_store,
+        sface_adapter=adapter,
+        buffalo_adapter=_RecordingAdapter(pipeline_revision_id=uuid.uuid4(), label="unused"),
+        derivative_creator=PrivatePhotoDerivativeCreator(
+            object_store, encoding=DerivativeEncodingConfig(
+                preview=DerivativeEncoding(maximum_edge=24, jpeg_quality=100),
+                thumbnail=DerivativeEncoding(maximum_edge=12, jpeg_quality=100),
+            ),
+        ),
+    ).process_claimed(photo_id=photo_id, pipeline_revision_id=revision_id)
+    assert adapter.calls == ["sface"]
+    assert result == ("pending" if out_of_bounds else "ready")
+    assert object_store.read(key=staged.key) == original
+    with Session(engine) as session:
+        persisted = session.get(Photo, photo_id)
+        assert persisted is not None
+        assert (persisted.width, persisted.height) == (expected_width, expected_height)
+        assert persisted.checksum_sha256 == hashlib.sha256(original).digest()
+        assert persisted.original_byte_size == len(original)
+        state = session.get(PhotoPipelineState, (photo_id, revision_id))
+        assert state is not None
+        faces = list(session.scalars(select(PhotoFace).where(PhotoFace.photo_id == photo_id)))
+        if out_of_bounds:
+            assert result == state.status == "pending"
+            assert state.last_error == "processing failed"
+            assert state.searchable_at is None
+            assert state.preview_object_key is state.thumbnail_object_key is None
+            assert faces == []
+            return
+        assert result == state.status == "ready"
+        assert state.searchable_at is not None
+        assert len(faces) == 1
+        assert (faces[0].bbox_x, faces[0].bbox_y, faces[0].bbox_w, faces[0].bbox_h) == (
+            2.0, face_y, 5.0, 5.0,
+        )
+        assert faces[0].landmarks_json == landmarks
+        for key, edge in ((state.preview_object_key, 24), (state.thumbnail_object_key, 12)):
+            assert key is not None
+            derivative = cv2.imdecode(
+                np.frombuffer(object_store.read(key=key), dtype=np.uint8), cv2.IMREAD_COLOR
+            )
+            width, height = (
+                (edge // 3, edge) if orientation in (6, 8) else (edge, edge // 3)
+            )
+            assert derivative.shape == (height, width, 3)
+            expected = cv2.resize(expected_pixels, (width, height), interpolation=cv2.INTER_AREA)
+            # JPEG chroma subsampling affects boundaries; the three block centres
+            # must retain the independently rotated colour order in both artifacts.
+            for fraction in (1 / 6, 1 / 2, 5 / 6):
+                x, y = (width // 2, int(height * fraction)) if orientation in (6, 8) else (
+                    int(width * fraction), height // 2
+                )
+                np.testing.assert_allclose(derivative[y, x], expected[y, x], atol=35)
