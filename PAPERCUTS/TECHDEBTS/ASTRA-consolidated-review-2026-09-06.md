@@ -1,13 +1,11 @@
 # ASTRA — findings и порядок исправления
 
-Аудит от 2026-09-06, commit `0a46dc8`. 2 незакрытых findings. Исходная нумерация сохранена. Проверки выполнены локально; работающий deployment не проверялся. Пути и номера строк относятся к версии аудита.
+Аудит от 2026-09-06, commit `0a46dc8`. Все 13 findings исправлены и приняты; № 10 прошёл isolated packaged smoke 2026-09-07. Исходная нумерация сохранена. Проверки выполнены локально; работающий deployment не проверялся. Пути и номера строк относятся к версии аудита.
 
 ## Очередь исправлений
 
 | Порядок | Finding | Исполнитель | Серьёзность | Сложность /10 | Файлы /10 | Примерно файлов | Blast radius /10 |
 |---|---|---|---|---:|---:|---:|---:|
-| 9 | Утечка Blob URL | **Luna** | MEDIUM | 4 | 3 | 3–4 | 4 |
-| 10 | Устаревший packaged smoke | **Luna** | MEDIUM | 6 | 4 | 5–6 | 4 |
 
 Оценки приблизительные, включают реализацию и тесты:
 
@@ -138,7 +136,7 @@ Config/media fetch и decode не ограничены deadline. Таймер п
 
 **Нюанс:** при отказе одного элемента `Promise.all` другие загрузки продолжаются и могут создать URL уже после общего cleanup. Отслеживать владельца каждого URL и обрабатывать позднее завершение; удаление DOM недостаточно. Regression должен считать созданные/освобождённые URL на успешном цикле и в ветвях отказа. Исходный 100-cycle probe — в приложении.
 
-**Статус:** implementation evidence сохранено, но finding остаётся pending root acceptance из-за incident с out-of-scope database test execution во время executor run. JavaScript evidence (100 циклов `400 created / 400 revoked`, supersede pending render, timeout cleanup и browser-visible advertising) не оценивает влияние на существующие database/volume resources; утверждение о закрытии и об отсутствии production data usage отозвано до read-only fixture audit. [Implementation report](../../.tasks/ASTRA-findings/09-blob-lifecycle/implementation-report.md).
+**Статус:** исправлен и принят root после source-read review и независимой проверки: 52 unit, 11 browser, 100 циклов с 400 созданными и 400 освобождёнными URL. Уточнение оператора о расходных данных сняло preservation blocker. Ошибочный запуск Python-тестов остаётся отдельным incident evidence; безопасность прошлого запуска не утверждается. [Independent review](../../.tasks/ASTRA-findings/09-blob-lifecycle/independent-review.md), [incident](../../.tasks/ASTRA-findings/09-blob-lifecycle/incident-review.md).
 
 ## 10. Устаревший packaged smoke
 
@@ -153,6 +151,8 @@ Smoke запускает роли без обязательного serving/mode
 **Контекст запуска:** `src/face_moment/entrypoints/model_consumers.py`, `src/face_moment/serving_control/ingest_target.py`, `src/face_moment/entrypoints/migrate.py`, migrations и `compose.yaml`.
 
 **Нюанс:** без committed SPA/revision model-consuming роли не становятся healthy; `upgrade head` создаёт product tables; realtime публикует `production_model_loaded` вместо `engine=fake`. Это три независимые устаревшие предпосылки одного smoke. Исправить все три, сохранив изоляцию тестовой инфраструктуры. Успех — smoke проходит с текущими migrations и настоящими readiness prerequisites, а не после ослабления production startup.
+
+**Текущее состояние № 10:** исправлен root по прямому поручению оператора. Реальный isolated packaged smoke прошёл: current migrations, SFace seed/binding, три healthy роли, HTTPS 200/401/404 до и после перезапуска, storage persistence и owned cleanup. Исправлена одна preflight-ошибка чтения null IPAM; первоначальный и успешный логи сохранены. [Handoff и evidence](../../.tasks/ASTRA-findings/10-packaged-smoke/implementation-report.md). Deployment не выполнялся.
 
 ## 11. Calibration запрещает сравнение других параметров
 

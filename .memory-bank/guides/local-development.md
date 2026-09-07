@@ -73,12 +73,40 @@ finding #10.
 
 ## Packaged proof
 
-Before treating the application as deployable, run:
+Before deployment or after changes to packaging/startup, run the packaged smoke
+from the repository root. It requires Docker with Compose, Python 3 and existing
+`models/opencv_sface/{yunet,sface}.onnx` files:
 
 ```bash
 bash scripts/smoke-runtime.sh
 ```
 
-This path builds the image and proves the complete private Compose topology,
-three roles and HTTPS edge. Do not use a bare `docker compose run` as evidence
-that the image contains the current working tree.
+The [script](../../scripts/smoke-runtime.sh) builds current source using
+[Dockerfile](../../Dockerfile) and [compose.yaml](../../compose.yaml). It uses
+a unique project, private subnet, loopback HTTPS port and disposable volumes;
+`--env-file /dev/null` excludes the repository `.env`. Models are mounted read-only.
+
+It checks migrations, a minimal committed SFace/SPA/display-token seed, native
+model binding, all three roles, HTTPS routes and authentication, then storage
+persistence and readiness after dependency/application restarts. It creates no
+Photo or Promo session. This verifies the packaged SFace path; it does not
+establish Buffalo end-to-end readiness, complete other tasks or deploy the server.
+
+The exit trap removes the run's containers, networks, volumes and test image.
+Logs and redacted `compose-topology.json` remain under
+`.tasks/ASTRA-findings/10-packaged-smoke/runtime-<run-id>/`; use `EVIDENCE_DIR`
+to choose another evidence directory. Success requires exit 0 and
+`runtime_smoke=ok`, `owned_cleanup_status=0`, `owned_image_cleanup_status=0`
+in `smoke.log`. On failure, retain that directory for diagnosis.
+
+For server deployment, rebuild from source and consult
+[server parameters](../../SERVER/serverparams.md). The saved topology has
+redacted environment values; it is evidence, not deployable configuration.
+Do not reuse smoke credentials or `smoke-local-v1` fixture version labels as
+production settings. The smoke still verifies the actual model weights SHA-256.
+
+Last full smoke passed on 2026-09-07:
+[log](../../.tasks/ASTRA-findings/10-packaged-smoke/runtime-20260907T043355Z-858117/smoke.log).
+Automatic image cleanup was added afterwards and syntax-checked; the test image
+was removed manually. Detailed historical checks remain in the
+[evidence report](../../.tasks/ASTRA-findings/10-packaged-smoke/implementation-report.md).

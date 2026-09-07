@@ -4,6 +4,19 @@ status: active
 ---
 # Changelog
 
+## [2026-09-07] ASTRA finding 10 — packaged runtime proof
+
+- Updated smoke-runtime.sh and local-development guide for isolated project/network/volumes, migrated product schema, real SFace serving seed and current role readiness.
+- Live packaged smoke passed HTTPS route/auth checks, dependency/application restart, storage persistence and owned cleanup; all 13 ASTRA findings are now accepted. No indexed lifecycle or deployment change.
+- [Retained handoff and evidence](../.tasks/ASTRA-findings/10-packaged-smoke/implementation-report.md): logs, redacted topology and source links for the next deployment agent. User asked to retain useful artifacts and remove the obsolete test image after checks. The image was removed and its cleanup added to the script. The first preflight null-IPAM failure is also retained. Other project tasks remain untouched.
+
+## [2026-09-07] ASTRA findings — operator pause
+
+- Findings 3–9 and 11–13 are accepted; finding 9 source review and independent client gates confirm 52 unit and 11 browser passes, including 400/400 Blob URL cleanup.
+- Finding 10 remains open: accepted plan and read-only preparation only; no script changes or packaged runtime run. Work stopped at operator request.
+- The out-of-scope default-Compose pytest incident remains recorded; disposable-data clarification removes the preservation blocker without establishing retrospective isolation.
+- [Session handoff](../.tasks/ASTRA-findings/session-handoff.md): accepted work, incident evidence and exact continuation boundary. [Consolidated review](../PAPERCUTS/TECHDEBTS/ASTRA-consolidated-review-2026-09-06.md): one remaining finding.
+
 ## [2026-09-06] Wave 5 / Responsive realtime admission
 
 - Closed: [TASK-113-T3-FT-003-W5](tasks/TASK-113-T3-FT-003-W5.task.json), audit finding 2, after root functional PASS and independent semantic-pass.
