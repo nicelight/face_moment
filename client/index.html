@@ -3,21 +3,25 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#101827">
+    <meta name="theme-color" content="#0b1011">
     <title>Face Moment — SpaPromoClient</title>
     <link rel="stylesheet" href="/client/styles.css">
+    <link rel="stylesheet" href="/client/motion-theme.css">
+    <link rel="stylesheet" href="/client/kiosk-theme.css">
+    <link rel="stylesheet" href="/client/signal-progress.css">
   </head>
-  <body>
+  <body class="fm-page fm-kiosk">
     <header class="site-header">
-      <p class="eyebrow">Face Moment</p>
-      <h1>SpaPromoClient</h1>
-      <p class="subtitle">Центральный экран СПА</p>
+      <p class="eyebrow">Face Moment / SpaPromoClient</p>
+      <h1>Ловим моменты.</h1>
+      <p class="subtitle">Экран фотографий для гостей</p>
     </header>
 
     <nav class="navigation" aria-label="Навигация клиента">
       <a href="#advertising">Реклама</a>
       <a href="#configuration">Конфигурация</a>
       <a href="#debug">Диагностика</a>
+      <a href="/staff">Рабочее пространство ↗</a>
     </nav>
 
     <main id="client-view" class="client-view" aria-live="polite"></main>

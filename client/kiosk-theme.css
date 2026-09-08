@@ -1,0 +1,23 @@
+.fm-kiosk { padding: clamp(1.5rem, 5vw, 5rem) !important; }
+.fm-kiosk .site-header h1 { font-weight: 350; letter-spacing: -.06em; }
+.fm-kiosk .eyebrow { color: var(--fm-accent); font-weight: 400; font-size: 11px; letter-spacing: .16em; }
+.fm-kiosk .subtitle { color: var(--fm-muted); }
+.fm-kiosk .navigation { padding-bottom: 1.5rem; border-bottom: 1px solid var(--fm-line); }
+.fm-kiosk .navigation a { font-size: 13px; border-radius: 8px; border-color: var(--fm-line); color: var(--fm-soft); min-height: 44px; display: inline-flex; align-items: center; }
+.fm-kiosk .navigation a:hover, .fm-kiosk .navigation a:focus-visible { border-color: var(--fm-accent); outline-color: var(--fm-accent); color: var(--fm-accent); }
+.fm-kiosk .view-card:not(.promo-card) { border-radius: 20px; border-color: var(--fm-line); background: #111c1bf2; box-shadow: none; }
+.fm-kiosk .view-card:not(.promo-card) h2 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 400; letter-spacing: -.05em; }
+.fm-kiosk .view-card:not(.promo-card) p { color: var(--fm-soft); font-size: 15px; }
+.fm-kiosk :is(.display-client-panel, .sensor-panel, .quality-panel, .camera-panel, .trigger-panel) { border-color: var(--fm-line); }
+.fm-kiosk input, .fm-kiosk select { background: #0b1415; color: var(--fm-text); border: 1px solid #344743; border-radius: 8px; min-height: 48px; padding: .7rem .85rem; font-size: 16px; }
+.fm-kiosk input[type="checkbox"] { min-height: 22px; accent-color: var(--fm-accent); }
+.fm-kiosk h3 { font-weight: 500; letter-spacing: -.025em; }
+.fm-kiosk .notice { border-color: #a78b64; background: #211d14; color: #e4d4b5; }
+.fm-kiosk .communication-notice { z-index: 5; }
+.fm-phone { padding: clamp(1.5rem, 5vw, 3rem) !important; }
+.fm-phone .phone-session { background: var(--fm-panel); border: 1px solid var(--fm-line); border-radius: 20px; }
+.fm-phone h1 { font-weight: 400; letter-spacing: -.055em; }
+.fm-phone .eyebrow { color: var(--fm-accent); }
+.fm-phone .phone-purchase { background: var(--fm-accent); color: #0d211b; border-radius: 10px; }
+.fm-phone .phone-date, .fm-phone .phone-count { color: var(--fm-soft); }
+.fm-phone .phone-teaser-frame { border-color: var(--fm-line); }

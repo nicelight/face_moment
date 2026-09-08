@@ -121,3 +121,7 @@ status: active
   requirement traceability and SDD gate routing.
 
 - [Promo presentation](guides/promo-presentation.md): adaptive paper cards, approved text and display checks.
+- [Motion Atlas presentation](guides/motion-presentation.md): implemented homepages,
+  staff theme, kiosk phase effects, code ownership and public selfie limitations.
+- [Motion Atlas design brief](../.design/motion-atlas-integration/DESIGN_BRIEF.md):
+  operator presets, original discussion and implementation decisions.

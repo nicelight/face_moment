@@ -285,3 +285,53 @@ status: active
 Current lifecycle authority is `.memory-bank/tasks/*.task.json`. Historical
 verification entries inside terminal task records preserve provenance but do
 not override the record's top-level status.
+
+## 2026-09-08 — Local application deployment for operator testing
+
+Rebuilt current source and started the persistent local Compose stack using
+existing storage. Migrated to 0022, provisioned local SFace/SPA/display settings
+and separate operator, photographer and developer accounts. Application roles
+are healthy; HTTPS login and role-scoped page checks passed. Access paths,
+restart command, test settings and verification limits are recorded in
+[local-development.md](guides/local-development.md#persistent-local-testing-stand--2026-09-08).
+
+## 2026-09-08 — Motion Atlas visual integration
+
+Added distinct public and role-aware staff homepages, common staff styling,
+selected motion effects and a phase-driven kiosk loading scene. Existing paper
+Promo and QR continuation retain their behavior. Public camera capture UI is
+presented explicitly as prelaunch: visitor search and payment are not connected;
+gallery upload and Google OAuth remain deferred. See the
+[presentation guide](guides/motion-presentation.md) for ownership, local review
+routes and verification limits.
+
+### Motion Atlas operator visual correction
+
+Restored the original Fluid gradient tiling, color/background and rotation;
+removed the added dark overlay. The operator confirmed that the reference's
+visible rectangular boundaries are intentional. Earlier QA advice to smooth
+those boundaries is superseded. The public portrait frame is now the
+«Найти меня» link; the old hero CTA and registration tagline are removed.
+
+### Fluid browser controls
+
+Added the requested collapsible live-preview sliders on `/site`: spot size,
+drift, speed (including pause), rotation and blur. Values apply immediately
+to the public hero; reset restores the original preset. Settings are local to
+the current page and do not change server configuration.
+
+### Fluid hover zoom
+
+The public «Найти меня» hit area now smoothly enlarges the existing Fluid layers
+to an effective 100% spot size, returning to the slider-selected size on leave.
+The effect uses CSS scale, with no gradient-size animation or JS frame loop.
+Speed tuning now targets only drift animations so pause does not stop hover.
+
+### Fluid hover timing refinement
+
+Per operator feedback, increased the hover target from effective 100% to 200%
+and changed scale easing to a slow 4-second ease-in-out transition. Pointer
+leave reverses smoothly from the current scale; clicking never waits for zoom.
+
+The operator subsequently adjusted the final Fluid hover target to 150%;
+the 4-second transition and smooth return remain unchanged.

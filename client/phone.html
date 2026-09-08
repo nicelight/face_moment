@@ -7,8 +7,10 @@
     <meta name="theme-color" content="#101827">
     <title>Face Moment — ваши фотографии</title>
     <link rel="stylesheet" href="/client/styles.css">
+    <link rel="stylesheet" href="/client/motion-theme.css">
+    <link rel="stylesheet" href="/client/kiosk-theme.css">
   </head>
-  <body class="phone-page">
+  <body class="phone-page fm-page fm-phone">
     <main id="phone-session" class="phone-session" aria-live="polite" hidden>
       <p class="eyebrow">Face Moment</p>
       <h1 id="phone-spa"></h1>
@@ -23,7 +25,7 @@
       </p>
       <a
         id="phone-purchase"
-        class="phone-purchase"
+        class="phone-purchase fm-button"
         href="#"
         rel="noreferrer"
       >Перейти к покупке</a>
@@ -33,5 +35,6 @@
       Загружаем ваши фотографии…
     </p>
     <script type="module" src="/client/phone.js"></script>
+    <script type="module" src="/client/phone-presentation.js"></script>
   </body>
 </html>

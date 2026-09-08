@@ -91,8 +91,13 @@ def create_app() -> FastAPI:
     app.mount("/client", StaticFiles(directory=CLIENT_ROOT), name="promo-client-assets")
 
     @app.get("/", include_in_schema=False)
+    @app.get("/display", include_in_schema=False)
     def promo_client_shell() -> FileResponse:
         return FileResponse(CLIENT_ROOT / "index.html", media_type="text/html")
+
+    @app.get("/site", include_in_schema=False)
+    def public_site() -> FileResponse:
+        return FileResponse(CLIENT_ROOT / "site.html", media_type="text/html")
 
     return app
 

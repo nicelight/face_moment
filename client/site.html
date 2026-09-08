@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1011">
+  <title>Face Moment — ваши моменты, ваши фотографии</title>
+  <link rel="stylesheet" href="/client/motion-theme.css">
+  <link rel="stylesheet" href="/client/site.css">
+</head>
+<body class="fm-page fm-public">
+  <a class="fm-skip-link" href="#main-content">К содержимому</a>
+  <header class="fm-header">
+    <a class="fm-brand" href="/site" aria-label="Face Moment — главная"><span class="fm-brand-mark" aria-hidden="true"></span><span class="fm-brand-name">face<span>moment</span></span></a>
+    <span class="fm-tag">Моменты, которые остаются</span>
+    <details class="fm-nav"><summary>Меню</summary><nav class="fm-nav-links" aria-label="Главное меню"><a href="#how-it-works">Как это работает</a><a href="#selfie">Сделать селфи</a><a href="/staff">Для команды ↗</a></nav></details>
+  </header>
+  <main class="fm-container" id="main-content">
+    <section class="fm-hero fm-public-hero" aria-labelledby="hero-heading">
+      <div class="fm-fluid" aria-hidden="true"><i class="fm-fluid-spot"></i><i class="fm-fluid-spot"></i><i class="fm-fluid-spot"></i><i class="fm-fluid-spot"></i></div>
+      <div class="fm-hero-content">
+        <p class="fm-eyebrow fm-kicker">ВЫ БЫЛИ В МОМЕНТЕ. МЫ ЕГО СОХРАНИЛИ.</p>
+        <h1 id="hero-heading">Ваши моменты.<br>Ваши <em>фото.</em></h1>
+        <p>Одно селфи, чтобы найти себя<br>среди множества красивых кадров.</p>
+      </div>
+      <a class="fm-portrait-outline" href="#selfie"><span class="fm-portrait-art" aria-hidden="true"><span class="fm-portrait-oval"></span><i class="fm-focus-corner"></i><i class="fm-focus-corner"></i><i class="fm-focus-corner"></i><i class="fm-focus-corner"></i><span class="fm-portrait-caption">YOU / IN THE MOMENT</span></span><span class="fm-portrait-action">Найти меня</span></a>
+      <div class="fm-hero-footer"><span class="fm-hero-index">FACE MOMENT / 01</span></div>
+    </section>
+    <section class="fm-workspace" id="how-it-works" aria-labelledby="how-heading">
+      <div class="fm-section-heading"><h2 id="how-heading">Всего один шаг навстречу воспоминаниям</h2><span class="fm-eyebrow">Как это будет работать</span></div>
+      <div class="fm-steps">
+        <article class="fm-step"><span>01 / СЕЛФИ</span><h3>Покажите себя</h3><p>Сделайте селфи прямо здесь. Без аккаунта и лишних действий.</p></article>
+        <article class="fm-step"><span>02 / ВАШИ КАДРЫ</span><h3>Найдите свои моменты</h3><p>Поиск соберёт фотографии с вами, чтобы вы могли увидеть результат.</p></article>
+        <article class="fm-step"><span>03 / НА ПАМЯТЬ</span><h3>Заберите фотографии</h3><p>После оплаты вы получите весь подходящий набор.</p></article>
+      </div>
+    </section>
+    <section class="fm-selfie-section" id="selfie" aria-labelledby="selfie-heading">
+      <div class="fm-selfie-copy"><p class="fm-eyebrow fm-kicker">НАЧНЁМ С ВАС</p><h2 id="selfie-heading">Просто<br>будьте собой.</h2><p>Посмотрите в камеру. Лучше всего — при ровном свете и без солнцезащитных очков.</p><p class="fm-preview-note">Поиск и оплата готовятся к запуску. Сейчас можно проверить камеру и сделать селфи: снимок остаётся только в вашем браузере.</p></div>
+      <div class="fm-selfie-panel">
+        <div class="fm-selfie-viewport"><div id="selfie-placeholder" class="fm-selfie-placeholder"><span class="fm-camera-symbol" aria-hidden="true">◎</span><p>Для начала разрешите доступ к камере</p></div><video id="selfie-video" autoplay playsinline muted hidden aria-label="Предпросмотр камеры"></video><img id="selfie-preview" alt="Ваше селфи перед отправкой" hidden></div>
+        <p id="selfie-status" role="status" aria-live="polite">Камера включится только после нажатия кнопки.</p>
+        <div class="fm-selfie-actions"><button class="fm-button" id="selfie-start" type="button">Включить камеру <span aria-hidden="true">↗</span></button><button class="fm-button" id="selfie-capture" type="button" hidden>Сделать снимок</button><button class="fm-button fm-button-secondary" id="selfie-retake" type="button" hidden>Переснять</button><button class="fm-button" id="selfie-send" type="button" disabled hidden aria-describedby="selfie-status">Поиск скоро появится</button></div>
+      </div>
+    </section>
+  </main>
+  <footer class="fm-footer"><span>© Face Moment · Моменты, которые остаются</span><a href="/staff">Вход для команды ↗</a></footer>
+  <details class="fm-fluid-controls">
+    <summary>Настроить Fluid</summary>
+    <form id="fluid-controls">
+      <p>Меняйте фон и сразу смотрите результат.</p>
+      <label for="fluid-size">Размер пятен <output for="fluid-size">65%</output></label>
+      <input id="fluid-size" name="size" type="range" min="40" max="145" value="65" step="1">
+      <label for="fluid-drift">Размах движения <output for="fluid-drift">70 px</output></label>
+      <input id="fluid-drift" name="drift" type="range" min="0" max="150" value="70" step="1">
+      <label for="fluid-speed">Скорость <output for="fluid-speed">1.4×</output></label>
+      <input id="fluid-speed" name="speed" type="range" min="0" max="4" value="1.4" step="0.1">
+      <label for="fluid-turn">Поворот <output for="fluid-turn">15°</output></label>
+      <input id="fluid-turn" name="turn" type="range" min="0" max="45" value="15" step="1">
+      <label for="fluid-blur">Размытие границ <output for="fluid-blur">0 px</output></label>
+      <input id="fluid-blur" name="blur" type="range" min="0" max="30" value="0" step="1">
+      <p>0× — пауза. Размытие 0 — чёткие грани. Настройки действуют до обновления страницы.</p>
+      <p id="fluid-motion-note" hidden>В системе включено уменьшение движения: анимация отключена.</p>
+      <button type="reset">Вернуть исходные</button>
+    </form>
+  </details>
+  <script type="module" src="/client/fluid-controls.js"></script>
+  <script type="module" src="/client/site-selfie.js"></script>
+</body>
+</html>

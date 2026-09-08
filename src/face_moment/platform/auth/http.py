@@ -4,11 +4,12 @@ from collections.abc import Callable
 from ipaddress import ip_address
 
 from fastapi import Cookie, FastAPI, Header, HTTPException, Request, Response, status
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from face_moment.infrastructure.settings import Settings
+from face_moment.platform.staff_presentation import staff_document, staff_home_document
 from face_moment.platform.auth.sessions import (
     BrowserSession,
     CsrfValidationError,
@@ -34,7 +35,16 @@ def register_staff_session_routes(
 ) -> None:
     @app.get("/staff/login", response_class=HTMLResponse)
     def staff_login_page() -> HTMLResponse:
-        return HTMLResponse(_staff_login_page_html())
+        return HTMLResponse(staff_document(_staff_login_page_html(), "login"))
+
+    @app.get("/staff", response_class=HTMLResponse)
+    def staff_home(fm_staff_session: str | None = Cookie(default=None)) -> Response:
+        with _database_session(session_factory) as database_session:
+            try:
+                principal = get_current_principal(database_session, session_token=fm_staff_session)
+            except InvalidSessionError:
+                return RedirectResponse("/staff/login", status_code=303, headers={"Cache-Control": "no-store"})
+        return HTMLResponse(staff_home_document(principal), headers={"Cache-Control": "no-store"})
 
     @app.post("/api/staff/sessions", status_code=status.HTTP_204_NO_CONTENT)
     def login(request: Request, payload: LoginRequest) -> Response:
@@ -165,11 +175,11 @@ def _staff_login_page_html() -> str:
   <main>
     <h1>Staff login</h1>
     <form id="staff-login-form" method="post">
-      <label for="staff-username">Username</label>
+      <label for="staff-username">Логин</label>
       <input id="staff-username" name="username" type="text" autocomplete="username" required>
-      <label for="staff-password">Password</label>
+      <label for="staff-password">Пароль</label>
       <input id="staff-password" name="password" type="password" autocomplete="current-password" required>
-      <button id="staff-login-submit" type="submit">Sign in</button>
+      <button id="staff-login-submit" type="submit">Войти в пространство <span aria-hidden="true">↗</span></button>
       <p id="staff-login-message" role="alert" aria-live="assertive"></p>
     </form>
   </main>
@@ -200,18 +210,18 @@ def _staff_login_page_html() -> str:
           body: JSON.stringify({username: usernameInput.value, password: passwordInput.value}),
         });
         if (response.status === 204) {
-          window.location.assign("/staff/photo-inventory");
+          window.location.assign("/staff");
           return;
         }
         if (response.status === 401) {
-          message.textContent = "Invalid username or password.";
+          message.textContent = "Неверный логин или пароль.";
         } else if (response.status === 429) {
-          message.textContent = "Too many login attempts. Please try again later.";
+          message.textContent = "Слишком много попыток входа. Попробуйте немного позже.";
         } else {
-          message.textContent = "Login is temporarily unavailable. Please try again.";
+          message.textContent = "Вход временно недоступен. Попробуйте ещё раз.";
         }
       } catch (_) {
-        message.textContent = "Login is temporarily unavailable. Please try again.";
+        message.textContent = "Вход временно недоступен. Попробуйте ещё раз.";
       } finally {
         setPending(false);
       }

@@ -462,6 +462,8 @@ export class PromoDisplayController {
     imageFactory = () => new globalThis.Image(),
     urlApi = globalThis.URL,
     onComplete = () => {},
+    onLoading = () => {},
+    onPrepared = () => {},
     onFailure = () => {},
     onExpired = () => {},
     clock = () => globalThis.performance?.now?.(),
@@ -484,6 +486,8 @@ export class PromoDisplayController {
     this.imageFactory = imageFactory;
     this.urlApi = urlApi;
     this.onComplete = onComplete;
+    this.onLoading = onLoading;
+    this.onPrepared = onPrepared;
     this.onFailure = onFailure;
     this.onExpired = onExpired;
     this.clock = clock;
@@ -740,6 +744,7 @@ export class PromoDisplayController {
       previewResource = this.beginPreviewResource();
       const previewController = this.beginPendingOperation();
       let images;
+      this.onLoading({ attemptId });
       try {
         images = await this.runWithDeadline(
           Promise.all(
@@ -804,6 +809,7 @@ export class PromoDisplayController {
       qrPanel.append(qr.svg);
       copyPanel.append(qrPanel);
       card.append(copyPanel);
+      this.onPrepared({ attemptId, card });
       this.container.replaceChildren(card);
       this.renderedCard = card;
       this.isVisible = true;

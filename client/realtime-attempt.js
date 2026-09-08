@@ -225,10 +225,12 @@ export async function buildRealtimeAttemptRequest({
 export async function submitRealtimeAttempt({
   fetchImpl = globalThis.fetch,
   path = REALTIME_ATTEMPT_PATH,
+  onRequestReady = () => {},
   ...options
 } = {}) {
   if (typeof fetchImpl !== "function") throw new Error("fetch_unavailable");
   const request = await buildRealtimeAttemptRequest(options);
+  onRequestReady();
   const response = await fetchImpl(path, {
     method: "POST",
     headers: request.headers,

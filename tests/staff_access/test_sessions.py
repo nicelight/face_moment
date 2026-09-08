@@ -220,17 +220,17 @@ def test_staff_login_page_exposes_accessible_session_form(
 
     assert page_status == 200
     assert '<form id="staff-login-form" method="post">' in page
-    assert '<label for="staff-username">Username</label>' in page
+    assert '<label for="staff-username">Логин</label>' in page
     assert (
         '<input id="staff-username" name="username" type="text" '
         'autocomplete="username" required>'
     ) in page
-    assert '<label for="staff-password">Password</label>' in page
+    assert '<label for="staff-password">Пароль</label>' in page
     assert (
         '<input id="staff-password" name="password" type="password" '
         'autocomplete="current-password" required>'
     ) in page
-    assert '<button id="staff-login-submit" type="submit">Sign in</button>' in page
+    assert '<button id="staff-login-submit" type="submit">Войти в пространство' in page
     assert '<p id="staff-login-message" role="alert" aria-live="assertive"></p>' in page
 
 

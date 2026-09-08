@@ -110,3 +110,57 @@ Last full smoke passed on 2026-09-07:
 Automatic image cleanup was added afterwards and syntax-checked; the test image
 was removed manually. Detailed historical checks remain in the
 [evidence report](../../.tasks/ASTRA-findings/10-packaged-smoke/implementation-report.md).
+
+## Persistent local testing stand — 2026-09-08
+
+The operator requested a running application on this workstation. The current
+source was rebuilt as `face-moment:dev` and started with:
+
+```bash
+docker compose --env-file .env.testing up -d --wait --wait-timeout 120
+```
+
+This uses the existing `face-moment` PostgreSQL/MinIO volumes. Migration
+`0022_inventory_hard_purge_run` completed. All three application roles became
+healthy. The local HTTPS origin is `https://localhost:8443` with Caddy's internal
+certificate; a fresh browser may require accepting the local certificate.
+Services use Compose `restart: unless-stopped` and remain running after the
+agent session ends.
+
+Initial empty-database setup created `Local testing` (Asia/Dushanbe), a display
+client, and a committed SFace revision bound to the actual model hashes.
+`local-testing-v1` is a local asset identity, not an upstream release claim.
+Search date was initialized to 2026-09-08. Test-only search settings reuse the
+integration fixture values: similarity 0.6, minimum query quality 0.5, quality
+settings version 1. These are uncalibrated. Promo display is 20 seconds and
+success cooldown 3 seconds. Change the visit date in operator search settings
+when testing another day.
+
+Access files are ignored by Git and have mode 600:
+
+- `.protocols/local-testing/operator-credentials.txt`: operator account for
+  search date, display settings, inventory and processing health.
+- `.protocols/local-testing/photographer-credentials.txt`: photographer account
+  for photo upload.
+- `.protocols/local-testing/credentials.txt`: developer account `tester` for
+  diagnostics.
+- `.protocols/local-testing/display-token.txt`: token to paste into the kiosk
+  configuration at `/#configuration`.
+- `.env.testing`: persistent Compose model/timing settings and QR secret.
+
+Entry points: `/staff/login`, `/staff/photo-upload`, `/staff/search-settings`,
+`/staff/display-clients`, `/staff/attempts`, and `/` for the display.
+Roles are separate, not hierarchical; developer is not a photo uploader.
+
+Evidence: `.protocols/local-testing/http-check.log` records successful HTTPS
+health, client assets, staff login and role-appropriate page checks.
+`.protocols/local-testing/check-http.py` repeats these HTTP checks.
+The one-time `start.sh`/`seed.py` bootstrap must not be rerun against the seeded
+database; use the Compose command above for ordinary startup.
+No photos were uploaded and no camera/sensor/phone end-to-end test was performed.
+The loopback-only endpoint is not reachable from a phone on the LAN.
+
+
+The Motion Atlas review now uses a source-mounted backend overlay. See
+[motion-presentation.md](motion-presentation.md#local-review-and-evidence) for
+its restart command and the `/site`, `/staff`, `/display` review routes.

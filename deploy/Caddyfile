@@ -21,6 +21,13 @@ https://localhost:8443 {
 		respond @inventory_photo_upload_without_length 413
 		respond @inventory_photo_upload_over_cap 413
 
+		@site_pages path /staff /site /display
+		handle @site_pages {
+			reverse_proxy backend:8000 {
+				header_up X-Forwarded-For {remote_host}
+			}
+		}
+
 		handle /api/staff/* {
 			reverse_proxy backend:8000 {
 				header_up X-Forwarded-For {remote_host}

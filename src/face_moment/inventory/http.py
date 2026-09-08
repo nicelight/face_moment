@@ -14,6 +14,7 @@ from starlette.datastructures import UploadFile
 from sqlalchemy.orm import Session
 
 from face_moment.infrastructure.settings import Settings
+from face_moment.platform.staff_presentation import staff_document
 from face_moment.inventory.ingest_targets import (
     InvalidSessionError,
     IngestTargetContext,
@@ -131,7 +132,7 @@ def register_ingest_target_routes(
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from error
             except PhotographerAccessDeniedError as error:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN) from error
-        return HTMLResponse(_photo_upload_page_html())
+        return HTMLResponse(staff_document(_photo_upload_page_html(), "photo-upload"))
 
     @app.get("/staff/processing-health", response_class=HTMLResponse)
     def processing_health_page(
@@ -147,7 +148,7 @@ def register_ingest_target_routes(
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN) from error
             except InvalidSessionError as error:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from error
-        return HTMLResponse(_processing_health_page_html())
+        return HTMLResponse(staff_document(_processing_health_page_html(), "processing-health"))
 
     @app.get("/staff/photo-inventory", response_class=HTMLResponse)
     def photo_inventory_page(
@@ -164,7 +165,7 @@ def register_ingest_target_routes(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     headers=_NO_STORE_HEADERS,
                 ) from error
-        response = HTMLResponse(_photo_inventory_page_html())
+        response = HTMLResponse(staff_document(_photo_inventory_page_html(), "photo-inventory"))
         response.headers["Cache-Control"] = "no-store"
         return response
 
@@ -547,20 +548,24 @@ def _photo_upload_page_html() -> str:
 <body>
   <main>
     <h1>Photo upload</h1>
+    <div class="fm-upload-layout" id="upload-perspective">
     <form id="photo-upload-form">
       <label for="spa-id">СПА</label>
       <select id="spa-id" name="spa_id" required>
-        <option value="">Select СПА</option>
+        <option value="">Выберите площадку</option>
       </select>
-      <label for="visit-date">Visit date</label>
+      <label for="visit-date">Дата съёмки</label>
       <input id="visit-date" name="visit_date" type="date" required>
-      <label for="photos">JPEG files</label>
+      <label for="photos">Фотографии в формате JPEG</label>
       <input id="photos" name="photos" type="file" accept="image/jpeg" multiple required>
-      <button type="submit">Upload selected files</button>
+      <button type="submit">Загрузить фотографии <span aria-hidden="true">↗</span></button>
     </form>
+    <p class="fm-upload-state" id="upload-transfer-state" role="status">Готово к загрузке</p>
+    </div>
     <p id="form-message" role="alert"></p>
     <section aria-label="Upload results">
-      <h2>Results</h2>
+      <h2>Результаты загрузки</h2>
+      <p class="fm-upload-totals">Результаты: <span id="upload-settled" data-rolling-count>0</span> <span id="upload-selected-total"></span></p>
       <ol id="upload-results"></ol>
     </section>
   </main>
@@ -686,6 +691,20 @@ def _photo_upload_page_html() -> str:
       }
     }
 
+    let activeUploads = 0;
+    let selectedTotal = 0;
+    let settledTotal = 0;
+    const perspective = document.querySelector("#upload-perspective");
+    const transferState = document.querySelector("#upload-transfer-state");
+    function updateTransferState() {
+      perspective.classList.toggle("is-uploading", activeUploads > 0);
+      form.setAttribute("aria-busy", String(activeUploads > 0));
+      transferState.textContent = activeUploads > 0
+        ? "Загружаем фотографии — можно добавить ещё файлы"
+        : "Передача завершена. Результат каждого файла — ниже";
+      document.querySelector("#upload-settled").textContent = String(settledTotal);
+      document.querySelector("#upload-selected-total").textContent = `из ${selectedTotal}`;
+    }
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       const spaId = spaSelect.value;
@@ -701,7 +720,13 @@ def _photo_upload_page_html() -> str:
         row: appendResultRow(file, visitDate),
       }));
       filesInput.value = "";
-      await Promise.all(uploads.map(({ file, row }) => uploadFile(file, spaId, visitDate, row)));
+      selectedTotal += uploads.length;
+      activeUploads += uploads.length;
+      updateTransferState();
+      await Promise.all(uploads.map(async ({ file, row }) => {
+        try { await uploadFile(file, spaId, visitDate, row); }
+        finally { activeUploads -= 1; settledTotal += 1; updateTransferState(); }
+      }));
     });
 
     loadTargets();
@@ -722,67 +747,67 @@ def _processing_health_page_html() -> str:
   <main>
     <h1>Processing health</h1>
     <form id="processing-health-query">
-      <label for="health-spa-id">SPA ID</label>
+      <label for="health-spa-id">ID площадки</label>
       <input id="health-spa-id" name="spa_id" required>
-      <label for="accepted-from">Accepted from (optional ISO timestamp)</label>
+      <label for="accepted-from">Поступили после (дата и время ISO, необязательно)</label>
       <input id="accepted-from" name="accepted_from">
-      <label for="accepted-before">Accepted before (optional ISO timestamp)</label>
+      <label for="accepted-before">Поступили до (дата и время ISO, необязательно)</label>
       <input id="accepted-before" name="accepted_before">
-      <button type="submit">Refresh health</button>
+      <button type="submit">Обновить состояние</button>
     </form>
     <p id="health-message" role="alert"></p>
 
     <section aria-label="Processing queue">
-      <h2>Processing queue</h2>
+      <h2>Очередь фотографий</h2>
       <dl>
-        <dt>Pending</dt><dd id="queue-pending"></dd>
-        <dt>Processing</dt><dd id="queue-processing"></dd>
-        <dt>Ready</dt><dd id="queue-ready"></dd>
-        <dt>No faces</dt><dd id="queue-no-faces"></dd>
-        <dt>Failed</dt><dd id="queue-failed"></dd>
-        <dt>Oldest pending accepted at</dt><dd id="queue-oldest-pending-accepted-at"></dd>
-        <dt>Current operation</dt><dd id="queue-current-operation"></dd>
-        <dt>Operation started at</dt><dd id="queue-operation-started-at"></dd>
-        <dt>Worker started at</dt><dd id="queue-worker-started-at"></dd>
-        <dt>Last recovery at</dt><dd id="queue-last-recovery-at"></dd>
-        <dt>Last recovered count</dt><dd id="queue-last-recovered-count"></dd>
+        <dt>В очереди</dt><dd id="queue-pending">—</dd>
+        <dt>Обрабатываются</dt><dd id="queue-processing">—</dd>
+        <dt>Готовы</dt><dd id="queue-ready">—</dd>
+        <dt>Без лиц</dt><dd id="queue-no-faces">—</dd>
+        <dt>Ошибки</dt><dd id="queue-failed">—</dd>
+        <dt>Самая ранняя заявка в очереди</dt><dd id="queue-oldest-pending-accepted-at">—</dd>
+        <dt>Текущая операция</dt><dd id="queue-current-operation">—</dd>
+        <dt>Начало операции</dt><dd id="queue-operation-started-at">—</dd>
+        <dt>Обработчик запущен</dt><dd id="queue-worker-started-at">—</dd>
+        <dt>Последнее восстановление</dt><dd id="queue-last-recovery-at">—</dd>
+        <dt>Восстановлено задач</dt><dd id="queue-last-recovered-count">—</dd>
       </dl>
     </section>
 
     <section aria-label="Ingest to searchable SLO">
-      <h2>Ingest to searchable SLO</h2>
+      <h2>Скорость появления в поиске</h2>
       <p id="slo-message"></p>
       <dl>
-        <dt>Accepted from</dt><dd id="slo-accepted-from"></dd>
-        <dt>Accepted before</dt><dd id="slo-accepted-before"></dd>
-        <dt>Population</dt><dd id="slo-population"></dd>
-        <dt>Success under 15 minutes</dt><dd id="slo-success-under-15-minutes"></dd>
-        <dt>Breach</dt><dd id="slo-breach"></dd>
-        <dt>Open</dt><dd id="slo-open"></dd>
-        <dt>Success ratio</dt><dd id="slo-success-ratio"></dd>
-        <dt>95 percent verdict</dt><dd id="slo-verdict"></dd>
+        <dt>Начало периода</dt><dd id="slo-accepted-from">—</dd>
+        <dt>Конец периода</dt><dd id="slo-accepted-before">—</dd>
+        <dt>Всего фотографий</dt><dd id="slo-population">—</dd>
+        <dt>Готовы менее чем за 15 минут</dt><dd id="slo-success-under-15-minutes">—</dd>
+        <dt>Превышено время</dt><dd id="slo-breach">—</dd>
+        <dt>Ещё в работе</dt><dd id="slo-open">—</dd>
+        <dt>Доля успешных</dt><dd id="slo-success-ratio">—</dd>
+        <dt>Достигнуты 95%</dt><dd id="slo-verdict">—</dd>
       </dl>
     </section>
 
     <section aria-label="PostgreSQL capacity">
-      <h2>PostgreSQL capacity</h2>
+      <h2>Хранилище данных · PostgreSQL</h2>
       <dl>
-        <dt>Status</dt><dd id="postgresql-status"></dd>
-        <dt>Available bytes</dt><dd id="postgresql-available-bytes"></dd>
-        <dt>Low threshold bytes</dt><dd id="postgresql-low-threshold-bytes"></dd>
-        <dt>Observed at</dt><dd id="postgresql-observed-at"></dd>
-        <dt>Error</dt><dd id="postgresql-error"></dd>
+        <dt>Состояние</dt><dd id="postgresql-status">—</dd>
+        <dt>Свободно, байт</dt><dd id="postgresql-available-bytes">—</dd>
+        <dt>Минимальный остаток, байт</dt><dd id="postgresql-low-threshold-bytes">—</dd>
+        <dt>Проверено</dt><dd id="postgresql-observed-at">—</dd>
+        <dt>Ошибка</dt><dd id="postgresql-error">—</dd>
       </dl>
     </section>
 
     <section aria-label="MinIO capacity">
-      <h2>MinIO capacity</h2>
+      <h2>Хранилище фотографий · MinIO</h2>
       <dl>
-        <dt>Status</dt><dd id="minio-status"></dd>
-        <dt>Available bytes</dt><dd id="minio-available-bytes"></dd>
-        <dt>Low threshold bytes</dt><dd id="minio-low-threshold-bytes"></dd>
-        <dt>Observed at</dt><dd id="minio-observed-at"></dd>
-        <dt>Error</dt><dd id="minio-error"></dd>
+        <dt>Состояние</dt><dd id="minio-status">—</dd>
+        <dt>Свободно, байт</dt><dd id="minio-available-bytes">—</dd>
+        <dt>Минимальный остаток, байт</dt><dd id="minio-low-threshold-bytes">—</dd>
+        <dt>Проверено</dt><dd id="minio-observed-at">—</dd>
+        <dt>Ошибка</dt><dd id="minio-error">—</dd>
       </dl>
     </section>
   </main>
@@ -792,7 +817,7 @@ def _processing_health_page_html() -> str:
     const sloMessage = document.querySelector("#slo-message");
     const healthFieldNames = ["spa_id", "accepted_from", "accepted_before"];
 
-    function renderValue(id, value, missing = "not available") {
+    function renderValue(id, value, missing = "нет данных") {
       document.querySelector(`#${id}`).textContent = value === null ? missing : String(value);
     }
 
@@ -824,17 +849,17 @@ def _processing_health_page_html() -> str:
 
     function renderSlo(slo) {
       if (slo === null) {
-        sloMessage.textContent = "No controlled SLO interval selected.";
+        sloMessage.textContent = "Выберите период, чтобы оценить время обработки.";
         for (const id of [
           "slo-accepted-from", "slo-accepted-before", "slo-population",
           "slo-success-under-15-minutes", "slo-breach", "slo-open",
           "slo-success-ratio", "slo-verdict",
         ]) {
-          renderValue(id, null, "not selected");
+          renderValue(id, null, "не выбрано");
         }
         return;
       }
-      sloMessage.textContent = "Controlled SLO interval.";
+      sloMessage.textContent = "Показатели за выбранный период.";
       renderValue("slo-accepted-from", slo.accepted_from);
       renderValue("slo-accepted-before", slo.accepted_before);
       renderValue("slo-population", slo.population);
@@ -864,7 +889,7 @@ def _processing_health_page_html() -> str:
     async function loadHealth() {
       const query = queryFromForm();
       if (!query.includes("spa_id=")) {
-        healthMessage.textContent = "Enter a SPA ID.";
+        healthMessage.textContent = "Укажите ID площадки для просмотра состояния.";
         return;
       }
       try {
@@ -872,12 +897,12 @@ def _processing_health_page_html() -> str:
           credentials: "same-origin",
         });
         if (!response.ok) {
-          healthMessage.textContent = "Health data unavailable.";
+          healthMessage.textContent = "Не удалось получить состояние обработки.";
           return;
         }
         renderHealth(await response.json());
       } catch (_) {
-        healthMessage.textContent = "Health data unavailable.";
+        healthMessage.textContent = "Не удалось получить состояние обработки.";
       }
     }
 
@@ -931,13 +956,13 @@ def _photo_inventory_page_html() -> str:
   <main>
     <h1>Photo inventory</h1>
     <form id="recent-statistics-query">
-      <label for="recent-statistics-spa-id">SPA ID</label>
+      <label for="recent-statistics-spa-id">ID площадки</label>
       <input id="recent-statistics-spa-id" name="spa_id" required>
-      <button type="submit">Refresh statistics</button>
+      <button type="submit">Обновить статистику</button>
     </form>
     <p id="recent-statistics-message" role="alert"></p>
     <section aria-label="Recent photo statistics">
-      <h2>Recent photo statistics</h2>
+      <h2>Последние поступления</h2>
       <ol id="recent-statistics-windows"></ol>
     </section>
     <section id="inventory-purge" aria-label="Управление скрытыми фото" hidden>

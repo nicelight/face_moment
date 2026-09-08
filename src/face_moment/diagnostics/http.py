@@ -11,6 +11,7 @@ import uuid
 
 from fastapi import Cookie, FastAPI, Request, Response, status
 from fastapi.responses import HTMLResponse
+from face_moment.platform.staff_presentation import staff_document
 from sqlalchemy.orm import Session
 
 from face_moment.diagnostics.attempt_investigation import (
@@ -113,7 +114,7 @@ def register_attempt_investigation_routes(
             return _empty(status.HTTP_422_UNPROCESSABLE_ENTITY)
         except Exception:
             return _empty(status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return HTMLResponse(content=content, headers=_NO_STORE_HEADERS)
+        return HTMLResponse(content=staff_document(content, "attempts"), headers=_NO_STORE_HEADERS)
 
     @app.get("/staff/attempts/{attempt_id}", response_class=HTMLResponse)
     def attempt_detail(
@@ -144,7 +145,7 @@ def register_attempt_investigation_routes(
             return _empty(status.HTTP_404_NOT_FOUND)
         except Exception:
             return _empty(status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return HTMLResponse(content=content, headers=_NO_STORE_HEADERS)
+        return HTMLResponse(content=staff_document(content, "attempt-detail"), headers=_NO_STORE_HEADERS)
 
 
 def register_server_event_search_routes(
@@ -181,7 +182,7 @@ def register_server_event_search_routes(
             return _empty(status.HTTP_422_UNPROCESSABLE_ENTITY)
         except Exception:
             return _empty(status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return HTMLResponse(content=content, headers=_NO_STORE_HEADERS)
+        return HTMLResponse(content=staff_document(content, "server-events"), headers=_NO_STORE_HEADERS)
 
 
 def parse_attempt_filters(request: Request) -> AttemptInvestigationFilters:

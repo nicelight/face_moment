@@ -8,6 +8,7 @@ import uuid
 
 from fastapi import Cookie, FastAPI, Header, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse
+from face_moment.platform.staff_presentation import staff_document
 from sqlalchemy.orm import Session
 
 from face_moment.diagnostics.attempt_investigation import (
@@ -71,7 +72,7 @@ def register_ground_truth_annotation_routes(
             return _empty(status.HTTP_404_NOT_FOUND)
         except Exception:
             return _empty(status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return HTMLResponse(content=content, headers=_NO_STORE_HEADERS)
+        return HTMLResponse(content=staff_document(content, "annotations"), headers=_NO_STORE_HEADERS)
 
     @app.post("/staff/attempts/{attempt_id}/annotations")
     async def annotation_create(

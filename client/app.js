@@ -23,8 +23,11 @@ import { createAttemptTimingRecorder } from "./attempt-timing.js";
 import { reportClientResponseTiming } from "./diagnostic-timing.js";
 import { createCommunicationNoticeController } from "./communication-notice.js";
 import { createPromoDisplayController } from "./promo-display.js";
+import { createSignalProgress } from "./signal-progress.js";
+import "./motion-ui.js";
 
 const view = document.querySelector("#client-view");
+const signalProgress = createSignalProgress();
 const communicationNoticeController = createCommunicationNoticeController({
   element: document.querySelector("#communication-notice"),
 });
@@ -279,6 +282,8 @@ async function submitReadyReferenceSeries(detail, proposals) {
   let timingRecorder;
   try {
     attemptId = newRealtimeAttemptId();
+    signalProgress.bind(captureId, attemptId);
+    signalProgress.phase(captureId, "crops");
     timingRecorder = createAttemptTimingRecorder({
       attemptId,
       captureId,
@@ -306,6 +311,7 @@ async function submitReadyReferenceSeries(detail, proposals) {
       frames: detail?.frames,
       frameTimestampsMs: detail?.frame_timestamps_ms,
       proposals,
+      onRequestReady: () => signalProgress.phase(attemptId, "search"),
     });
     timingRecorder.recordResponseReceived();
     const responseTiming = timingRecorder.snapshot();
@@ -407,6 +413,7 @@ window.addEventListener("face-moment:attempt-outcome", (event) => {
   attemptTimingSnapshots.delete(detail?.attemptId);
   const configuration = displayConfigSnapshots.get(detail?.attemptId);
   if (detail?.outcome !== "result") {
+    signalProgress.cancel(detail?.attemptId);
     discardDisplayConfiguration(detail?.attemptId);
     return;
   }
@@ -438,6 +445,7 @@ window.addEventListener("face-moment:attempt-outcome", (event) => {
 
 function returnToAdvertisingAfterPromoFailure(detail) {
   if (detail?.handled !== true || detail?.stale === true) return;
+  signalProgress.cancel(detail.attemptId);
   const released = attemptOutcomeController?.releaseResult(detail.attemptId);
   if (!released) return;
   window.dispatchEvent(
@@ -823,6 +831,7 @@ window.addEventListener("face-moment:trigger-request", (event) => {
 
 window.addEventListener("face-moment:attempt-finished", (event) => {
   const detail = event.detail;
+  if (detail?.success !== true) signalProgress.cancel(detail?.attemptId);
   const finished = triggerController?.finishAttempt({
     success: event.detail?.success === true,
     cooldownMs: event.detail?.cooldownMs ?? 0,
@@ -849,6 +858,7 @@ window.addEventListener("face-moment:attempt-finished", (event) => {
 });
 
 window.addEventListener("face-moment:reference-series-ready", async (event) => {
+  signalProgress.begin(event.detail?.attemptId);
   try {
     const detector = await getBlazeFaceDetector();
     const proposals = await detectReferenceSeries(event.detail?.frames, {
@@ -901,6 +911,8 @@ attemptOutcomeController = createAttemptOutcomeController({
 promoDisplayController = createPromoDisplayController({
   container: view,
   requireDisplayConfig: true,
+  onLoading: ({ attemptId }) => signalProgress.phase(attemptId, "photos"),
+  onPrepared: ({ attemptId, card }) => signalProgress.reveal(attemptId, card),
   onComplete: (detail) => {
     document.body.dataset.promoState = "complete";
     window.dispatchEvent(

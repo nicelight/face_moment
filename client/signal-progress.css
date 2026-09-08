@@ -1,0 +1,24 @@
+.signal-progress {
+  position: fixed; inset: 0; z-index: 1; isolation: isolate; overflow: hidden;
+  background: radial-gradient(ellipse at 50% 48%, #1c302b, #0b1212 64%);
+  opacity: 1; transition: opacity 450ms ease-out; pointer-events: none;
+}
+.signal-progress[hidden] { display: none; }
+.signal-progress.is-revealing { opacity: 0; }
+.signal-routes { position: absolute; inset: 5% 0 10%; width: 100%; height: 85%; }
+.signal-guide { stroke: #8ae4c9; stroke-width: 1; stroke-opacity: .12; }
+.signal-packet { stroke: #8ae4c9; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 14 86; animation: signal-travel 12.5s linear infinite; opacity: .65; }
+.signal-packet:nth-of-type(4n) { stroke: #b29cce; opacity: .4; }
+.signal-fill { stroke: #b0f2d9; stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 100 100; stroke-dashoffset: 100; transition: stroke-dashoffset 400ms ease-in-out; opacity: .85; }
+.signal-caption { position: absolute; inset: auto 1.5rem max(1.5rem, env(safe-area-inset-bottom)); text-align: center; color: #a9c0b59c; font: 12px/1.4 "Avenir Next", "Segoe UI", sans-serif; letter-spacing: .06em; margin: 0; }
+.signal-active { overflow: hidden; }
+.signal-active .site-header, .signal-active .navigation, .signal-active .client-view > :not(.promo-card) { visibility: hidden; }
+.signal-active .fm-fluid-spot, .signal-active .fm-aurora i { animation-play-state: paused !important; }
+.promo-card.has-signal-handoff { background: transparent; isolation: isolate; }
+.promo-card.has-signal-handoff::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse at 30% 40%, #39352f, #242321 45%, #191a19); animation: signal-result-background 450ms ease-out both; }
+@keyframes signal-travel { to { stroke-dashoffset: -100; } }
+@keyframes signal-result-background { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .signal-packet, .promo-card.has-signal-handoff::before { animation: none; }
+  .signal-progress, .signal-fill { transition: none; }
+}

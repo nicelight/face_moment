@@ -8,6 +8,7 @@ import uuid
 from fastapi import Cookie, FastAPI, Header, HTTPException, status
 from pydantic import BaseModel, ConfigDict
 from fastapi.responses import HTMLResponse
+from face_moment.platform.staff_presentation import staff_document
 from sqlalchemy.orm import Session
 
 from face_moment.platform.auth.sessions import (
@@ -64,7 +65,7 @@ def register_display_client_admin_routes(
             except DisplayClientAdminAccessDeniedError as error:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN) from error
 
-        response = HTMLResponse(_display_client_page_html(clients))
+        response = HTMLResponse(staff_document(_display_client_page_html(clients), "display-clients"))
         response.headers["Cache-Control"] = "no-store"
         return response
 
@@ -91,7 +92,7 @@ def register_active_search_date_routes(
                     status_code=status.HTTP_403_FORBIDDEN
                 ) from error
 
-        response = HTMLResponse(_active_search_date_page_html(spas))
+        response = HTMLResponse(staff_document(_active_search_date_page_html(spas), "search-settings"))
         response.headers["Cache-Control"] = "no-store"
         return response
 
@@ -162,6 +163,19 @@ def _database_session(session_factory: Callable[[], Session]) -> Session:
 
 
 def _display_client_page_html(clients: Sequence[DisplayClientAdminRecord]) -> str:
+    cards = "".join(
+        '<article class="fm-device-card">'
+        '<div class="fm-device-face" data-tilt>'
+        f'<p class="fm-eyebrow">КИОСК / {"РАЗРЕШЁН" if client.active else "ОТКЛЮЧЁН"}</p>'
+        f'<h2>{escape(client.name)}</h2></div>'
+        f'<p class="fm-device-meta">Площадка: {escape(str(client.spa_id))}<br>'
+        f'ID экрана: {escape(str(client.display_client_id))}</p>'
+        '<div class="fm-token"><span class="fm-eyebrow">Токен подключения</span>'
+        f'<code>{escape(client.token_value)}</code>'
+        '<button class="fm-button-secondary" type="button" data-copy-token>Скопировать токен</button>'
+        '<span class="fm-copy-status" role="status"></span></div></article>'
+        for client in clients
+    )
     rows = "".join(
         "<tr>"
         f'<td data-field="display-client-id">{escape(str(client.display_client_id))}</td>'
@@ -182,7 +196,8 @@ def _display_client_page_html(clients: Sequence[DisplayClientAdminRecord]) -> st
 <body>
   <main>
     <h1>Display client settings</h1>
-    <table>
+    <div class="fm-device-list">{cards or '<p>Экраны пока не настроены.</p>'}</div>
+    <details class="fm-device-table"><summary>Таблица настроенных экранов</summary><table>
       <caption>Configured kiosks and current tokens</caption>
       <thead>
         <tr>
@@ -194,7 +209,7 @@ def _display_client_page_html(clients: Sequence[DisplayClientAdminRecord]) -> st
         </tr>
       </thead>
       <tbody>{rows}</tbody>
-    </table>
+    </table></details>
   </main>
 </body>
 </html>"""

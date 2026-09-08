@@ -15,6 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from face_moment.diagnostics.server_events import ServerEventSink
+from face_moment.platform.staff_presentation import staff_document
 from face_moment.infrastructure.object_store import PrivateObjectStore
 from face_moment.infrastructure.settings import (
     DEFAULT_PHONE_PUBLIC_RATE_LIMIT,
@@ -161,7 +162,7 @@ def register_diagnostic_retention_routes(
             f"{html.escape(json.dumps(payload, indent=2, sort_keys=True))}"
             "</pre></main>"
         )
-        return HTMLResponse(status_code=status.HTTP_200_OK, content=body, headers=_NO_STORE_HEADERS)
+        return HTMLResponse(status_code=status.HTTP_200_OK, content=staff_document(body, "diagnostics-retention"), headers=_NO_STORE_HEADERS)
 
 
 def register_phone_continuation_routes(
