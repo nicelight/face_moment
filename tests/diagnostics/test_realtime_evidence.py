@@ -149,6 +149,8 @@ def test_result_realtime_path_persists_diagnostics_evidence(
         "n": 4,
     }
     assert len(evidence.ordinary_manifest["detections"]) == 1
+    assert evidence.ordinary_manifest["detections"][0]["best_cosine_similarity"] == 0.99
+    assert evidence.ordinary_manifest["detections"][0]["eligible_photo_count"] == 6
     assert "selfie" not in _all_keys(evidence.ordinary_manifest)
     assert evidence.ordinary_manifest["artifacts"] == []
 
@@ -397,6 +399,8 @@ def _detection(index: int, matches: tuple[PhotoMatchObservation, ...]) -> Detect
         quality_gate_passed=True,
         rejection_reason=None,
         matches=matches,
+        best_cosine_similarity=max((match.cosine_similarity for match in matches), default=0.4),
+        eligible_photo_count=6,
     )
 
 

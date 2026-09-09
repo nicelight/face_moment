@@ -198,6 +198,8 @@ def _detections_manifest(search_result: RealtimeSearchResult) -> list[dict[str, 
             "reference_quality_score": detection.reference_quality_score,
             "quality_gate_passed": detection.quality_gate_passed,
             "rejection_reason": detection.rejection_reason,
+            "best_cosine_similarity": detection.best_cosine_similarity,
+            "eligible_photo_count": detection.eligible_photo_count,
             "matches": [
                 {
                     "photo_id": str(match.photo_id),

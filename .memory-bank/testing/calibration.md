@@ -143,6 +143,12 @@ objective.
 No separate experimentation platform, automatic apply path or serving fallback
 is part of this proof.
 
+The operator-added manual threshold form also verifies developer/CSRF access,
+finite [-1, 1] validation, committed current-value readback, unchanged quality
+settings and cleared Calibration provenance, stale-form rejection and rollback
+after an injected post-write failure. This uses disposable settings and adds
+no Calibration run or pipeline-switch action.
+
 ## Worker, Recovery And Retention Proof
 
 The worker scenario starts from isolated test state with queued Photo work and

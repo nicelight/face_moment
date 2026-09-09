@@ -481,7 +481,7 @@ export class PromoDisplayController {
     if (typeof fetchImpl !== "function") throw new TypeError("promo_fetch_missing");
     if (!documentImpl) throw new TypeError("promo_document_missing");
     this.container = container;
-    this.fetchImpl = fetchImpl;
+    this.fetchImpl = fetchImpl.bind(globalThis);
     this.document = documentImpl;
     this.imageFactory = imageFactory;
     this.urlApi = urlApi;
@@ -697,7 +697,11 @@ export class PromoDisplayController {
         signal: controller.signal,
         body: JSON.stringify(body),
       });
-      if (!response?.ok) throw new Error("promo_display_acknowledgement_failed");
+      if (!response?.ok) {
+        const error = new Error("promo_display_acknowledgement_failed");
+        error.httpStatus = response?.status;
+        throw error;
+      }
       return { status: response.status };
     });
     try {
@@ -834,7 +838,7 @@ export class PromoDisplayController {
             return { stale: true, attemptId };
           }
           acknowledgement = { sent: true, status: 200 };
-        } catch {
+        } catch (error) {
           if (generation !== this.generation) {
             this.releasePreviewResource(previewResource);
             return { stale: true, attemptId };
@@ -847,6 +851,8 @@ export class PromoDisplayController {
             state: "advertising",
             retryEligible: true,
             reason: "acknowledgement_failure",
+            errorCode: "promo_display_acknowledgement_failed",
+            httpStatus: Number.isInteger(error?.httpStatus) ? error.httpStatus : undefined,
             teaserCount: images.length,
             qrFullyVisible: true,
             qrFullyVisibleElapsedMs,
@@ -920,6 +926,8 @@ export class PromoDisplayController {
         state: "advertising",
         retryEligible: true,
         reason,
+        errorCode: typeof error?.message === "string" && /^(promo|qr)_[a-z_]{1,80}$/.test(error.message)
+          ? error.message : "unexpected_render_error",
         acknowledgement,
       });
       this.isVisible = false;

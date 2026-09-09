@@ -31,6 +31,7 @@ from face_moment.platform.auth.sessions import (
 )
 from face_moment.serving_control.realtime_context import (
     CalibrationRecommendationConflictError,
+    CalibrationServingSnapshot,
 )
 
 _NO_STORE_HEADERS = {"Cache-Control": "no-store"}
@@ -39,6 +40,7 @@ _CREATE_FIELDS = frozenset(
 )
 _CASE_FIELDS = frozenset({"action", "selection_key", "confirmation"})
 _APPLY_FIELDS = frozenset({"action", "recommendation_key", "confirmation"})
+_THRESHOLD_FIELDS = frozenset({"threshold", "settings_revision"})
 
 
 class InvalidCalibrationFormError(ValueError):
@@ -58,8 +60,9 @@ def register_calibration_routes(
                     database_session, session_token=fm_staff_session
                 )
                 authorize_calibration(principal)
-                runs = CalibrationRunService(database_session).list_recent()
-                content = _render_list(runs)
+                service = CalibrationRunService(database_session)
+                runs = service.list_recent()
+                content = _render_list(runs, settings=service.current_threshold_settings())
         except InvalidSessionError:
             return _empty(status.HTTP_401_UNAUTHORIZED)
         except CalibrationAccessDeniedError:
@@ -109,6 +112,43 @@ def register_calibration_routes(
         except Exception:
             return _empty(status.HTTP_500_INTERNAL_SERVER_ERROR)
         return _redirect(run_id)
+
+    @app.post("/staff/calibrations/threshold")
+    async def calibration_manual_threshold(
+        request: Request,
+        fm_staff_session: str | None = Cookie(default=None),
+        fm_staff_csrf: str | None = Cookie(default=None),
+        x_csrf_token: str | None = Header(default=None),
+    ) -> Response:
+        try:
+            with _database_session(session_factory) as database_session:
+                principal = authenticate_unsafe_staff_request(
+                    database_session,
+                    session_token=fm_staff_session,
+                    csrf_cookie_token=fm_staff_csrf,
+                    csrf_header_token=x_csrf_token,
+                )
+                authorize_calibration(principal)
+                values = _exact_form(list((await request.form()).multi_items()), _THRESHOLD_FIELDS)
+                revision = _positive_int(values["settings_revision"])
+                if revision is None:
+                    raise InvalidCalibrationFormError
+                CalibrationRunService(database_session).save_manual_threshold(
+                    threshold=float(values["threshold"].strip().replace(",", ".")),
+                    settings_revision=revision,
+                )
+                database_session.commit()
+        except InvalidSessionError:
+            return _empty(status.HTTP_401_UNAUTHORIZED)
+        except (CsrfValidationError, CalibrationAccessDeniedError):
+            return _empty(status.HTTP_403_FORBIDDEN)
+        except CalibrationSelectionConflictError:
+            return _empty(status.HTTP_409_CONFLICT)
+        except ValueError:
+            return _empty(status.HTTP_422_UNPROCESSABLE_ENTITY)
+        except Exception:
+            return _empty(status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return RedirectResponse("/staff/calibrations", status_code=303, headers=_NO_STORE_HEADERS)
 
     @app.get(
         "/staff/calibrations/{calibration_id}", response_class=HTMLResponse
@@ -241,7 +281,9 @@ def _positive_int(value: str | None) -> int | None:
     return parsed if parsed > 0 else None
 
 
-def _render_list(runs: Sequence[CalibrationRun]) -> str:
+def _render_list(
+    runs: Sequence[CalibrationRun], *, settings: CalibrationServingSnapshot | None = None
+) -> str:
     rows = (
         "".join(
             "<tr>"
@@ -256,6 +298,7 @@ def _render_list(runs: Sequence[CalibrationRun]) -> str:
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Calibration runs</title></head>
 <body><main><h1>Calibration runs</h1>
+{_render_manual_threshold(settings)}
 <table><thead><tr><th>Run</th><th>Status</th><th>Created</th></tr></thead><tbody>{rows}</tbody></table>
 <section><h2>Create Calibration run</h2><form data-protected method="post" action="/staff/calibrations">
 <label>Photo UUIDs <input name="photo_ids" autocomplete="off" required></label>
@@ -264,6 +307,22 @@ def _render_list(runs: Sequence[CalibrationRun]) -> str:
 <label>Buffalo M revision UUID <input name="buffalo_revision_id" autocomplete="off" required></label>
 <button type="submit">Create Calibration run</button></form><output data-form-status role="status"></output></section>
 <script>{_FORM_SCRIPT}</script></main></body></html>"""
+
+
+def _render_manual_threshold(settings: CalibrationServingSnapshot | None) -> str:
+    if settings is None:
+        return '<section><h2>Порог сходства</h2><p>Текущие настройки поиска недоступны.</p></section>'
+    value = escape(str(settings.reference_threshold))
+    model = "SFace" if settings.pipeline_code.value == "opencv_sface" else "Buffalo M"
+    return f"""<section id="manual-threshold"><h2>Порог сходства</h2>
+<p>Модель: {model}. Изменение применяется к следующим попыткам поиска.</p>
+<form data-protected method="post" action="/staff/calibrations/threshold">
+<input type="hidden" name="settings_revision" value="{settings.settings_revision}">
+<label for="manual-threshold-input">Ввести порог сходства вручную</label>
+<input id="manual-threshold-input" name="threshold" type="number" min="-1" max="1" step="any" value="{value}" required>
+<button type="submit">Сохранить</button></form>
+<output data-form-status role="status"></output>
+<p>Текущий порог сходства: <output id="current-threshold">{value}</output></p></section>"""
 
 
 def _render_detail(
@@ -386,15 +445,24 @@ const csrfToken = () => document.cookie.split("; ")
 for (const form of document.querySelectorAll("form[data-protected]")) {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const statusOutput = document.querySelector("[data-form-status]");
-    const response = await fetch(form.getAttribute("action"), {
-      method: "POST",
-      body: new FormData(form),
-      headers: {"X-CSRF-Token": csrfToken()},
-      redirect: "follow",
-    });
-    if (response.redirected) { window.location.assign(response.url); return; }
-    statusOutput.value = `Request failed (${response.status})`;
+    const statusOutput = form.parentElement.querySelector("[data-form-status]");
+    try {
+      const response = await fetch(form.getAttribute("action"), {
+        method: "POST",
+        body: new FormData(form),
+        headers: {"X-CSRF-Token": csrfToken()},
+        redirect: "follow",
+      });
+      if (response.redirected) { window.location.assign(response.url); return; }
+      const manualThreshold = form.getAttribute("action") === "/staff/calibrations/threshold";
+      statusOutput.value = manualThreshold && response.status === 409
+        ? "Настройки изменились. Обновите страницу и повторите сохранение."
+        : manualThreshold && response.status === 422
+          ? "Порог должен быть числом от −1 до 1."
+          : `Не удалось выполнить запрос (${response.status}).`;
+    } catch {
+      statusOutput.value = "Нет связи с сервером. Изменение не подтверждено.";
+    }
   });
 }
 """

@@ -63,6 +63,12 @@ without replacement selection or session/`N` mutation. The display treats any
 missing or undecodable teaser as render failure and never presents a partial
 Promo.
 
+The preview revision is the immutable `pipeline_revision_id` of the issuing
+Promo Attempt, reached through the session's `attempt_id`. It is not the
+Photo's admission revision or today's serving revision. This preserves the
+issued result after Photo reprocessing or a later serving switch. Missing
+issuing Attempt/revision content remains unavailable without fallback.
+
 ## Display Acknowledgement
 
 - Method and path:

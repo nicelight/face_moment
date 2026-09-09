@@ -416,3 +416,33 @@ def test_phash_is_deterministic_and_rejects_invalid_preview() -> None:
     assert 0 <= opencv_phash64_v1(payload) < 2**64
     with pytest.raises(ValueError, match="cannot be decoded"):
         opencv_phash64_v1(b"not-a-jpeg")
+
+
+def test_rejected_best_score_is_observed_without_admitting_or_loading_photo(
+    disposable_realtime_search: _Fixture,
+) -> None:
+    fixture = disposable_realtime_search
+    engine = _SelectionEngine(
+        revision_id=fixture.revision.id,
+        scores={0: 0.95},
+        embeddings={0: _embedding(1.0, -1.0)},
+    )
+    with Session(fixture.engine) as session:
+        repository = ExactCompatibleSearchRepository(session)
+        object_store = _RecordingObjectStore(fixture.object_store)
+        result = RealtimeSearchService(repository, object_store).search(
+            context=_context(fixture), engine=engine, occurrences=_occurrences(1),
+        )
+        observation = result.detections[0]
+        assert observation.matches == ()
+        assert observation.best_cosine_similarity == pytest.approx(2 ** -0.5)
+        assert observation.eligible_photo_count == 2  # Photos, not face rows.
+        assert object_store.read_calls == []
+        empty = repository.search_with_diagnostics(
+            spa_id=fixture.spa_id, visit_date=date(2000, 1, 1),
+            pipeline_revision_id=fixture.revision.id,
+            query_embedding=_embedding(1.0, -1.0), reference_threshold=0.75,
+        )
+        assert empty.matches == ()
+        assert empty.best_cosine_similarity is None
+        assert empty.eligible_photo_count == 0

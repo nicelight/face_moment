@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from face_moment.infrastructure.object_store import PrivateObjectStore
 from face_moment.processing import read_photo_processing_projection
+from face_moment.promo.attempt import PromoAttempt
 from face_moment.promo.session import PromoSession
 
 
@@ -49,6 +50,7 @@ def resolve_teaser_media(
         raise PromoMediaNotFoundError(media_ref)
 
     matched_photo_id: uuid.UUID | None = None
+    matched_attempt_id: uuid.UUID | None = None
     sessions: Iterable[PromoSession] = database_session.scalars(
         select(PromoSession).where(PromoSession.spa_id == spa_id)
     )
@@ -61,6 +63,7 @@ def resolve_teaser_media(
             )
             if hmac.compare_digest(expected, media_ref):
                 matched_photo_id = photo_id
+                matched_attempt_id = session_row.attempt_id
                 break
         if matched_photo_id is not None:
             break
@@ -68,10 +71,17 @@ def resolve_teaser_media(
     if matched_photo_id is None:
         raise PromoMediaNotFoundError(media_ref)
 
+    revision_id = database_session.scalar(
+        select(PromoAttempt.pipeline_revision_id).where(PromoAttempt.id == matched_attempt_id)
+    )
+    if revision_id is None:
+        raise PromoMediaNotFoundError(media_ref)
+
     projection = read_photo_processing_projection(
         database_session,
         photo_id=matched_photo_id,
         spa_id=spa_id,
+        pipeline_revision_id=revision_id,
     )
     if projection is None:
         raise PromoMediaNotFoundError(media_ref)

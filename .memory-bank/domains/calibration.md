@@ -136,6 +136,7 @@ The existing same-origin staff application exposes only:
 |---|---|---|
 | `GET` | `/staff/calibrations` | Bounded recent list and explicit selection form. |
 | `POST` | `/staff/calibrations` | Create one immutable requested run and redirect to detail. |
+| `POST` | `/staff/calibrations/threshold` | Save an explicit developer-entered threshold for the active serving target. |
 | `GET` | `/staff/calibrations/{calibration_id}` | Show state, comparison, profiles, quality results and Attempt links. |
 | `POST` | `/staff/calibrations/{calibration_id}` | Perform exactly one confirmed `apply`, `promote` or `delete_promoted` action. |
 
@@ -152,6 +153,24 @@ unexpected failures return an empty sanitized `500` and roll back. Missing or
 invalid session returns `401`, and another staff role returns `403`.
 
 ## Manual Apply
+
+Operator-authorized manual threshold control (2026-09-09) appears at the top of
+`GET /staff/calibrations`, independently of stored runs. It displays the active
+model, an input labelled «Ввести порог сходства вручную», «Сохранить», and below
+the form the current server-owned threshold. Missing current serving settings
+display an unavailable message instead of an editable default.
+
+The separate `/threshold` POST accepts exactly `threshold` and hidden positive
+`settings_revision`, with the same developer authentication and CSRF protection.
+The threshold must be finite and within the cosine range [-1, 1]; dot/comma
+decimal input is accepted. Under the existing SPA lock, diagnostics compares
+the submitted settings revision and requests the serving owner's update of
+only the threshold. Quality settings, active date, selected pipeline and
+historical Attempts/runs remain intact; manual override clears `calibration_id`
+and increments the normal settings revision. A stale/unavailable setting
+returns 409, invalid form/value 422, and unexpected failure rolls back with a
+sanitized 500. Success redirects to the list and reads the current value anew.
+This does not alter the stored-recommendation action's exact input contract.
 
 For `apply`, diagnostics resolves one exact recommendation from a complete run
 and asks `serving_control` to update the existing

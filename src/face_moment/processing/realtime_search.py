@@ -44,6 +44,8 @@ class DetectionSearchObservation:
     quality_gate_passed: bool
     rejection_reason: str | None
     matches: tuple[PhotoMatchObservation, ...]
+    best_cosine_similarity: float | None = None
+    eligible_photo_count: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -131,7 +133,7 @@ class RealtimeSearchService:
         if query.pipeline_revision_id != context.pipeline_revision_id:
             raise ValueError("reference query revision does not match search context")
 
-        matches = self._repository.search(
+        search = self._repository.search_with_diagnostics(
             spa_id=context.spa_id,
             visit_date=context.visit_date,
             pipeline_revision_id=context.pipeline_revision_id,
@@ -146,8 +148,10 @@ class RealtimeSearchService:
             rejection_reason=observation.rejection_reason,
             matches=tuple(
                 self._with_phash(match=match, phash_cache=phash_cache)
-                for match in matches
+                for match in search.matches
             ),
+            best_cosine_similarity=search.best_cosine_similarity,
+            eligible_photo_count=search.eligible_photo_count,
         )
 
     def _with_phash(

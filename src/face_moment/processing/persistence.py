@@ -23,6 +23,7 @@ from sqlalchemy import (
     cast as sql_cast,
     desc,
     func,
+    or_,
     select,
 )
 from sqlalchemy.orm import Mapped, Session, mapped_column
@@ -57,6 +58,13 @@ class CompatiblePhotoMatch:
     pipeline_revision_id: uuid.UUID
     cosine_similarity: float
     preview_object_key: str
+
+
+@dataclass(frozen=True, slots=True)
+class CompatibleSearchObservation:
+    matches: tuple[CompatiblePhotoMatch, ...]
+    best_cosine_similarity: float | None
+    eligible_photo_count: int
 
 
 class PhotoFace(Base):
@@ -171,6 +179,24 @@ class ExactCompatibleSearchRepository:
         reference_threshold: float,
     ) -> tuple[CompatiblePhotoMatch, ...]:
         """Search the immutable compatible ready scope using exact cosine distance."""
+        return self.search_with_diagnostics(
+            spa_id=spa_id,
+            visit_date=visit_date,
+            pipeline_revision_id=pipeline_revision_id,
+            query_embedding=query_embedding,
+            reference_threshold=reference_threshold,
+        ).matches
+
+    def search_with_diagnostics(
+        self,
+        *,
+        spa_id: uuid.UUID,
+        visit_date: date,
+        pipeline_revision_id: uuid.UUID,
+        query_embedding: Sequence[float],
+        reference_threshold: float,
+    ) -> CompatibleSearchObservation:
+        """Return accepted matches and the best pre-threshold score in one query."""
 
         if not math.isfinite(float(reference_threshold)):
             raise ValueError("reference_threshold must be finite")
@@ -217,18 +243,29 @@ class ExactCompatibleSearchRepository:
             .subquery("compatible_scope")
         )
         similarity = 1.0 - scoped.c.cosine_distance
-        statement = (
+        ranked = (
             select(
                 scoped.c.photo_id,
                 scoped.c.pipeline_revision_id,
                 similarity.label("cosine_similarity"),
                 scoped.c.preview_object_key,
+                func.count().over().label("eligible_photo_count"),
+                func.row_number().over(
+                    order_by=(desc(similarity), asc(scoped.c.photo_id))
+                ).label("score_rank"),
             )
-            .where(similarity >= float(reference_threshold))
-            .order_by(desc(similarity), asc(scoped.c.photo_id))
+            .subquery("ranked_compatible_scope")
+        )
+        statement = (
+            select(ranked)
+            .where(or_(
+                ranked.c.cosine_similarity >= float(reference_threshold),
+                ranked.c.score_rank == 1,
+            ))
+            .order_by(ranked.c.score_rank)
         )
         rows = self._session.execute(statement).all()
-        return tuple(
+        matches = tuple(
             CompatiblePhotoMatch(
                 photo_id=row.photo_id,
                 pipeline_revision_id=row.pipeline_revision_id,
@@ -236,6 +273,12 @@ class ExactCompatibleSearchRepository:
                 preview_object_key=row.preview_object_key,
             )
             for row in rows
+            if float(row.cosine_similarity) >= float(reference_threshold)
+        )
+        return CompatibleSearchObservation(
+            matches=matches,
+            best_cosine_similarity=float(rows[0].cosine_similarity) if rows else None,
+            eligible_photo_count=int(rows[0].eligible_photo_count) if rows else 0,
         )
 
 

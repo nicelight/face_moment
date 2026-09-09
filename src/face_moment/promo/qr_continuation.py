@@ -11,11 +11,12 @@ from typing import Protocol
 import uuid
 
 from botocore.exceptions import ClientError
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from face_moment.diagnostics.server_events import ServerEventCode, ServerEventSink
 from face_moment.processing import read_photo_processing_projection
-from face_moment.promo.attempt import PromoAttemptRepository
+from face_moment.promo.attempt import PromoAttempt, PromoAttemptRepository
 from face_moment.promo.display_media import derive_media_ref
 from face_moment.promo.purchase_url import (
     PhoneContinuationConfigurationError,
@@ -263,10 +264,16 @@ class PhoneContinuationService:
     def _read_preview(
         self, session_row: PromoSession, photo_id: uuid.UUID
     ) -> bytes | None:
+        revision_id = self._database_session.scalar(
+            select(PromoAttempt.pipeline_revision_id).where(PromoAttempt.id == session_row.attempt_id)
+        )
+        if revision_id is None:
+            return None
         projection = read_photo_processing_projection(
             self._database_session,
             photo_id=photo_id,
             spa_id=session_row.spa_id,
+            pipeline_revision_id=revision_id,
         )
         if projection is None or not projection.preview_object_key:
             return None

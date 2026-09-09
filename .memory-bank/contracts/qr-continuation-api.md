@@ -133,6 +133,11 @@ return non-disclosing `404` without raw MinIO keys, participant-facing presigned
 URLs, replacement selection or session mutation. Media reads are passive and
 never extend idle access.
 
+Both phone teaser selection and media delivery read previews for the immutable
+pipeline revision of the session's issuing Promo Attempt. They never substitute
+the Photo's original admission revision or a newer serving revision. A missing
+issuing Attempt/preview follows the existing unavailable-media behavior.
+
 ## Shared Expiry
 
 The first-open window and browser idle window are independent derived checks:

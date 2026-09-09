@@ -4,6 +4,48 @@ status: active
 ---
 # Changelog
 
+## [2026-09-09] Native Promo fetch binding
+
+- Actual browser diagnostics exposed a second display blocker: unbound
+  Window.fetch was invoked as a Promo controller method. Configuration and ACK
+  requests failed before HTTP. Bound it to the browser global like the sensor
+  client; 53 client tests passed with a new receiver regression.
+- The preceding wrapper-based browser smoke covered previews/QR but masked this
+  defect. [Investigation](guides/local-development.md#native-browser-fetch-failure-after-preview-repair)
+  records that limitation and the new full-app proof route.
+
+## [2026-09-09] Developer manual threshold control
+
+- Added the requested input/save/current-value block to Calibration, independent
+  of stored recommendations. The serving owner preserves other settings,
+  rejects stale forms and applies the new threshold to future Attempts.
+- Nine disposable HTTP tests cover role/CSRF, validation, persisted readback,
+  unchanged quality settings and rollback. See
+  [manual threshold](guides/local-development.md#manual-threshold-in-calibration).
+
+## [2026-09-09] Issued preview revision and display diagnostics
+
+- Found the actual display failure: search used reprocessed Photos, while media
+  reads defaulted to admission revision without previews. Display and phone now
+  select the issuing Attempt's revision through the existing processing boundary.
+- Operator-selected local SFace threshold and initial seed are now 0.4. Added
+  bounded browser diagnostic events with safe render-failure codes.
+- [Local investigation](guides/local-development.md#issued-preview-revision-repair-and-sface-threshold-04)
+  records evidence, rollout and tests; historical data is preserved.
+
+## [2026-09-09] Camera Attempt investigation presentation
+
+- Investigated two actual camera Attempts: one deadline and one completed
+  search with five accepted detections but no threshold-valid matches.
+- Added a developer-only readable summary of existing evidence with explicit
+  missing-score limitations; local backend refreshed and HTTP role checks passed.
+- Follow-up adds actual pre-threshold best cosine similarity and eligible Photo
+  count for fresh searches, persisted in ordinary evidence and shown in detail.
+  Twelve focused current-source tests passed; match eligibility is preserved.
+- [Local diagnosis](guides/local-development.md#camera-search-diagnosis--2026-09-09)
+  records measurements, verification limits and the exact evidence gap.
+  Search behavior and task lifecycle remain unchanged.
+
 ## [2026-09-09] Wave 8 — Preserved local Photo reprocessing
 
 - Editorial cleanup: сокращены повторяющиеся протоколы, handoff и инструкции; решения, команды, evidence и verdicts сохранены.

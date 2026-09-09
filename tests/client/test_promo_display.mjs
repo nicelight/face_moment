@@ -135,6 +135,7 @@ test("invalid result returns to advertising without fetching partial media", asy
   assert.equal(detail.state, "advertising");
   assert.equal(detail.retryEligible, true);
   assert.equal(detail.reason, "invalid_result");
+  assert.equal(detail.errorCode, "promo_teasers_must_contain_four");
   assert.equal(fetchCalls, 0);
   assert.deepEqual(failures, [detail]);
   assert.equal(controller.isVisible, false);

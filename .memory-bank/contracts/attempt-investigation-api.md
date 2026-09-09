@@ -101,6 +101,19 @@ FT-010 may add a developer-only navigation link to its separate annotation
 child page. The link carries only the server `attempt_id`; the FT-008 detail
 projection itself still exposes no participant name or annotation field.
 
+Operator-requested presentation, 2026-09-09: developer detail also renders a
+readable search summary from the same available ordinary manifest: historical
+date/revision/threshold, proposal count, per-detection rank, quality gate,
+rejection reason, threshold-valid match count, eligible Photo count and best
+pre-threshold cosine similarity. The page highlights the maximum measured score
+across its retained observations; this is not an identity probability.
+The existing JSON is indented inside a disclosure. Missing observations are
+explicitly unavailable, not zero detected faces. Quality is not similarity;
+Older bundles without the additive measurement fields explicitly show missing
+data. They cannot be inferred from an empty matches list or current inventory.
+Authorization and ordinary retention continue to govern this developer-only
+projection; operator detail does not include these measurements.
+
 ## Evidence Availability
 
 The diagnostics projection uses exactly four ordinary-evidence states:

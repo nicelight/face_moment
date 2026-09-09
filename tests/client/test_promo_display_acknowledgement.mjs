@@ -581,3 +581,31 @@ test("application wiring carries the existing one-clock timing snapshot into Pro
   assert.match(app, /attemptTimingSnapshots\.set\(event\.detail\.attemptId, event\.detail\.timing\)/);
   assert.match(app, /timing,\n\s*\}\);/);
 });
+
+test("default browser fetch keeps its Window receiver for configuration and ACK", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalStorage = globalThis.localStorage;
+  const paths = [];
+  try {
+    globalThis.localStorage = { getItem: () => "fixture-display-token" };
+    globalThis.fetch = async function (path) {
+      // Chromium's native Window.fetch rejects a controller as its receiver.
+      assert.equal(this, globalThis);
+      paths.push(path);
+      return {
+        ok: true, status: 200,
+        json: async () => ({ schema_version: 1, result_display_ms: 20000, success_cooldown_ms: 3000 }),
+      };
+    };
+    const controller = new PromoDisplayController({
+      container: new FakeElement(), documentImpl: displayDocument(),
+    });
+    const configuration = await controller.loadDisplayConfiguration({ attemptId: "native-fetch" });
+    assert.equal(configuration.result_display_ms, 20000);
+    await controller.reportDisplay({ sessionId: "native-fetch", status: "confirmed", qrFullyVisibleElapsedMs: 2100 });
+    assert.deepEqual(paths, ["/api/promo/display/config", "/api/promo/sessions/native-fetch/display"]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    globalThis.localStorage = originalStorage;
+  }
+});

@@ -176,6 +176,7 @@ def test_exact_routes_are_developer_only_no_store_and_csrf_protected(
     expected = {
         ("GET", "/staff/calibrations"),
         ("POST", "/staff/calibrations"),
+        ("POST", "/staff/calibrations/threshold"),
         ("GET", "/staff/calibrations/{calibration_id}"),
         ("POST", "/staff/calibrations/{calibration_id}"),
     }
@@ -589,6 +590,11 @@ def _mutation_matrix(
     target = detail_path or f"/staff/calibrations/{uuid.uuid4()}"
     return (
         _request(
+            fixture.app, "POST", "/staff/calibrations/threshold",
+            cookies=cookies, headers=headers,
+            form={"threshold": "0.4", "settings_revision": "1"},
+        ),
+        _request(
             fixture.app,
             "POST",
             "/staff/calibrations",
@@ -786,3 +792,57 @@ def _login_cookies(engine: Engine, values: dict[str, str]) -> dict[str, str]:
         "fm_staff_session": browser.session_token,
         "fm_staff_csrf": browser.csrf_token,
     }
+
+
+def test_manual_threshold_changes_only_current_threshold_and_rejects_stale_form(
+    disposable_calibration_http: CalibrationHttpFixture,
+) -> None:
+    fixture = disposable_calibration_http
+    developer = fixture.cookies['developer']
+    headers = {'X-CSRF-Token': developer['fm_staff_csrf']}
+    before = _serving_snapshot(fixture)
+    page = _request(fixture.app, 'GET', '/staff/calibrations', cookies=developer)
+    assert 'Ввести порог сходства вручную' in page.body
+    assert f'id="current-threshold">{before[1]}</output>' in page.body
+    form = {'threshold': '0,4', 'settings_revision': str(before[0])}
+    response = _request(fixture.app, 'POST', '/staff/calibrations/threshold',
+                        cookies=developer, headers=headers, form=form)
+    assert response.status_code == 303
+    assert response.headers['location'] == '/staff/calibrations'
+    assert response.headers['cache-control'] == 'no-store'
+    after = _serving_snapshot(fixture)
+    assert after == (before[0] + 1, 0.4, before[2], before[3], None)
+    page = _request(fixture.app, 'GET', '/staff/calibrations', cookies=developer)
+    assert 'id="current-threshold">0.4</output>' in page.body
+    stale = _request(fixture.app, 'POST', '/staff/calibrations/threshold',
+                     cookies=developer, headers=headers, form=form)
+    assert stale.status_code == 409
+    assert _serving_snapshot(fixture) == after
+    for invalid in ('NaN', 'Infinity', '-Infinity', '', 'abc', '-1.01', '1.01'):
+        bad = _request(fixture.app, 'POST', '/staff/calibrations/threshold',
+                       cookies=developer, headers=headers,
+                       form={'threshold': invalid, 'settings_revision': str(after[0])})
+        assert bad.status_code == 422
+        assert _serving_snapshot(fixture) == after
+
+
+def test_manual_threshold_rolls_back_on_failed_save(
+    disposable_calibration_http: CalibrationHttpFixture, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = disposable_calibration_http
+    before = _serving_snapshot(fixture)
+    original = RealtimeContextRepository.update_reference_settings
+
+    def fail_after_write(self, **kwargs):
+        original(self, **kwargs)
+        raise RuntimeError('private internal failure')
+
+    monkeypatch.setattr(RealtimeContextRepository, 'update_reference_settings', fail_after_write)
+    developer = fixture.cookies['developer']
+    response = _request(fixture.app, 'POST', '/staff/calibrations/threshold',
+                        cookies=developer,
+                        headers={'X-CSRF-Token': developer['fm_staff_csrf']},
+                        form={'threshold': '0.5', 'settings_revision': str(before[0])})
+    assert response.status_code == 500
+    assert response.body == ''
+    assert _serving_snapshot(fixture) == before

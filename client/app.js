@@ -41,6 +41,34 @@ let promoDisplayController;
 let successfulCooldownAttemptId = null;
 const attemptTimingSnapshots = new Map();
 const displayConfigSnapshots = new Map();
+const clientDiagnosticEvents = [];
+
+function recordClientDiagnostic(stage, detail = {}) {
+  const event = { time: new Date().toISOString(), stage };
+  for (const key of ["attemptId", "outcome", "reason", "errorCode"]) {
+    if (typeof detail[key] === "string" && /^[a-zA-Z0-9_-]{1,100}$/.test(detail[key])) {
+      event[key] = detail[key];
+    }
+  }
+  if (typeof detail.acknowledgement?.sent === "boolean") {
+    event.displayReportSent = detail.acknowledgement.sent;
+  }
+  if (Number.isInteger(detail.httpStatus)) event.httpStatus = detail.httpStatus;
+  clientDiagnosticEvents.push(event);
+  if (clientDiagnosticEvents.length > 20) clientDiagnosticEvents.shift();
+  refreshClientDiagnostics();
+}
+
+function refreshClientDiagnostics() {
+  const list = document.querySelector("#client-diagnostic-events");
+  if (!list) return;
+  list.replaceChildren();
+  for (const event of [...clientDiagnosticEvents].reverse()) {
+    const item = document.createElement("li");
+    item.textContent = Object.entries(event).map(([key, value]) => `${key}: ${value}`).join(" · ");
+    list.append(item);
+  }
+}
 const jpegQualityController = createJpegQualityController({
   onChange: updateQualityConfiguration,
 });
@@ -58,7 +86,7 @@ const views = {
   },
   debug: {
     title: "Диагностика",
-    text: "Состояние клиента и диагностические сведения появятся в следующих этапах.",
+    text: "Последние 20 этапов поиска и показа в этой вкладке. После сбоя откройте эту страницу: причина возврата к рекламе останется здесь до перезагрузки. Токены и изображения не записываются.",
     className: "debug-card",
   },
 };
@@ -88,6 +116,12 @@ function render() {
   card.append(text);
 
   view.append(card);
+  if (name === "debug") {
+    const list = document.createElement("ol");
+    list.id = "client-diagnostic-events";
+    card.append(list);
+    refreshClientDiagnostics();
+  }
   if (name === "configuration") mountDisplayClientConfiguration(card);
   if (name === "configuration") mountSensorConfiguration(card);
   if (name === "configuration") mountQualityConfiguration(card);
@@ -409,6 +443,7 @@ window.addEventListener("face-moment:attempt-transport-failure", (event) => {
 
 window.addEventListener("face-moment:attempt-outcome", (event) => {
   const detail = event.detail;
+  recordClientDiagnostic("Ответ сервера", detail);
   const timing = attemptTimingSnapshots.get(detail?.attemptId);
   attemptTimingSnapshots.delete(detail?.attemptId);
   const configuration = displayConfigSnapshots.get(detail?.attemptId);
@@ -440,7 +475,9 @@ window.addEventListener("face-moment:attempt-outcome", (event) => {
       });
     },
   );
-  void render.catch(() => {});
+  void render.catch(() => recordClientDiagnostic("Ошибка запуска показа", {
+    attemptId: detail.attemptId, errorCode: "unexpected_render_error",
+  }));
 });
 
 function returnToAdvertisingAfterPromoFailure(detail) {
@@ -911,9 +948,16 @@ attemptOutcomeController = createAttemptOutcomeController({
 promoDisplayController = createPromoDisplayController({
   container: view,
   requireDisplayConfig: true,
-  onLoading: ({ attemptId }) => signalProgress.phase(attemptId, "photos"),
-  onPrepared: ({ attemptId, card }) => signalProgress.reveal(attemptId, card),
+  onLoading: ({ attemptId }) => {
+    recordClientDiagnostic("Загрузка фотографий", { attemptId });
+    signalProgress.phase(attemptId, "photos");
+  },
+  onPrepared: ({ attemptId, card }) => {
+    recordClientDiagnostic("Карточка подготовлена", { attemptId });
+    signalProgress.reveal(attemptId, card);
+  },
   onComplete: (detail) => {
+    recordClientDiagnostic("Фотографии и QR показаны", detail);
     document.body.dataset.promoState = "complete";
     window.dispatchEvent(
       new CustomEvent("face-moment:promo-rendered", { detail }),
@@ -929,6 +973,7 @@ promoDisplayController = createPromoDisplayController({
     );
   },
   onFailure: (detail) => {
+    recordClientDiagnostic("Показ не удался", detail);
     document.body.dataset.promoState = "advertising";
     returnToAdvertisingAfterPromoFailure(detail);
   },
@@ -941,6 +986,7 @@ triggerController = createReferenceCaptureController({
   },
   cloneFrame: copyCameraFrame,
   onAttemptStart: (detail) => {
+    recordClientDiagnostic("Съёмка начата", detail);
     window.dispatchEvent(new CustomEvent("face-moment:attempt-start", { detail }));
   },
   onReferenceSeriesReady: (detail) => {

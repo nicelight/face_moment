@@ -404,14 +404,15 @@ def _render_attempt_detail(view: AttemptInvestigationView) -> str:
         manifest = (
             "unavailable"
             if evidence.ordinary_manifest is None
-            else json.dumps(evidence.ordinary_manifest, sort_keys=True, ensure_ascii=True)
+            else json.dumps(evidence.ordinary_manifest, sort_keys=True, ensure_ascii=False, indent=2)
         )
         developer = (
             '<section id="developer-evidence"><h2>Developer evidence</h2>'
             f"<p>Schema version: {_text(evidence.schema_version)}</p>"
             f"<p>Completeness: {escape(evidence.completeness)}</p>"
             f"<p>Gap reason: {_text(evidence.gap_reason)}</p>"
-            f"<pre>{escape(manifest)}</pre>"
+            f"{_render_search_evidence(evidence.ordinary_manifest)}"
+            f"<details><summary>Исходные диагностические данные (JSON)</summary><pre>{escape(manifest)}</pre></details>"
             f'<p><a href="/staff/attempts/{core.attempt_id}/annotations">Annotations</a></p></section>'
         )
     return f"""<!doctype html>
@@ -429,6 +430,78 @@ def _render_attempt_detail(view: AttemptInvestigationView) -> str:
 <dt>Evidence availability</dt><dd id="evidence-availability">{view.evidence_availability}</dd>
 <dt>Issue tags</dt><dd>{_tags(view.issue_tags)}</dd></dl>
 <section><h2>Server durations</h2><ul>{durations}</ul></section>{developer}</main></body></html>"""
+
+
+def _render_search_evidence(manifest: dict[str, object] | None) -> str:
+    """Explain existing developer evidence without inferring missing search scores."""
+    if manifest is None:
+        return ""
+    serving = manifest.get("serving")
+    client = manifest.get("client")
+    fields: list[tuple[str, object]] = []
+    if isinstance(serving, dict):
+        fields.extend((label, serving.get(key)) for label, key in (
+            ("Дата поиска", "visit_date"),
+            ("Модель", "pipeline_code"),
+            ("Версия обработки", "pipeline_revision_id"),
+            ("Версия настроек", "settings_revision"),
+            ("Порог сходства", "threshold"),
+            ("Настройки качества", "quality_settings"),
+        ))
+    if isinstance(client, dict):
+        fields.append(("Передано предложений лиц", client.get("proposal_count")))
+    parameters = "".join(
+        f"<dt>{escape(label)}</dt><dd>{_text(value)}</dd>" for label, value in fields
+    )
+    detections = manifest.get("detections")
+    rows = ""
+    best_scores: list[float] = []
+    if isinstance(detections, list):
+        for detection in detections:
+            if not isinstance(detection, dict):
+                continue
+            matches = detection.get("matches")
+            observations = (
+                [match for match in matches if isinstance(match, dict)]
+                if isinstance(matches, list) else []
+            )
+            best = detection.get("best_cosine_similarity")
+            best_label = "не сохранено"
+            if isinstance(best, (int, float)) and not isinstance(best, bool):
+                best_scores.append(float(best))
+                best_label = format(best, ".4f")
+            elif "best_cosine_similarity" in detection:
+                best_label = "нет оценки"
+            gate = detection.get("quality_gate_passed")
+            gate_label = "пройден" if gate is True else "не пройден" if gate is False else "нет данных"
+            rows += (
+                "<tr>"
+                f"<td>{_text(detection.get('rank'))}</td>"
+                f"<td>{_text(detection.get('occurrence_index'))}</td>"
+                f"<td>{_text(detection.get('reference_quality_score'))}</td>"
+                f"<td>{gate_label}</td>"
+                f"<td>{_text(detection.get('rejection_reason'))}</td>"
+                f"<td>{_text(detection.get('eligible_photo_count'))}</td>"
+                f"<td>{len(observations) if isinstance(matches, list) else 'нет данных'}</td>"
+                f"<td>{best_label}</td></tr>"
+            )
+    table = (
+        "<table><thead><tr><th>Ранг</th><th>Индекс лица (с 0)</th><th>Оценка качества</th>"
+        "<th>Фильтр качества</th><th>Причина отклонения</th><th>Фотографий в поиске</th><th>Совпадений ≥ порога</th>"
+        f"<th>Лучшее сходство до порога</th></tr></thead><tbody>{rows}</tbody></table>"
+        if rows else "<p>Наблюдения поиска не сохранены; это не означает, что камера не нашла лиц.</p>"
+    )
+    return (
+        '<section id="search-evidence-summary"><h3>Диагностика поиска</h3>'
+        '<p>Лучшее сходство среди сохранённых поисковых наблюдений: '
+        f'<strong id="best-cosine-similarity">{format(max(best_scores), ".4f") if best_scores else "нет данных"}</strong></p>'
+        f"<dl>{parameters}</dl>{table}"
+        "<p>Оценка качества лица не является оценкой сходства с фотографией. "
+        "Лучшее сходство — cosine similarity, а не вероятность узнавания. "
+        "Оно измеряется до отсечения по порогу; список совпадений содержит только прошедшие порог фотографии. "
+        "«Нет оценки» означает, что поиск не выполнялся или в его области не было подходящих фотографий. "
+        "В старых попытках эта оценка не сохранена; при превышении времени результаты поиска могут быть недоступны.</p></section>"
+    )
 
 
 def _tags(values: Sequence[str]) -> str:

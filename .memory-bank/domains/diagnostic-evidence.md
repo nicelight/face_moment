@@ -133,6 +133,16 @@ threshold-valid match returned for each of them until the bundle-size bound;
 exceeding that bound fails the best-effort write and remains explicit rather
 than silently truncating a candidate pool. FT-007 writes `artifacts: []`.
 
+Operator-authorized additive diagnostic fields (2026-09-09): each new detection
+may also store `best_cosine_similarity` (finite number or null) before threshold
+filtering and `eligible_photo_count` (nonnegative integer or null). They are
+copied from the processing-owned observation, never reconstructed from current
+inventory. Null means unavailable/no eligible candidate; count 0 identifies a
+completed empty scope, whereas null count means no measurement. Older version-1
+bundles omit these fields and remain readable with an explicit missing-data
+label. Neither field changes matches, result assembly, threshold, embeddings,
+media retention or the existing deadline-discard behavior.
+
 Candidate observations may contain Photo UUID, finite score and deterministic
 ranking inputs required for reproduction. Embeddings, credentials, auth
 headers/cookies/tokens, commercial Photo originals, personalized session data,

@@ -33,6 +33,10 @@ pilot. Threshold identity is deliberately tied to pipeline code and query
 source, not to one immutable pipeline revision.
 
 An isolated provision/update path supplies deterministic test settings. The
+operator-selected initial SFace threshold is 0.4 (2026-09-09); the local seed
+and persistent local setting use this value. Existing Attempts retain their
+admitted historical threshold. Other pipeline settings remain explicit.
+The
 active-date staff API is defined by the
 [Boundary Map](../contracts/boundary-map.md#active-search-date). No automatic
 date rollover, automatic threshold change, settings history or generic
@@ -145,6 +149,15 @@ The typed result returned to `promo` contains, in selected-detection order:
 - request-local occurrence index, rank, quality score and gate result;
 - for every gate-passing detection, all unique threshold-valid Photo matches
   with `photo_id`, cosine similarity, private preview reference and pHash.
+- Operator-authorized diagnostics (2026-09-09): nullable
+  `best_cosine_similarity` before threshold filtering and nullable
+  `eligible_photo_count` after the same compatibility/visibility/date filters.
+  Count is distinct Photos, not face rows. A completed empty search reports
+  count 0 and null score; an unsearched/rejected occurrence reports nulls.
+  These values do not admit a match or trigger preview/pHash reads. The repository
+  obtains them in the same SQL statement, returning at most one extra candidate
+  internally when all scores are below threshold; the public match list remains
+  threshold-valid. No embedding or rejected Photo identity is persisted.
 
 It does not contain a session, global candidate union, selected teaser set,
 `N`, QR ticket or display state. Those are `promo`-owned outcomes.

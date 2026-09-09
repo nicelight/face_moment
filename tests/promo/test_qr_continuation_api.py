@@ -728,6 +728,7 @@ def test_phone_assembly_uses_first_available_issued_teaser_without_mutation(
     photo_ids = tuple(uuid.uuid4() for _ in range(4))
     row = SimpleNamespace(
         id=uuid.uuid4(),
+        attempt_id=uuid.uuid4(),
         spa_id=uuid.uuid4(),
         visit_date=date(2026, 8, 28),
         teaser_photo_ids=list(photo_ids),
@@ -756,10 +757,13 @@ def test_phone_assembly_uses_first_available_issued_teaser_without_mutation(
         photo_id for photo_id, is_available in zip(photo_ids, availability) if is_available
     }
 
+    attempt_revision = uuid.uuid4()
+
     def projection(
-        _session: object, *, photo_id: uuid.UUID, spa_id: uuid.UUID
+        _session: object, *, photo_id: uuid.UUID, spa_id: uuid.UUID, pipeline_revision_id: uuid.UUID
     ) -> object | None:
         assert spa_id == row.spa_id
+        assert pipeline_revision_id == attempt_revision
         if photo_id not in available:
             return None
         return SimpleNamespace(
@@ -780,7 +784,7 @@ def test_phone_assembly_uses_first_available_issued_teaser_without_mutation(
     monkeypatch.setattr(qr_continuation, "read_photo_processing_projection", projection)
 
     service = PhoneContinuationService(
-        SimpleNamespace(),  # type: ignore[arg-type]
+        SimpleNamespace(scalar=lambda _statement: attempt_revision),  # type: ignore[arg-type]
         qr_ticket_secret="fixture-secret",
         purchase_url=PURCHASE_URL,
         object_store=Store(),

@@ -44,9 +44,15 @@ from face_moment.platform.auth.principals import StaffPrincipal, StaffRole
 from face_moment.serving_control.realtime_context import (
     CalibrationRecommendationConflictError,
     CalibrationServingRecommendation,
+    CalibrationServingSnapshot,
     InvalidCalibrationRecommendationError,
     RealtimeContextRepository,
     UnknownRealtimeContextSpaError,
+)
+from face_moment.serving_control.ingest_target import (
+    CommittedServingTargetUnavailableError,
+    IneligibleIngestTargetError,
+    IngestTargetRepository,
 )
 
 _MAX_JSON_BYTES = 1024 * 1024
@@ -289,6 +295,37 @@ class CalibrationRunService:
     def __init__(self, session: Session) -> None:
         self._session = session
         self._repository = CalibrationRunRepository(session)
+
+    def current_threshold_settings(self) -> CalibrationServingSnapshot | None:
+        """Read the single active serving target through its owner boundary."""
+        try:
+            target = IngestTargetRepository(self._session).resolve_committed_serving_target()
+            return RealtimeContextRepository(self._session).read_calibration_serving_snapshot(
+                spa_id=target.spa_id
+            )
+        except (
+            CommittedServingTargetUnavailableError,
+            IneligibleIngestTargetError,
+            CalibrationRecommendationConflictError,
+        ):
+            return None
+
+    def save_manual_threshold(self, *, threshold: float, settings_revision: int) -> None:
+        """Change only the threshold; preserve quality and invalidate stale applies."""
+        if not math.isfinite(threshold) or not -1 <= threshold <= 1:
+            raise ValueError("threshold must be a finite cosine similarity")
+        current = self.current_threshold_settings()
+        if current is None or current.settings_revision != settings_revision:
+            raise CalibrationSelectionConflictError("serving settings changed or unavailable")
+        # The snapshot owns the SPA row lock until the adapter commits.
+        RealtimeContextRepository(self._session).update_reference_settings(
+            spa_id=current.spa_id,
+            pipeline_code=current.pipeline_code,
+            reference_threshold=threshold,
+            min_query_face_quality=current.min_query_face_quality,
+            quality_settings=current.quality_settings,
+            calibration_id=None,
+        )
 
     def request(
         self,
