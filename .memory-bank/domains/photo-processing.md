@@ -438,3 +438,114 @@ foreign-owned row.
 - Capacity probes independently demonstrate normal, configured-low and
   unavailable PostgreSQL/MinIO observations in disposable state without
   disclosing storage contents.
+
+## Versioned Photographer Preprocessing
+
+Authority: [accepted operator plan](../../.protocols/photo-preprocessing/operator-plan.md).
+This is processing-owned detail under the existing native SFace Photo boundary;
+no module, graph edge, storage schema or global Planning Revision changes.
+
+The legacy `opencv-bgr-v1` and other previously configured preparation labels
+MUST retain their existing native full-image detection behavior. New behavior MUST use explicit immutable preprocessing identities:
+`opencv-photo-640-v2` and, only if selected, `opencv-photo-640-1280-v2`.
+The paired-scale candidate may be a local benchmark parameter before selection;
+there is no obligation to retain an unused 1280 production path. Revision
+publication and model admission retain exact configured identity/asset checks;
+only the explicit new identities activate bounded Photo preprocessing.
+No persisted revision or existing face/state is rewritten to mean new behavior.
+
+For new-revision photographer processing, use the once EXIF-oriented decoded
+BGR original supplied to the adapter. Derive each detection image independently
+from that original with aspect-preserving long-edge bounds 640 and optionally
+1280, no upscaling, no repeated actual dimensions, and no tiling. Use actual
+output width/original width and output height/original height ratios to invert
+bbox and all five landmark coordinates, including non-square rounding. The
+roughly 7% face size and groups up to eight are test scope, not size filters or
+face count limits.
+
+Merge cross-scale duplicates deterministically in original coordinates before
+embedding. A duplicate requires overlapping boxes and consistent native
+five-point geometry; proximity alone MUST NOT merge neighbouring faces. Keep
+one native detection rather than averaging embeddings. Exact routine numeric
+thresholds and tie ordering belong to the implementation and its fixtures.
+`FaceRecognizerSF.alignCrop` MUST receive the original decoded pixels and the
+mapped native detection; feed its native 112x112 result to SFace recognition.
+Do not align from the reduced detector image. Embedding normalization and
+revision dimension checks remain the existing native rules.
+
+For a legitimate partial face at the image boundary, intersect the published
+bbox with the original image bounds; discard an empty intersection. Keep the
+mapped landmark/alignment geometry unchanged. Finite coordinates and positive
+terminal dimensions remain mandatory; invalid detections cannot make invalid
+terminal rows. Zero accepted faces uses ordinary `no_faces`; inference failure
+uses the existing bounded retry/failure route. Original JPEG bytes are unchanged.
+
+`inspect_reference_crop` and `prepare_reference_query` MUST use one native
+single-pass crop detection per operation and MUST NOT inherit Photo multi-scale
+processing. Existing query selection, gates and repeated inspection/preparation
+semantics are preserved. Buffalo retains its own SCRFD/alignment/recognizer
+path. Worker, realtime and offline Calibration consume the same version-aware
+SFace adapter; no registry, service, model download, threshold auto-apply or
+cross-pipeline geometry is added. Inference decodes once; derivative generation
+may reuse those oriented pixels within the processing owner, without changing
+original storage or derivative shape.
+
+Verification target: FT-002-AC-010 and the
+[paired native experiment](../testing/photo-processing.md#photographer-scale-experiment)
+for FT-002-AC-011. The lower-cost 640 identity is selected unless the experiment
+shows useful extra detections or matching gain; the experimental identity is
+never silently substituted for the selected one.
+
+## Local Preprocessing Revision Application
+
+Authority is the explicit workstation testing deployment/reprocessing request,
+not general permission to change remote production. Reuse the existing
+[processing inputs](../contracts/boundary-map.md#processing-input-projections),
+[guarded serving switch](../contracts/boundary-map.md#manual-serving-revision-switch),
+revision publication, initial pending, worker and terminal boundaries.
+
+A bounded local operator procedure records selected existing Photo IDs and
+before-state, verifies the selected measured adapter against read-only assets,
+publishes a new compatible revision through `PipelineRevisionRepository`, and
+uses the serving-control command with its ordinary exact-A guard. Drain actual
+A-admission work before switching; never bypass the guard or falsify terminals.
+Update local model settings and restart model consumers during accepted
+maintenance downtime. For each selected Photo lacking `(photo_id, new_revision)`
+state, processing creates pending through its owner repository
+(`InitialPendingRepository.ensure_revision_pending`). An existing
+state is preserved, including terminal no_faces/failed; retrying the procedure
+must not create another revision or reset an existing terminal state. Reuse the
+recorded target revision on resume. Missing/purged originals are explicit
+failures/exclusions and never silently alter the selected population.
+
+The worker alone claims, processes and publishes the new states. Inventory IDs,
+checksums, original bytes, visibility, accepted_at, admission revision and old
+revision outcomes MUST remain unchanged; no reupload, new admission, face-row
+rewrite across revisions, database reset or new jobs/queue is allowed. The
+real persistence is existing `face_moment.pipeline_revisions`,
+`photo_pipeline_states`, `photo_faces` and serving-control rows in local
+PostgreSQL, plus deterministic new-revision derivative objects in local MinIO.
+
+Capture local target/revision identity, counts and original hashes before and
+after; inspect the committed new revision from fresh sessions and exercise
+compatible exact search. The per-Photo staff status API intentionally continues
+to report its immutable admission revision, so it is not the reprocessing
+completion oracle. Use processing-owned new-revision state/search projections.
+Runtime settings/binding failure remains closed until corrected and restarted;
+retained old data supports an explicit guarded switch back, never automatic
+rollback. Disposable integration fixtures own failure injection and cleanup;
+the authorized local inventory/new outcomes are retained for user testing.
+
+Verification target: FT-002-AC-012; native new-revision terminals, idempotent
+resume and unchanged old inventory/original/lineage snapshots.
+
+## Selected Local Photo Preparation
+
+TASK-117 measurement selects `opencv-photo-640-v2` for the requested local rollout.
+The explicit `opencv-photo-640-1280-v2` remains experimental; both share the
+original-pixel alignment and single-pass query contract above. Eight native
+samples supplied no extra face from 1280. [Scale selection evidence](../../.tasks/TASK-117-T2-FT-002-W7/scale-selection.md)
+records detections, timing, group misses and the absence of camera/label proof.
+Implementation: `processing/yunet_photo_preprocessing.py` and
+`processing/sface_adapter.py`; orchestration reuses the once decoded original
+for derivatives. This selection is not a universal accuracy or ingest SLO claim.

@@ -1,0 +1,110 @@
+{
+  "id": "TASK-117-T2-FT-002-W7",
+  "title": "Bound versioned SFace Photo preprocessing and select detection scales",
+  "status": "done",
+  "wave": "W7",
+  "feature": "FT-002",
+  "tier": "T2",
+  "reqs": [
+    "REQ-SRCH-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-114-T3-FT-002-W6"
+  ],
+  "touched_files": [
+    "src/face_moment/processing/sface_adapter.py",
+    "src/face_moment/processing/photo_orchestration.py",
+    "src/face_moment/processing/derivatives.py",
+    "tests/processing/test_sface_adapter.py",
+    "tests/processing/test_photo_orchestration.py",
+    "tests/processing/test_model_asset_admission.py",
+    "scripts/measure-photo-preprocessing.py"
+  ],
+  "purpose": "Bound high-resolution photographer detection cost and investigate useful second-scale coverage without changing native query/Buffalo or historical revision semantics.",
+  "success_outcome": "New explicit SFace Photo preprocessing aligns original pixels after bounded detection and chooses 640 versus 640+1280 from repeatable real-sample evidence; query crops and legacy revisions retain their own single-pass behavior.",
+  "gates": [
+    {
+      "name": "Current-source typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    },
+    {
+      "name": "SFace and direct affected-consumer regressions",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/processing/test_sface_adapter.py tests/processing/test_photo_orchestration.py tests/processing/test_derivatives.py tests/processing/test_model_asset_admission.py tests/processing/test_reference_query.py tests/processing/test_buffalo_adapter.py",
+      "required": true
+    }
+  ],
+  "verify": [
+    "2026-09-09 independent /verify PASS: AC-010/011; 62 focused current-source tests, mypy (96 files), mb-lint, native original-pixel/query-isolation probe and full three-repeat eight-sample CPU comparison passed. Selected opencv-photo-640-v2 confirmed; hashes/geometry/counts/self-query scores reproduce executor evidence. Report: .protocols/TASK-117-T2-FT-002-W7/verification.md; artifacts: .tasks/TASK-117-T2-FT-002-W7/verify-*. Lifecycle unchanged; root explicit owner may close T2.",
+    "2026-09-09 root GENERAL explicit manual owner closure: done after independent /verify PASS in .protocols/TASK-117-T2-FT-002-W7/verification.md; AC-010/011 accepted. T2 feature semantic completion remains due after TASK-118."
+  ],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md"
+  ],
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-010",
+    ".memory-bank/features/FT-002.md#FT-002-AC-011",
+    ".protocols/photo-preprocessing/operator-plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/constitution.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/boundary-map.md#processing-input-projections",
+    ".memory-bank/contracts/boundary-map.md#manual-serving-revision-switch",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/contracts/boundary-map.md#calibration-and-serving-change",
+    ".memory-bank/architecture/system-architecture.md",
+    ".memory-bank/domains/realtime-search.md",
+    ".memory-bank/domains/calibration.md",
+    ".memory-bank/testing/index.md",
+    ".memory-bank/guides/local-development.md"
+  ],
+  "constraints": [
+    "Primary owner processing, src/face_moment/processing/. Reuse the two direct adapters and Photo orchestrator; current query methods call process_photo, so separate their single-pass native route before adding Photo scale selection. No new FaceEngine abstraction is needed.",
+    "Read versioned-photographer-preprocessing and photographer-scale-experiment exact sections. Existing opencv-bgr-v1 and other historical configured preprocessing labels preserve old full-image behavior; new behavior is an exact explicit opt-in. Version identifies Photo behavior plus retained single-pass query path. Runtime model identity checks remain exact.",
+    "Decode EXIF once for inference. Both scales derive from the same oriented original. Reusing that decoded array in derivative generation is permitted within processing; preserve derivative output/original bytes. Clip published edge bbox after native original-pixel alignment; preserve mapped five-point landmarks.",
+    "Implement the paired-scale candidate as the same bounded adapter algorithm, not a second service. Production may retain only the selected exact new version if 1280 is not useful; a local benchmark override/helper may supply the experimental edges without changing legacy default behavior. Record the selected version and evidence.",
+    "Native sample inputs: /tmp/!datasets/serg_1/me_1/*.jpg (five), /tmp/!datasets/serg_1/IMG_20230523_185218.jpg (sixth), and root group JPEGs FansChildrenTJ.jpg / sirious-guys.jpg. Groups are local benchmark inputs only, not uploaded/admitted. Model files under models/opencv_sface are read-only.",
+    "Preserve deterministic geometry/readiness tests as regressions without adopting dependency claims. Exercise both new and legacy admission identities for serving and Calibration with matching/mismatched settings. No database migration or runtime persistence is introduced; native arrays and task-owned measurement artifacts suffice.",
+    "Use existing pytest fixtures with isolated databases/assets and cleanup for any integration test. Do not require real camera Attempts or operator ground truth that do not exist; report available matching/self-query evidence and its limits.",
+    "If host .env.local PostgreSQL forwarding is unavailable, the same exact focused pytest nodes may execute inside the source-mounted local backend container with its effective local environment; prove it runs current workspace source and fixture-owned isolated databases/object prefixes. This is an equivalent test invocation, not permission to mutate operator rows."
+  ],
+  "invariants": [
+    "Original JPEG bytes, Photo identity/visibility/admission lineage and old revision outcomes remain unchanged.",
+    "Processing alone owns revision/state/faces/derivatives; serving_control alone selects serving; no foreign direct writes, fallback, extra worker or service."
+  ],
+  "verification_targets": [
+    "FT-002-AC-010 / REQ-SRCH-001: non-square odd dimensions, EXIF-oriented original, no upscaling, no repeated actual dimensions, duplicate-versus-neighbour merging, five-point actual-ratio mapping, original-pixel alignCrop/native 112x112 input, edge clipping and finite normalized terminal results. Legacy revision and new-revision query traces remain single-pass; serving/Calibration fail closed on identity mismatch.",
+    "FT-002-AC-011 / REQ-SRCH-001 / REQ-ARCH-001: real CPU six-portrait plus available-group paired 640/640+1280 experiment per canonical method; preserve sample manifest, overlays, per-image counts/matching evidence and repeated timing. Record concrete selected variant and why the extra scale is useful or why 640 is sufficient; missing human/camera data is explicit."
+  ],
+  "evidence_required": [
+    "FT-002-AC-010 RED: current new-identity adapter on a high-resolution controlled Photo still detects at original size instead of bounded size; GREEN: equivalent fixture records bounded calls, correctly mapped original geometry/alignment and preserved legacy/query behavior; decisive comparison: detector/alignCrop traces and terminal values; artifact: focused regression transcript under .tasks/TASK-117-T2-FT-002-W7/.",
+    "FT-002-AC-011 RED_NOT_APPLICABLE: this claim requires empirical selection, not an assumed quality defect; inventing a poor 640 baseline would falsify the experiment. Alternative proof: paired native same-input measurements and overlays with explicit per-sample gain/time comparison, available matching observations, selected revision and evidence limits; artifact: measurement report and bounded outputs under .tasks/TASK-117-T2-FT-002-W7/."
+  ],
+  "anti_goals": [
+    "No runtime deployment, persisted serving revision switch or reprocessing of operator inventory in this task.",
+    "No Buffalo geometry changes, query ranking/threshold changes, Calibration schema/data collection, model registry/download, new service or universal accuracy claim."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Remote or local runtime deployment and operator database mutations",
+      "Inventory admission/visibility/lineage writes; old task records and evidence; model asset writes"
+    ],
+    "stop_conditions": [
+      "Actual native model or required six portrait input missing; record evidence gap instead of substituting fabricated data.",
+      "A change to global ownership, query/search behavior or public API is required beyond accepted Photo preprocessing."
+    ]
+  }
+}

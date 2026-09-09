@@ -4,6 +4,20 @@ status: active
 ---
 # Changelog
 
+## [2026-09-09] Wave 8 — Preserved local Photo reprocessing
+
+- Editorial cleanup: сокращены повторяющиеся протоколы, handoff и инструкции; решения, команды, evidence и verdicts сохранены.
+
+- Completed [TASK-118](tasks/TASK-118-T3-FT-002-W8.task.json): local `opencv-photo-640-v2` deployment, six ready Photos, compatible search, unchanged originals/admission/history and exact repeat-run snapshot.
+- Fixed the extra admission-revision search filter and added create-only pending plus disposable retry/recovery coverage. Independent verification passed 34 focused tests, mypy, lint, build and fresh local read-only proof; task and current FT-002 semantic reviews passed.
+- Reconciled [FT-002](features/FT-002.md), its implementation plan, RTM links and [local development guide](guides/local-development.md). All 26 feature tasks are done; other feature/epic lifecycles and Planning Revision 4 are unchanged. Actual camera identity evaluation still needs camera attempts and labels.
+
+## [2026-09-09] Wave 7 — Measured SFace Photo preprocessing
+
+- Completed [TASK-117](tasks/TASK-117-T2-FT-002-W7.task.json): bounded detection with original-pixel alignment, shared EXIF decode and preserved legacy/query behavior.
+- Eight native samples support `opencv-photo-640-v2`: all six main portrait faces recovered; 1280 adds no faces on the supplied groups. This does not establish camera identity accuracy.
+- Independent verification passed 62 focused tests, mypy, lint and repeated native measurements. [FT-002](features/FT-002.md) records AC-010/011 completion; local application and fresh feature semantic verification remain in TASK-118.
+
 ## [2026-09-07] Adaptive Promo photo cards
 
 - Implemented the operator-approved paper-card presentation and exact download/domain copy in the existing Chromium client. Landscape, square and portrait layouts replace the fixed display assumption; QR remains stationary.

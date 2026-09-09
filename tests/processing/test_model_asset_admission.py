@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -190,20 +190,27 @@ def _patch_sface_loader(
     monkeypatch.setattr(SFacePhotoAdapter, "from_configured_assets", load)
 
 
+@pytest.mark.parametrize("version", ["opencv-bgr-v1", "opencv-photo-640-v2", "opencv-photo-640-1280-v2"])
+@pytest.mark.parametrize("admit", [admit_selected_model, admit_selected_calibration_adapter])
 def test_admission_verifies_matching_direct_assets_before_warmup(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, version: str, admit: Any,
 ) -> None:
-    assets = _assets(tmp_path)
+    assets = replace(_assets(tmp_path), preprocessing_version=version)
     revision = _revision(assets)
     settings = _set_sface_environment(monkeypatch, assets)
     created: list[_RecordingAdapter] = []
     _patch_sface_loader(monkeypatch, created)
 
-    adapter = admit_selected_model(revision=revision, settings=settings)
+    adapter = admit(revision=revision, settings=settings)
 
     assert adapter.ready is True
     assert adapter.pipeline_revision_id == revision.id
     assert [item.pipeline_revision_id for item in created] == [revision.id]
+
+    mismatched = replace(revision, preprocessing_version="other-preprocessing")
+    with pytest.raises(ModelAdmissionError):
+        admit(revision=mismatched, settings=settings)
+    assert len(created) == 1
 
 
 @pytest.mark.parametrize("case", ["missing", "identity", "hash", "dimension"])

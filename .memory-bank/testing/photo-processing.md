@@ -11,7 +11,7 @@ source_of_truth:
 
 This specification defines deterministic proof for `REQ-ING-003..004`,
 `REQ-SRCH-001`, `REQ-REL-002`, `REQ-SEC-001`, `REQ-ARCH-001` and
-`FT-002-AC-001..009`. Product outcomes remain owned by the
+`FT-002-AC-001..012`. Product outcomes remain owned by the
 [PRD](../prd.md) and [FT-002](../features/FT-002.md); the persisted/worker rules
 come from [Photo Processing](../domains/photo-processing.md), and the staff
 surface comes from the [Photo Processing API](../contracts/photo-processing-api.md).
@@ -209,3 +209,72 @@ read-only and PostgreSQL, MinIO and internal service ports remain private.
 Project-native build/typecheck/tests and tier-routed verification remain owned
 by the [testing index](index.md). This subject specification adds no lifecycle,
 gate category or production-data permission.
+
+## Photographer Scale Experiment
+
+This method proves AC-010/011 under the accepted
+[versioned preprocessing contract](../domains/photo-processing.md#versioned-photographer-preprocessing).
+Use deterministic fixtures for actual resize ratios on non-square odd
+sizes, EXIF orientations, images smaller than 640, 640..1280 images, duplicate
+scales, the same face at two scales, neighbouring faces and partial edge faces.
+Observe detector dimensions, original array passed to alignCrop, all five
+mapped landmarks, native 112x112 crop, finite normalized embeddings, clipped
+terminal bbox and absence of count/size filters. Prove legacy full-image behavior
+and single-pass query calls under both new Photo identities; keep Buffalo and
+serving/Calibration admission regressions scoped to compatibility.
+
+Native sample inputs currently include five JPEGs under
+`/tmp/!datasets/serg_1/me_1/`, `IMG_20230523_185218.jpg` at the dataset root
+(EXIF 3), and groups `FansChildrenTJ.jpg` and `sirious-guys.jpg` at that root.
+Verify paths and record a filename/hash/dimensions/orientation manifest before
+measurement. Six portraits correspond to the existing local uploaded inventory.
+The group images include partial, occluded and profile faces; results must name
+which visible sample faces are recovered or missed, not claim that every pose
+or every group of eight is supported.
+
+Use the same configured YuNet/SFace read-only assets, CPU/thread conditions,
+originals and query inputs for both variants. Warm up, then repeat each sample
+at least three times and retain per-image median detection and full processing
+time, pre/post-merge face counts and reviewable original-coordinate overlays.
+Compare query cosine/matching observations under unchanged thresholds only
+where corresponding evidence is actually available. Separate visually observed
+detection counts from operator ground truth and distinguish sample/self-query
+sanity from real camera accuracy. Store bounded metrics and local overlays in
+task evidence, not model files, raw embeddings or commercial originals in Git.
+
+Select 640 unless the additional scale recovers a visually verified real face
+or improves an available corresponding match without introducing a known
+sample regression that defeats that benefit. Record the concrete gain and
+extra time; uncertain or absent benefit resolves to 640 under the accepted
+simpler-selection policy. Missing camera Attempts or human ground truth is
+reported as unavailable evidence, never fabricated Calibration data or an
+unsupported universal accuracy verdict. The experiment is local task proof,
+not a new persisted product experiment platform.
+
+## Local Reprocessing Proof
+
+AC-012 uses the authorized workstation runtime for a non-destructive final
+application after disposable integration proof. Capture current revision,
+selected Photo IDs, original hashes, admission/visibility fields, old terminal
+states/faces/derivative references and effective Compose configuration. Prove
+new-revision pending creation/repeated invocation, guarded selection, selected
+worker/realtime binding, truthful terminals and compatible search through the
+existing owner boundaries. Compare fresh-session before/after snapshots and
+re-run the same recorded target to prove no extra revision/state/face rows.
+
+Inject failure and restart only in disposable fixtures with unique database and
+object-prefix cleanup; never erase or downgrade local operator inventory.
+Retain deployed local outcomes for testing. Staff admission-revision status and
+the admission-based SLO are intentionally unchanged after reprocessing and
+must not be presented as new-revision completion evidence. A missing local
+runtime/model/original is reported with its exact affected scope.
+
+
+Local reprocessing implementation evidence uses
+`tests/processing/test_photo_reprocessing.py`: preserved-A/new-B exact search,
+create-only pending with rollback and all five existing statuses, and target
+reuse after interrupted journaling through real processing/serving owner APIs.
+Native admission remains covered by `test_model_asset_admission.py`; the local
+procedure retry fixture substitutes only model loading. All databases are
+fixture-owned and removed. The local application evidence belongs to
+`.tasks/TASK-118-T3-FT-002-W8/` and retains user outcomes after application.

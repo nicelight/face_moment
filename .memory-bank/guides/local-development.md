@@ -1,7 +1,7 @@
 ---
 description: Local-first Python development with uv and containerized PostgreSQL/MinIO.
 status: active
-last_updated: 2026-09-07
+last_updated: 2026-09-09
 source_of_truth:
   - .memory-bank/guides/local-development.md
 ---
@@ -222,3 +222,31 @@ Production preprocessing, existing Photo results and pipeline revisions were
 not changed by this diagnosis. A fix must preserve original-coordinate boxes,
 landmarks and revision compatibility; 640 px is sample evidence, not yet a
 validated universal setting for distant or group faces.
+
+
+## Versioned local Photo reprocessing
+
+С 2026-09-09 локально активна `opencv-photo-640-v2`, revision
+`50e488ac-842e-404f-ba32-7d8390832152`. Все шесть Photos от 2026-09-08 — ready,
+по одному лицу; compatible search работает. Оригиналы, admission и результаты
+старой revision `1fa46d01-f6aa-4a72-a47c-3770209d44ea` сохранены.
+Контракт: [Photo preprocessing](../domains/photo-processing.md#versioned-photographer-preprocessing).
+
+Процедура `scripts/apply-local-photo-preprocessing.py` запускается в локальной
+Compose network с текущим source mount и каталогом evidence:
+
+1. `snapshot --evidence <dir>`: сохранить IDs, original/history hashes и настройки.
+   Ожидается шесть Photos; иной разрешённый объём задаётся `--expected-photos`.
+2. После disposable tests собрать worker/realtime, дождаться окончания текущей работы
+   и остановить model consumers. `apply --evidence <dir>` валидирует модель,
+   сохраняет target.json, выполняет guarded switch и создаёт только missing pending.
+3. Установить `SFACE_PREPROCESSING_VERSION` из target.json, перезапустить model consumers
+   и backend с прежним source overlay. Обработку выполняет штатный worker.
+4. `check --evidence <dir>`: проверить terminals/search и сохранность снимка.
+   Повторный apply использует тот же target и сохраняет existing states.
+
+Before snapshot не перезаписывать. Rollback — явный guarded switch со старыми
+настройками и restart. Migration/failure tests — только disposable DB/objects.
+Staff status/SLO сохраняют admission revision; результат новой обработки проверяется
+через processing projections. Команды и доказательства:
+[TASK-118 verification](../../.protocols/TASK-118-T3-FT-002-W8/verification.md).

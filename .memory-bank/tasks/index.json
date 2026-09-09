@@ -452,6 +452,14 @@
     {
       "id": "TASK-116-T3-FT-001-W9",
       "file": "TASK-116-T3-FT-001-W9.task.json"
+    },
+    {
+      "id": "TASK-117-T2-FT-002-W7",
+      "file": "TASK-117-T2-FT-002-W7.task.json"
+    },
+    {
+      "id": "TASK-118-T3-FT-002-W8",
+      "file": "TASK-118-T3-FT-002-W8.task.json"
     }
   ]
 }

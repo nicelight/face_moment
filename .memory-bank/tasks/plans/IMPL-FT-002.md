@@ -1,7 +1,7 @@
 ---
 description: Implementation plan for compatible Photo processing and searchable readiness in FT-002.
 status: active
-last_updated: 2026-09-06
+last_updated: 2026-09-09
 ---
 # IMPL-FT-002 — Processing And Searchable Readiness
 
@@ -267,9 +267,8 @@ head or hard task write boundary is inferred.
 - The two UI tasks use `playwright cli` and store transcripts, screenshots and
   traces under their task artifact directories.
 - Tier-routed `/verify` applies to every task; each T3 additionally requires
-  per-task `/red-verify`. Feature completion is determined by the accepted task
-  records and feature completion boundary; no separate feature-level verdict is
-  used.
+  per-task `/red-verify`. Feature completion additionally requires the current tier-policy
+  feature semantic verification after all feature tasks complete.
 
 ## Constitution Constraints And Invariants
 
@@ -301,3 +300,24 @@ coverage, and both model-consuming roles pass the selected-revision
 admission/fail-closed matrix,
 the two staff UAT flows pass, and fresh review can approve the queue without
 adding a runtime mechanism or changing Global Backbone Planning Revision `4`.
+
+
+## Photographer Preprocessing Follow-Up
+
+[Принятый план](../../../.protocols/photo-preprocessing/operator-plan.md), Planning Revision 4.
+Правила: [Photo preprocessing](../../domains/photo-processing.md#versioned-photographer-preprocessing).
+Метод проверки: [scale experiment](../../testing/photo-processing.md#photographer-scale-experiment)
+и [local reprocessing](../../testing/photo-processing.md#local-reprocessing-proof).
+
+| Task | Claims | Зависимости | Результат |
+|---|---|---|---|
+| [TASK-117](../TASK-117-T2-FT-002-W7.task.json) | AC-010/011 | TASK-114 | Original-pixel preprocessing, выбор 640 по native experiment |
+| [TASK-118](../TASK-118-T3-FT-002-W8.task.json) | AC-012 | TASK-117, TASK-040 | Локальное применение, шесть ready Photos, сохранённая история |
+
+Processing владеет revision/pending/results; operational script отдельно вызывает
+serving_control guarded switch. Query, Buffalo, Calibration и admission-based status
+сохраняют свои контракты. Группы — только benchmark; новые schema/service/graph edges
+не нужны. Failure/restart proof выполняется в disposable state.
+
+Обе задачи закрыты 2026-09-09 после required gates и независимых verdicts.
+[Feature semantic-pass](../../features/FT-002.md#semantic-verification) покрывает AC-001..012.

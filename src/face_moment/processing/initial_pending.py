@@ -60,6 +60,31 @@ class InitialPendingRepository:
     def __init__(self, session: Session) -> None:
         self._session = session
 
+    def ensure_revision_pending(
+        self,
+        *,
+        photo_id: uuid.UUID,
+        pipeline_revision_id: uuid.UUID,
+    ) -> PhotoPipelineState:
+        """Create only a missing revision state in the caller's transaction.
+
+        The sequential local reprocessing procedure may resume without resetting
+        existing work or terminal results. Revision eligibility remains owned by
+        processing; this operation makes no serving decision.
+        """
+        existing = self._session.get(
+            PhotoPipelineState, (photo_id, pipeline_revision_id)
+        )
+        if existing is not None:
+            return existing
+
+        from face_moment.processing.revisions import PipelineRevisionRepository
+
+        PipelineRevisionRepository(self._session).resolve_eligible(pipeline_revision_id)
+        return self.create_initial_pending(
+            photo_id=photo_id, pipeline_revision_id=pipeline_revision_id
+        )
+
     def create_initial_pending(
         self,
         *,

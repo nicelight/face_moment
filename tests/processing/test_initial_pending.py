@@ -6,11 +6,10 @@ import uuid
 
 from alembic import command as alembic_command
 from alembic.config import Config
-from sqlalchemy import create_engine, inspect, select
+from sqlalchemy import inspect, select
 from sqlalchemy.orm import Session
 
 from face_moment.infrastructure.database import APP_SCHEMA
-from face_moment.infrastructure.settings import Settings
 from face_moment.inventory.photo_persistence import Photo
 from face_moment.inventory.validation import CapturedAtSource
 from face_moment.processing import (
@@ -21,6 +20,8 @@ from face_moment.processing import (
 from face_moment.processing.initial_pending import PhotoPipelineState
 from face_moment.serving_control import IngestTargetRepository
 from tests.pipeline_compatibility import PIPELINE_COMPATIBILITY
+from tests.disposable_postgresql import disposable_postgresql_engine
+from sqlalchemy.engine import Engine
 
 
 def _migration_round_trip(engine: object) -> None:
@@ -53,6 +54,7 @@ def _add_photo(
     )
     photo = Photo(
         spa_id=target.spa_id,
+        admission_pipeline_revision_id=revision.id,
         visit_date=date(2026, 8, 11),
         captured_at=datetime(2026, 8, 11, 9, 0, tzinfo=timezone.utc),
         captured_at_source=CapturedAtSource.UPLOAD_STARTED_AT,
@@ -69,7 +71,11 @@ def _add_photo(
 
 
 def test_processing_creates_initial_pending_inside_the_caller_transaction() -> None:
-    engine = create_engine(Settings.from_env().database_url, pool_pre_ping=True)
+    with disposable_postgresql_engine("initial_pending") as engine:
+        _check_initial_pending(engine)
+
+
+def _check_initial_pending(engine: Engine) -> None:
     committed: tuple[uuid.UUID, uuid.UUID, uuid.UUID] | None = None
     marker = uuid.uuid4().hex
 

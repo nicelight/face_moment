@@ -203,7 +203,6 @@ class ExactCompatibleSearchRepository:
                 Photo.spa_id == spa_id,
                 Photo.visit_date == visit_date,
                 Photo.is_active.is_(True),
-                Photo.admission_pipeline_revision_id == pipeline_revision_id,
                 PhotoFace.pipeline_revision_id == pipeline_revision_id,
                 PhotoPipelineState.pipeline_revision_id == pipeline_revision_id,
                 PhotoPipelineState.status == "ready",

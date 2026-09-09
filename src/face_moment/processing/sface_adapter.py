@@ -17,6 +17,10 @@ from face_moment.processing.reference_query import (
     ReferenceQualityObservation,
 )
 from face_moment.processing.terminal_publication import TerminalFace
+from face_moment.processing.yunet_photo_preprocessing import (
+    detect_photo_faces,
+    photo_detection_edges,
+)
 
 
 class YuNetDetector(Protocol):
@@ -118,6 +122,7 @@ class SFacePhotoAdapter:
         self._assets = assets
         self._detector = detector
         self._recognizer = recognizer
+        self._photo_edges = photo_detection_edges(revision.preprocessing_version)
 
     @classmethod
     def from_configured_assets(
@@ -160,14 +165,24 @@ class SFacePhotoAdapter:
     def process_photo(
         self, photo: NDArray[np.uint8]
     ) -> tuple[SFacePhotoFace, ...]:
+        return self._process(photo, edges=self._photo_edges)
+
+    def _detect_native(self, photo: NDArray[np.uint8]) -> NDArray[np.float32] | None:
+        height, width = photo.shape[:2]
+        self._detector.setInputSize((width, height))
+        detected, detections = self._detector.detect(photo)
+        return detections if detected else None
+
+    def _process(
+        self, photo: NDArray[np.uint8], *, edges: tuple[int, ...] | None
+    ) -> tuple[SFacePhotoFace, ...]:
         self._assets.verify_revision(self._revision)
         self._validate_photo(photo)
-
-        height, width, _ = photo.shape
-        self._detector.setInputSize((width, height))
-        detected, native_detections = self._detector.detect(photo)
-        if not detected or native_detections is None:
-            return ()
+        if edges is None:
+            detected = self._detect_native(photo)
+            native_detections = () if detected is None else tuple(detected)
+        else:
+            native_detections = detect_photo_faces(photo, edges, self._detect_native)
 
         faces: list[SFacePhotoFace] = []
         for native_detection in native_detections:
@@ -196,7 +211,7 @@ class SFacePhotoAdapter:
         quality_settings: Mapping[str, object],
     ) -> ReferenceQualityObservation:
         del quality_settings
-        faces = self.process_photo(crop)
+        faces = self._process(crop, edges=None)
         if not faces:
             return ReferenceQualityObservation(
                 reference_quality_score=0.0,
@@ -213,7 +228,7 @@ class SFacePhotoAdapter:
     def prepare_reference_query(
         self, crop: NDArray[np.uint8]
     ) -> PreparedReferenceQuery | None:
-        faces = self.process_photo(crop)
+        faces = self._process(crop, edges=None)
         if not faces:
             return None
         face = max(
@@ -230,13 +245,20 @@ class SFacePhotoAdapter:
     ) -> tuple[TerminalFace, ...]:
         """Adapt this revision's native results for terminal publication."""
 
-        return tuple(
-            TerminalFace(
+        terminal_faces: list[TerminalFace] = []
+        for index, face in enumerate(self.process_photo(photo)):
+            x, y, w, h = (float(value) for value in face.native_detection[:4])
+            if self._photo_edges is not None:
+                # alignCrop already used the unmodified mapped native geometry.
+                right, bottom = min(photo.shape[1], x + w), min(photo.shape[0], y + h)
+                x, y = max(0.0, x), max(0.0, y)
+                w, h = right - x, bottom - y
+            terminal_faces.append(TerminalFace(
                 face_index=index,
-                bbox_x=float(face.native_detection[0]),
-                bbox_y=float(face.native_detection[1]),
-                bbox_w=float(face.native_detection[2]),
-                bbox_h=float(face.native_detection[3]),
+                bbox_x=x,
+                bbox_y=y,
+                bbox_w=w,
+                bbox_h=h,
                 landmarks_json=[
                     [
                         float(face.native_detection[4 + landmark * 2]),
@@ -246,9 +268,8 @@ class SFacePhotoAdapter:
                 ],
                 detection_confidence=float(face.native_detection[14]),
                 embedding=tuple(float(value) for value in face.embedding),
-            )
-            for index, face in enumerate(self.process_photo(photo))
-        )
+            ))
+        return tuple(terminal_faces)
 
     @staticmethod
     def _validate_photo(photo: NDArray[np.uint8]) -> None:

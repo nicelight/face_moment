@@ -1,0 +1,115 @@
+{
+  "id": "TASK-118-T3-FT-002-W8",
+  "title": "Apply measured preprocessing and reprocess existing local Photos",
+  "status": "done",
+  "wave": "W8",
+  "feature": "FT-002",
+  "tier": "T3",
+  "reqs": [
+    "REQ-SRCH-001",
+    "REQ-ING-003",
+    "REQ-REL-002"
+  ],
+  "depends_on": [
+    "TASK-117-T2-FT-002-W7",
+    "TASK-040-T2-FT-002-W7"
+  ],
+  "touched_files": [
+    "scripts/apply-local-photo-preprocessing.py",
+    "src/face_moment/processing/initial_pending.py",
+    ".protocols/local-testing/compose-source.yaml",
+    ".memory-bank/guides/local-development.md",
+    "tests/processing/test_initial_pending.py"
+  ],
+  "purpose": "Make the measured preprocessing usable in the authorized local testing runtime while preserving existing admitted Photos and their revision history.",
+  "success_outcome": "Local worker/realtime bind the measured explicit revision and existing Photos have truthful new-revision terminal outcomes; compatible search uses new ready faces and before/after snapshots prove inventory, originals, old outcomes and admission lineage preserved.",
+  "gates": [
+    {
+      "name": "Current-source typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    },
+    {
+      "name": "Reprocessing prerequisite and preservation regressions",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/processing/test_initial_pending.py tests/processing/test_serving_revision_guard.py tests/processing/test_terminal_publication.py tests/processing/test_searchable_projection.py tests/processing/test_ingest_slo.py",
+      "required": true
+    },
+    {
+      "name": "Packaged local runtime build",
+      "command": "docker compose --env-file .env.testing build background-worker realtime",
+      "required": true
+    }
+  ],
+  "verify": [
+    "2026-09-09 /verify VERDICT: PASS \u2014 FT-002-AC-012 / REQ-SRCH-001 / REQ-ING-003 / REQ-REL-002: independent read-only local snapshot proves all 6 new-revision Photos ready and exact-searchable; originals, full inventory/admission, old outcomes and repeated-run snapshot preserved (2 revisions/12 states/7 faces). Fresh isolated 34 tests, mypy, mb-lint and build passed; live model/source/health proof passed. Evidence: .protocols/TASK-118-T3-FT-002-W8/verification.md; .tasks/TASK-118-T3-FT-002-W8/verify-current.json, verify-runtime-proof.json, verify-gates.txt. Luna co-review adjudicated; separate T3 /red-verify still required. Lifecycle unchanged.",
+    "2026-09-09 /red-verify SEMANTIC_VERDICT: semantic-pass \u2014 FT-002-AC-012: independent semantic assessment of owner writes, compatible search, immutable originals/history/admission and supported target reuse/retry/restart found no material break or required operator decision. Evidence: .protocols/TASK-118-T3-FT-002-W8/red-verification.md; .tasks/TASK-118-T3-FT-002-W8/TASK-118-T3-FT-002-W8-S-RED-VERIFY-final-report-docs-01.md. Two Luna focuses each failed launch and retry due thread limit; no co-review result claimed. Status unchanged; root owns closure.",
+    "2026-09-09 root GENERAL explicit manual owner closure: done after independent functional PASS and per-task semantic-pass; FT-002-AC-012 local application, search, original/history preservation and exact rerun proved. See .protocols/TASK-118-T3-FT-002-W8/verification.md and red-verification.md. Feature semantic refresh follows before final wave sync."
+  ],
+  "docs": [
+    ".memory-bank/features/FT-002.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md"
+  ],
+  "source_artifacts": [
+    ".memory-bank/features/FT-002.md#FT-002-AC-012",
+    ".protocols/photo-preprocessing/operator-plan.md",
+    ".memory-bank/tasks/plans/IMPL-FT-002.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/constitution.md",
+    ".memory-bank/domains/photo-processing.md",
+    ".memory-bank/testing/photo-processing.md",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/boundary-map.md#processing-input-projections",
+    ".memory-bank/contracts/boundary-map.md#manual-serving-revision-switch",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/contracts/boundary-map.md#calibration-and-serving-change",
+    ".memory-bank/architecture/system-architecture.md",
+    ".memory-bank/domains/realtime-search.md",
+    ".memory-bank/domains/calibration.md",
+    ".memory-bank/testing/index.md",
+    ".memory-bank/guides/local-development.md"
+  ],
+  "constraints": [
+    "Primary outcome owner processing (src/face_moment/processing/) supplies revision/pending operations. The operational local script independently calls serving_control switch_serving_revision and processing owner APIs in sequence; processing MUST NOT call the serving switch. This reuses accepted manual-serving-revision-switch and processing-input-projections boundaries without a new module edge. Pending/revision logic stays in processing; serving decisions stay in serving_control.",
+    "Reuse PipelineRevisionRepository.publish_eligible, InitialPendingRepository.create_initial_pending, serving_control switch_serving_revision and singleton worker. Add the smallest owner-local idempotent pending helper only if needed; no new state/schema/service. Reuse recorded target revision on rerun rather than publishing another revision.",
+    "Follow local-preprocessing-revision-application and local-reprocessing-proof sections. Snapshot selected Photo IDs, hashes, admission/visibility fields, old states/faces/derivative references, committed revision and local effective Compose config before change. Six existing originals are the intended admitted population; verify live evidence.",
+    "User has explicitly authorized workstation testing deploy/reprocessing; no redundant confirmation required. Existing local overlay source-mounts backend; worker/realtime may still run old built code, so prove effective running source/image and restart both model consumers with matching new identity.",
+    "Use the variant and exact preprocessing identity decided by TASK-117. Record authoritative committed target and local settings in task protocol without secrets. Preserve old revision/settings evidence for explicit guarded recovery; no automatic rollback or hot-switch.",
+    "Safe failure/retry/restart and repeated-pending proof uses disposable fixture-owned PostgreSQL/MinIO state and cleanup before final local application. Local app state persists in existing face_moment tables and current MinIO volumes; do not purge final user testing outcomes.",
+    "Show new-revision readiness and compatible search from owner projections/fresh DB sessions. Staff per-Photo API and ingest SLO continue selecting the old admission revision; do not misreport them as a failed new processing run or change their contract.",
+    "If host .env.local PostgreSQL forwarding is unavailable, the same exact focused pytest nodes may execute inside the source-mounted local backend container with its effective local environment; prove it runs current workspace source and fixture-owned isolated databases/object prefixes. This is an equivalent test invocation, not permission to mutate operator rows."
+  ],
+  "invariants": [
+    "Original JPEG bytes, Photo identity/visibility/admission lineage and old revision outcomes remain unchanged.",
+    "Processing alone owns revision/state/faces/derivatives; serving_control alone selects serving; no foreign direct writes, fallback, extra worker or service."
+  ],
+  "verification_targets": [
+    "FT-002-AC-012 / REQ-SRCH-001 / REQ-ING-003 / REQ-REL-002: disposable integration proves target revision reuse, create-only missing pending rows, preservation of terminal rows and old lineage/outcomes, guarded switch and fail-closed binding; retain safe rerun/cleanup evidence.",
+    "FT-002-AC-012: capture genuine local before-state, build/start matching local worker and realtime, switch through owner command and reprocess selected existing Photos with ordinary worker. Observe terminal result for every ID, record failures honestly, verify compatible exact search for new ready faces and original/old-state/lineage preservation. Repeating recorded target creates no duplicate revision/state/face rows. Camera identity accuracy remains outside this operational proof."
+  ],
+  "evidence_required": [
+    "FT-002-AC-012 RED: selected local Photos have no state for the measured new revision and running roles remain bound to the previous identity; GREEN: same selected inventory has new-revision truthful terminals with model consumers bound compatibly, while fresh-session/original-hash snapshots preserve old data and repeated invocation adds no rows; decisive comparison: before/after revision binding, per-Photo state/search eligibility, original hashes and old-row snapshots; artifact: local application transcript plus disposable retry/preservation evidence under .tasks/TASK-118-T3-FT-002-W8/."
+  ],
+  "anti_goals": [
+    "No remote/production deployment, database reset, old outcome deletion, reupload, admission-lineage rewrite or automatic threshold/model selection.",
+    "No group-image upload: groups remain local measurement samples. No login/routing repair or unrelated pending TASK-115/TASK-116 execution."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Remote production hosts/SSH deployment, destructive default-database tests or volume deletion",
+      "Photo admission/visibility/lineage mutation; deletion or mutation of old revisions, outcomes, originals; model file writes; unrelated TASK-115/TASK-116 fixes"
+    ],
+    "stop_conditions": [
+      "The target is not demonstrably the authorized local workstation Compose runtime.",
+      "Current A admission has pending/processing work: let normal work finish, never bypass guard or manufacture terminal state.",
+      "The selected new revision cannot admit with exact native asset identity or required original is unavailable: keep evidence truthful and do not silently shrink the population."
+    ]
+  }
+}

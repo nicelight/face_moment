@@ -401,6 +401,7 @@ def test_admitted_exif_coordinates_reach_terminal_publication(
     disposable_processing_state: tuple[Engine, PrivateObjectStore, str, list[str]],
     orientation: int | None,
     out_of_bounds: bool,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     engine, object_store, run_prefix, derivative_prefixes = disposable_processing_state
     # An asymmetric left/right pattern distinguishes clockwise from anticlockwise.
@@ -470,6 +471,15 @@ def test_admitted_exif_coordinates_reach_terminal_publication(
         pipeline_revision_id=revision_id, label="sface", terminal_faces=(face,),
         expected_pixels=expected_pixels,
     )
+    decode = cv2.imdecode
+    decoded_shapes: list[tuple[int, ...]] = []
+
+    def record_decode(*args: object, **kwargs: object) -> np.ndarray:
+        image = decode(*args, **kwargs)
+        decoded_shapes.append(image.shape)
+        return image
+
+    monkeypatch.setattr(cv2, "imdecode", record_decode)
     result = PhotoProcessingOrchestrator(
         session_factory=lambda: Session(engine), object_store=object_store,
         sface_adapter=adapter,
@@ -481,6 +491,7 @@ def test_admitted_exif_coordinates_reach_terminal_publication(
             ),
         ),
     ).process_claimed(photo_id=photo_id, pipeline_revision_id=revision_id)
+    assert decoded_shapes == [expected_pixels.shape]
     assert adapter.calls == ["sface"]
     assert result == ("pending" if out_of_bounds else "ready")
     assert object_store.read(key=staged.key) == original

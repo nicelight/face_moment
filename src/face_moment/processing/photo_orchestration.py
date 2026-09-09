@@ -79,6 +79,7 @@ class PhotoProcessingOrchestrator:
                 photo_id=photo_id,
                 pipeline_revision_id=pipeline_revision_id,
                 original_object_key=original_object_key,
+                decoded_original=decoded_photo,
             )
             return self._publish_ready(
                 photo_id=photo_id,

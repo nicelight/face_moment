@@ -85,10 +85,13 @@ class PrivatePhotoDerivativeCreator:
         photo_id: uuid.UUID,
         pipeline_revision_id: uuid.UUID,
         original_object_key: str,
+        decoded_original: NDArray[np.uint8] | None = None,
     ) -> PrivatePhotoDerivatives:
-        """Read the original once and replace the two deterministic private objects."""
+        """Reuse oriented pixels when supplied, otherwise decode the private original."""
 
-        original = self._decode(self._object_store.read(key=original_object_key))
+        original = decoded_original
+        if original is None:
+            original = self._decode(self._object_store.read(key=original_object_key))
         preview_key = derivative_object_key(
             photo_id=photo_id,
             pipeline_revision_id=pipeline_revision_id,
