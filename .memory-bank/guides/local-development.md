@@ -164,3 +164,61 @@ The loopback-only endpoint is not reachable from a phone on the LAN.
 The Motion Atlas review now uses a source-mounted backend overlay. See
 [motion-presentation.md](motion-presentation.md#local-review-and-evidence) for
 its restart command and the `/site`, `/staff`, `/display` review routes.
+
+## Full-resolution JPEG uploads
+
+Operator decision, 2026-09-08: remove the need to manually shrink ordinary
+camera JPEGs before upload. Defaults now admit up to 100 MiB compressed,
+200,000,000 decoded pixels and 20,000 pixels on either side. All three limits
+apply together. Settings live in `src/face_moment/infrastructure/settings.py`,
+`.env.example` and `compose.yaml`. `deploy/Caddyfile` permits 101 MiB multipart
+requests including form overhead; align both edge caps when changing the byte
+limit. Originals remain unchanged. These admission limits do not establish
+processing latency or concurrent-upload capacity at maximum resolution.
+
+The operator fixture `IMG_20230523_185218.jpg` (4608×3456, 6,363,178 bytes)
+previously failed with `decoded_side_exceeded` at 4096 px. Its EXIF orientation
+3 is valid and unrelated to that rejection.
+
+Validation: 20 JPEG-validation/uploader tests and mypy (95 source files)
+passed; Caddy configuration validated and reloaded. The local backend was
+recreated with the source overlay and became healthy. The unchanged operator
+JPEG now passes the actual running backend validator (4608×3456). Full
+200 MP processing and the 100 MiB upload boundary were not benchmarked.
+
+Upload rejection UI now displays the safe per-file validation message from the
+backend (size, pixel bounds, JPEG decode/format or EXIF orientation) and a size
+explanation for an unstructured proxy 413. Refresh an already-open uploader to
+load the updated inline script. See the
+[upload contract](../contracts/photo-admission-api.md#upload-rejection-explanation).
+Validation for rejection explanations: 26 focused tests passed, mypy passed
+for 95 source files, and the actual uploader JS passed structured-422,
+empty-proxy-413 and generic-422 checks in Node. Backend restart completed and
+HTTPS health returned 200. The database-backed upload suite could not run:
+local PostgreSQL port 55432 refused connection; a direct container-IP retry
+was stopped while connecting, before any tests ran.
+
+Operator-requested test inventory reset: hard-purge run
+`44fdd8ea-5966-423e-b505-510e6782fffc` completed all four pre-existing photos
+at 2026-09-08 12:22:40 UTC through authenticated visibility/purge APIs.
+A new upload `82c14178-2eba-45b7-9cb6-85f7c8d465a3` arrived at 12:22:42 UTC,
+after completion, and was preserved. Source files in `/tmp/!datasets/` were
+not modified. The inventory therefore is no longer empty after the reset.
+
+## YuNet portrait scale diagnosis
+
+Manual calibration preparation exposed five `no_faces` outcomes among six
+uploaded close-up portraits; only the 200×200 `_logo.jpg` was searchable.
+`SFacePhotoAdapter.process_photo` feeds full-resolution images to YuNet.
+A read-only experiment inside the actual background-worker loaded the six
+persisted originals and reduced the detection working image to at most 640 px
+on its longest side (INTER_AREA, no upscaling). The same detector and threshold
+found one face in each, including both versions of IMG_20230523_185218.
+This isolates scale as a sufficient explanation for this sample; it is not
+an SFace identity-match threshold failure. EXIF-aware decode was preserved.
+The exploratory local scale matrix is in
+`.protocols/model-debug/yunet-scale.log` with its reproducer beside it.
+Production preprocessing, existing Photo results and pipeline revisions were
+not changed by this diagnosis. A fix must preserve original-coordinate boxes,
+landmarks and revision compatibility; 640 px is sample evidence, not yet a
+validated universal setting for distant or group faces.

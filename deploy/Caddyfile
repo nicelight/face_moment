@@ -10,7 +10,7 @@ https://localhost:8443 {
 	@inventory_photo_upload_over_cap {
 		method POST
 		path /api/inventory/photos
-		expression `{http.request.header.Content-Length} != "" && int({http.request.header.Content-Length}) > 11534336`
+		expression `{http.request.header.Content-Length} != "" && int({http.request.header.Content-Length}) > 105906176`
 	}
 
 	@realtime_attempts path /api/realtime/attempts /api/realtime/attempts/*/client-timing
@@ -36,7 +36,7 @@ https://localhost:8443 {
 
 		handle /api/inventory/photos {
 			request_body {
-				max_size 11MiB
+				max_size 101MiB
 			}
 			reverse_proxy backend:8000 {
 				header_up X-Forwarded-For {remote_host}

@@ -97,13 +97,13 @@ class Settings:
                 "PHOTO_UPLOAD_RATE_WINDOW_SECONDS", "60"
             ),
             photo_upload_max_compressed_bytes=_positive_int(
-                "PHOTO_UPLOAD_MAX_COMPRESSED_BYTES", "10485760"
+                "PHOTO_UPLOAD_MAX_COMPRESSED_BYTES", "104857600"
             ),
             photo_upload_max_decoded_side_length=_positive_int(
-                "PHOTO_UPLOAD_MAX_DECODED_SIDE_LENGTH", "4096"
+                "PHOTO_UPLOAD_MAX_DECODED_SIDE_LENGTH", "20000"
             ),
             photo_upload_max_decoded_pixels=_positive_int(
-                "PHOTO_UPLOAD_MAX_DECODED_PIXELS", "16777216"
+                "PHOTO_UPLOAD_MAX_DECODED_PIXELS", "200000000"
             ),
             background_worker_idle_seconds=_positive_float(
                 "BACKGROUND_WORKER_IDLE_SECONDS", "0.2"

@@ -441,14 +441,25 @@ def register_ingest_target_routes(
             except PhotoUploadRateLimitError as error:
                 raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS) from error
             except InvalidPhotoUploadError as error:
-                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY) from error
+                raise HTTPException(status_code=422, detail={"code": "invalid_target", "message": "Выбранный СПА недоступен для загрузки. Обновите страницу и выберите СПА снова."}) from error
             except InvalidJpegCandidateError as error:
                 status_code = (
                     status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
                     if error.code == "compressed_bytes_exceeded"
                     else status.HTTP_422_UNPROCESSABLE_ENTITY
                 )
-                raise HTTPException(status_code=status_code) from error
+                messages = {
+                    "compressed_bytes_exceeded": f"Размер файла превышает лимит {settings.photo_upload_max_compressed_bytes / 1048576:g} МиБ.",
+                    "decoded_side_exceeded": f"Сторона фотографии превышает лимит {settings.photo_upload_max_decoded_side_length} пикселей.",
+                    "decoded_pixels_exceeded": f"Разрешение фотографии превышает лимит {settings.photo_upload_max_decoded_pixels / 1000000:g} мегапикселей.",
+                    "unsupported_media_type": "Файл должен быть в формате JPEG.",
+                    "decode_failed": "Не удалось прочитать JPEG. Файл повреждён или имеет неподдерживаемое кодирование.",
+                    "invalid_exif_orientation": "В JPEG некорректно указана ориентация EXIF. Пересохраните фотографию в редакторе.",
+                }
+                raise HTTPException(status_code=status_code, detail={
+                    "code": error.code if error.code in messages else "invalid_jpeg",
+                    "message": messages.get(error.code, "Не удалось проверить JPEG."),
+                }) from error
             except Exception as error:
                 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR) from error
             if result.admission.outcome == "duplicate":
@@ -555,7 +566,7 @@ def _photo_upload_page_html() -> str:
         <option value="">Выберите площадку</option>
       </select>
       <label for="visit-date">Дата съёмки</label>
-      <input id="visit-date" name="visit_date" type="date" required>
+      <input id="visit-date" name="visit_date" type="text" placeholder="ДД.ММ.ГГГГ" aria-label="Дата съёмки, ДД.ММ.ГГГГ" maxlength="10" pattern="[0-9]{2}[.][0-9]{2}[.][0-9]{4}" required>
       <label for="photos">Фотографии в формате JPEG</label>
       <input id="photos" name="photos" type="file" accept="image/jpeg" multiple required>
       <button type="submit">Загрузить фотографии <span aria-hidden="true">↗</span></button>
@@ -573,6 +584,17 @@ def _photo_upload_page_html() -> str:
     const form = document.querySelector("#photo-upload-form");
     const spaSelect = document.querySelector("#spa-id");
     const visitDateInput = document.querySelector("#visit-date");
+    if (!visitDateInput.value) {
+      const today = new Date();
+      visitDateInput.value = [String(today.getDate()).padStart(2, "0"), String(today.getMonth() + 1).padStart(2, "0"), today.getFullYear()].join(".");
+    }
+    function uploadVisitDate() {
+      const [day, month, year] = visitDateInput.value.split(".");
+      const iso = `${year}-${month}-${day}`;
+      const parsed = new Date(`${iso}T00:00:00Z`);
+      return Number(year) > 0 && Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === iso ? iso : null;
+    }
+    visitDateInput.addEventListener("input", () => visitDateInput.setCustomValidity(""));
     const filesInput = document.querySelector("#photos");
     const results = document.querySelector("#upload-results");
     const formMessage = document.querySelector("#form-message");
@@ -591,7 +613,7 @@ def _photo_upload_page_html() -> str:
       const outcome = document.createElement("strong");
       const detail = document.createElement("span");
       name.textContent = file.name;
-      date.textContent = ` — ${visitDate} — `;
+      date.textContent = ` — ${visitDate.split("-").reverse().join(".")} — `;
       outcome.textContent = "uploading";
       outcome.setAttribute("aria-live", "polite");
       row.append(name, date, outcome, detail);
@@ -665,7 +687,14 @@ def _photo_upload_page_html() -> str:
         } else if (response.status === 200) {
           setResult(row, "duplicate");
         } else if (response.status === 413 || response.status === 422) {
-          setResult(row, "rejected");
+          let reason = response.status === 413
+            ? "Размер файла или запроса превышает допустимый лимит загрузки."
+            : "Проверьте формат JPEG, выбранный СПА и дату съёмки.";
+          try {
+            const payload = await response.json();
+            if (typeof payload.detail?.message === "string") reason = payload.detail.message;
+          } catch (_) { /* The proxy may return an empty or non-JSON rejection. */ }
+          setResult(row, "Отклонено", reason);
         } else {
           setResult(row, "upload unavailable");
         }
@@ -708,7 +737,12 @@ def _photo_upload_page_html() -> str:
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       const spaId = spaSelect.value;
-      const visitDate = visitDateInput.value;
+      const visitDate = uploadVisitDate();
+      if (!visitDate) {
+        visitDateInput.setCustomValidity("Введите существующую дату в формате ДД.ММ.ГГГГ.");
+        visitDateInput.reportValidity();
+        return;
+      }
       const files = Array.from(filesInput.files);
       if (!spaId || !visitDate || files.length === 0) {
         formMessage.textContent = "Select one СПА, one visit date and at least one file.";

@@ -51,12 +51,13 @@ def _header(page: str) -> str:
         + (' aria-current="page"' if page == key else '') + f'>{label}</a>'
         for key, label, roles, _ in NAVIGATION
     )
-    navigation = '<a class="fm-eyebrow" href="/site">На сайт ↗</a>' if page == "login" else f'''<details class="fm-nav">
-      <summary>Меню</summary><nav class="fm-nav-links" aria-label="Рабочее пространство">
-      <div class="fm-identity" id="staff-identity">Рабочее пространство</div>
+    navigation = '<a class="fm-eyebrow" href="/site">На сайт ↗</a>' if page == "login" else f'''<nav class="fm-staff-navigation" aria-label="Рабочее пространство">
       <a href="/staff"{' aria-current="page"' if page == 'home' else ''}>Главная</a>{links}
       <a href="/display">Открыть экран ↗</a><a href="/site">На сайт ↗</a>
-      <button id="staff-logout" type="button">Выйти</button></nav></details>'''
+      <details class="fm-nav fm-account-dropdown">
+      <summary aria-label="Меню аккаунта"><span class="fm-account-name" id="staff-account-name" hidden></span></summary>
+      <div class="fm-nav-links"><div class="fm-identity" id="staff-identity">Рабочее пространство</div>
+      <button id="staff-logout" type="button">Выйти</button></div></details></nav>'''
     return f'<a class="fm-skip-link" href="#staff-content">К содержимому</a><header class="fm-header">{brand_markup()}<span class="fm-tag">Рабочее пространство</span>{navigation}</header>'
 
 def staff_document(document: str, page: str) -> str:

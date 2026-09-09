@@ -45,6 +45,7 @@ def disposable_photo_upload_state(
         connection.exec_driver_sql(f"CREATE DATABASE {probe_database}")
 
     monkeypatch.setenv("DATABASE_URL", probe_url.render_as_string(hide_password=False))
+    monkeypatch.setenv("PHOTO_UPLOAD_MAX_COMPRESSED_BYTES", "10485760")
     monkeypatch.setenv("PHOTO_UPLOAD_RATE_LIMIT", "2")
     monkeypatch.setenv("PHOTO_UPLOAD_RATE_WINDOW_SECONDS", "60")
     engine = create_engine(Settings.from_env().database_url, pool_pre_ping=True)

@@ -130,3 +130,15 @@ external ingest, resumable upload or aggregate confirmation path.
 - Topology and redaction probes confirm that only the HTTPS edge is browser-
   reachable and no password, session/CSRF token, authorization header, object
   key or storage credential appears in URL or application logs.
+
+## Upload rejection explanation
+
+Operator decision (2026-09-08): per-file uploader rejections must explain why
+admission failed. JPEG validation 413/422 responses use FastAPI `detail` with
+`code` and a safe Russian `message`. Codes are `compressed_bytes_exceeded`,
+`decoded_side_exceeded`, `decoded_pixels_exceeded`, `unsupported_media_type`,
+`decode_failed`, `invalid_exif_orientation` (fallback `invalid_jpeg`). Limit
+messages reflect configured values. Invalid ingest targets use `invalid_target`.
+The uploader displays messages as text beside the rejected file. Non-JSON or
+empty edge 413 responses get a size-limit explanation; other unstructured 422
+responses get a JPEG/SPA/date explanation. Unexpected exceptions remain sanitized.

@@ -100,3 +100,40 @@ def _get_page(app: FastAPI, *, cookie: str | None = None) -> tuple[int, str]:
         if message["type"] == "http.response.body"
     )
     return int(start["status"]), response_body.decode()
+
+
+@pytest.mark.parametrize("code,status_code,message", [
+    ("compressed_bytes_exceeded", 413, "100 МиБ"),
+    ("decoded_side_exceeded", 422, "20000 пикселей"),
+    ("decoded_pixels_exceeded", 422, "200 мегапикселей"),
+    ("unsupported_media_type", 422, "формате JPEG"),
+    ("decode_failed", 422, "Не удалось прочитать JPEG"),
+    ("invalid_exif_orientation", 422, "ориентация EXIF"),
+])
+def test_upload_rejection_explains_validation_failure(
+    uploader_page_app: FastAPI, monkeypatch: pytest.MonkeyPatch,
+    code: str, status_code: int, message: str,
+) -> None:
+    from face_moment.inventory.validation import InvalidJpegCandidateError
+    from tests.inventory.test_photo_upload_api import _multipart_photo, _request
+
+    def reject(*args: object, **kwargs: object) -> None:
+        raise InvalidJpegCandidateError(code)
+
+    for name in ("DATABASE_URL", "S3_ENDPOINT_URL", "S3_ACCESS_KEY", "S3_SECRET_KEY",
+                 "S3_BUCKET", "POSTGRESQL_CAPACITY_VIEW_PATH", "MINIO_CAPACITY_VIEW_PATH"):
+        monkeypatch.setenv(name, "unused-in-stubbed-request")
+    monkeypatch.setattr(inventory_http, "upload_photo", reject)
+    monkeypatch.setenv("PHOTO_UPLOAD_MAX_COMPRESSED_BYTES", "104857600")
+    monkeypatch.setenv("PHOTO_UPLOAD_MAX_DECODED_SIDE_LENGTH", "20000")
+    monkeypatch.setenv("PHOTO_UPLOAD_MAX_DECODED_PIXELS", "200000000")
+    body, content_type = _multipart_photo(
+        spa_id="00000000-0000-0000-0000-000000000001",
+        visit_date="2026-09-08", photo=b"jpeg-fixture",
+    )
+    result = _request(uploader_page_app, "POST", "/api/inventory/photos",
+                      body=body, content_type=content_type)
+    assert result[0] == status_code
+    detail = result[2]["detail"]
+    assert detail["code"] == code
+    assert message in detail["message"]

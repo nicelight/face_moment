@@ -23,6 +23,13 @@ public search/payment requirements or change the accepted backend contracts.
   capability handlers enforce authorization; navigation is presentation only.
 - `/staff/login` and existing staff pages: shared typography, navigation,
   panels, accessible focus and local table scrolling.
+- Authenticated staff navigation is a permanently visible horizontal top strip;
+  links wrap on narrow screens. The username follows the links on the right and
+  opens an account dropdown containing identity and logout. Escape and an
+  outside click close this dropdown.
+- Authenticated staff headers show the account name beside the closed menu.
+  Photographers use regular text; operators (the administrative account) and
+  developers use bold white text with a static radial white glow.
 - `/` and `/display`: existing kiosk; the original entry remains available.
 - `/phone`: existing QR continuation, with the shared palette and rolling count.
 
@@ -64,6 +71,11 @@ This is a rendering-cost choice, not a measured device-performance guarantee.
 Upload perspective enters when file requests start and leaves after all
 concurrent requests settle, including failures. Background face processing
 continues independently. The form stays usable for additional files.
+The upload date defaults to today's local browser date when the field is empty;
+the photographer can change it before uploading.
+The date field and upload result rows use explicit `DD.MM.YYYY` formatting.
+The editable text field validates calendar dates and converts them to ISO for
+the existing upload API, independently of the browser's date-control locale.
 
 [signal-progress.js](../../client/signal-progress.js) observes existing local
 capture/detection/request/preview boundaries from the kiosk composition. Its

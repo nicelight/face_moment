@@ -10,6 +10,11 @@ async function loadIdentity() {
     if (response.status === 401) { window.location.assign("/staff/login"); return; }
     if (!response.ok) return;
     const identity = await response.json();
+    const accountName = document.querySelector("#staff-account-name");
+    accountName.textContent = identity.username;
+    accountName.title = identity.username;
+    accountName.classList.toggle("fm-account-name-privileged", ["operator", "developer"].includes(identity.role));
+    accountName.hidden = false;
     document.querySelector("#staff-identity").textContent = `${identity.username} · ${roles[identity.role] ?? identity.role}`;
     document.querySelectorAll("[data-staff-roles]").forEach(link => {
       link.hidden = !link.dataset.staffRoles.split(" ").includes(identity.role);
@@ -27,6 +32,17 @@ document.querySelector("#staff-logout")?.addEventListener("click", async event =
     else button.textContent = "Не удалось выйти. Повторить";
   } catch { button.textContent = "Не удалось выйти. Повторить"; }
   finally { button.disabled = false; }
+});
+
+const accountMenu = document.querySelector(".fm-account-dropdown");
+document.addEventListener("click", event => {
+  if (accountMenu && !accountMenu.contains(event.target)) accountMenu.open = false;
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && accountMenu?.open) {
+    accountMenu.open = false;
+    accountMenu.querySelector("summary").focus();
+  }
 });
 
 for (const table of document.querySelectorAll("main table")) {

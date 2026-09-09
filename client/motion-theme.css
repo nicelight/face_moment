@@ -63,6 +63,16 @@ body.fm-page {
 }
 .fm-tag { border-left: 1px solid var(--fm-line); padding-left: 1rem; display: none; }
 .fm-nav { position: relative; }
+.fm-staff:not(.fm-login) .fm-header { flex-wrap: wrap; gap: .5rem 1.5rem; padding-top: 1.25rem; }
+.fm-staff-navigation { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; width: 100%; padding: .5rem 0; }
+.fm-staff-navigation > a { padding: .7rem .75rem; min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; border-radius: 8px; color: var(--fm-soft); font-size: 13px; }
+.fm-staff-navigation > a:hover, .fm-staff-navigation > a[aria-current="page"] { color: var(--fm-accent); background: #ffffff08; }
+.fm-account-dropdown { margin-left: auto; padding-left: 1rem; border-left: 1px solid var(--fm-line); }
+.fm-account-dropdown > summary { padding-inline: .5rem; }
+.fm-nav.fm-account-dropdown > summary::after { content: "⌄"; font-size: 16px; }
+.fm-account-name { position: relative; isolation: isolate; font-size: 14px; font-weight: 400; color: var(--fm-soft); overflow-wrap: anywhere; max-width: min(24ch, 25vw); }
+.fm-account-name-privileged { font-weight: 700; color: #fff; }
+.fm-account-name-privileged::before { content: ""; position: absolute; inset: -1.1rem -1.4rem; z-index: -1; pointer-events: none; background: radial-gradient(ellipse at center, #ffffff38 0%, #ffffff16 38%, #ffffff00 72%); }
 .fm-nav summary {
   list-style: none; min-height: 44px; display: flex; align-items: center;
   gap: .7rem; cursor: pointer; font-size: 14px; color: var(--fm-soft);
