@@ -262,9 +262,14 @@ export class CameraController {
       return this.devices;
     }
 
-    if (applyStoredSelection && this.selectedDeviceId) {
+    if (this.selectedDeviceId && (applyStoredSelection ||
+      (this.state === "reselection-required" && !this.stream))) {
       try {
-        await this.selectDevice(this.selectedDeviceId, { persist: false });
+        await this.selectDevice(this.selectedDeviceId, {
+          persist: false,
+          // Give the reconnected UVC device time to initialize white balance.
+          settleMs: this.state === "reselection-required" ? 2000 : 0,
+        });
       } catch {
         this.requireReselection("stored_device_unavailable");
       }
@@ -297,7 +302,7 @@ export class CameraController {
     this.setState("reselection-required", { reason });
   }
 
-  async selectDevice(deviceId, { persist = true } = {}) {
+  async selectDevice(deviceId, { persist = true, settleMs = 0 } = {}) {
     const requestedId = String(deviceId ?? "");
     const device = this.devices.find((candidate) => candidate.deviceId === requestedId);
     if (!device) throw new Error("camera_device_not_available");
@@ -308,6 +313,10 @@ export class CameraController {
     this.stopPreview();
     this.setState("opening", { reason: "explicit_selection" });
     try {
+      if (settleMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, settleMs));
+        if (selectionRevision !== this.selectionRevision) return this.snapshot();
+      }
       const stream = await this.mediaDevices.getUserMedia({
         audio: false,
         video: { deviceId: { exact: requestedId } },

@@ -300,6 +300,56 @@ function provesOversizedFramesAreCappedBeforeDownstream() {
   assert.equal(downstreamFrames[0].frame.width, 1280);
 }
 
+async function provesSameCameraReconnectsWithoutSubstitution() {
+  const mediaDevices = createMediaDevices([videoDevice("usb", "USB")]);
+  const controller = new CameraController({
+    mediaDevices, storage: createStorage({ [CAMERA_STORAGE_KEY]: "usb" }),
+  });
+  await controller.start();
+  const oldStream = controller.stream;
+  oldStream.track.emit("ended");
+  mediaDevices.devices = [videoDevice("other", "Other")];
+  await controller.handleDeviceChange();
+  assert.equal(controller.state, "reselection-required");
+  assert.deepEqual(mediaDevices.calls, ["usb"]);
+  mediaDevices.devices.push(videoDevice("usb", "USB"));
+  const reconnectStarted = performance.now();
+  const reconnect = Promise.all([controller.handleDeviceChange(), controller.handleDeviceChange()]);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(controller.state, "opening");
+  assert.deepEqual(mediaDevices.calls, ["usb"], "do not open during USB settling");
+  await reconnect;
+  assert.ok(performance.now() - reconnectStarted >= 1950, "allow two seconds for USB initialization");
+  assert.deepEqual(mediaDevices.calls, ["usb", "usb"]);
+  assert.equal(controller.state, "ready");
+  assert.notEqual(controller.stream, oldStream);
+  oldStream.track.emit("ended");
+  assert.equal(controller.state, "ready");
+}
+
+async function provesPendingReconnectIsCancelled() {
+  for (const action of ["select", "disconnect", "destroy"]) {
+    const mediaDevices = createMediaDevices([videoDevice("usb", "USB"), videoDevice("other", "Other")]);
+    const controller = new CameraController({
+      mediaDevices, storage: createStorage({ [CAMERA_STORAGE_KEY]: "usb" }),
+    });
+    await controller.start();
+    controller.stream.track.emit("ended");
+    const reconnect = controller.handleDeviceChange();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    if (action === "select") await controller.selectDevice("other");
+    if (action === "destroy") controller.destroy();
+    if (action === "disconnect") {
+      mediaDevices.devices = [videoDevice("other", "Other")];
+      await controller.handleDeviceChange();
+    }
+    await reconnect;
+    assert.deepEqual(mediaDevices.calls, action === "select" ? ["usb", "other"] : ["usb"], action);
+  }
+}
+
+await provesPendingReconnectIsCancelled();
+await provesSameCameraReconnectsWithoutSubstitution();
 await provesBrowserVisibleListAndExplicitPersistedPreview();
 await provesReloadAppliesOnlyThePersistedExactDevice();
 await provesLossKeepsAdvertisingAndRequiresReselectionWithoutFallback();

@@ -25,6 +25,8 @@ import { createCommunicationNoticeController } from "./communication-notice.js";
 import { createPromoDisplayController } from "./promo-display.js";
 import { createSignalProgress } from "./signal-progress.js";
 import "./motion-ui.js";
+import { readClientDiagnosticEvents, saveClientDiagnosticEvents } from "./client-diagnostic-history.js";
+import { openPromoLayoutEditor } from "./promo-layout-editor.js";
 
 const view = document.querySelector("#client-view");
 const signalProgress = createSignalProgress();
@@ -41,7 +43,7 @@ let promoDisplayController;
 let successfulCooldownAttemptId = null;
 const attemptTimingSnapshots = new Map();
 const displayConfigSnapshots = new Map();
-const clientDiagnosticEvents = [];
+const clientDiagnosticEvents = readClientDiagnosticEvents();
 
 function recordClientDiagnostic(stage, detail = {}) {
   const event = { time: new Date().toISOString(), stage };
@@ -53,9 +55,11 @@ function recordClientDiagnostic(stage, detail = {}) {
   if (typeof detail.acknowledgement?.sent === "boolean") {
     event.displayReportSent = detail.acknowledgement.sent;
   }
-  if (Number.isInteger(detail.httpStatus)) event.httpStatus = detail.httpStatus;
+  const httpStatus = detail.httpStatus ?? detail.status;
+  if (Number.isInteger(httpStatus)) event.httpStatus = httpStatus;
   clientDiagnosticEvents.push(event);
   if (clientDiagnosticEvents.length > 20) clientDiagnosticEvents.shift();
+  saveClientDiagnosticEvents(clientDiagnosticEvents);
   refreshClientDiagnostics();
 }
 
@@ -86,7 +90,7 @@ const views = {
   },
   debug: {
     title: "Диагностика",
-    text: "Последние 20 этапов поиска и показа в этой вкладке. После сбоя откройте эту страницу: причина возврата к рекламе останется здесь до перезагрузки. Токены и изображения не записываются.",
+    text: "Последние 20 этапов камеры, поиска и показа в этой вкладке. История сохраняется при обновлении страницы до закрытия вкладки, если браузер разрешает хранение. Токены и изображения не записываются.",
     className: "debug-card",
   },
 };
@@ -116,6 +120,20 @@ function render() {
   card.append(text);
 
   view.append(card);
+  if (name === "configuration") {
+    const editLayout = document.createElement("button");
+    editLayout.type = "button";
+    editLayout.textContent = "Поправить расположение фоток";
+    editLayout.addEventListener("click", () => openPromoLayoutEditor({
+      onClose: () => {
+        window.location.hash = "#configuration";
+        render();
+        document.querySelector("[data-edit-promo-layout]")?.focus();
+      },
+    }));
+    editLayout.dataset.editPromoLayout = "true";
+    card.append(editLayout);
+  }
   if (name === "debug") {
     const list = document.createElement("ol");
     list.id = "client-diagnostic-events";
@@ -696,7 +714,7 @@ function cameraStateMessage(state) {
   if (state === "ready") return "Камера выбрана и доступна для предпросмотра.";
   if (state === "opening") return "Открываем выбранную камеру…";
   if (state === "reselection-required") {
-    return "Выбранная камера недоступна. Выберите её снова; другая камера автоматически не включается.";
+    return "Ожидаем выбранную камеру. После подключения она откроется автоматически; при необходимости нажмите «Обновить список» или выберите камеру снова.";
   }
   if (state === "selection-required") return "Выберите камеру явно.";
   if (state === "unavailable") return "Камера недоступна. Реклама продолжает работать.";
@@ -846,6 +864,7 @@ window.addEventListener("face-moment:sensor-passage", (event) => {
 
 window.addEventListener("face-moment:trigger-request", (event) => {
   const source = event.detail?.trigger_source;
+  if (document.body.classList.contains("promo-editor-open")) return;
   if (promoDisplayController?.isVisible) {
     updateTriggerStatus("busy", "Срабатывание проигнорировано: Promo ещё отображается.");
     return;
@@ -930,7 +949,10 @@ window.addEventListener("face-moment:reference-series-ready", async (event) => {
 const cameraConfig = globalThis.__FACE_MOMENT_CAMERA_CONFIG__ ?? {};
 cameraController = createCameraController({
   maxDimensions: cameraConfig.maxDimensions,
-  onStateChange: updateCameraConfiguration,
+  onStateChange: (detail) => {
+    recordClientDiagnostic("Камера", { reason: detail.reason ?? detail.state });
+    updateCameraConfiguration();
+  },
   onDevices: updateCameraConfiguration,
   onError: () => updateCameraConfiguration(),
 });

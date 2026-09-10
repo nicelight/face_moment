@@ -103,20 +103,21 @@ body:has(.promo-card) { overflow: hidden; }
   position: fixed; inset: 0; z-index: 2;
   box-sizing: border-box; width: 100%; height: 100dvh; min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
-  gap: 5vmin; padding: 6vmin; border: 0; border-radius: 0;
+  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+  gap: max(10vmin, 6vw); padding: 2.5vmin; border: 0; border-radius: 0;
   background: radial-gradient(ellipse at 30% 40%, #39352f, #242321 45%, #191a19);
   color: #fdfbf7;
 }
 .promo-teaser-grid {
   min-width: 0; min-height: 0; display: grid;
   grid-template: repeat(2, minmax(0, 1fr)) / repeat(2, minmax(0, 1fr));
-  gap: 4vmin; padding: 1.5vmin;
+  gap: 0; padding: 0; isolation: isolate;
 }
 .promo-photo-card {
   --tilt: -2deg; --delay: 0ms;
   box-sizing: border-box; min-width: 0; min-height: 0; margin: 0;
-  padding: 1.3vmin 1.3vmin 4vmin;
+  width: 125%; height: 125%; place-self: center;
+  padding: 1vmin 1vmin 2.5vmin;
   border: 1px solid #ffffff70; border-radius: 0.25vmin;
   background: #fdfbf7;
   box-shadow: 0 1.6vmin 3vmin #0005, 0 0.2vmin 0.3vmin #0004;
@@ -131,8 +132,8 @@ body:has(.promo-card) { overflow: hidden; }
   display: block; width: 100%; height: 100%; object-fit: contain; background: #f1ede5;
 }
 .promo-copy {
-  min-width: 0; min-height: 0; display: flex; flex-direction: column;
-  justify-content: center; align-items: flex-start; gap: 4vmin;
+  min-width: 0; min-height: 0; display: grid; position: relative; z-index: 1;
+  grid-template-rows: auto minmax(0, 1fr); gap: 3vmin;
 }
 .promo-card h2 {
   margin: 0; font-weight: 400; font-size: 3.1vmin; line-height: 1.4; color: #d6d0c5;
@@ -142,9 +143,13 @@ body:has(.promo-card) { overflow: hidden; }
   letter-spacing: -0.045em; line-height: 1.08; text-wrap: balance; color: #fdfbf7;
 }
 .promo-domain { display: block; font-weight: 600; color: #e7c99b; }
+.promo-qr-slot {
+  min-width: 0; min-height: 0; container-type: size;
+  display: grid; place-items: center;
+}
 .promo-qr-panel {
-  flex: none; width: min(28vmin, 100%); aspect-ratio: 1; box-sizing: border-box;
-  padding: 1.4vmin; border-radius: 1vmin; background: #fff;
+  width: min(100cqw, 100cqh); aspect-ratio: 1; box-sizing: border-box;
+  padding: 1vmin; border-radius: 1vmin; background: #fff;
   box-shadow: 0 1vmin 3vmin #0003;
 }
 .promo-qr { display: block; width: 100%; height: 100%; }
@@ -152,18 +157,15 @@ body:has(.promo-card) { overflow: hidden; }
   .promo-card {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) minmax(0, 0.42fr);
-    gap: 4vmin; padding: 5vmin;
+    gap: 8vmin; padding: 2.5vmin;
   }
-  .promo-copy { flex-direction: row; align-items: center; justify-content: space-between; }
-  .promo-copy h2 { flex: 1; }
-  .promo-qr-panel { width: 27vmin; }
+  .promo-copy { grid-template: minmax(0, 1fr) / minmax(0, 1fr) minmax(0, 1fr); }
+  .promo-copy h2 { align-self: center; }
 }
 @media (max-aspect-ratio: 2/3) {
-  .promo-card { grid-template-rows: minmax(0, 1fr) minmax(0, 0.6fr); }
-  .promo-copy { flex-direction: column; justify-content: center; gap: 3vmin; text-align: center; }
-  .promo-copy h2 { flex: none; }
+  .promo-card { grid-template-rows: minmax(0, 1fr) minmax(0, 0.7fr); }
+  .promo-copy { grid-template: auto minmax(0, 1fr) / minmax(0, 1fr); gap: 3vmin; text-align: center; }
   .promo-title { font-size: 6.5vmin; margin-bottom: 1.5vmin; }
-  .promo-qr-panel { width: 33vmin; }
 }
 @keyframes promo-arrive {
   from { opacity: 0; transform: translateY(1.5vmin) rotate(var(--tilt)) scale(0.97); }
@@ -465,3 +467,49 @@ body:has(.promo-card) { overflow: hidden; }
 .trigger-status {
   margin-bottom: 0;
 }
+
+/* The same viewport-relative composition is used in the editor and live Promo. */
+.promo-custom-layout .promo-teaser-grid,
+.promo-custom-layout .promo-copy,
+.promo-custom-layout .promo-qr-slot { display: contents; }
+.promo-custom-layout :is(.promo-photo-card, .promo-copy h2, .promo-qr-panel) {
+  position: absolute; margin: 0; min-width: 0; min-height: 0;
+  animation: none; box-sizing: border-box;
+}
+.promo-custom-layout .promo-copy h2 { font-size: calc(3.1vmin * var(--promo-text-scale, 1)); text-align: left; }
+.promo-custom-layout .promo-title { font-size: calc(5.8vmin * var(--promo-text-scale, 1)); }
+.promo-custom-layout .promo-qr-panel { aspect-ratio: 1; }
+.promo-editor-open { overflow: hidden; }
+.promo-editor { position: fixed; inset: 0; z-index: 100; }
+.promo-editor .promo-card { z-index: 0; }
+.promo-editor .promo-photo-card { animation: none; }
+.promo-editor-tools, .promo-editor-actions {
+  position: fixed; z-index: 3; display: flex; flex-wrap: wrap; align-items: center;
+  gap: 10px; padding: 12px; background: #101b1af2; color: #eff7f4;
+  border: 1px solid #60877c; border-radius: 12px; box-shadow: 0 5px 25px #0005;
+  font: 14px/1.4 sans-serif;
+}
+.promo-editor-tools { top: 12px; left: 12px; max-width: min(520px, calc(100vw - 24px)); box-sizing: border-box; }
+.promo-editor-tools label { display: flex; align-items: center; gap: 8px; }
+.promo-editor-tools p { flex-basis: 100%; margin: 0; font-size: 12px; }
+.promo-editor-tools details { width: 100%; }
+.promo-editor-tools summary { cursor: pointer; padding: 6px 0; color: #cbff63; }
+.promo-editor-tools details label { display: grid; grid-template-columns: 65px minmax(0, 1fr) 45px; }
+.promo-editor-tools input[type="range"] { width: 100%; padding: 0; min-height: 32px; accent-color: #cbff63; }
+.promo-editor-actions { bottom: 16px; right: 16px; max-width: calc(100vw - 32px); box-sizing: border-box; }
+.promo-editor-actions p { margin: 0; max-width: 280px; }
+.promo-editor-actions p:empty { display: none; }
+.promo-editor-actions button { min-height: 44px; }
+.promo-editor-actions [data-action="save"] { background: #cbff63; color: #142400; font-weight: 700; padding: 16px 24px; border: 0; }
+.promo-editable { touch-action: none; user-select: none; cursor: move; outline: 1px dashed #ffffff65; }
+.promo-editable.is-selected { outline: 2px solid #cbff63; z-index: 2; }
+.promo-editable img, .promo-editable svg { pointer-events: none; }
+.promo-editor .promo-editor-handle {
+  display: none; position: absolute; width: 36px; height: 36px; min-height: 36px;
+  padding: 0; border: 2px solid #142400; border-radius: 50%;
+  background: #cbff63; color: #142400; font: 24px/1 sans-serif; touch-action: none;
+}
+.promo-editor .is-selected .promo-editor-handle { display: block; }
+.promo-editor-handle.resize { right: -12px; bottom: -12px; cursor: nwse-resize; }
+.promo-editor-handle.rotate { left: calc(50% - 18px); top: -40px; cursor: grab; }
+@media (pointer: coarse) { .promo-editor .promo-editor-handle { width: 44px; height: 44px; } }

@@ -283,3 +283,88 @@ Attempt `472e284a-569d-426a-832d-dc189533e56e` (09-09 23:36:48 Asia/Dushanbe):
 совпадений 0.3833. Открытие по QR ещё не записано; стенд доступен только локально.
 
 Карточки малы: [заметка](../../PAPERCUTS/gpt-6%20__%2009-10-2026%2001.20.md).
+
+## No server connection notice — 2026-09-10
+
+Operator Network evidence confirmed `net::ERR_CERT_AUTHORITY_INVALID` on the
+Attempt fetch: Chrome rejected TLS before HTTP. Earlier `curl -k` health checks
+did not test certificate trust; the token/origin explanation was unproven.
+After accepting the local certificate, Attempt
+`0aa5b559-1bb0-4d60-b310-fa5eed792eff` at 2026-09-10 08:09:52 UTC returned
+`no_proposals` with zero occurrences; client timing was received. No Promo is
+expected for that outcome. This does not explain why the detector found no face.
+Empty `/healthz` content is normal. Durable local CA trust/persistence remains
+follow-up work; browser JavaScript cannot bypass a certificate trust failure.
+
+## USB recovery and reload diagnostics — 2026-09-10
+
+Physical follow-up: automatic reconnection now produces a stream, but the
+operator reports magenta imagery until selecting another camera and returning.
+Recovery is therefore not yet physically accepted. Host kernel messages around
+14:02:58–14:03:00 Asia/Dushanbe show descriptor/address errors `-71` and failed
+enumeration; the UVC device is discovered again at 14:03:07 and 14:03:23.
+These prove USB initialization trouble, not the cause of color corruption.
+At 14:04 the camera reports YUYV 640x480, 30 fps, automatic white balance on;
+the operator's visual state at that read is not yet confirmed. Both manual
+and automatic paths use the same exact-device getUserMedia constraints.
+Early reopening is a hypothesis pending a controlled before/after comparison;
+do not treat an automatic second reopen or a color filter as a verified fix.
+The operator subsequently explicitly held the magenta state for inspection:
+same YUYV 640x480 at 30 fps, automatic white balance enabled, inactive manual
+white-balance-temperature readback 0, gain 22, exposure 305. No capture settings
+were changed by the inspection. A normal-color comparison is still pending;
+the inactive temperature value alone is not a diagnosis.
+
+Read-only follow-up around 14:15 Asia/Dushanbe found the same device and
+YUYV 640x480/30 fps format, automatic white balance on and inactive temperature
+readback 0; gain was 20 and exposure 405. The operator has not yet identified
+the visible color state for this sample, so it is not a normal-color baseline.
+No further reconnect entries appeared after 14:03:25 in the inspected kernel
+log. Next evidence needed: identify the current preview color, then compare
+controls after the manual camera-switch recovery under the same lighting.
+
+At 14:18 Asia/Dushanbe the operator confirmed a stable magenta preview with
+a screenshot. A fresh read-only sample showed YUYV 640x480/30 fps, automatic
+white balance on, inactive temperature 0, gain 22 and exposure 405. Brightness
+128, contrast 32 and saturation 32 were at device defaults. This is the
+confirmed faulty-state baseline; comparison after manual switching remains
+pending. No controls or stream settings were changed for this sample.
+
+At 14:19 the operator switched to the built-in camera and back to UVC without
+USB removal; the screenshot confirmed normal color. The subsequent read
+retained YUYV 640x480/30 fps and automatic white balance on, but inactive
+white-balance-temperature readback changed from 0 to 3900. Gain changed from
+22 to 20 and exposure from 405 to 505; other listed controls were unchanged.
+This associates recovery with a changed camera white-balance readback, but does
+not prove that this inactive control caused the tint. Stream format did not
+change. Next controlled check: reproduce the tint on USB reconnect and test
+page reload while keeping UVC selected, to determine whether reopening alone
+is sufficient without selecting the built-in camera.
+
+Operator decision after that comparison: allow initialization time before
+reopening; the operator reports white-balance availability after roughly 1.5 s.
+Automatic same-device recovery now waits 2 s before getUserMedia. Explicit
+selection and ordinary page startup retain their existing timing. A newer
+selection, another disconnect or controller destruction invalidates the pending
+open. All 54 client unit test files passed, including delay and cancellation
+checks. Physical color recovery with this delay is still pending; the earlier
+reload experiment is superseded by this operator-directed change.
+
+Operator reproduced USB disappearance/return with the same camera still selected
+but unavailable; switching away and back restored preview. `devicechange`
+previously refreshed enumeration without reopening the stream. The client now
+reopens the exact selected deviceId when it returns while awaiting reselection.
+Changed identities still require explicit selection; no label-based fallback.
+This refines FR-CAP-11 per operator request. Physical USB verification remains
+necessary; simulated lifecycle tests cover the implementation.
+
+The last 20 safe client diagnostic events now use sessionStorage and survive
+reload in the same tab. Blocked/full storage falls back to in-memory operation.
+HTTP status and camera transitions are recorded; tokens/images remain excluded.
+Older in-memory history lost to a prior reload cannot be recovered.
+
+Validation: 54 client unit tests and all 17 existing Chromium browser tests
+passed. Separate isolated browser checks confirmed sessionStorage round-trip
+and retained event rendering in the actual app's `#debug` after reload;
+API responses were mocked and no new real Attempt was created. TLS trust was
+ignored only by the QA browser, so this does not establish a certificate fix.

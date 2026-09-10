@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 
 const origin = 'https://promo-layout.test';
 for (const [width, height] of [[1920,1080], [1280,1024], [1080,1080], [1080,1920], [2560,1080], [390,844]]) {
-  test(`Promo fits ${width}x${height} with complete photos and stationary QR`, async ({ page }) => {
+  test(`Promo collage ${width}x${height} overlaps with contained images and stationary QR`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.route(`${origin}/**`, async route => {
       const pathname = new URL(route.request().url()).pathname;
@@ -29,7 +29,14 @@ for (const [width, height] of [[1920,1080], [1280,1024], [1080,1080], [1080,1920
     await expect(page.locator('h2')).toHaveText('Ваши фото можно скачать по QR коду или на сайте face-momet.ru');
     await page.waitForTimeout(1200);
     const qrBefore = await page.locator('.promo-qr').boundingBox();
-    for (const selector of ['.promo-photo-card', '.promo-qr-panel', '.promo-copy h2']) {
+    if (width / height > 1.2) {
+      const copyBounds = await page.locator('.promo-copy').boundingBox();
+      for (const card of await page.locator('.promo-photo-card').all()) {
+        const bounds = await card.boundingBox();
+        expect(bounds.x + bounds.width).toBeLessThan(copyBounds.x);
+      }
+    }
+    for (const selector of ['.promo-qr-panel', '.promo-copy h2']) {
       for (const element of await page.locator(selector).all()) {
         const bounds = await element.boundingBox();
         expect(bounds.x).toBeGreaterThanOrEqual(0); expect(bounds.y).toBeGreaterThanOrEqual(0);
@@ -37,6 +44,20 @@ for (const [width, height] of [[1920,1080], [1280,1024], [1080,1080], [1080,1920
         expect(bounds.y+bounds.height).toBeLessThanOrEqual(height);
       }
     }
+    const geometry = await page.evaluate(() => {
+      const cards = [...document.querySelectorAll('.promo-photo-card')];
+      const slot = document.querySelector('.promo-qr-slot').getBoundingClientRect();
+      const qr = document.querySelector('.promo-qr-panel').getBoundingClientRect();
+      return {
+        cardWidths: cards.map(card => card.offsetWidth),
+        cellWidth: document.querySelector('.promo-teaser-grid').clientWidth / 2,
+        qrSide: qr.width, availableSide: Math.min(slot.width, slot.height),
+      };
+    });
+    for (const cardWidth of geometry.cardWidths) {
+      expect(cardWidth / geometry.cellWidth).toBeCloseTo(1.25, 1);
+    }
+    expect(Math.abs(geometry.qrSide - geometry.availableSide)).toBeLessThan(2);
     for (const img of await page.locator('.promo-teaser').all()) {
       expect(await img.evaluate(el => el.complete && el.naturalWidth > 0 && getComputedStyle(el).objectFit === 'contain')).toBe(true);
     }

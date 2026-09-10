@@ -1,3 +1,4 @@
+import { applySavedPromoLayout } from "./promo-layout.js";
 import { getDisplayRequestHeaders } from "./display-client-config.js";
 
 const PROMO_COPY = "Ваши фото можно скачать по QR коду или на сайте face-momet.ru";
@@ -778,41 +779,8 @@ export class PromoDisplayController {
         return { stale: true, attemptId };
       }
 
-      const card = this.document.createElement("section");
-      card.className = "view-card promo-card";
-      card.dataset.view = "result";
-      const heading = this.document.createElement("h2");
-      heading.textContent = PROMO_COPY;
-      const copyPanel = this.document.createElement("div");
-      copyPanel.className = "promo-copy";
-      heading.textContent = "";
-      for (const [className, text] of [
-        ["promo-title", "Ваши фото можно скачать"],
-        ["promo-instruction", " по QR коду или на сайте "],
-        ["promo-domain", "face-momet.ru"],
-      ]) {
-        const span = this.document.createElement("span");
-        span.className = className;
-        span.textContent = text;
-        heading.append(span);
-      }
-      copyPanel.append(heading);
-      const teaserGrid = this.document.createElement("div");
-      teaserGrid.className = "promo-teaser-grid";
-      images.forEach((image) => {
-        const photoCard = this.document.createElement("figure");
-        photoCard.className = "promo-photo-card";
-        photoCard.append(image);
-        teaserGrid.append(photoCard);
-      });
-      card.append(teaserGrid);
-      const qrPanel = this.document.createElement("div");
-      qrPanel.className = "promo-qr-panel";
-      const qr = createQrSvg(this.document, normalized.qr_url);
-      qr.svg.classList.add("promo-qr");
-      qrPanel.append(qr.svg);
-      copyPanel.append(qrPanel);
-      card.append(copyPanel);
+      const { card, qr } = createPromoCard(this.document, images, normalized.qr_url);
+      applySavedPromoLayout(card);
       this.onPrepared({ attemptId, card });
       this.container.replaceChildren(card);
       this.renderedCard = card;
@@ -941,4 +909,47 @@ export class PromoDisplayController {
 
 export function createPromoDisplayController(options) {
   return new PromoDisplayController(options);
+}
+
+/** Shared presentation for issued results and the local layout editor. */
+export function createPromoCard(documentImpl, images, qrUrl) {
+  const card = documentImpl.createElement("section");
+  card.className = "view-card promo-card";
+  card.dataset.view = "result";
+  const heading = documentImpl.createElement("h2");
+  heading.textContent = PROMO_COPY;
+  const copyPanel = documentImpl.createElement("div");
+  copyPanel.className = "promo-copy";
+  heading.textContent = "";
+  for (const [className, text] of [
+    ["promo-title", "Ваши фото можно скачать"],
+    ["promo-instruction", " по QR коду или на сайте "],
+    ["promo-domain", "face-momet.ru"],
+  ]) {
+    const span = documentImpl.createElement("span");
+    span.className = className;
+    span.textContent = text;
+    heading.append(span);
+  }
+  copyPanel.append(heading);
+  const teaserGrid = documentImpl.createElement("div");
+  teaserGrid.className = "promo-teaser-grid";
+  images.forEach((image) => {
+    const photoCard = documentImpl.createElement("figure");
+    photoCard.className = "promo-photo-card";
+    photoCard.append(image);
+    teaserGrid.append(photoCard);
+  });
+  card.append(teaserGrid);
+  const qrPanel = documentImpl.createElement("div");
+  qrPanel.className = "promo-qr-panel";
+  const qr = createQrSvg(documentImpl, qrUrl);
+  qr.svg.classList.add("promo-qr");
+  qrPanel.append(qr.svg);
+  const qrSlot = documentImpl.createElement("div");
+  qrSlot.className = "promo-qr-slot";
+  qrSlot.append(qrPanel);
+  copyPanel.append(qrSlot);
+  card.append(copyPanel);
+  return { card, qr };
 }

@@ -294,8 +294,10 @@ pilot actor or blocker.
 - **FR-CAP-11** — Client configuration MUST list available cameras with
   understandable labels, provide preview, explicit selection and refresh. If
   the selected camera becomes unavailable, advertising MUST continue and
-  capture MUST wait for operator reselection and preview; no arbitrary camera
-  substitution is allowed. Frames larger than the deployment-configured maximum
+  capture MUST wait for an available selected camera and preview; no arbitrary
+  camera substitution is allowed. Operator update, 2026-09-10: when the exact
+  previously selected deviceId returns, reopen it automatically. If its identity
+  changes, require explicit operator reselection. Frames larger than the deployment-configured maximum
   MUST be downscaled before entering the ring buffer or detector; the exact
   maximum belongs to camera/site configuration.
 - **FR-CAP-12** — Client configuration MUST provide an explicitly labelled test
@@ -344,6 +346,13 @@ pilot actor or blocker.
   serialization belongs to downstream SDD.
 
 ### D. Promo display and QR continuation
+
+Operator addition, 2026-09-10: Configuration provides «Поправить расположение
+фоток», a local full-screen editor for position, size and rotation of the four
+photo cards, QR and text box. Text has three font-size presets. «Сохранить
+дизайн» persists the composition in the kiosk browser, applies it to subsequent
+Promo displays and returns to Configuration. See the
+[presentation guide](guides/promo-presentation.md#local-composition-editor).
 
 - **FR-UX-01** — Between attempts, the display MUST show locally available
   advertising. Capture/search MAY use a non-personal prePromo state; it MUST NOT

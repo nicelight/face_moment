@@ -4,6 +4,42 @@ status: active
 ---
 # Changelog
 
+## [2026-09-10] Mouse-operated Promo composition editor
+
+- Configuration now opens a full-screen editor for all four photo cards, QR
+  and copy. Pointer gestures change position, size and rotation; text has three
+  size presets. Toolbar sliders keep size/rotation accessible for cards that
+  extend beyond the screen.
+- Save persists local viewport-relative geometry and returns to Configuration;
+  real Promo results reuse the same renderer and saved design. Cancel preserves
+  the prior design, and storage failure keeps the unsaved draft visible.
+  See the [editor guide](guides/promo-presentation.md#local-composition-editor).
+- Validation: 55 client unit test files, the existing 17 browser tests and
+  the new editor regression passed; mouse interactions and slider fallback
+  were independently checked in isolated desktop/mobile browser viewports.
+
+## [2026-09-10] USB reconnection and reload diagnostics
+
+- Added the operator-requested 2-second settling delay before automatic USB
+  camera recovery, with cancellation when selection or device state changes.
+  All 54 client unit test files passed; physical color recovery remains to be
+  checked after loading the updated client.
+- Promo cards now overlap at 125% of grid-cell size and the stationary QR
+  fills its allocated square. Wide-screen text clearance was corrected;
+  six layout cases plus 1450x833 passed after the final CSS change. The local
+  server serves the updated stylesheet. See the
+  [presentation guide](guides/promo-presentation.md).
+- Per operator request, the previously selected camera now reopens when the
+  same deviceId returns. Other identities still require explicit selection.
+- Bounded safe client diagnostics survive reload using sessionStorage, include
+  camera transitions and preserve HTTP failure status. Denied storage is
+  non-blocking. All 54 client unit tests and 17 browser tests passed; isolated
+  Chromium also confirmed retained history rendering after reload.
+- Browser evidence identified certificate distrust as the prior transport
+  failure; the next actual Attempt reached the server with `no_proposals`.
+  [Local diagnosis](guides/local-development.md#no-server-connection-notice--2026-09-10)
+  distinguishes TLS, USB recovery and no-face outcomes.
+
 ## [2026-09-09] Native Promo fetch binding
 
 - Bound `Window.fetch` in `PromoDisplayController`; native Chromium configuration

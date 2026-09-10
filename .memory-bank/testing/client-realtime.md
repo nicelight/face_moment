@@ -7,6 +7,16 @@ source_of_truth:
 ---
 # Client Realtime Verification
 
+Operator recovery update, 2026-09-10: same-device USB reconnect must reopen
+the selected deviceId, without substituting a different identity or accepting
+stale stream completion. A changed deviceId still needs explicit selection.
+Automatic recovery waits two seconds before opening the returning device;
+selection changes, another disconnect and destruction must cancel that open.
+Client diagnostics must retain the last 20 safe events across same-tab reload;
+denied or corrupt storage must not break capture. Unit coverage lives in
+`test_camera.mjs` and `test_client_diagnostic_history.mjs`. Physical USB and
+browser certificate-trust checks remain distinct from simulated fixtures.
+
 ## Contract Inputs
 
 - [Sensor Passage API](../contracts/sensor-passage-api.md): exact long-poll,
