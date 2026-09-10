@@ -304,20 +304,16 @@ adding a runtime mechanism or changing Global Backbone Planning Revision `4`.
 
 ## Photographer Preprocessing Follow-Up
 
-[Принятый план](../../../.protocols/photo-preprocessing/operator-plan.md), Planning Revision 4.
-Правила: [Photo preprocessing](../../domains/photo-processing.md#versioned-photographer-preprocessing).
-Метод проверки: [scale experiment](../../testing/photo-processing.md#photographer-scale-experiment)
-и [local reprocessing](../../testing/photo-processing.md#local-reprocessing-proof).
+План: [operator decision](../../../.protocols/photo-preprocessing/operator-plan.md).
+Контракт и проверки: [processing](../../domains/photo-processing.md#versioned-photographer-preprocessing),
+[scale](../../testing/photo-processing.md#photographer-scale-experiment),
+[reprocessing](../../testing/photo-processing.md#local-reprocessing-proof).
 
-| Task | Claims | Зависимости | Результат |
-|---|---|---|---|
-| [TASK-117](../TASK-117-T2-FT-002-W7.task.json) | AC-010/011 | TASK-114 | Original-pixel preprocessing, выбор 640 по native experiment |
-| [TASK-118](../TASK-118-T3-FT-002-W8.task.json) | AC-012 | TASK-117, TASK-040 | Локальное применение, шесть ready Photos, сохранённая история |
+| Task | Scope | Result |
+|---|---|---|
+| [TASK-117](../TASK-117-T2-FT-002-W7.task.json) | AC-010/011 | 640 selected by native measurement |
+| [TASK-118](../TASK-118-T3-FT-002-W8.task.json) | AC-012 | Local apply; six ready Photos; history preserved |
 
-Processing владеет revision/pending/results; operational script отдельно вызывает
-serving_control guarded switch. Query, Buffalo, Calibration и admission-based status
-сохраняют свои контракты. Группы — только benchmark; новые schema/service/graph edges
-не нужны. Failure/restart proof выполняется в disposable state.
-
-Обе задачи закрыты 2026-09-09 после required gates и независимых verdicts.
-[Feature semantic-pass](../../features/FT-002.md#semantic-verification) покрывает AC-001..012.
+Processing owns revision/pending/results; the script uses the guarded serving
+switch. No new schema/service/graph edge. Both tasks closed 2026-09-09;
+[feature semantic-pass](../../features/FT-002.md#semantic-verification) covers AC-001..012.

@@ -227,164 +227,59 @@ validated universal setting for distant or group faces.
 ## Versioned local Photo reprocessing
 
 С 2026-09-09 локально активна `opencv-photo-640-v2`, revision
-`50e488ac-842e-404f-ba32-7d8390832152`. Все шесть Photos от 2026-09-08 — ready,
-по одному лицу; compatible search работает. Оригиналы, admission и результаты
-старой revision `1fa46d01-f6aa-4a72-a47c-3770209d44ea` сохранены.
-Контракт: [Photo preprocessing](../domains/photo-processing.md#versioned-photographer-preprocessing).
+`50e488ac-842e-404f-ba32-7d8390832152`; шесть Photos готовы, старые revision и
+оригиналы сохранены. Контракт: [Photo preprocessing](../domains/photo-processing.md#versioned-photographer-preprocessing).
 
-Процедура `scripts/apply-local-photo-preprocessing.py` запускается в локальной
-Compose network с текущим source mount и каталогом evidence:
-
-1. `snapshot --evidence <dir>`: сохранить IDs, original/history hashes и настройки.
-   Ожидается шесть Photos; иной разрешённый объём задаётся `--expected-photos`.
-2. После disposable tests собрать worker/realtime, дождаться окончания текущей работы
-   и остановить model consumers. `apply --evidence <dir>` валидирует модель,
-   сохраняет target.json, выполняет guarded switch и создаёт только missing pending.
-3. Установить `SFACE_PREPROCESSING_VERSION` из target.json, перезапустить model consumers
-   и backend с прежним source overlay. Обработку выполняет штатный worker.
-4. `check --evidence <dir>`: проверить terminals/search и сохранность снимка.
-   Повторный apply использует тот же target и сохраняет existing states.
-
-Before snapshot не перезаписывать. Rollback — явный guarded switch со старыми
-настройками и restart. Migration/failure tests — только disposable DB/objects.
-Staff status/SLO сохраняют admission revision; результат новой обработки проверяется
-через processing projections. Команды и доказательства:
-[TASK-118 verification](../../.protocols/TASK-118-T3-FT-002-W8/verification.md).
+`scripts/apply-local-photo-preprocessing.py` выполняется так: `snapshot` сохраняет
+IDs/хэши, `apply` делает guarded switch и создаёт только отсутствующие pending,
+затем штатный worker обрабатывает новую revision, а `check` проверяет terminals,
+search и сохранность снимка. Повторный apply не сбрасывает готовые состояния.
+Rollback и failure tests — только через явные guarded/disposable процедуры.
+[TASK-118 evidence](../../.protocols/TASK-118-T3-FT-002-W8/verification.md).
 
 ## Camera search diagnosis — 2026-09-09
 
-Read-only inspection found two real Attempts at 21:17:44 and 21:18:51 local
-time. The first exceeded its 3000 ms deadline (3371 ms server search). The
-second completed search in 2448 ms with `insufficient_results`: eight admitted
-proposals, five selected observations passing quality, and zero matches at
-threshold 0.6. Both used visit date 2026-09-08 and the new processing revision.
-The current compatible inventory contains six ready Photos/faces; this is a
-current read, not a historical inventory snapshot.
-
-Developer `/staff/attempts/{attempt_id}` now shows a readable summary of this
-existing evidence and expandable JSON. Backend source-overlay restart and
-live HTTPS developer/operator projection checks passed for both Attempts.
-Mypy passed for 96 files, render smoke passed, investigation tests: 15 passed,
-one existing whole-document assertion rejected the shared navigation's hidden
-Calibration link. No camera identity root cause is established.
-
-The precise missing measurement is the best score before threshold filtering,
-together with the compatible population size at search time. The current
-repository applies the threshold before returning observations, and camera
-crops/embeddings are not retained; old Attempts cannot recover those scores.
-The follow-up now collects both values in the same exact-search SQL statement
-and carries them into new ordinary evidence. Developer detail highlights the
-best score and shows counts per selected detection. No threshold or matching
-behavior changes. Deadline results remain discarded and may have no score.
-
-The local source overlay now also mounts `src` into realtime. To load changes:
+Две первые реальные попытки дали: deadline 3371 мс и `insufficient_results` за
+2448 мс при пороге 0.6. Старые попытки не содержали лучшего отклонённого score.
+Для новых поисков developer detail теперь сохраняет pre-threshold similarity и
+число совместимых Photos; поведение matching не менялось.
 
 ```bash
 docker compose --env-file .env.testing -f compose.yaml -f .protocols/local-testing/compose-source.yaml up -d --no-deps realtime
 docker compose --env-file .env.testing -f compose.yaml -f .protocols/local-testing/compose-source.yaml restart backend
 ```
 
-Current-source tests must mount current `tests` too: the existing image contains
-older tests. Twelve focused search/evidence/render checks passed with disposable
-PostgreSQL databases and unique object prefixes; mypy passed. For the next probe,
-keep date/threshold/photos fixed, use the normal camera and trigger twice a few
-seconds apart, then inspect the newest developer Attempt detail. This obtains
-actual camera measurements; old Attempts cannot be backfilled.
-
-Rollout check: backend/realtime HTTPS health returned 200; realtime loaded both
-new observation fields, and live developer/operator detail retained role
-isolation. Older Attempt correctly displays no best-score measurement.
-Read-only cross-comparison of the six active Photos in the selected revision
-gave 15 Photo pairs: scores 0.5082–0.9246, with 14/15 reaching 0.6. This supports
-consistency of most stored reference embeddings but does not establish camera
-query correctness or an appropriate threshold. Awaiting operator's two fresh
-camera triggers with unchanged settings.
-
-Fresh operator triggers at 22:55:52 and 22:56:31 local time produced Attempts
-`3b99687a-06b5-4afc-93f1-b7404bb71489` and
-`a92240cf-e19b-4f0b-8127-673f116462b7`. Both issued a result containing four
-Photos, with best scores 0.6669973 and 0.6743400 and search durations 2055/2083
-ms. Every selected observation searched six Photos; date, pipeline revision,
-settings revision 3 and threshold 0.6 match the earlier failed attempt.
-This proves current camera-search success, not the cause of the earlier miss.
-Both core display rows remain pending with no QR timing/ack evidence; actual
-on-screen display and any changed capture conditions require operator feedback.
+Текущая source-overlay проверка: 12 focused tests и mypy прошли. Для повторной
+проверки фиксировать date/threshold/photos и смотреть новую Attempt; старые scores
+не backfill-ятся. Две следующие попытки выдали результаты за 2055/2083 мс с best
+scores 0.6670/0.6743.
 
 ## Issued preview revision repair and SFace threshold 0.4
 
-The operator confirmed that no photographs/QR appeared and the second capture
-had worse lighting. Browser reproduction proved `media_failure`: all four
-issued previews returned 404. The loader omitted revision and selected the
-Photo's original admission state (`no_faces`, no preview); the issuing Attempt
-used the new revision where the same Photos were `ready` with existing bytes.
-This was not expiry. Display and phone preview reads now explicitly use the
-issuing Attempt's immutable pipeline revision, preserving admission history
-and previously issued results across future serving switches.
-
-Per explicit operator instruction, updated local SFace threshold from 0.6 to
-0.4 through `RealtimeContextRepository.update_reference_settings`; settings
-revision is now 4. Local initial seed also uses 0.4. No Photo, historical
-Attempt, quality gate, active date or model was changed.
-
-The client `#debug` placeholder is replaced by a bounded 20-event in-memory
-log: capture, server outcome, loading, card preparation, success or failure.
-Failure includes a safe machine error code and available ACK HTTP status.
-Only allowlisted scalar metadata is shown; no tokens, media URLs, images or
-raw exceptions are retained. Reloading clears the log and loads updated JS.
-
-Validation: 48 Promo/phone API tests, all 52 client unit tests and mypy passed;
-the strengthened diagnostic error-code assertion passed its 14-test file.
-Local backend restarted with the source overlay. The delegated browser proof
-and any remaining end-to-end verification are recorded in
-`.protocols/model-debug/display-qa.md`.
-
-Post-fix Chromium verification loaded all four actual issued previews with
-HTTP 200, decoded them, and rendered four cards plus QR. The retained old
-session's ACK was mocked because its reporting window had expired; this does
-not claim a new live ACK. Browser diagnostic failure/code visibility also
-passed using a synthetic incomplete-config fixture. One fresh operator trigger
-after hard reload remains the final camera-to-display/ACK check.
+Причина `media_failure`: media reader брал admission revision, где preview не
+было; теперь display и phone используют immutable revision issuing Attempt.
+Локальный SFace threshold был изменён на 0.4. `#debug` получил bounded log и
+безопасные error codes. 48 API-тестов, 52 client-теста и mypy прошли; browser
+доказательство сохранено в `.protocols/model-debug/display-qa.md`.
 
 ## Manual threshold in Calibration
 
-Developer `/staff/calibrations` now has the operator-requested manual threshold
-input and save button, with current threshold below it. It uses the active
-model's existing serving settings; no Calibration run is required. The local
-current value is 0.4. Save changes only threshold and clears recommendation
-provenance; already admitted Attempts preserve their settings.
-
-The owner serializes changes and checks the hidden settings revision. A stale
-form asks for reload instead of overwriting newer settings. Role/CSRF, invalid
-values, persisted readback, preserved quality and rollback checks passed in
-the nine-test disposable Calibration HTTP suite; mypy passed.
-
-Live Chromium developer check passed: numeric field displayed 0.4, one save of
-that unchanged value returned 303, and reload showed persisted 0.4. No run or
-recommendation was changed. Evidence:
-`.protocols/model-debug/manual-threshold-qa.md`.
+`/staff/calibrations` получил ручной threshold без запуска Calibration; сохраняется
+только threshold, stale revision отклоняется. Девять HTTP-тестов и mypy прошли;
+Chromium подтвердил сохранение 0.4. [Evidence](../../.protocols/model-debug/manual-threshold-qa.md).
 
 ## Native browser fetch failure after preview repair
 
-Three further operator Attempts (18:11:09, 18:11:32, 18:13:04 UTC) all issued
-six-photo results at threshold 0.4; best scores were 0.6517/0.6524/0.6253.
-The actual browser debug log then identified `configuration_failure` with
-`promo_display_configuration_missing`. A native Chromium probe confirmed
-`Illegal invocation`: PromoDisplayController stored Window.fetch unbound and
-called it as a controller method. Both display configuration and display ACK
-requests failed before HTTP. The preceding direct-controller preview QA used
-an injected fetch wrapper and therefore did not cover this browser binding.
+Browser `configuration_failure` оказался `Illegal invocation`: native
+`Window.fetch` был передан без receiver. Binding исправлен; 53 client-теста и
+полный UI smoke прошли. [Evidence](../../.protocols/model-debug/display-full-flow-qa.md).
 
-The controller now binds fetch to globalThis, matching the existing sensor
-client pattern. Fifty-three client unit tests pass, including a default-fetch
-receiver regression covering configuration and ACK. This complements the
-earlier real preview-revision fix; neither defect was a matching-threshold
-failure. Fresh full-app browser evidence is retained separately in
-`.protocols/model-debug/display-full-flow-qa.md`.
+## Live camera/display confirmation — 2026-09-10
 
-Post-fix full UI browser check passed with a selected fake camera and the
-actual Test button: native configuration GET 200, four actual preview GETs 200,
-decoded cards and visible QR. Native fetch was neither injected nor wrapped.
-Detector/search response used a retained-result fixture, and old-session ACK
-was intercepted; the emitted confirmed request proves the browser path, not
-durable live ACK or actual camera timing. No new Attempt was created. A hard
-reload plus one operator camera trigger is still needed for live confirmation.
+Attempt `472e284a-569d-426a-832d-dc189533e56e` (09-09 23:36:48 Asia/Dushanbe):
+реальный показ подтверждён (`confirmed`), evidence полные. Найдено 6 фото,
+показано 4; поиск 1870 мс, QR виден через 2434 мс от готовности серии.
+Порог попытки и текущий — 0.38; similarity максимум 0.5923, минимум среди
+совпадений 0.3833. Открытие по QR ещё не записано; стенд доступен только локально.
+
+Карточки малы: [заметка](../../PAPERCUTS/gpt-6%20__%2009-10-2026%2001.20.md).

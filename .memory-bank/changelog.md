@@ -6,59 +6,41 @@ status: active
 
 ## [2026-09-09] Native Promo fetch binding
 
-- Actual browser diagnostics exposed a second display blocker: unbound
-  Window.fetch was invoked as a Promo controller method. Configuration and ACK
-  requests failed before HTTP. Bound it to the browser global like the sensor
-  client; 53 client tests passed with a new receiver regression.
-- The preceding wrapper-based browser smoke covered previews/QR but masked this
-  defect. [Investigation](guides/local-development.md#native-browser-fetch-failure-after-preview-repair)
-  records that limitation and the new full-app proof route.
+- Bound `Window.fetch` in `PromoDisplayController`; native Chromium configuration
+  and ACK calls now work. Added a receiver regression; 53 client tests passed.
+- [Investigation](guides/local-development.md#native-browser-fetch-failure-after-preview-repair)
+  records the prior wrapper-smoke limitation.
 
 ## [2026-09-09] Developer manual threshold control
 
-- Added the requested input/save/current-value block to Calibration, independent
-  of stored recommendations. The serving owner preserves other settings,
-  rejects stale forms and applies the new threshold to future Attempts.
-- Nine disposable HTTP tests cover role/CSRF, validation, persisted readback,
-  unchanged quality settings and rollback. See
-  [manual threshold](guides/local-development.md#manual-threshold-in-calibration).
+- Added independent manual threshold input/save/current value to Calibration;
+  stale forms are rejected and other settings/history are preserved. Nine
+  disposable HTTP tests cover the route. See [details](guides/local-development.md#manual-threshold-in-calibration).
 
 ## [2026-09-09] Issued preview revision and display diagnostics
 
-- Found the actual display failure: search used reprocessed Photos, while media
-  reads defaulted to admission revision without previews. Display and phone now
-  select the issuing Attempt's revision through the existing processing boundary.
-- Operator-selected local SFace threshold and initial seed are now 0.4. Added
-  bounded browser diagnostic events with safe render-failure codes.
-- [Local investigation](guides/local-development.md#issued-preview-revision-repair-and-sface-threshold-04)
-  records evidence, rollout and tests; historical data is preserved.
+- Display and phone media now use the issuing Attempt's immutable revision;
+  bounded browser diagnostics expose safe render-failure codes. Local SFace
+  threshold was set to 0.4. [Investigation](guides/local-development.md#issued-preview-revision-repair-and-sface-threshold-04).
 
 ## [2026-09-09] Camera Attempt investigation presentation
 
-- Investigated two actual camera Attempts: one deadline and one completed
-  search with five accepted detections but no threshold-valid matches.
-- Added a developer-only readable summary of existing evidence with explicit
-  missing-score limitations; local backend refreshed and HTTP role checks passed.
-- Follow-up adds actual pre-threshold best cosine similarity and eligible Photo
-  count for fresh searches, persisted in ordinary evidence and shown in detail.
-  Twelve focused current-source tests passed; match eligibility is preserved.
-- [Local diagnosis](guides/local-development.md#camera-search-diagnosis--2026-09-09)
-  records measurements, verification limits and the exact evidence gap.
-  Search behavior and task lifecycle remain unchanged.
+- Added developer search summaries with pre-threshold best similarity and
+  eligible-Photo count for fresh searches; historical missing values remain
+  explicit. Twelve focused tests passed. [Diagnosis](guides/local-development.md#camera-search-diagnosis--2026-09-09).
 
 ## [2026-09-09] Wave 8 — Preserved local Photo reprocessing
 
-- Editorial cleanup: сокращены повторяющиеся протоколы, handoff и инструкции; решения, команды, evidence и verdicts сохранены.
-
-- Completed [TASK-118](tasks/TASK-118-T3-FT-002-W8.task.json): local `opencv-photo-640-v2` deployment, six ready Photos, compatible search, unchanged originals/admission/history and exact repeat-run snapshot.
-- Fixed the extra admission-revision search filter and added create-only pending plus disposable retry/recovery coverage. Independent verification passed 34 focused tests, mypy, lint, build and fresh local read-only proof; task and current FT-002 semantic reviews passed.
-- Reconciled [FT-002](features/FT-002.md), its implementation plan, RTM links and [local development guide](guides/local-development.md). All 26 feature tasks are done; other feature/epic lifecycles and Planning Revision 4 are unchanged. Actual camera identity evaluation still needs camera attempts and labels.
+- [TASK-118](tasks/TASK-118-T3-FT-002-W8.task.json): local `opencv-photo-640-v2`
+  deployment, six ready Photos, preserved originals/admission/history and
+  repeat-run proof. Fixed revision filtering; 34 focused tests, mypy, lint,
+  build and semantic reviews passed. Camera identity still needs labelled attempts.
 
 ## [2026-09-09] Wave 7 — Measured SFace Photo preprocessing
 
-- Completed [TASK-117](tasks/TASK-117-T2-FT-002-W7.task.json): bounded detection with original-pixel alignment, shared EXIF decode and preserved legacy/query behavior.
-- Eight native samples support `opencv-photo-640-v2`: all six main portrait faces recovered; 1280 adds no faces on the supplied groups. This does not establish camera identity accuracy.
-- Independent verification passed 62 focused tests, mypy, lint and repeated native measurements. [FT-002](features/FT-002.md) records AC-010/011 completion; local application and fresh feature semantic verification remain in TASK-118.
+- [TASK-117](tasks/TASK-117-T2-FT-002-W7.task.json): bounded original-pixel
+  detection with shared EXIF decode. Six portraits recovered at 640; 1280 added
+  no faces in supplied groups. 62 focused tests, mypy, lint and native measurements passed.
 
 ## [2026-09-07] Adaptive Promo photo cards
 
