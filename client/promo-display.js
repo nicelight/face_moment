@@ -1,4 +1,5 @@
 import { applySavedPromoLayout } from "./promo-layout.js";
+import { promoDurationMs } from "./promo-display-preferences.js";
 import { getDisplayRequestHeaders } from "./display-client-config.js";
 
 const PROMO_COPY = "Ваши фото можно скачать по QR коду или на сайте face-momet.ru";
@@ -506,6 +507,8 @@ export class PromoDisplayController {
     this.displayConfigurationOperations = new Map();
     this.previewResources = new Set();
     this.renderedCard = null;
+    this.lastResult = null;
+    this.isReplaying = false;
   }
 
   beginPreviewResource() {
@@ -614,7 +617,7 @@ export class PromoDisplayController {
     });
   }
 
-  async loadDisplayConfiguration({ attemptId } = {}) {
+  async loadDisplayConfiguration({ attemptId, onIdentity } = {}) {
     const controller = this.beginPendingOperation();
     const key = attemptId === undefined ? controller : String(attemptId);
     if (attemptId !== undefined) this.cancelDisplayConfiguration(attemptId);
@@ -633,7 +636,12 @@ export class PromoDisplayController {
       }
       const payload = await response.json();
       throwIfOperationAborted(controller.signal);
-      return validateDisplayConfiguration(payload);
+      const configuration = validateDisplayConfiguration(payload);
+      onIdentity?.(
+        response.headers?.get?.("X-Face-Moment-Display-Client-Id") ?? null,
+        response.headers?.get?.("X-Face-Moment-Display-Name") ?? "",
+      );
+      return configuration;
     });
     const pending = this.runWithDeadline(work, {
       controller,
@@ -657,7 +665,7 @@ export class PromoDisplayController {
     }
   }
 
-  scheduleDisplayExpiry(attemptId, durationMs) {
+  scheduleDisplayExpiry(attemptId, durationMs, replay = false) {
     this.clearDisplayExpiryTimer();
     const generation = this.generation;
     this.displayExpiryTimer = this.setTimeoutImpl(() => {
@@ -666,6 +674,7 @@ export class PromoDisplayController {
       this.cancelPendingWork();
       this.generation += 1;
       this.isVisible = false;
+      this.isReplaying = false;
       this.removeRenderedCard();
       this.releasePreviewResources();
       this.onExpired(Object.freeze({
@@ -675,6 +684,7 @@ export class PromoDisplayController {
         state: "advertising",
         reason: "display_expired",
         resultDisplayMs: durationMs,
+        ...(replay ? { replay: true } : {}),
       }));
     }, durationMs);
   }
@@ -729,13 +739,21 @@ export class PromoDisplayController {
     return elapsed;
   }
 
-  async showResult({ attemptId, result, timing, displayConfig }) {
+  replayLastResult() {
+    if (!this.lastResult || this.isVisible || this.isReplaying) {
+      return Promise.resolve({ handled: false });
+    }
+    return this.showResult({ ...this.lastResult, replay: true });
+  }
+
+  async showResult({ attemptId, result, timing, displayConfig, replay = false }) {
     this.cancelPendingWork();
     this.removeRenderedCard();
     this.releasePreviewResources();
     const generation = ++this.generation;
     this.clearDisplayExpiryTimer();
     this.isVisible = false;
+    this.isReplaying = replay;
     let normalized;
     let previewResource = null;
     try {
@@ -749,7 +767,7 @@ export class PromoDisplayController {
       previewResource = this.beginPreviewResource();
       const previewController = this.beginPendingOperation();
       let images;
-      this.onLoading({ attemptId });
+      if (!replay) this.onLoading({ attemptId });
       try {
         images = await this.runWithDeadline(
           Promise.all(
@@ -781,7 +799,13 @@ export class PromoDisplayController {
 
       const { card, qr } = createPromoCard(this.document, images, normalized.qr_url);
       applySavedPromoLayout(card);
-      this.onPrepared({ attemptId, card });
+      if (replay && Date.parse(normalized.qr_first_open_expires_at) <= Date.now()) {
+        const notice = this.document.createElement("p");
+        notice.className = "promo-replay-notice";
+        notice.textContent = "Срок действия QR истёк. Для нового QR запустите поиск.";
+        card.append(notice);
+      }
+      if (!replay) this.onPrepared({ attemptId, card });
       this.container.replaceChildren(card);
       this.renderedCard = card;
       this.isVisible = true;
@@ -790,9 +814,9 @@ export class PromoDisplayController {
         throw new Error("promo_qr_not_visible");
       }
       if (configuration !== null) {
-        this.scheduleDisplayExpiry(attemptId, configuration.result_display_ms);
+        this.scheduleDisplayExpiry(attemptId, promoDurationMs(configuration.result_display_ms), replay);
       }
-      const qrFullyVisibleElapsedMs = this.qrFullyVisibleElapsedMs(timing);
+      const qrFullyVisibleElapsedMs = replay ? null : this.qrFullyVisibleElapsedMs(timing);
       let acknowledgement = { sent: false, reason: "timing_unavailable" };
       if (qrFullyVisibleElapsedMs !== null) {
         try {
@@ -845,10 +869,12 @@ export class PromoDisplayController {
         ...(configuration === null
           ? {}
           : {
-              resultDisplayMs: configuration.result_display_ms,
+              resultDisplayMs: promoDurationMs(configuration.result_display_ms),
               successCooldownMs: configuration.success_cooldown_ms,
             }),
+        ...(replay ? { replay: true } : {}),
       });
+      if (!replay) this.lastResult = { attemptId, result: normalized, displayConfig: configuration ?? undefined };
       this.onComplete(detail);
       return detail;
     } catch (error) {
@@ -868,7 +894,7 @@ export class PromoDisplayController {
               ? "configuration_failure"
             : "invalid_result";
       let acknowledgement = { sent: false, reason: "not_server_result" };
-      if (normalized) {
+      if (normalized && !replay) {
         try {
           await this.reportDisplay({
             sessionId: normalized.session_id,
@@ -897,8 +923,10 @@ export class PromoDisplayController {
         errorCode: typeof error?.message === "string" && /^(promo|qr)_[a-z_]{1,80}$/.test(error.message)
           ? error.message : "unexpected_render_error",
         acknowledgement,
+        ...(replay ? { replay: true } : {}),
       });
       this.isVisible = false;
+      this.isReplaying = false;
       this.removeRenderedCard();
       this.releasePreviewResource(previewResource);
       this.onFailure(detail);

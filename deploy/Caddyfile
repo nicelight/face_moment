@@ -15,7 +15,7 @@ https://localhost:8443 {
 
 	@realtime_attempts path /api/realtime/attempts /api/realtime/attempts/*/client-timing
 	@phone_continuation path /q /phone /api/phone/*
-	@backend_canonical path /api/promo/* /api/serving/spas/*/active-visit-date /api/diagnostics/retention /staff/search-settings /staff/photo-inventory /staff/calibrations /staff/calibrations/* /staff/diagnostics-retention
+	@backend_canonical path /api/promo/* /api/serving/display-clients/*/name /api/serving/spas/*/active-visit-date /api/diagnostics/retention /staff/search-settings /staff/photo-inventory /staff/calibrations /staff/calibrations/* /staff/diagnostics-retention
 
 	route {
 		respond @inventory_photo_upload_without_length 413

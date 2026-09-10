@@ -284,3 +284,7 @@ body.fm-page {
   .fm-page *, .fm-page *::before, .fm-page *::after { scroll-behavior: auto !important; transition: none !important; }
   .fm-device-face, .fm-upload-layout.is-uploading form { transform: none !important; }
 }
+.fm-device-rename { display: grid; gap: 12px; margin: 20px 0; }
+.fm-device-rename label { display: grid; gap: 8px; }
+.fm-device-rename button { justify-self: start; }
+.fm-device-rename [role="status"]:empty { display: none; }

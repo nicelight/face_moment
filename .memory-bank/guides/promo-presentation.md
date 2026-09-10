@@ -74,10 +74,50 @@ Ownership: `client/promo-layout-editor.js` (interactions),
 `client/promo-layout.js` (safe local geometry and application),
 `client/promo-display.js` (shared card rendering), `client/styles.css` (visuals).
 
-Validation: 55 client unit test files passed. The existing 17 browser tests
+Validation: 55 client unit checks passed. The existing 17 browser tests
 and the new `tests/client/test_promo_editor.spec.mjs` passed. Isolated browser
 QA exercised move/resize/rotate for all six objects, text presets, offscreen
 card adjustment through sliders, save/reload/cancel, denied storage and saved
 layout application by the real PromoDisplayController. Controls were inspected
 at 1450x833 and 390x844 with synthetic images and mocked camera/detector;
 no real Attempt or physical camera was used for editor QA.
+
+## Replay and display seconds
+
+Operator addition, 2026-09-10: Advertising provides «Фотки вновь», a transparent
+button fixed at the bottom right, available after a successful display.
+It reloads the same four authorized
+previews and QR, applies the current saved design and returns to advertising
+after a full display interval. Replay does not create a new Attempt, repeat the
+original display acknowledgement or restart capture cooldown. New sensor
+triggers are ignored while replay is loading or visible. A failed media reload
+returns to advertising with a message and leaves retry available.
+
+Configuration exposes «Время показа фотографий, секунд». The positive whole
+number is saved in this browser and applies to the next original or repeated
+display. Without a valid local preference, the server's configured duration
+is used. Server display-confirmation deadlines, success cooldown and QR
+validity remain independent; replay does not renew the QR. An already expired
+QR has an explicit notice on the replayed screen.
+
+Only the latest successful result's references are retained in page memory;
+they disappear on reload, and no photo or ticket is written to browser storage.
+The duration preference survives reload. Ownership: `promo-display.js`
+(replay/lifetime), `promo-display-preferences.js` (local seconds), `app.js`
+(configuration and advertising controls).
+
+Configuration keeps the central screen token and passage-sensor panels inside
+the initially collapsed «доп настройки» disclosure. Routine camera, display
+duration and layout controls remain directly accessible.
+
+Validation: 57 client unit checks and all 19 browser tests passed. The new
+`tests/client/test_promo_replay.spec.mjs` exercises the actual app's initial
+disabled button, seconds save/reload, original render/ACK, repeated timed
+returns to advertising, same four media references/QR/design, no new search
+or duplicate ACK, expired-QR notice and failed-media retry. Camera/detector
+and server responses were isolated fixtures; no real Attempt was created.
+
+Operator follow-up: the requested manual testing scenarios were reported
+working, with camera auto-disconnection recovery as the sole stated exception.
+That defect is deferred by the operator; see the
+[camera investigation](local-development.md#usb-recovery-and-reload-diagnostics--2026-09-10).

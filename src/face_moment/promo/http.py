@@ -6,6 +6,7 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 import uuid
+from urllib.parse import quote
 
 from fastapi import Cookie, FastAPI, HTTPException, Request, Response, status
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
@@ -62,6 +63,7 @@ from face_moment.serving_control.display_client_auth import (
     InvalidDisplayClientCredentials,
     authenticate_display_client,
 )
+from face_moment.serving_control.display_client_access import DisplayClientRepository
 from face_moment.platform.auth.principals import StaffRole
 from face_moment.platform.auth.sessions import InvalidSessionError, get_current_principal
 
@@ -95,7 +97,7 @@ def register_promo_display_routes(
 
         with _database_session(session_factory) as database_session:
             try:
-                authenticate_display_client(
+                principal = authenticate_display_client(
                     database_session,
                     authorization=request.headers.get("authorization"),
                     ip_address=_client_ip(request),
@@ -120,11 +122,15 @@ def register_promo_display_routes(
                     headers=_NO_STORE_HEADERS,
                 ) from error
 
+            display_name = DisplayClientRepository(database_session).get(principal.display_client_id).name
+
         response = JSONResponse(
             status_code=status.HTTP_200_OK,
             content=configuration.as_response(),
         )
         response.headers.update(_NO_STORE_HEADERS)
+        response.headers["X-Face-Moment-Display-Client-Id"] = str(principal.display_client_id)
+        response.headers["X-Face-Moment-Display-Name"] = quote(display_name, safe="")
         return response
 
     _register_promo_media_and_outcome_routes(

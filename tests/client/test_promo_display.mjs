@@ -576,3 +576,50 @@ test("late completion after a deadline cannot replace the next usable result", a
   assert.strictEqual(container.children[0], nextCard);
   assert.equal(controller.isVisible, true);
 });
+
+test("manual replay uses latest duration, re-fetches the same four photos and never repeats ACK", async () => {
+  let seconds = "3";
+  globalThis.localStorage = { getItem: key => key === "face-moment.promo-display-seconds" ? seconds : null };
+  const requests = [], expirations = [], completions = [], timers = [];
+  let failMedia = false;
+  const controller = new PromoDisplayController({
+    container: new FakeElement(), documentImpl: fakeDocument(), origin: ORIGIN,
+    fetchImpl: async (url, options) => {
+      requests.push({ url, method: options?.method ?? "GET" });
+      return { ok: !failMedia, status: failMedia ? 404 : 200, blob: async () => new Blob(["fixture"], { type: "image/jpeg" }) };
+    },
+    imageFactory: () => ({ decode: async () => {} }), urlApi: trackedUrlApi().api,
+    clock: () => 100,
+    setTimeoutImpl: (callback, delay) => { timers.push({ callback, delay }); return timers.length; },
+    clearTimeoutImpl: () => {},
+    onExpired: detail => expirations.push(detail), onComplete: detail => completions.push(detail),
+  });
+  assert.equal((await controller.replayLastResult()).handled, false);
+  await controller.showResult({ attemptId: "latest", result: result(), timing: { referenceSeriesReadyMonotonicMs: 0 },
+    displayConfig: { schema_version: 1, result_display_ms: 20000, success_cooldown_ms: 3000 } });
+  assert.equal(timers[0].delay, 3000);
+  assert.equal(requests.filter(r => r.method === "PUT").length, 1);
+  assert.equal((await controller.replayLastResult()).handled, false, "no double show while visible");
+  timers[0].callback();
+  assert.equal(controller.isVisible, false);
+  seconds = "5";
+  const replay = await controller.replayLastResult();
+  assert.equal(replay.replay, true);
+  assert.equal(replay.resultDisplayMs, 5000);
+  assert.equal(timers[1].delay, 5000);
+  assert.deepEqual(requests.slice(5).map(r => r.url), requests.slice(0, 4).map(r => r.url));
+  assert.equal(requests.filter(r => r.method === "PUT").length, 1);
+  timers[1].callback();
+  assert.equal(expirations[1].replay, true);
+  assert.equal(controller.isReplaying, false);
+  assert.equal(controller.lastResult.attemptId, "latest");
+  failMedia = true;
+  const failure = await controller.replayLastResult();
+  assert.equal(failure.replay, true);
+  assert.equal(failure.state, "advertising");
+  assert.equal(controller.isVisible, false);
+  assert.equal(controller.isReplaying, false);
+  assert.equal(completions.length, 2);
+  assert.equal(requests.filter(r => r.method === "PUT").length, 1, "failed replay must not change original display status");
+  delete globalThis.localStorage;
+});

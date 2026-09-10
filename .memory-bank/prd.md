@@ -354,6 +354,13 @@ photo cards, QR and text box. Text has three font-size presets. «Сохрани
 Promo displays and returns to Configuration. See the
 [presentation guide](guides/promo-presentation.md#local-composition-editor).
 
+The operator also adds an explicit replay button on Advertising for the last
+successful four-photo result and a browser-local display-duration setting in
+seconds in Configuration. Original and replayed results use that duration;
+replay does not create a new search/session or renew the QR. The latest result
+is retained only for the current page lifetime. This explicit replay is
+distinct from automatic advertising/prePromo behavior below.
+
 - **FR-UX-01** — Between attempts, the display MUST show locally available
   advertising. Capture/search MAY use a non-personal prePromo state; it MUST NOT
   expose a partial or stale participant result.

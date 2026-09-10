@@ -27,6 +27,7 @@ import { createSignalProgress } from "./signal-progress.js";
 import "./motion-ui.js";
 import { readClientDiagnosticEvents, saveClientDiagnosticEvents } from "./client-diagnostic-history.js";
 import { openPromoLayoutEditor } from "./promo-layout-editor.js";
+import { MAX_PROMO_SECONDS, readPromoSeconds, savePromoSeconds } from "./promo-display-preferences.js";
 
 const view = document.querySelector("#client-view");
 const signalProgress = createSignalProgress();
@@ -40,6 +41,7 @@ let sensorClient;
 let triggerController;
 let attemptOutcomeController;
 let promoDisplayController;
+let displayIdentityRevision = 0;
 let successfulCooldownAttemptId = null;
 const attemptTimingSnapshots = new Map();
 const displayConfigSnapshots = new Map();
@@ -111,16 +113,22 @@ function render() {
   card.className = `view-card ${content.className}`;
   card.dataset.view = name;
 
-  const title = document.createElement("h2");
-  title.textContent = content.title;
-  card.append(title);
-
-  const text = document.createElement("p");
-  text.textContent = content.text;
-  card.append(text);
+  if (name !== "advertising") {
+    const title = document.createElement("h2");
+    title.textContent = content.title;
+    card.append(title);
+    const text = document.createElement("p");
+    text.textContent = content.text;
+    card.append(text);
+  }
 
   view.append(card);
   if (name === "configuration") {
+    const identity = document.createElement("p");
+    identity.id = "display-client-identity";
+    identity.setAttribute("role", "status");
+    identity.textContent = "Получаем ID экрана…";
+    card.append(identity);
     const editLayout = document.createElement("button");
     editLayout.type = "button";
     editLayout.textContent = "Поправить расположение фоток";
@@ -140,11 +148,21 @@ function render() {
     card.append(list);
     refreshClientDiagnostics();
   }
-  if (name === "configuration") mountDisplayClientConfiguration(card);
-  if (name === "configuration") mountSensorConfiguration(card);
+  if (name === "configuration") mountPromoDurationConfiguration(card);
   if (name === "configuration") mountQualityConfiguration(card);
   if (name === "configuration") mountCameraConfiguration(card);
   if (name === "configuration") mountTriggerConfiguration(card);
+  if (name === "configuration") {
+    const advanced = document.createElement("details");
+    advanced.className = "configuration-advanced";
+    const summary = document.createElement("summary");
+    summary.textContent = "доп настройки";
+    advanced.append(summary);
+    card.append(advanced);
+    mountDisplayClientConfiguration(advanced);
+    mountSensorConfiguration(advanced);
+  }
+  if (name === "advertising") mountPromoReplay(card);
   if (name === "advertising" && detectorFailureMessage) {
     const notice = document.createElement("p");
     notice.className = "notice";
@@ -154,6 +172,94 @@ function render() {
       "Детектор лиц временно недоступен. Клиент продолжает рекламу; оператор может повторить попытку.";
     card.append(notice);
   }
+}
+
+function mountPromoReplay(card) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.id = "replay-last-promo";
+  button.textContent = "Фотки вновь";
+  button.disabled = !promoDisplayController?.lastResult;
+  const status = document.createElement("p");
+  status.setAttribute("role", "status");
+  if (button.disabled) button.title = "Станет доступна после первого показа фотографий";
+  button.addEventListener("click", async () => {
+    if (triggerController?.activeAttempt || attemptOutcomeController?.state === "result") {
+      status.textContent = "Дождитесь завершения текущего поиска.";
+      return;
+    }
+    button.disabled = true;
+    status.textContent = "Открываем последние фотографии…";
+    try {
+      await promoDisplayController.replayLastResult();
+    } catch {
+      status.textContent = "Не удалось открыть фотографии. Повторите попытку.";
+    } finally {
+      if (button.isConnected) button.disabled = !promoDisplayController?.lastResult;
+    }
+  });
+  card.append(button, status);
+}
+
+function mountPromoDurationConfiguration(card) {
+  const form = document.createElement("form");
+  form.className = "promo-duration-panel";
+  const label = document.createElement("label");
+  label.htmlFor = "promo-display-seconds";
+  label.textContent = "Время показа фотографий, секунд";
+  const input = document.createElement("input");
+  input.id = "promo-display-seconds";
+  input.type = "number";
+  input.min = "1";
+  input.max = String(MAX_PROMO_SECONDS);
+  input.step = "1";
+  input.required = true;
+  input.value = readPromoSeconds() ?? "";
+  const save = document.createElement("button");
+  save.type = "submit";
+  save.textContent = "Сохранить время показа";
+  const status = document.createElement("p");
+  status.setAttribute("role", "status");
+  status.textContent = "Для обычного и повторного показа. Настройка сохраняется в этом браузере; срок действия QR не меняется.";
+  form.append(label, input, save, status);
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+    try {
+      const seconds = savePromoSeconds(input.value);
+      status.textContent = `Сохранено: ${seconds} сек. Применится со следующего показа фотографий.`;
+    } catch (error) {
+      status.textContent = error instanceof TypeError
+        ? "Введите целое положительное число секунд в допустимом диапазоне."
+        : "Не удалось сохранить время. Разрешите хранение данных в браузере и повторите.";
+    }
+  });
+  card.append(form);
+  refreshConfiguredScreen();
+}
+
+function refreshConfiguredScreen() {
+  const identity = document.querySelector("#display-client-identity");
+  const duration = document.querySelector("#promo-display-seconds");
+  if (!identity) return;
+  const revision = ++displayIdentityRevision;
+  identity.textContent = "Получаем ID экрана…";
+  void promoDisplayController?.loadDisplayConfiguration({
+    onIdentity: (id, encodedName) => {
+      if (revision !== displayIdentityRevision || !identity.isConnected) return;
+      let name = "";
+      try { name = decodeURIComponent(encodedName); } catch { /* Show the ID if the name header is malformed. */ }
+      identity.textContent = typeof id === "string" && /^[a-f0-9-]{36}$/i.test(id)
+        ? `${name || "Экран"} · ID: …${id.slice(-5)}`
+        : "Сервер не передал ID экрана.";
+    },
+  }).then(configuration => {
+    if (revision !== displayIdentityRevision) return;
+    if (duration?.isConnected && !duration.value) duration.value = configuration.result_display_ms / 1000;
+  }).catch(() => {
+    if (revision !== displayIdentityRevision || !identity.isConnected) return;
+    identity.textContent = "Не удалось определить экран. Проверьте подключение и токен в «доп настройках».";
+    if (duration?.isConnected && !duration.value) duration.placeholder = "Введите число секунд";
+  });
 }
 
 function displayClientStatusMessage() {
@@ -500,6 +606,12 @@ window.addEventListener("face-moment:attempt-outcome", (event) => {
 
 function returnToAdvertisingAfterPromoFailure(detail) {
   if (detail?.handled !== true || detail?.stale === true) return;
+  if (detail.replay) {
+    render();
+    const status = document.querySelector(".advertising-card [role='status']");
+    if (status) status.textContent = "Не удалось повторно загрузить фотографии. Проверьте соединение или запустите новый поиск.";
+    return;
+  }
   signalProgress.cancel(detail.attemptId);
   const released = attemptOutcomeController?.releaseResult(detail.attemptId);
   if (!released) return;
@@ -518,6 +630,12 @@ function returnToAdvertisingAfterPromoFailure(detail) {
 
 function returnToAdvertisingAfterDisplayExpiry(detail) {
   if (detail?.handled !== true || detail?.stale === true) return;
+  if (detail.replay) {
+    document.body.dataset.promoState = "advertising";
+    if (currentView() !== "advertising") window.location.hash = "#advertising";
+    else render();
+    return;
+  }
   const released = attemptOutcomeController?.releaseResult(detail.attemptId);
   if (!released) return;
   if (
@@ -853,6 +971,20 @@ function copyCameraFrame(captured) {
 }
 
 window.addEventListener("hashchange", render);
+const kioskMenu = document.querySelector(".kiosk-menu");
+kioskMenu?.addEventListener("click", event => {
+  if (event.target.closest("a")) kioskMenu.open = false;
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && kioskMenu?.open) {
+    kioskMenu.open = false;
+    kioskMenu.querySelector("summary").focus();
+  }
+});
+document.addEventListener("click", event => {
+  if (kioskMenu?.open && !kioskMenu.contains(event.target)) kioskMenu.open = false;
+});
+window.addEventListener("face-moment:display-client-configured", refreshConfiguredScreen);
 
 window.addEventListener("face-moment:sensor-passage", (event) => {
   window.dispatchEvent(
@@ -865,7 +997,7 @@ window.addEventListener("face-moment:sensor-passage", (event) => {
 window.addEventListener("face-moment:trigger-request", (event) => {
   const source = event.detail?.trigger_source;
   if (document.body.classList.contains("promo-editor-open")) return;
-  if (promoDisplayController?.isVisible) {
+  if (promoDisplayController?.isVisible || promoDisplayController?.isReplaying) {
     updateTriggerStatus("busy", "Срабатывание проигнорировано: Promo ещё отображается.");
     return;
   }
@@ -979,6 +1111,11 @@ promoDisplayController = createPromoDisplayController({
     signalProgress.reveal(attemptId, card);
   },
   onComplete: (detail) => {
+    if (detail.replay) {
+      recordClientDiagnostic("Повторный показ фотографий", { attemptId: detail.attemptId });
+      document.body.dataset.promoState = "complete";
+      return;
+    }
     recordClientDiagnostic("Фотографии и QR показаны", detail);
     document.body.dataset.promoState = "complete";
     window.dispatchEvent(

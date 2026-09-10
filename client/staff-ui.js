@@ -64,3 +64,34 @@ document.querySelectorAll("[data-copy-token]").forEach(button => button.addEvent
   } catch { token.querySelector(".fm-copy-status").textContent = "Не удалось скопировать. Выделите токен и скопируйте вручную."; }
 }));
 void loadIdentity();
+
+for (const form of document.querySelectorAll('.fm-device-rename')) {
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = form.querySelector('[role="status"]');
+    const button = form.querySelector('button');
+    const input = form.querySelector('[name="name"]');
+    const name = input.value.trim();
+    if (!name) { status.textContent = 'Введите название экрана.'; return; }
+    button.disabled = true;
+    const csrf = document.cookie.split(';').map(value => value.trim()).find(value => value.startsWith('fm_staff_csrf='))?.slice('fm_staff_csrf='.length) ?? '';
+    try {
+      const response = await fetch(`/api/serving/display-clients/${encodeURIComponent(form.dataset.clientId)}/name`, {
+        method: 'PUT', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': decodeURIComponent(csrf) },
+        body: JSON.stringify({ name }),
+      });
+      if (!response.ok) throw new Error('rename_failed');
+      const saved = await response.json();
+      input.value = saved.name;
+      form.closest('.fm-device-card').querySelector('h2').textContent = saved.name;
+      for (const row of document.querySelectorAll('.fm-device-table tbody tr')) {
+        if (row.querySelector('[data-field="display-client-id"]')?.textContent === form.dataset.clientId) {
+          row.querySelector('[data-field="name"]').textContent = saved.name;
+        }
+      }
+      status.textContent = 'Название сохранено. На клиенте откройте «Конфигурацию», чтобы увидеть его.';
+    } catch { status.textContent = 'Не удалось сохранить название. Проверьте соединение и вход в аккаунт.'; }
+    finally { button.disabled = false; }
+  });
+}

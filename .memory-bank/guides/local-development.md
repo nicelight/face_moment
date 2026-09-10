@@ -346,9 +346,19 @@ reopening; the operator reports white-balance availability after roughly 1.5 s.
 Automatic same-device recovery now waits 2 s before getUserMedia. Explicit
 selection and ordinary page startup retain their existing timing. A newer
 selection, another disconnect or controller destruction invalidates the pending
-open. All 54 client unit test files passed, including delay and cancellation
+open. All 54 client unit checks passed, including delay and cancellation
 checks. Physical color recovery with this delay is still pending; the earlier
 reload experiment is superseded by this operator-directed change.
+
+Subsequent operator test: camera recovery after automatic disconnection still
+did not restore normal operation. The operator explicitly deferred this defect
+as non-blocking for further testing; the two-second delay is not an accepted
+physical fix. Other requested manual scenarios were reported working. This
+is operator-reported evidence, not an independently observed physical pass.
+
+The next manual no-face test also passed per operator report: camera pointed
+at an empty wall, old frames allowed to leave the buffer, test trigger followed
+by normal return to advertising without an automatic stale-photo display.
 
 Operator reproduced USB disappearance/return with the same camera still selected
 but unavailable; switching away and back restored preview. `devicechange`

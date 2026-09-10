@@ -21,3 +21,26 @@
 .fm-phone .phone-purchase { background: var(--fm-accent); color: #0d211b; border-radius: 10px; }
 .fm-phone .phone-date, .fm-phone .phone-count { color: var(--fm-soft); }
 .fm-phone .phone-teaser-frame { border-color: var(--fm-line); }
+
+/* Quiet operator access; the guest-facing screen keeps only its headline. */
+.fm-kiosk .kiosk-menu { position: fixed; top: 12px; right: 16px; z-index: 10; }
+.fm-kiosk .kiosk-menu > summary {
+  display: grid; place-items: center; width: 44px; height: 44px;
+  cursor: pointer; list-style: none; color: var(--fm-muted); font-size: 22px;
+  opacity: .65; border-radius: 8px;
+}
+.fm-kiosk .kiosk-menu > summary::-webkit-details-marker { display: none; }
+.fm-kiosk .kiosk-menu > summary:hover,
+.fm-kiosk .kiosk-menu > summary:focus-visible,
+.fm-kiosk .kiosk-menu[open] > summary { opacity: 1; color: var(--fm-text); }
+.fm-kiosk .kiosk-menu .navigation {
+  position: absolute; top: 48px; right: 0; margin: 0; padding: 8px;
+  display: grid; gap: 4px; min-width: 220px;
+  border: 1px solid var(--fm-line); border-radius: 12px;
+  background: #111c1b; box-shadow: 0 12px 32px #0005;
+}
+.fm-kiosk .kiosk-menu .navigation a { border: 0; white-space: nowrap; }
+.fm-kiosk .advertising-card { background: transparent !important; border: 0 !important; padding: 0; min-height: 0; }
+.fm-kiosk .advertising-card > p:empty { display: none; }
+#display-client-identity { overflow-wrap: anywhere; }
+body:has(.promo-card) .kiosk-menu { display: none; }

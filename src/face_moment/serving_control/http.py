@@ -6,8 +6,8 @@ from html import escape
 import uuid
 
 from fastapi import Cookie, FastAPI, Header, HTTPException, status
-from pydantic import BaseModel, ConfigDict
-from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, ConfigDict, Field
+from fastapi.responses import HTMLResponse, JSONResponse
 from face_moment.platform.staff_presentation import staff_document
 from sqlalchemy.orm import Session
 
@@ -28,13 +28,20 @@ from face_moment.serving_control.display_client_admin import (
     DisplayClientAdminAccessDeniedError,
     DisplayClientAdminRecord,
     read_display_client_admin,
+    rename_display_client,
 )
+from face_moment.serving_control.display_client_access import DisplayClientNotFoundError
 
 
 class ActiveSearchDateUpdateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     visit_date: date
+
+
+class DisplayClientNameRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str = Field(min_length=1, max_length=255)
 
 
 class ActiveSearchDateResponse(BaseModel):
@@ -50,6 +57,31 @@ class ActiveSearchDateResponse(BaseModel):
 def register_display_client_admin_routes(
     app: FastAPI, *, session_factory: Callable[[], Session]
 ) -> None:
+    @app.put("/api/serving/display-clients/{display_client_id}/name")
+    def rename_display_client_route(
+        display_client_id: uuid.UUID, payload: DisplayClientNameRequest,
+        fm_staff_session: str | None = Cookie(default=None),
+        fm_staff_csrf: str | None = Cookie(default=None),
+        x_csrf_token: str | None = Header(default=None),
+    ) -> JSONResponse:
+        with _database_session(session_factory) as database_session:
+            try:
+                name = rename_display_client(
+                    database_session, session_token=fm_staff_session,
+                    csrf_cookie_token=fm_staff_csrf, csrf_header_token=x_csrf_token,
+                    display_client_id=display_client_id, name=payload.name,
+                )
+                database_session.commit()
+            except InvalidSessionError as error:
+                raise HTTPException(status_code=401) from error
+            except (CsrfValidationError, DisplayClientAdminAccessDeniedError) as error:
+                raise HTTPException(status_code=403) from error
+            except DisplayClientNotFoundError as error:
+                raise HTTPException(status_code=404) from error
+            except ValueError as error:
+                raise HTTPException(status_code=422, detail="Название должно содержать от 1 до 255 символов") from error
+        return JSONResponse({"display_client_id": str(display_client_id), "name": name}, headers={"Cache-Control": "no-store"})
+
     @app.get("/staff/display-clients", response_class=HTMLResponse)
     def display_client_admin_page(
         fm_staff_session: str | None = Cookie(default=None),
@@ -169,7 +201,10 @@ def _display_client_page_html(clients: Sequence[DisplayClientAdminRecord]) -> st
         f'<p class="fm-eyebrow">КИОСК / {"РАЗРЕШЁН" if client.active else "ОТКЛЮЧЁН"}</p>'
         f'<h2>{escape(client.name)}</h2></div>'
         f'<p class="fm-device-meta">Площадка: {escape(str(client.spa_id))}<br>'
-        f'ID экрана: {escape(str(client.display_client_id))}</p>'
+        f'ID экрана: …{escape(str(client.display_client_id)[-5:])}</p>'
+        f'<form class="fm-device-rename" data-client-id="{client.display_client_id}">'
+        f'<label>Название экрана<input name="name" value="{escape(client.name, quote=True)}" required maxlength="255"></label>'
+        '<button type="submit">Сохранить название</button><p role="status"></p></form>'
         '<div class="fm-token"><span class="fm-eyebrow">Токен подключения</span>'
         f'<code>{escape(client.token_value)}</code>'
         '<button class="fm-button-secondary" type="button" data-copy-token>Скопировать токен</button>'

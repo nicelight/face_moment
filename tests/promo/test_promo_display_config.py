@@ -104,16 +104,21 @@ def test_authenticated_config_route_returns_exact_no_store_shape(
         classmethod(lambda cls: settings),
     )
     monkeypatch.setattr(promo_http, "_database_session", database)
+    client_id = uuid.uuid4()
     monkeypatch.setattr(
         promo_http,
         "authenticate_display_client",
-        lambda *_args, **_kwargs: DisplayClientPrincipal(uuid.uuid4(), uuid.uuid4()),
+        lambda *_args, **_kwargs: DisplayClientPrincipal(client_id, uuid.uuid4()),
     )
+    monkeypatch.setattr(promo_http, "DisplayClientRepository", lambda session: SimpleNamespace(get=lambda id: SimpleNamespace(name="Экран у выхода")))
 
     response = route.endpoint(_request())
 
     assert response.status_code == 200
     assert response.headers["cache-control"] == "no-store"
+    assert response.headers["x-face-moment-display-client-id"] == str(client_id)
+    from urllib.parse import unquote
+    assert unquote(response.headers["x-face-moment-display-name"]) == "Экран у выхода"
     assert response.media_type == "application/json"
     assert response.body == (
         b'{"schema_version":1,"result_display_ms":111,"success_cooldown_ms":222}'

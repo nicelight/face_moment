@@ -12,17 +12,18 @@
   </head>
   <body class="fm-page fm-kiosk">
     <header class="site-header">
-      <p class="eyebrow">Face Moment / SpaPromoClient</p>
-      <h1>Ловим моменты.</h1>
-      <p class="subtitle">Экран фотографий для гостей</p>
+      <h1>Ловим моменты</h1>
     </header>
 
-    <nav class="navigation" aria-label="Навигация клиента">
+    <details class="kiosk-menu">
+      <summary aria-label="Меню"><span aria-hidden="true">☰</span></summary>
+      <nav class="navigation" aria-label="Навигация клиента">
       <a href="#advertising">Реклама</a>
       <a href="#configuration">Конфигурация</a>
       <a href="#debug">Диагностика</a>
       <a href="/staff">Рабочее пространство ↗</a>
-    </nav>
+      </nav>
+    </details>
 
     <main id="client-view" class="client-view" aria-live="polite"></main>
     <p

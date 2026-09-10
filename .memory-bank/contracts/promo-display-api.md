@@ -45,6 +45,14 @@ used when `promo` fixes
 `display_expires_at = qr_issued_at + result_display_ms` for a newly issued
 result.
 
+Operator addition, 2026-09-10: the kiosk may override its **local visible
+duration** with a positive whole-second preference from Configuration. The
+response above remains the fallback and the server-owned initial display
+acknowledgement window; its schema and persisted deadline are unchanged.
+Explicit replay reloads the latest successful result's authorized previews
+without sending another display acknowledgement or extending the QR lifetime.
+See [local presentation behavior](../guides/promo-presentation.md#replay-and-display-seconds).
+
 ## Teaser Media
 
 Each `media_url` in Realtime Attempt API Response Version 1 resolves through:

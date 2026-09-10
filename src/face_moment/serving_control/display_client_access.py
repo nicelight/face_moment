@@ -168,6 +168,13 @@ class DisplayClientRepository:
     def get(self, display_client_id: uuid.UUID) -> DisplayClient:
         return self._load(display_client_id)
 
+    def rename(self, display_client_id: uuid.UUID, name: str) -> DisplayClient:
+        normalized = _normalize_name(name)
+        client = self._load(display_client_id, for_update=True)
+        client.name = normalized
+        self._session.flush()
+        return client
+
     def list_for_spa(self, spa_id: uuid.UUID) -> list[DisplayClient]:
         return list(
             self._session.scalars(

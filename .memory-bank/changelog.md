@@ -4,6 +4,29 @@ status: active
 ---
 # Changelog
 
+## [2026-09-10] Advertising shortcut and simpler configuration
+
+- Renamed replay to «Фотки вновь» and made the button transparent at the bottom
+  right of the advertising screen.
+- Central-token and passage-sensor controls now start collapsed under
+  «доп настройки» in Configuration.
+- Operator confirmed the manual no-face flow works; camera recovery remains
+  deferred as previously agreed.
+
+## [2026-09-10] Last-result replay and local display duration
+
+- Advertising now replays the last successful four-photo result on demand;
+  Configuration saves the visible duration in whole seconds for both original
+  and repeated displays. Replay returns to advertising after a full interval.
+- Replay re-fetches the same authorized previews and uses the saved design,
+  without another search or display acknowledgement. It does not renew the QR;
+  an expired QR has an explicit notice. Last-result references remain in page
+  memory, while the seconds preference persists in this browser.
+  See [presentation behavior](guides/promo-presentation.md#replay-and-display-seconds).
+- Validation: 57 client unit checks and all 19 browser tests passed, including
+  the actual-app replay/duration flow, failed-media retry and absence of a new
+  search or duplicate display acknowledgement.
+
 ## [2026-09-10] Mouse-operated Promo composition editor
 
 - Configuration now opens a full-screen editor for all four photo cards, QR
@@ -14,7 +37,7 @@ status: active
   real Promo results reuse the same renderer and saved design. Cancel preserves
   the prior design, and storage failure keeps the unsaved draft visible.
   See the [editor guide](guides/promo-presentation.md#local-composition-editor).
-- Validation: 55 client unit test files, the existing 17 browser tests and
+- Validation: 55 client unit checks, the existing 17 browser tests and
   the new editor regression passed; mouse interactions and slider fallback
   were independently checked in isolated desktop/mobile browser viewports.
 
@@ -22,7 +45,7 @@ status: active
 
 - Added the operator-requested 2-second settling delay before automatic USB
   camera recovery, with cancellation when selection or device state changes.
-  All 54 client unit test files passed; physical color recovery remains to be
+  All 54 client unit checks passed; physical color recovery remains to be
   checked after loading the updated client.
 - Promo cards now overlap at 125% of grid-cell size and the stationary QR
   fills its allocated square. Wide-screen text clearance was corrected;

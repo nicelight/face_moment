@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import { MAX_PROMO_SECONDS, PROMO_DURATION_KEY, parsePromoSeconds, readPromoSeconds, promoDurationMs, savePromoSeconds } from '../../client/promo-display-preferences.js';
+for (const value of ['', null, 0, -1, 1.5, 'x', 'Infinity', MAX_PROMO_SECONDS + 1]) assert.equal(parsePromoSeconds(value), null);
+assert.equal(parsePromoSeconds('25'), 25);
+let stored = null;
+globalThis.localStorage = { getItem: () => stored, setItem(key, value) { assert.equal(key, PROMO_DURATION_KEY); stored = value; } };
+assert.equal(readPromoSeconds(), null);
+assert.equal(promoDurationMs(20000), 20000);
+assert.equal(savePromoSeconds('7'), 7);
+assert.equal(promoDurationMs(20000), 7000);
+assert.throws(() => savePromoSeconds('1.5'), /invalid_promo_seconds/);
+stored = 'corrupt';
+assert.equal(promoDurationMs(20000), 20000);
+Object.defineProperty(globalThis, 'localStorage', { configurable: true, get() { throw new Error('denied'); } });
+assert.equal(promoDurationMs(20000), 20000);
+assert.throws(() => savePromoSeconds('7'), /denied/);
+delete globalThis.localStorage;
+console.log('Promo seconds persistence, validation, timer limit and denied storage passed');

@@ -17,6 +17,15 @@ denied or corrupt storage must not break capture. Unit coverage lives in
 `test_camera.mjs` and `test_client_diagnostic_history.mjs`. Physical USB and
 browser certificate-trust checks remain distinct from simulated fixtures.
 
+Operator presentation update, 2026-09-10: original and explicitly replayed
+Promo use the saved local whole-second duration, falling back to server config.
+Replay must load the same last successful four-photo result, return to
+advertising after the full interval and avoid a new realtime Attempt, original
+display ACK or capture cooldown change. Check saved seconds across reload,
+no-result disabled state, media failure/retry and expired-QR explanation.
+Last-result references stay in page memory only. See
+[presentation behavior](../guides/promo-presentation.md#replay-and-display-seconds).
+
 ## Contract Inputs
 
 - [Sensor Passage API](../contracts/sensor-passage-api.md): exact long-poll,
