@@ -422,8 +422,8 @@ ignored only by the QA browser, so this does not establish a certificate fix.
 ## Названия площадок в админке
 
 «Библиотека» и «Обработка» показывают выпадающий список сохранённых названий.
-Чтобы переименовать площадку, войдите как оператор, откройте «Настройки поиска»,
-выберите площадку и сохраните поле «Название площадки». После открытия других
+Чтобы переименовать площадку, войдите как оператор или администратор, откройте «Площадки»
+и сохраните новое название в карточке нужной площадки. После открытия других
 разделов список показывает новое имя. Новые площадки, создаваемые через
 `IngestTargetRepository.configure_spa` без `name`, получают «Площадка 1»,
 «Площадка 2» и далее по первому свободному номеру. Существующие имена сохраняются.
@@ -463,7 +463,20 @@ convert UTC+7 to UTC. Implementation lives in
 
 ### Fixed 24-hour time selection
 
-All staff time selectors use hours `00–23`, minutes `00–59` and seconds
-`00–59`, separated by colons. They do not use the locale-dependent native time
-input, so AM/PM never appears. UTC+7 interpretation and UTC query serialization
-remain unchanged. The controls restore all three values from bookmarked URLs.
+All staff time selectors use one compact `HH:mm:ss` text field with a clock
+icon, independent of browser locale. `HH:mm` input normalizes to `HH:mm:00` on
+blur. Arrow Up/Down adjusts the hour/minute/second segment under the caret.
+Strict 24-hour validation rejects impossible values; UTC+7 interpretation and
+UTC query serialization are preserved. No additional UI dependency is needed.
+
+### Displayed timestamps
+
+Staff-facing timestamps display `dd.mm.yyyy HH:mm:ss` in UTC+7, without
+fractional seconds or a trailing timezone suffix. The shared staff footer
+identifies UTC+7. Processing/statistics use the browser formatter; event,
+Attempt, Calibration and retention pages use the matching Python formatter.
+Persisted values, query serialization and API responses keep exact UTC instants.
+
+Переименование площадок доступно оператору и администратору (`developer`)
+в разделе «Площадки» (`/staff/spas`). «Настройки поиска» доступны обеим ролям.
+Страница создания новых площадок пока не реализована.

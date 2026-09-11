@@ -111,7 +111,7 @@ def list_active_search_date_spas(
 
 
 def _authorize(role: StaffRole) -> None:
-    if role is not StaffRole.OPERATOR:
+    if role not in {StaffRole.OPERATOR, StaffRole.DEVELOPER}:
         raise ActiveSearchDateAccessDeniedError
 
 

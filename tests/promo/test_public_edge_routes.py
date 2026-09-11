@@ -416,6 +416,8 @@ def test_canonical_route_groups_are_named_without_prefix_stripping() -> None:
     expected = (
         "/api/promo/*",
         "/api/serving/spas/*/active-visit-date",
+        "/api/serving/spas/*/name",
+        "/staff/spas",
         "/api/diagnostics/retention",
         "/staff/search-settings",
         "/staff/photo-inventory",
@@ -517,7 +519,7 @@ def test_live_caddy_preserves_staff_roles_csrf_and_full_paths(live_edge: _LiveEd
     assert _request(
         live_edge.base_url, "/staff/search-settings", cookies=operator
     ).status == 200
-    for cookies in (developer, photographer):
+    for cookies in (photographer,):
         assert _request(
             live_edge.base_url, "/staff/search-settings", cookies=cookies
         ).status == 403
@@ -526,7 +528,7 @@ def test_live_caddy_preserves_staff_roles_csrf_and_full_paths(live_edge: _LiveEd
     assert _request(
         live_edge.base_url, active_date_path, cookies=operator
     ).status == 200
-    for cookies in (developer, photographer):
+    for cookies in (photographer,):
         assert _request(
             live_edge.base_url, active_date_path, cookies=cookies
         ).status == 403
@@ -757,3 +759,24 @@ def _request_with_declared_content_length(
         )
     finally:
         connection.close()
+
+
+
+def test_live_caddy_serves_spa_page_and_name_mutation(live_edge: _LiveEdge) -> None:
+    page_path = "/staff/spas"
+    name_path = f"/api/serving/spas/{live_edge.spa_id}/name"
+    assert _request(live_edge.base_url, page_path).status == 401
+    assert _request(live_edge.base_url, page_path, cookies=live_edge.cookies["photographer"]).status == 403
+    for role in ("operator", "developer"):
+        cookies = live_edge.cookies[role]
+        page = _request(live_edge.base_url, page_path, cookies=cookies)
+        assert page.status == 200
+        assert b'data-spa-rename' in page.body
+        assert _request(live_edge.base_url, "/staff/search-settings", cookies=cookies).status == 200
+        assert _request(live_edge.base_url, name_path, method="PUT", cookies=cookies,
+                        headers={"Content-Type": "application/json"}, data=b'{"name":"Pool"}').status == 403
+        renamed = _request(live_edge.base_url, name_path, method="PUT", cookies=cookies,
+                           headers={"Content-Type": "application/json", "X-CSRF-Token": cookies["fm_staff_csrf"]}, data=b'{"name":"Pool"}')
+        assert renamed.status == 200
+        assert json.loads(renamed.body)["name"] == "Pool"
+        assert b'Pool' in _request(live_edge.base_url, page_path, cookies=cookies).body

@@ -12,7 +12,7 @@ import uuid
 from fastapi import Cookie, FastAPI, Request, Response, status
 from fastapi.responses import HTMLResponse
 from face_moment.platform.staff_presentation import staff_document
-from face_moment.platform.staff_datetime import datetime_range_fields
+from face_moment.platform.staff_datetime import datetime_range_fields, format_staff_datetime
 from sqlalchemy.orm import Session
 
 from face_moment.diagnostics.attempt_investigation import (
@@ -517,7 +517,7 @@ def _time(value: datetime | None) -> str:
 
 
 def _iso(value: datetime) -> str:
-    return escape(value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"))
+    return format_staff_datetime(value)
 
 
 def _empty(status_code: int) -> Response:

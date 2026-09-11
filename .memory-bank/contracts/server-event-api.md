@@ -123,5 +123,7 @@ this surface displays `dd.mm.yyyy` through validated text with a calendar
 trigger. Calendar selection and manual entry stay synchronized. Transport
 continues using the existing ISO date/UTC timestamp contracts.
 
-Time-selector correction: use explicit 24-hour hour/minute/second selects
-(`00–23:00–59:00–59`) independently of browser locale; no AM/PM.
+Time-selector correction: use one 24-hour `HH:mm:ss` field with a clock icon,
+manual entry and arrow-key segment adjustment, independently of browser locale.
+Accept `HH:mm` shorthand as `HH:mm:00`; reject invalid times. No AM/PM or three
+separate dropdowns.

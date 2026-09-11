@@ -7,6 +7,11 @@ from html import escape
 STAFF_TIMEZONE = timezone(timedelta(hours=7))
 
 
+def format_staff_datetime(value: datetime | str) -> str:
+    instant = datetime.fromisoformat(value.replace("Z", "+00:00")) if isinstance(value, str) else value
+    return instant.astimezone(STAFF_TIMEZONE).strftime("%d.%m.%Y %H:%M:%S")
+
+
 def staff_today() -> str:
     return datetime.now(STAFF_TIMEZONE).date().isoformat()
 
@@ -22,17 +27,9 @@ def date_picker(input_id: str, value: str, *, name: str = "", range_date: bool =
 
 
 def time_picker(input_id: str, value: str) -> str:
-    parts = value.split(":")
-    controls = []
-    for index, (part, label, count) in enumerate((("hour", "Часы", 24), ("minute", "Минуты", 60), ("second", "Секунды", 60))):
-        options = "".join(
-            f'<option value="{number:02d}"{" selected" if number == int(parts[index]) else ""}>{number:02d}</option>'
-            for number in range(count)
-        )
-        controls.append(f'<select data-{part} aria-label="{label}">{options}</select>')
     return f'''<span class="fm-time-picker" data-time-picker>
-{'<span aria-hidden="true">:</span>'.join(controls)}
-<input id="{escape(input_id)}" type="hidden" data-time value="{escape(value)}">
+<input id="{escape(input_id)}" type="text" data-time value="{escape(value)}" placeholder="чч:мм:сс" maxlength="8" pattern="([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?" title="24-часовой формат. Введите время или измените часы, минуты и секунды стрелками ↑ ↓." required>
+<span class="fm-time-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
 </span>'''
 
 
@@ -59,7 +56,7 @@ def datetime_range_fields(
 <legend>{escape(label)} <span>UTC+7</span></legend>
 <div class="fm-datetime-row">
 <label for="{prefix}-date">Дата{date_picker(name + "-date", selected.date().isoformat(), range_date=True)}</label>
-<label>Время (24 часа){time_picker(name + "-time", selected.strftime("%H:%M:%S"))}</label>
+<label>Время{time_picker(name + "-time", selected.strftime("%H:%M:%S"))}</label>
 </div>
 <input type="hidden" name="{prefix}" value="{escape(value)}" data-utc{'' if enabled else ' disabled'}>
 </fieldset>''')

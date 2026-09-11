@@ -9,7 +9,7 @@ from face_moment.platform.staff_datetime import datetime_range_fields
 from face_moment.platform.staff_presentation import staff_document
 from face_moment.diagnostics.http import _render_server_event_page, _render_attempt_list
 from face_moment.inventory.http import _processing_health_page_html, _photo_upload_page_html
-from face_moment.serving_control.http import _active_search_date_page_html
+from face_moment.serving_control.http import _active_search_date_page_html, _spa_admin_page_html
 from face_moment.serving_control.active_search_date import ActiveSearchDateSpa
 spa = uuid.UUID('00000000-0000-0000-0000-000000000001')
 fixed = datetime_range_fields(now=datetime(2026,9,11,20,15,30,tzinfo=timezone.utc), max_days=7)
@@ -22,6 +22,7 @@ print(json.dumps({
   '/staff/attempts': staff_document(_render_attempt_list([], []), 'attempts'),
   '/staff/processing-health': staff_document(_processing_health_page_html([(spa, 'Площадка 1')]), 'processing-health'),
   '/staff/photo-upload': staff_document(_photo_upload_page_html(), 'photo-upload'),
+  '/staff/spas': staff_document(_spa_admin_page_html([ActiveSearchDateSpa(spa, 'Площадка 1')]), 'spas'),
   '/staff/search-settings': staff_document(_active_search_date_page_html([ActiveSearchDateSpa(spa, 'Площадка 1')]), 'search-settings'),
 }))
 `], { encoding: 'utf8' }));
@@ -77,9 +78,7 @@ test('date and time submit UTC correctly and reject equal and oversized ranges',
   await page.getByRole('button', { name: 'Filter', exact: true }).click();
   await expect(page.locator('[data-range-error]')).toContainText('7 дней');
   await page.locator('#from-date').fill('12.09.2026');
-  await page.locator('[data-hour]').first().selectOption('00');
-  await page.locator('[data-minute]').first().selectOption('00');
-  await page.locator('[data-second]').first().selectOption('00');
+  await page.locator('#from-time').fill('00:00:00');
   const navigation = page.waitForRequest(request => request.isNavigationRequest() && new URL(request.url()).searchParams.has('from'));
   await page.getByRole('button', { name: 'Filter', exact: true }).click();
   const url = new URL((await navigation).url());
@@ -128,17 +127,70 @@ test('calendar selection and typed dd.mm.yyyy stay synchronized and reject impos
 });
 
 
-test('time uses only 24-hour choices and sends an afternoon selection correctly', async ({ page }) => {
+test('single time field uses 24-hour input and sends an afternoon selection correctly', async ({ page }) => {
   await page.goto('https://staff.test/staff/server-events');
   await expect(page.locator('input[type="time"]')).toHaveCount(0);
-  await expect(page.locator('[data-hour]').first().locator('option')).toHaveCount(24);
-  await expect(page.locator('[data-hour]').first().locator('option')).toHaveText(Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, '0')));
+  await expect(page.locator('[data-time-picker] select')).toHaveCount(0);
+  await expect(page.locator('[data-time-picker] input')).toHaveCount(2);
   await page.locator('#from-date').fill('11.09.2026');
-  await page.locator('[data-hour]').first().selectOption('18');
-  await page.locator('[data-minute]').first().selectOption('45');
-  await page.locator('[data-second]').first().selectOption('00');
+  await page.locator('#from-time').fill('18:45:00');
   await expect(page.locator('#from-time')).toHaveValue('18:45:00');
   const navigation = page.waitForRequest(request => request.isNavigationRequest() && new URL(request.url()).searchParams.has('from'));
   await page.getByRole('button', { name: 'Filter', exact: true }).click();
   expect(new URL((await navigation).url()).searchParams.get('from')).toBe('2026-09-11T11:45:00.000Z');
+});
+
+
+test('processing timestamps show seconds only in UTC+7 without Z', async ({ page }) => {
+  const stamp = '2026-09-11T20:05:17.501214Z';
+  await page.route('**/api/inventory/processing-health?*', route => route.fulfill({ json: {
+    queue: { pending: 0, processing: 0, ready: 0, no_faces: 0, failed: 0,
+      oldest_pending_accepted_at: null, current_operation: null, operation_started_at: null,
+      worker_started_at: stamp, last_recovery_at: stamp, last_recovered_count: 0 },
+    ingest_to_searchable: null,
+    storage: { postgresql: { status: 'ok', available_bytes: 1, low_threshold_bytes: 0, observed_at: stamp, error: null },
+      minio: { status: 'ok', available_bytes: 1, low_threshold_bytes: 0, observed_at: stamp, error: null } },
+  } }));
+  await page.goto('https://staff.test/staff/processing-health');
+  await expect(page.locator('#queue-worker-started-at')).toHaveText('12.09.2026 03:05:17');
+  await expect(page.locator('#queue-last-recovery-at')).toHaveText('12.09.2026 03:05:17');
+  await expect(page.locator('#postgresql-observed-at')).toHaveText('12.09.2026 03:05:17');
+  await expect(page.locator('#queue-operation-started-at')).toHaveText('нет данных');
+});
+
+
+for (const role of ['operator', 'developer']) {
+  test(`${role} sees both navigation entries and renames a площадка on its own page`, async ({ page }) => {
+    await page.route('**/api/staff/session', route => route.fulfill({ json: { username: 'Fixture', role } }));
+    const writes = [];
+    await page.route('**/api/serving/spas/*/name', route => {
+      writes.push(route.request().postDataJSON());
+      return route.fulfill({ json: { name: writes.at(-1).name } });
+    });
+    await page.goto('https://staff.test/staff/spas');
+    await expect(page.getByRole('link', { name: 'Площадки', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Настройки поиска', exact: true })).toBeVisible();
+    await page.locator('[data-spa-rename] input').fill('Термы');
+    await page.getByRole('button', { name: 'Сохранить название', exact: true }).click();
+    await expect(page.locator('[data-spa-title]')).toHaveText('Термы');
+    await expect(page.locator('[data-spa-rename] [role="status"]')).toHaveText('Название площадки сохранено.');
+    expect(writes).toEqual([{ name: 'Термы' }]);
+  });
+}
+
+
+test('time supports minute shorthand and keyboard adjustment while rejecting invalid input', async ({ page }) => {
+  await page.goto('https://staff.test/staff/server-events');
+  const time = page.locator('#from-time');
+  await time.fill('18:45');
+  await time.blur();
+  await expect(time).toHaveValue('18:45:00');
+  await time.focus();
+  await time.evaluate(input => input.setSelectionRange(3, 5));
+  await time.press('ArrowUp');
+  await expect(time).toHaveValue('18:46:00');
+  await time.fill('24:00:00');
+  expect(await time.evaluate(input => input.checkValidity())).toBe(false);
+  await time.fill('23:59:59');
+  expect(await time.evaluate(input => input.checkValidity())).toBe(true);
 });

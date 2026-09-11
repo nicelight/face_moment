@@ -96,7 +96,7 @@ or traceback is returned.
   remain option values and API parameters. Select the first available площадка
   by default, preserve a valid `spa_id` URL selection, and refresh on change.
   An empty list shows «Нет доступных площадок» and sends no scoped request.
-  Names are edited by the operator in `/staff/search-settings`; see
+  Names are edited by operator/developer in `/staff/spas`; see
   [Staff площадка names](boundary-map.md#staff-площадка-names).
 - API: `GET /api/inventory/processing-health` with required UUID `spa_id` and
   optional paired ISO timestamps `accepted_from` and `accepted_before` for a
@@ -193,5 +193,7 @@ this surface displays `dd.mm.yyyy` through validated text with a calendar
 trigger. Calendar selection and manual entry stay synchronized. Transport
 continues using the existing ISO date/UTC timestamp contracts.
 
-Time-selector correction: use explicit 24-hour hour/minute/second selects
-(`00–23:00–59:00–59`) independently of browser locale; no AM/PM.
+Time-selector correction: use one 24-hour `HH:mm:ss` field with a clock icon,
+manual entry and arrow-key segment adjustment, independently of browser locale.
+Accept `HH:mm` shorthand as `HH:mm:00`; reject invalid times. No AM/PM or three
+separate dropdowns.

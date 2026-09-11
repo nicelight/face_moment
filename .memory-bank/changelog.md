@@ -4,6 +4,34 @@ status: active
 ---
 # Changelog
 
+## [2026-09-11] Compact single-field time controls
+
+- Replaced three time dropdowns with one `HH:mm:ss` field and clock icon across
+  all staff period forms. Supports `HH:mm` shorthand, keyboard segment adjustment
+  and strict 24-hour validation, with no added dependency.
+- Verified: 4 Python checks, 11 browser checks, mypy and visual inspection.
+- [Time control behavior](guides/local-development.md#fixed-24-hour-time-selection).
+
+## [2026-09-11] Separate площадка administration and administrator access
+
+- `/staff/spas` lists active площадки with per-card rename forms for both
+  operator and developer. Name editing moved out of search-date settings.
+- Administrator (`developer`) can now use all operator sections, including
+  `/staff/search-settings` and its date read/write API. Navigation and backend
+  checks agree; photographer restrictions and CSRF remain enforced.
+- Verified: 10 PostgreSQL-backed/route tests, 10 browser tests and mypy.
+- [Access contract](domains/staff-access.md#administrator-access-to-operator-sections),
+  [площадка names](contracts/boundary-map.md#staff-площадка-names).
+
+## [2026-09-11] Readable staff timestamps
+
+- Processing/statistics, event/Attempt, Calibration and retention displays use
+  `dd.mm.yyyy HH:mm:ss` in UTC+7, without microseconds or `Z`. API and database
+  timestamp precision remain unchanged. The shared footer identifies UTC+7.
+- Verified: 4 Python checks, 8 browser checks and mypy; local backend restarted
+  and current HTTPS page checked successfully.
+- [Display and площадка administration](guides/local-development.md#displayed-timestamps).
+
 ## [2026-09-11] Locale-independent 24-hour time selectors
 
 - All staff period forms now select hours 00–23, minutes and seconds explicitly;

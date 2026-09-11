@@ -2,6 +2,14 @@
 (() => {
   const offsetMs = 7 * 60 * 60 * 1000;
 
+  function formatTimestamp(value) {
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) return value;
+    const instant = new Date(value);
+    if (!Number.isFinite(instant.getTime())) return value;
+    const local = new Date(instant.getTime() + offsetMs).toISOString();
+    return `${local.slice(0, 10).split('-').reverse().join('.')} ${local.slice(11, 19)}`;
+  }
+
   function dateValue(input) {
     const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(input.value);
     if (!match || match[3] === '0000') return '';
@@ -34,19 +42,36 @@
     });
   }
 
+  function timeValue(input) {
+    const match = /^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/.exec(input.value);
+    return match ? `${match[1]}:${match[2]}:${match[3] ?? '00'}` : '';
+  }
+
   function setTime(input, value) {
     input.value = value;
-    const picker = input.closest('[data-time-picker]');
-    value.split(':').forEach((part, index) => { picker.querySelectorAll('select')[index].value = part; });
+    input.setCustomValidity('');
   }
 
   function initTimePickers(root) {
-    root.querySelectorAll('[data-time-picker]').forEach(picker => {
-      if (picker.dataset.ready) return;
-      picker.dataset.ready = 'true';
-      picker.addEventListener('change', () => {
-        const input = picker.querySelector('[data-time]');
-        input.value = [...picker.querySelectorAll('select')].map(control => control.value).join(':');
+    root.querySelectorAll('[data-time]').forEach(input => {
+      if (input.dataset.ready) return;
+      input.dataset.ready = 'true';
+      input.addEventListener('input', () => {
+        input.setCustomValidity(input.value && !timeValue(input) ? 'Введите время от 00:00:00 до 23:59:59.' : '');
+      });
+      input.addEventListener('blur', () => {
+        const value = timeValue(input);
+        if (value) input.value = value;
+      });
+      input.addEventListener('keydown', event => {
+        if (!['ArrowUp', 'ArrowDown'].includes(event.key) || !timeValue(input)) return;
+        event.preventDefault();
+        const segment = Math.min(2, Math.floor((input.selectionStart ?? 0) / 3));
+        const parts = timeValue(input).split(':');
+        const limit = segment === 0 ? 24 : 60;
+        parts[segment] = String((Number(parts[segment]) + (event.key === 'ArrowUp' ? 1 : -1) + limit) % limit).padStart(2, '0');
+        input.value = parts.join(':');
+        input.setSelectionRange(segment * 3, segment * 3 + 2);
         input.dispatchEvent(new Event('input', { bubbles: true }));
       });
     });
@@ -54,7 +79,7 @@
 
   function toUtc(field) {
     const date = dateValue(field.querySelector('[data-date]'));
-    const time = field.querySelector('[data-time]').value;
+    const time = timeValue(field.querySelector('[data-time]'));
     if (!date || !time) return '';
     const instant = new Date(`${date}T${time}+07:00`);
     return Number.isFinite(instant.getTime()) ? instant.toISOString() : '';
@@ -127,7 +152,7 @@
     return true;
   }
 
-  window.StaffDateTime = { init, sync, setValue, dateValue, setDate };
+  window.StaffDateTime = { init, sync, setValue, dateValue, setDate, formatTimestamp };
   document.addEventListener('DOMContentLoaded', () => {
     initDatePickers(document);
     document.querySelectorAll('form').forEach(form => {

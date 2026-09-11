@@ -9,6 +9,7 @@ import uuid
 
 from fastapi import Cookie, FastAPI, Header, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse
+from face_moment.platform.staff_datetime import format_staff_datetime
 from face_moment.platform.staff_presentation import staff_document
 from sqlalchemy.orm import Session
 
@@ -289,7 +290,7 @@ def _render_list(
             "<tr>"
             f'<td><a href="/staff/calibrations/{run.id}">{run.id}</a></td>'
             f'<td data-field="status">{escape(run.status)}</td>'
-            f'<td>{escape(run.created_at.isoformat())}</td>'
+            f'<td>{format_staff_datetime(run.created_at)}</td>'
             "</tr>"
             for run in runs
         )

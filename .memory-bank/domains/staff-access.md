@@ -91,3 +91,12 @@ automatic credential rotation are outside the pilot.
 - Deterministic rate-limit and redaction probes prove `429` behavior and absence
   of passwords, cookies, headers, plaintext tokens and token digests in URLs or
   logs.
+
+## Administrator access to operator sections
+
+Operator decision 2026-09-11: `developer` is the current administrator role and
+must be able to use every section and operation available to `operator`,
+including search-date settings and the separate `/staff/spas` name editor.
+Navigation and server authorization both enforce this rule. Existing
+photographer restrictions and developer-only tools remain unchanged; no new
+role enum or role migration is introduced.

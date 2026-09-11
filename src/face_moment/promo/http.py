@@ -15,6 +15,7 @@ import json
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from face_moment.platform.staff_datetime import format_staff_datetime
 from face_moment.diagnostics.server_events import ServerEventSink
 from face_moment.platform.staff_presentation import staff_document
 from face_moment.infrastructure.object_store import PrivateObjectStore
@@ -163,6 +164,14 @@ def register_diagnostic_retention_routes(
         with _database_session(session_factory) as database_session:
             _require_retention_staff(database_session, fm_staff_session)
             payload = read_latest_retention_result(database_session)
+        result = payload.get("result")
+        if isinstance(result, dict):
+            displayed_result = dict(result)
+            for name in ("started_at", "finished_at", "technical_logs_before", "attempts_and_evidence_before"):
+                value = displayed_result.get(name)
+                if isinstance(value, str):
+                    displayed_result[name] = format_staff_datetime(value)
+            payload = {**payload, "result": displayed_result}
         body = (
             "<main><h1>Diagnostics retention</h1><pre>"
             f"{html.escape(json.dumps(payload, indent=2, sort_keys=True))}"

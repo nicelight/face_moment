@@ -763,6 +763,10 @@ distinct from automatic advertising/prePromo behavior below.
 
 ## UX / Interaction Flow
 
+Staff timestamp display uses `dd.mm.yyyy HH:mm:ss` in UTC+7, without fractional
+seconds or a trailing `Z`; transport/persistence precision is unchanged
+(operator correction, 2026-09-11).
+
 Operator update 2026-09-11: server services default to UTC+7. All date/time
 selection surfaces use separate native calendar and clock controls with the
 clock on the right, always in 24-hour `HH:mm:ss` format without AM/PM; defaults are today's date and current time in UTC+7.
@@ -787,7 +791,8 @@ From/To defaults do not force an invalid interval when filtering other fields.
 
 Operator update 2026-09-11: «Библиотека» and «Обработка» select an active
 площадка by its saved name in a dropdown, with UUID kept internal. The operator
-can edit the selected площадка name in «Настройки поиска». Newly configured
+and administrator (`developer`) can edit площадка names in the separate
+«Площадки» section. Both may use «Настройки поиска». Newly configured
 площадки without an explicit name receive «Площадка 1», «Площадка 2», etc.;
 existing explicit names remain unchanged.
 
@@ -1072,3 +1077,9 @@ the accepted FR, NFR or acceptance criteria without a new product decision.
 ## Unresolved Blockers
 
 None at product level.
+
+
+Operator access correction 2026-09-11: the administrator (`developer`) has
+access to all operator sections and their operations. «Площадки» is a separate
+list/name-editing section available to both operator and developer; search-date
+settings remain separate and are available to both roles.

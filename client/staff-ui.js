@@ -95,3 +95,30 @@ for (const form of document.querySelectorAll('.fm-device-rename')) {
     finally { button.disabled = false; }
   });
 }
+
+
+for (const form of document.querySelectorAll('[data-spa-rename]')) {
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = form.querySelector('[role="status"]');
+    const button = form.querySelector('button');
+    const input = form.querySelector('[name="name"]');
+    const name = input.value.trim();
+    if (!name) { status.textContent = 'Введите название площадки.'; return; }
+    button.disabled = true;
+    const csrf = document.cookie.split(';').map(value => value.trim()).find(value => value.startsWith('fm_staff_csrf='))?.slice('fm_staff_csrf='.length) ?? '';
+    try {
+      const response = await fetch(`/api/serving/spas/${encodeURIComponent(form.dataset.spaId)}/name`, {
+        method: 'PUT', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': decodeURIComponent(csrf) },
+        body: JSON.stringify({ name }),
+      });
+      if (!response.ok) throw new Error('rename_failed');
+      const saved = await response.json();
+      input.value = saved.name;
+      form.closest('article').querySelector('[data-spa-title]').textContent = saved.name;
+      status.textContent = 'Название площадки сохранено.';
+    } catch { status.textContent = 'Не удалось сохранить название. Проверьте соединение и права доступа.'; }
+    finally { button.disabled = false; }
+  });
+}

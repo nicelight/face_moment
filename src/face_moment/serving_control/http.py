@@ -132,6 +132,19 @@ def register_active_search_date_routes(
                 raise HTTPException(status_code=422, detail="Название должно содержать от 1 до 255 символов") from error
         return JSONResponse({"spa_id": str(spa_id), "name": name}, headers={"Cache-Control": "no-store"})
 
+    @app.get("/staff/spas", response_class=HTMLResponse)
+    def spa_admin_page(
+        fm_staff_session: str | None = Cookie(default=None),
+    ) -> HTMLResponse:
+        with _database_session(session_factory) as database_session:
+            try:
+                spas = list_active_search_date_spas(database_session, session_token=fm_staff_session)
+            except InvalidSessionError as error:
+                raise HTTPException(status_code=401) from error
+            except ActiveSearchDateAccessDeniedError as error:
+                raise HTTPException(status_code=403) from error
+        return HTMLResponse(staff_document(_spa_admin_page_html(spas), "spas"), headers={"Cache-Control": "no-store"})
+
     @app.get("/staff/search-settings", response_class=HTMLResponse)
     def active_search_date_page(
         fm_staff_session: str | None = Cookie(default=None),
@@ -316,12 +329,7 @@ def _active_search_date_page_html(spas: Sequence[ActiveSearchDateSpa]) -> str:
       <button type="submit">Save active date</button>
       <output id="status" role="status" aria-live="polite"></output>
     </form>
-    <form id="spa-name-form">
-      <label for="spa-name">Название площадки</label>
-      <input id="spa-name" name="name" required maxlength="255"{disabled}>
-      <button type="submit"{disabled}>Сохранить название площадки</button>
-      <p id="spa-name-status" role="status" aria-live="polite"></p>
-    </form>
+
   </main>
   <script>
     const form = document.querySelector("#active-search-date-form");
@@ -331,39 +339,6 @@ def _active_search_date_page_html(spas: Sequence[ActiveSearchDateSpa]) -> str:
     const statusOutput = document.querySelector("#status");
     const csrfToken = () => document.cookie.split("; ")
       .find((item) => item.startsWith("fm_staff_csrf="))?.slice("fm_staff_csrf=".length) ?? "";
-    const nameInput = document.querySelector("#spa-name");
-    const nameStatus = document.querySelector("#spa-name-status");
-    function showSpaName() {{
-      nameInput.value = spaId.value ? spaId.selectedOptions[0].textContent : "";
-      nameStatus.textContent = "";
-    }}
-    showSpaName();
-    spaId.addEventListener("change", showSpaName);
-    document.querySelector("#spa-name-form").addEventListener("submit", async (event) => {{
-      event.preventDefault();
-      const selected = spaId.selectedOptions[0];
-      if (!selected) return;
-      const button = event.currentTarget.querySelector("button");
-      button.disabled = true;
-      spaId.disabled = true;
-      try {{
-        const response = await fetch(`/api/serving/spas/${{selected.value}}/name`, {{
-          method: "PUT",
-          headers: {{"Content-Type": "application/json", "X-CSRF-Token": csrfToken()}},
-          body: JSON.stringify({{name: nameInput.value}})
-        }});
-        if (!response.ok) throw new Error("Не удалось сохранить название. Введите от 1 до 255 символов.");
-        const data = await response.json();
-        selected.textContent = data.name;
-        nameInput.value = data.name;
-        nameStatus.textContent = "Название площадки сохранено.";
-      }} catch (error) {{
-        nameStatus.textContent = error.message;
-      }} finally {{
-        button.disabled = false;
-        spaId.disabled = false;
-      }}
-    }});
     async function loadActiveDate() {{
       const response = await fetch(`/api/serving/spas/${{spaId.value}}/active-visit-date`, {{
         headers: {{"Accept": "application/json"}}
@@ -390,3 +365,16 @@ def _active_search_date_page_html(spas: Sequence[ActiveSearchDateSpa]) -> str:
   </script>
 </body>
 </html>"""
+
+
+
+def _spa_admin_page_html(spas: Sequence[ActiveSearchDateSpa]) -> str:
+    cards = "".join(
+        f'''<article class="fm-device-card"><h2 data-spa-title>{escape(spa.name)}</h2>
+<form data-spa-rename data-spa-id="{spa.spa_id}">
+<label>Название площадки<input name="name" value="{escape(spa.name, quote=True)}" required maxlength="255"></label>
+<button type="submit">Сохранить название</button><p role="status" aria-live="polite"></p>
+</form></article>'''
+        for spa in spas
+    ) or '<p>Нет доступных площадок.</p>'
+    return f'<main><h1>Площадки</h1><div class="fm-device-list">{cards}</div></main>'

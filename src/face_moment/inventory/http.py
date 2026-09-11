@@ -854,7 +854,7 @@ def _processing_health_page_html(spas: Sequence[tuple[UUID, str]] = ()) -> str:
     StaffDateTime.init(healthForm);
 
     function renderValue(id, value, missing = "нет данных") {
-      document.querySelector(`#${id}`).textContent = value === null ? missing : String(value);
+      document.querySelector(`#${id}`).textContent = value === null ? missing : String(StaffDateTime.formatTimestamp(value));
     }
 
     function queryFromForm() {
@@ -1040,7 +1040,7 @@ def _photo_inventory_page_html(spas: Sequence[tuple[UUID, str]] = ()) -> str:
         if (spaId !== recentStatisticsSpaId.value) return;
         recentStatisticsWindows.replaceChildren();
         payload.windows.forEach(renderWindow);
-        recentStatisticsMessage.textContent = `Observed at ${payload.observed_at}`;
+        recentStatisticsMessage.textContent = `Обновлено: ${StaffDateTime.formatTimestamp(payload.observed_at)}`;
       } catch (error) {
         recentStatisticsMessage.textContent = error.message;
       }

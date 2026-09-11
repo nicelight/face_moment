@@ -16,7 +16,8 @@ PAGES: dict[str, tuple[str, str]] = {
     "photo-inventory": ("Библиотека фотографий", "Свежие поступления, результаты обработки и управление скрытыми фотографиями."),
     "processing-health": ("Состояние обработки", "Очередь фотографий, время обработки и доступное место в хранилищах."),
     "display-clients": ("Экраны", "Настроенные киоски и доступ для подключения Chromium-клиентов."),
-    "search-settings": ("Настройки поиска", "Измените название площадки и дату посещения для поиска фотографий."),
+    "spas": ("Площадки", "Просматривайте площадки и изменяйте их названия."),
+    "search-settings": ("Настройки поиска", "Укажите дату посещения для поиска фотографий."),
     "attempts": ("История поиска", "Попытки распознавания и результаты — от захвата до показа фотографий."),
     "attempt-detail": ("Подробности поиска", "Результат, этапы обработки и диагностические материалы попытки."),
     "server-events": ("События сервера", "Поиск по структурированному журналу событий."),
@@ -32,7 +33,8 @@ NAVIGATION = (
     ("photo-inventory", "Библиотека", "photographer operator developer", "Поступления и результаты обработки."),
     ("processing-health", "Обработка", "operator developer", "Очередь, скорость и состояние хранилищ."),
     ("display-clients", "Экраны", "operator developer", "Подключение и настройки киосков."),
-    ("search-settings", "Настройки поиска", "operator", "Площадка и активная дата посещения."),
+    ("spas", "Площадки", "operator developer", "Список площадок и их названия."),
+    ("search-settings", "Настройки поиска", "operator developer", "Площадка и активная дата посещения."),
     ("attempts", "История поиска", "operator developer", "Результаты попыток распознавания."),
     ("server-events", "События сервера", "developer", "Подробный журнал работы системы."),
     ("calibrations", "Калибровка", "developer", "Проверка и настройка качества поиска."),
@@ -79,7 +81,7 @@ def staff_document(document: str, page: str) -> str:
         document = document.replace('</main>', '</div></main>', 1)
     elif page != "home":
         document = document.replace('<main>', '<main id="staff-content">' + heading, 1)
-    footer = '<footer class="fm-footer"><span>© Face Moment · Моменты, которые остаются</span><a href="/site">Перейти на сайт ↗</a></footer>'
+    footer = '<footer class="fm-footer"><span>© Face Moment · Моменты, которые остаются</span><span>Время: UTC+7</span><a href="/site">Перейти на сайт ↗</a></footer>'
     return document.replace('</body>', footer + '</body>', 1)
 
 def staff_home_document(principal: StaffPrincipal) -> str:

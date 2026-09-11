@@ -150,7 +150,7 @@ transport, `staff_access`, `promo` and `processing` MUST NOT write the value.
 
 The minimum same-origin staff surface is:
 
-- `GET /staff/search-settings`: active-operator settings page; the native date
+- `GET /staff/search-settings`: operator/developer settings page; the native date
   picker preserves a saved date, or defaults to today in UTC+7 when none is set
   (operator update 2026-09-11);
 - `GET /api/serving/spas/{spa_id}/active-visit-date`: return `200`
@@ -163,7 +163,7 @@ The minimum same-origin staff surface is:
   increment the settings revision atomically, then return `200` with the same
   response shape and the new date/revision/time.
 
-An active operator may read/change the one-СПА pilot value. Missing/invalid/
+An active operator or developer may read/change the one-СПА pilot value. Missing/invalid/
 revoked authentication returns `401`; wrong role, inaccessible СПА or missing/
 mismatched CSRF on `PUT` returns `403`; unknown СПА returns `404`; invalid JSON,
 unknown fields or an invalid calendar date returns `422`. The surface uses the
@@ -172,11 +172,13 @@ automatic rollover or client override.
 
 #### Staff площадка names
 
-Operator decision 2026-09-11: the same operator-only settings page provides a
-separate name form for the selected active площадка. `serving_control` owns
+Operator correction 2026-09-11: `GET /staff/spas` is the separate площадка
+list and name-editing page for active operators and developers. Each active
+площадка has its own rename form. `/staff/search-settings` retains only search
+date settings and is also accessible to both roles. `serving_control` owns
 `PUT /api/serving/spas/{spa_id}/name`, accepting exactly `{"name":"…"}` and
 returning `200` with `spa_id` and normalized `name`, `Cache-Control: no-store`.
-Existing session, operator role and CSRF checks apply; missing authentication
+Existing session, operator/developer role and CSRF checks apply; missing authentication
 is `401`, wrong role/CSRF/inactive площадка `403`, unknown UUID `404`, empty or
 whitespace-only name, unknown fields or name longer than 255 characters `422`.
 Trim outer whitespace; change only the persisted name. UUID, date, pipeline,

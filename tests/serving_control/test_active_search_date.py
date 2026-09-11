@@ -32,6 +32,7 @@ class _Fixture:
     spa_id: uuid.UUID
     inaccessible_spa_id: uuid.UUID
     operator: dict[str, str]
+    developer: dict[str, str]
     photographer: dict[str, str]
 
 
@@ -66,6 +67,7 @@ def active_search_date_fixture(
     marker = uuid.uuid4().hex
     password = f"task068-password-{marker}"
     operator = {"username": f"task068-operator-{marker}", "password": password}
+    developer = {"username": f"task068-developer-{marker}", "password": password}
     photographer = {
         "username": f"task068-photographer-{marker}",
         "password": password,
@@ -96,6 +98,7 @@ def active_search_date_fixture(
             session.commit()
             for account, role in (
                 (operator, StaffRole.OPERATOR),
+                (developer, StaffRole.DEVELOPER),
                 (photographer, StaffRole.PHOTOGRAPHER),
             ):
                 provision_staff_user(
@@ -113,6 +116,7 @@ def active_search_date_fixture(
             spa_id=active_spa.spa_id,
             inaccessible_spa_id=inaccessible_spa.spa_id,
             operator=operator,
+            developer=developer,
             photographer=photographer,
         )
     finally:
@@ -443,3 +447,40 @@ def test_unnamed_spas_receive_persisted_numbered_names(
         repository = IngestTargetRepository(session)
         assert repository.resolve_ingest_target(first.spa_id).name == "Площадка 1"
         assert repository.resolve_ingest_target(second.spa_id).name == "Площадка 2"
+
+
+@pytest.mark.parametrize("role", ["operator", "developer"])
+def test_both_admin_roles_manage_spas_and_search_settings(active_search_date_fixture: _Fixture, role: str) -> None:
+    fixture = active_search_date_fixture
+    cookies = _login(fixture.app, getattr(fixture, role))
+    for path in ("/staff/spas", "/staff/search-settings"):
+        status, headers, page = _request(fixture.app, "GET", path, cookies=cookies)
+        assert status == 200
+        assert headers["cache-control"] == "no-store"
+        if path == "/staff/spas":
+            assert f'data-spa-id="{fixture.spa_id}"' in page
+            assert str(fixture.inaccessible_spa_id) not in page
+        else:
+            assert 'data-spa-rename' not in page
+    headers = {"X-CSRF-Token": cookies["fm_staff_csrf"]}
+    name_path = f"/api/serving/spas/{fixture.spa_id}/name"
+    assert _request(fixture.app, "PUT", name_path, cookies=cookies, body={"name": "Площадка у бассейна"})[0] == 403
+    assert _request(fixture.app, "PUT", name_path, cookies=cookies, headers=headers, body={"name": "Площадка у бассейна"})[0] == 200
+    date_path = f"/api/serving/spas/{fixture.spa_id}/active-visit-date"
+    assert _request(fixture.app, "GET", date_path, cookies=cookies)[0] == 200
+    assert _request(fixture.app, "PUT", date_path, cookies=cookies, headers=headers, body={"visit_date": "2026-09-12"})[0] == 200
+    assert "Площадка у бассейна" in _request(fixture.app, "GET", "/staff/spas", cookies=cookies)[2]
+
+
+def test_spa_page_rejects_other_roles(active_search_date_fixture: _Fixture) -> None:
+    fixture = active_search_date_fixture
+    assert _request(fixture.app, "GET", "/staff/spas")[0] == 401
+    cookies = _login(fixture.app, fixture.photographer)
+    assert _request(fixture.app, "GET", "/staff/spas", cookies=cookies)[0] == 403
+
+
+def test_developer_navigation_includes_every_operator_section() -> None:
+    from face_moment.platform.staff_presentation import NAVIGATION
+    for _, _, roles, _ in NAVIGATION:
+        if "operator" in roles.split():
+            assert "developer" in roles.split()
