@@ -347,6 +347,11 @@ pilot actor or blocker.
 
 ### D. Promo display and QR continuation
 
+Operator update, 2026-09-10: kiosk navigation moves into a small top-right
+hamburger; the guest screen omits service labels and retains «Ловим моменты».
+Client Configuration identifies its screen using the server-owned name and
+last five ID characters. Authorized staff can edit that same name on «Экраны».
+
 Operator addition, 2026-09-10: Configuration provides «Поправить расположение
 фоток», a local full-screen editor for position, size and rotation of the four
 photo cards, QR and text box. Text has three font-size presets. «Сохранить
@@ -758,6 +763,16 @@ distinct from automatic advertising/prePromo behavior below.
 
 ## UX / Interaction Flow
 
+Operator update 2026-09-11: server services default to UTC+7. All date/time
+selection surfaces use separate native calendar and clock controls with the
+clock on the right, always in 24-hour `HH:mm:ss` format without AM/PM; defaults are today's date and current time in UTC+7.
+All visible date values use `dd.mm.yyyy` regardless of browser locale, with
+a calendar trigger and validated manual input. Date-only domain fields do not
+include time. Event Severity/Component are
+selects with `all`, and Component labels explain their meaning in parentheses.
+Optional periods can be enabled separately so the requested identical current
+From/To defaults do not force an invalid interval when filtering other fields.
+
 ### Photographer flow
 
 1. Authenticate and select the СПА plus authoritative `visit_date`.
@@ -769,6 +784,12 @@ distinct from automatic advertising/prePromo behavior below.
    soft-delete or restore them.
 
 ### Photo inventory administration flow
+
+Operator update 2026-09-11: «Библиотека» and «Обработка» select an active
+площадка by its saved name in a dropdown, with UUID kept internal. The operator
+can edit the selected площадка name in «Настройки поиска». Newly configured
+площадки without an explicit name receive «Площадка 1», «Площадка 2», etc.;
+existing explicit names remain unchanged.
 
 1. Select a СПА and observe `new`, `unprocessed`, `processed` and `failed`
    statistics for the last 1, 5 and 60 minutes, refreshed every five seconds.

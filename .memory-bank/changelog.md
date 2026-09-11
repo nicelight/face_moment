@@ -4,6 +4,61 @@ status: active
 ---
 # Changelog
 
+## [2026-09-11] Locale-independent 24-hour time selectors
+
+- All staff period forms now select hours 00–23, minutes and seconds explicitly;
+  no locale-dependent AM/PM input remains. Saved intervals and UTC+7-to-UTC
+  conversion are preserved.
+- Verified: 3 Python checks, 7 browser tests and mypy for 97 source files.
+- [Time selection](guides/local-development.md#fixed-24-hour-time-selection).
+
+## [2026-09-11] Fixed dd.mm.yyyy date selectors
+
+- All staff date fields now use locale-independent `dd.mm.yyyy` text with a
+  native calendar trigger, including period filters, upload and search settings.
+  Invalid dates are rejected; ISO API values and UTC+7 conversion are preserved.
+- Verified: 10 Python checks, 6 browser checks (including calendar/text sync,
+  leap date validation and mobile layout), mypy for 97 source files.
+- [Usage and implementation](guides/local-development.md#fixed-date-display-format).
+
+## [2026-09-11] UTC+7 and calendar/time filters
+
+- Server application roles and PostgreSQL now default to `Asia/Novosibirsk`.
+  Shared staff controls show calendar left/time right in UTC+7; event Severity
+  and Component selects include `all` and explanations. Date-only upload and
+  search-settings fields use calendars and a UTC+7 today default.
+- [Behavior and runtime defaults](guides/local-development.md#server-timezone-and-staff-datetime-controls),
+  [event form contract](contracts/server-event-api.md#staff-filter-controls-operator-update-2026-09-11).
+- Verified: 41 Python checks passed, 5 browser tests passed, mypy passed for
+  97 source files. One existing Attempt-role test fails because the common
+  hidden navigation includes `/staff/calibrations`; reproduced with HEAD
+  presentation/diagnostics code, independently of this change.
+- Applied to the local source-overlay stack: all three roles healthy and
+  reporting `+0700`; PostgreSQL `timezone` and `log_timezone` report
+  `Asia/Novosibirsk`. HTTPS serves the new date/time asset. Disposable test
+  PostgreSQL removed; existing application data volumes retained.
+
+## [2026-09-11] Named площадка selectors and editing
+
+- «Библиотека» and «Обработка» now use saved active площадка names, select the
+  first available entry and preserve valid URL selection. The operator edits
+  names in «Настройки поиска»; omitted configuration names become «Площадка N».
+- [Name ownership and API](contracts/boundary-map.md#staff-площадка-names),
+  [inventory UI](contracts/photo-inventory-api.md#staff-inventory-page-and-selection)
+  and [processing UI](contracts/photo-processing-api.md#processing-health-and-slo).
+- Verified: 13 PostgreSQL-backed API/owner tests, mypy over 96 source files,
+  JavaScript syntax for populated/empty states of all three pages. No deployment
+  or existing площадка rename was performed during implementation.
+- Follow-up: restarted the local source-mounted backend at the operator’s
+  request; live health returned 200 and OpenAPI includes the new rename route.
+
+## [2026-09-10] Quiet kiosk menu and editable screen names
+
+- Added hamburger navigation and editable screen names; Configuration shows
+  the name and last five ID characters. [Usage](guides/promo-presentation.md#guest-screen-and-operator-menu).
+- Verified: 15 backend tests, mypy, 57 client unit checks, 22 browser tests; local HTTPS identity,
+  no-op rename and CSRF rejection passed.
+
 ## [2026-09-10] Advertising shortcut and simpler configuration
 
 - Renamed replay to «Фотки вновь» and made the button transparent at the bottom

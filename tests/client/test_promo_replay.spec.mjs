@@ -29,8 +29,11 @@ test('local duration persists; latest Promo replays without search or ACK and re
     } });
   });
   await page.goto(`${origin}/#advertising`);
-  const replay = page.getByRole('button', { name: 'Фотки вновь', exact: true });
-  await expect(replay).toBeDisabled();
+  const replay = page.locator('.advertising-card');
+  await expect(page.getByText('Фотки вновь', { exact: true })).toHaveCount(0);
+  await expect(replay).toHaveAttribute('aria-disabled', 'true');
+  await page.mouse.click(1, page.viewportSize().height - 2);
+  await expect(page.locator('.promo-card')).toHaveCount(0);
   await page.goto(`${origin}/#configuration`);
   await page.locator('#promo-display-seconds').fill('1');
   await page.getByRole('button', { name: 'Сохранить время показа', exact: true }).click();
@@ -66,11 +69,24 @@ test('local duration persists; latest Promo replays without search or ACK and re
   const original = await snapshot();
   await expect.poll(() => requests.filter(r => r.pathname.endsWith('/display') && r.method === 'PUT').length).toBe(1);
   await expect(card).toHaveCount(0, { timeout: 3000 });
-  await expect(replay).toBeEnabled();
+  await expect(replay).toHaveAttribute('aria-disabled', 'false');
+  await expect(page.getByRole('button', { name: 'Фотки вновь', exact: true })).toHaveCount(0);
+  const beforeMenu = requests.filter(r => r.pathname.startsWith('/api/promo/media/')).length;
+  await page.getByLabel('Меню', { exact: true }).click();
+  await expect(page.locator('.kiosk-menu')).toHaveAttribute('open', '');
+  await expect(card).toHaveCount(0);
+  await page.getByLabel('Меню', { exact: true }).click();
+  expect(requests.filter(r => r.pathname.startsWith('/api/promo/media/')).length).toBe(beforeMenu);
   const beforeReplay = requests.length;
   for (let repeat = 0; repeat < 2; repeat++) {
     const beforeThisReplay = requests.length;
-    await replay.click();
+    if (repeat === 0) {
+      // Click the bare screen edge outside the central advertising section.
+      const viewport = page.viewportSize();
+      const bounds = await replay.evaluate(el => { const b = el.getBoundingClientRect(); return { x: b.x, y: b.y, height: b.height }; });
+      expect(1 < bounds.x || viewport.height - 2 > bounds.y + bounds.height).toBe(true);
+      await page.mouse.click(1, viewport.height - 2);
+    } else await page.mouse.click(3, page.viewportSize().height - 3);
     await expect(card).toBeVisible();
     const visibleAt = Date.now();
     await expect(card.locator('.promo-teaser')).toHaveCount(4);
@@ -81,20 +97,20 @@ test('local duration persists; latest Promo replays without search or ACK and re
     await expect(card).toHaveCount(0, { timeout: 3000 });
     expect(Date.now() - visibleAt).toBeGreaterThan(600);
     expect(Date.now() - visibleAt).toBeLessThan(2200);
-    await expect(replay).toBeEnabled();
+    await expect(replay).toHaveAttribute('aria-disabled', 'false');
   }
   expect(requests.slice(beforeReplay).filter(r => r.pathname.endsWith('/attempts') || r.pathname.endsWith('/display'))).toEqual([]);
   mediaUnavailable = true;
-  await replay.click();
+  await page.mouse.click(1, page.viewportSize().height - 2);
   await expect(page.locator('.advertising-card [role="status"]')).toContainText('Не удалось повторно загрузить');
   await expect(card).toHaveCount(0);
-  await expect(replay).toBeEnabled();
+  await expect(replay).toHaveAttribute('aria-disabled', 'false');
   mediaUnavailable = false;
-  await replay.click();
+  await page.mouse.click(1, page.viewportSize().height - 2);
   await expect(card).toBeVisible();
   await expect(card.locator('.promo-teaser')).toHaveCount(4);
   await expect(card).toHaveCount(0, { timeout: 3000 });
-  await expect(replay).toBeEnabled();
+  await expect(replay).toHaveAttribute('aria-disabled', 'false');
   expect(requests.filter(r => r.pathname.endsWith('/display') && r.method === 'PUT')).toHaveLength(1);
   expect(requests.filter(r => r.pathname.endsWith('/attempts'))).toHaveLength(0);
 });

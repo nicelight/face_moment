@@ -175,31 +175,47 @@ function render() {
 }
 
 function mountPromoReplay(card) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.id = "replay-last-promo";
-  button.textContent = "Фотки вновь";
-  button.disabled = !promoDisplayController?.lastResult;
+  card.tabIndex = 0;
+  card.setAttribute("role", "button");
+  card.setAttribute("aria-label", "Показать предыдущие фотографии");
+  card.setAttribute("aria-disabled", String(!promoDisplayController?.lastResult));
   const status = document.createElement("p");
   status.setAttribute("role", "status");
-  if (button.disabled) button.title = "Станет доступна после первого показа фотографий";
-  button.addEventListener("click", async () => {
-    if (triggerController?.activeAttempt || attemptOutcomeController?.state === "result") {
-      status.textContent = "Дождитесь завершения текущего поиска.";
-      return;
-    }
-    button.disabled = true;
-    status.textContent = "Открываем последние фотографии…";
-    try {
-      await promoDisplayController.replayLastResult();
-    } catch {
-      status.textContent = "Не удалось открыть фотографии. Повторите попытку.";
-    } finally {
-      if (button.isConnected) button.disabled = !promoDisplayController?.lastResult;
+  card.append(status);
+  card.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      void replayFromAdvertising();
     }
   });
-  card.append(button, status);
 }
+
+let advertisingReplayPending = false;
+async function replayFromAdvertising() {
+  if (currentView() !== "advertising" || promoDisplayController?.isVisible ||
+      advertisingReplayPending || !promoDisplayController?.lastResult) return;
+  const status = view.querySelector('.advertising-card [role="status"]');
+  if (!status) return;
+  if (triggerController?.activeAttempt || attemptOutcomeController?.state === "result") {
+    status.textContent = "Дождитесь завершения текущего поиска.";
+    return;
+  }
+  advertisingReplayPending = true;
+  status.textContent = "Открываем последние фотографии…";
+  try {
+    await promoDisplayController.replayLastResult();
+  } catch {
+    status.textContent = "Не удалось открыть фотографии. Коснитесь экрана, чтобы повторить попытку.";
+  } finally {
+    advertisingReplayPending = false;
+  }
+}
+
+document.addEventListener("click", (event) => {
+  if (event.target.closest("a, button, input, select, textarea, summary, dialog, .kiosk-menu") ||
+      document.querySelector(".kiosk-menu[open], dialog[open]")) return;
+  void replayFromAdvertising();
+});
 
 function mountPromoDurationConfiguration(card) {
   const form = document.createElement("form");
@@ -677,7 +693,17 @@ function mountTriggerConfiguration(card) {
       }),
     );
   });
-  panel.append(testTrigger);
+  const actions = document.createElement("div");
+  actions.className = "trigger-actions";
+  const returnToScreen = document.createElement("button");
+  returnToScreen.type = "button";
+  returnToScreen.className = "return-to-main-screen";
+  returnToScreen.textContent = "вернуться на основной экран";
+  returnToScreen.addEventListener("click", () => {
+    window.location.hash = "#advertising";
+  });
+  actions.append(testTrigger, returnToScreen);
+  panel.append(actions);
 
   const status = document.createElement("p");
   status.id = "trigger-status";
@@ -864,6 +890,25 @@ function updateCameraConfiguration() {
   status.textContent = cameraStateMessage(cameraController.state);
   panel.dataset.cameraState = cameraController.state;
   document.body.dataset.cameraState = cameraController.state;
+  const mode = panel.querySelector("#white-balance-mode");
+  const temperature = panel.querySelector("#white-balance-temperature");
+  const value = panel.querySelector("#white-balance-value");
+  const message = panel.querySelector("#white-balance-status");
+  if (!mode || !temperature) return;
+  const balance = cameraController.whiteBalanceConfiguration();
+  mode.value = balance.mode;
+  mode.disabled = cameraController.state !== "ready" || !balance.supported || balance.busy;
+  temperature.min = balance.range?.min ?? 2000;
+  temperature.max = balance.range?.max ?? 10000;
+  temperature.step = balance.range?.step || 10;
+  temperature.value = balance.temperature;
+  value.value = `${temperature.value} K`;
+  temperature.disabled = mode.disabled || balance.mode !== "manual";
+  message.textContent = balance.error || (balance.busy ? "Применяем настройку…" :
+    cameraController.state !== "ready" ? "Настройки станут доступны после подключения камеры." :
+    !balance.supported ? "Эта камера или браузер не поддерживает ручной баланс белого." :
+    balance.mode === "manual" ? "Ручная температура сохраняется для этой камеры и применяется после переподключения." :
+    "Камера подбирает баланс белого автоматически.");
 }
 
 function mountCameraConfiguration(card) {
@@ -895,6 +940,42 @@ function mountCameraConfiguration(card) {
     void cameraController.refreshDevices();
   });
   panel.append(refresh);
+
+  const balanceLabel = document.createElement("label");
+  balanceLabel.htmlFor = "white-balance-mode";
+  balanceLabel.textContent = "Баланс белого";
+  const balanceMode = document.createElement("select");
+  balanceMode.id = "white-balance-mode";
+  for (const [value, title] of [["continuous", "Автоматически"], ["manual", "Вручную"]]) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = title;
+    balanceMode.append(option);
+  }
+  const temperatureLabel = document.createElement("label");
+  temperatureLabel.htmlFor = "white-balance-temperature";
+  temperatureLabel.textContent = "Температура ";
+  const temperatureValue = document.createElement("output");
+  temperatureValue.id = "white-balance-value";
+  temperatureValue.htmlFor = "white-balance-temperature";
+  temperatureLabel.append(temperatureValue);
+  const temperature = document.createElement("input");
+  temperature.type = "range";
+  temperature.id = "white-balance-temperature";
+  temperature.setAttribute("aria-describedby", "white-balance-status");
+  temperature.addEventListener("input", () => {
+    temperatureValue.value = `${temperature.value} K`;
+  });
+  const applyBalance = () => {
+    void cameraController.setWhiteBalance(balanceMode.value, Number(temperature.value));
+  };
+  balanceMode.addEventListener("change", applyBalance);
+  temperature.addEventListener("change", applyBalance);
+  const balanceStatus = document.createElement("p");
+  balanceStatus.id = "white-balance-status";
+  balanceStatus.className = "camera-status";
+  balanceStatus.setAttribute("role", "status");
+  panel.append(balanceLabel, balanceMode, temperatureLabel, temperature, balanceStatus);
 
   const preview = document.createElement("video");
   preview.id = "camera-preview";
@@ -972,8 +1053,20 @@ function copyCameraFrame(captured) {
 
 window.addEventListener("hashchange", render);
 const kioskMenu = document.querySelector(".kiosk-menu");
+const leaveDisplayDialog = document.querySelector("#leave-display-dialog");
 kioskMenu?.addEventListener("click", event => {
-  if (event.target.closest("a")) kioskMenu.open = false;
+  const link = event.target.closest("a");
+  if (!link) return;
+  kioskMenu.open = false;
+  if (link.getAttribute("href") === "/staff") {
+    event.preventDefault();
+    leaveDisplayDialog.returnValue = "";
+    leaveDisplayDialog.showModal();
+  }
+});
+leaveDisplayDialog?.addEventListener("close", () => {
+  if (leaveDisplayDialog.returnValue === "leave") window.location.assign("/staff");
+  else kioskMenu?.querySelector("summary").focus();
 });
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && kioskMenu?.open) {

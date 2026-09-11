@@ -16,7 +16,7 @@ PAGES: dict[str, tuple[str, str]] = {
     "photo-inventory": ("Библиотека фотографий", "Свежие поступления, результаты обработки и управление скрытыми фотографиями."),
     "processing-health": ("Состояние обработки", "Очередь фотографий, время обработки и доступное место в хранилищах."),
     "display-clients": ("Экраны", "Настроенные киоски и доступ для подключения Chromium-клиентов."),
-    "search-settings": ("Настройки поиска", "Укажите дату посещения, по которой экран будет искать фотографии."),
+    "search-settings": ("Настройки поиска", "Измените название площадки и дату посещения для поиска фотографий."),
     "attempts": ("История поиска", "Попытки распознавания и результаты — от захвата до показа фотографий."),
     "attempt-detail": ("Подробности поиска", "Результат, этапы обработки и диагностические материалы попытки."),
     "server-events": ("События сервера", "Поиск по структурированному журналу событий."),
@@ -67,7 +67,7 @@ def staff_document(document: str, page: str) -> str:
         document = f'<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{title}</title></head><body>{document}</body></html>'
     document = document.replace('lang="en"', 'lang="ru"', 1)
     document = re.sub(r'<title>.*?</title>', lambda _: f'<title>{title} · Face Moment</title>', document, count=1)
-    assets = '<link rel="stylesheet" href="/client/motion-theme.css"><script type="module" src="/client/staff-ui.js"></script>'
+    assets = '<link rel="stylesheet" href="/client/motion-theme.css"><script src="/client/staff-datetime.js"></script><script type="module" src="/client/staff-ui.js"></script>'
     document = document.replace('</head>', assets + '</head>', 1)
     classes = 'fm-page fm-staff' + (' fm-login' if page == 'login' else '')
     document = document.replace('<body>', f'<body class="{classes}" data-staff-page="{page}">' + _header(page), 1)

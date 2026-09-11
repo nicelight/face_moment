@@ -276,12 +276,14 @@ test("FT-003-AC-008 missing camera keeps the loaded client in advertising", asyn
   const client = await launchClient();
   try {
     await client.page.goto(`${ORIGIN}/#advertising`);
-    await expect(client.page.locator('[data-view="advertising"]')).toBeVisible();
+    await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
+    await expect(client.page.locator('#replay-last-promo')).toBeVisible();
 
     await client.page.goto(`${ORIGIN}/#configuration`);
     await expect(client.page.locator("#camera-status")).toHaveText("Выберите камеру явно.");
     await client.page.goto(`${ORIGIN}/#advertising`);
-    await expect(client.page.locator('[data-view="advertising"]')).toBeVisible();
+    await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
+    await expect(client.page.locator('#replay-last-promo')).toBeVisible();
   } finally {
     await closeClient(client);
   }
@@ -291,7 +293,8 @@ test("FT-003-AC-008 sensor unavailability keeps advertising and exposes recovery
   const client = await launchClient({ sensorUnavailable: true });
   try {
     await client.page.goto(`${ORIGIN}/#advertising`);
-    await expect(client.page.locator('[data-view="advertising"]')).toBeVisible();
+    await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
+    await expect(client.page.locator('#replay-last-promo')).toBeVisible();
     await expect(client.page.locator("body")).toHaveAttribute(
       "data-sensor-state",
       "recoverable-error",
@@ -302,7 +305,8 @@ test("FT-003-AC-008 sensor unavailability keeps advertising and exposes recovery
       "Сенсор временно недоступен. Реклама продолжает работать.",
     );
     await client.page.goto(`${ORIGIN}/#advertising`);
-    await expect(client.page.locator('[data-view="advertising"]')).toBeVisible();
+    await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
+    await expect(client.page.locator('#replay-last-promo')).toBeVisible();
   } finally {
     await closeClient(client);
   }
@@ -340,7 +344,8 @@ test("FT-003-AC-008 BlazeFace load failure returns to retryable advertising", as
       "data-trigger-state",
       "advertising",
     );
-    await expect(client.page.locator('[data-view="advertising"]')).toBeVisible();
+    await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
+    await expect(client.page.locator('#replay-last-promo')).toBeVisible();
   } finally {
     await closeClient(client);
   }
@@ -374,7 +379,8 @@ test("FT-003-AC-008 central-service failure returns advertising with the existin
     await expect(client.page.locator("#communication-notice")).toContainText(
       "Попытка связи с сервером была не успешна в ",
     );
-    await expect(client.page.locator('[data-view="advertising"]')).toBeVisible();
+    await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
+    await expect(client.page.locator('#replay-last-promo')).toBeVisible();
   } finally {
     await closeClient(client);
   }
@@ -384,7 +390,8 @@ test("FT-003-AC-008 optional assets do not block the valid result seam", async (
   const client = await launchClient();
   try {
     await client.page.goto(`${ORIGIN}/#advertising`);
-    await expect(client.page.locator('[data-view="advertising"]')).toBeVisible();
+    await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
+    await expect(client.page.locator('#replay-last-promo')).toBeVisible();
     await expect(client.page.locator("body")).toHaveAttribute(
       "data-sensor-state",
       "disabled",
@@ -489,11 +496,13 @@ test("Promo config deadline releases a held result and the next attempt renders"
     await expect
       .poll(() => finishedEvent(client.page, "config-deadline-old", false))
       .toBe(true);
-    await expect(client.page.locator('[data-view="advertising"]')).toBeVisible();
+    await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
+    await expect(client.page.locator('#replay-last-promo')).toBeVisible();
 
     configGate.resolve();
     await client.page.waitForTimeout(250);
-    await expect(client.page.locator('[data-view="advertising"]')).toBeVisible();
+    await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
+    await expect(client.page.locator('#replay-last-promo')).toBeVisible();
     assert.deepEqual(
       await client.page.evaluate(() => window.__unhandledRejections),
       [],
@@ -553,18 +562,21 @@ test("one stalled Promo preview fails cleanly and cannot replace the next result
     // Preparing previews may take up to the bounded deadline. The shared
     // shell must keep its advertising view visible until a complete result is
     // ready or the preparation fails.
-    await expect(client.page.locator('[data-view="advertising"]')).toBeVisible();
+    await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
+    await expect(client.page.locator('#replay-last-promo')).toBeVisible();
     await expect(client.page.locator('[data-view="result"]')).toHaveCount(0);
 
     await client.page.waitForTimeout(5_250);
     await expect
       .poll(() => finishedEvent(client.page, "preview-deadline-old", false))
       .toBe(true);
-    await expect(client.page.locator('[data-view="advertising"]')).toBeVisible();
+    await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
+    await expect(client.page.locator('#replay-last-promo')).toBeVisible();
 
     mediaGate.resolve();
     await client.page.waitForTimeout(250);
-    await expect(client.page.locator('[data-view="advertising"]')).toBeVisible();
+    await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
+    await expect(client.page.locator('#replay-last-promo')).toBeVisible();
     assert.deepEqual(
       await client.page.evaluate(() => window.__unhandledRejections),
       [],

@@ -94,10 +94,16 @@ class IngestTargetRepository:
     def configure_spa(
         self,
         *,
-        name: str,
+        name: str | None = None,
         timezone: str,
         serving_pipeline_revision_id: uuid.UUID,
     ) -> IngestTarget:
+        if name is None:
+            names = set(self._session.scalars(select(Spa.name)))
+            number = 1
+            while f"Площадка {number}" in names:
+                number += 1
+            name = f"Площадка {number}"
         normalized_name = self._normalize_name(name)
         normalized_timezone = self._validate_timezone(timezone)
         revision = self._resolve_eligible_revision(serving_pipeline_revision_id)
@@ -111,6 +117,18 @@ class IngestTargetRepository:
         self._session.flush()
         self._session.refresh(spa)
         return self._as_ingest_target(spa, revision)
+
+    def list_active_spa_names(self) -> list[tuple[uuid.UUID, str]]:
+        """Names for authenticated staff selectors, independent of pipeline health."""
+        return [(row.id, row.name) for row in self._session.execute(
+            select(Spa.id, Spa.name).where(Spa.active.is_(True)).order_by(Spa.name, Spa.id)
+        )]
+
+    def rename_spa(self, spa_id: uuid.UUID, name: str) -> str:
+        spa = self._load_spa(spa_id)
+        spa.name = self._normalize_name(name)
+        self._session.flush()
+        return spa.name
 
     def resolve_ingest_target(self, spa_id: uuid.UUID) -> IngestTarget:
         return self._target_from_spa(self._load_spa(spa_id))

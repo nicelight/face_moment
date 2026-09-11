@@ -12,6 +12,7 @@ import uuid
 from fastapi import Cookie, FastAPI, Request, Response, status
 from fastapi.responses import HTMLResponse
 from face_moment.platform.staff_presentation import staff_document
+from face_moment.platform.staff_datetime import datetime_range_fields
 from sqlalchemy.orm import Session
 
 from face_moment.diagnostics.attempt_investigation import (
@@ -304,6 +305,14 @@ def _utc(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 
+def _filter_select(label: str, name: str, selected: str, choices: Sequence[tuple[str, str]]) -> str:
+    options = "".join(
+        f'<option value="{escape(value)}"{" selected" if value == selected else ""}>{escape(text)}</option>'
+        for value, text in (("", "all (Все)"), *choices)
+    )
+    return f'<label>{escape(label)} <select name="{escape(name)}">{options}</select></label>'
+
+
 def _render_server_event_page(
     events: Sequence[ServerEventProjection],
     active_filters: Sequence[tuple[str, str]],
@@ -314,22 +323,14 @@ def _render_server_event_page(
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Server events</title></head>
 <body><main><h1>Server events</h1>
 <form id="server-event-search" method="get" action="/staff/server-events">
-<label>From UTC <input name="from" value="{escape(filters.get('from', ''))}"></label>
-<label>To UTC <input name="to" value="{escape(filters.get('to', ''))}"></label>
-<label>Severity <input name="severity" value="{escape(filters.get('severity', ''))}"></label>
-<label>Component <input name="component" value="{escape(filters.get('component', ''))}"></label>
+{datetime_range_fields(from_value=filters.get('from', ''), to_value=filters.get('to', ''), max_days=7)}
+{_filter_select("Severity", "severity", filters.get("severity", ""), (("info", "info (Информация)"), ("warning", "warning (Предупреждение)"), ("error", "error (Ошибка)")))}
+{_filter_select("Component", "component", filters.get("component", ""), (("runtime", "runtime (Работа сервиса)"), ("realtime", "realtime (Распознавание)"), ("promo", "promo (Показ фотографий)"), ("qr", "qr (QR-переходы)")))}
 <label>Event code <input name="event_code" value="{escape(filters.get('event_code', ''))}"></label>
 <label>Attempt ID <input name="attempt_id" value="{escape(filters.get('attempt_id', ''))}"></label>
 <label>Correlation ID <input name="correlation_id" value="{escape(filters.get('correlation_id', ''))}"></label>
 <button type="submit">Filter</button></form>
-<script>
-const form = document.getElementById("server-event-search");
-form.addEventListener("submit", () => {{
-  for (const control of form.querySelectorAll("[name]")) {{
-    if (control.value === "") control.disabled = true;
-  }}
-}});
-</script>
+
 <table><thead><tr><th>Event time</th><th>Severity</th><th>Component</th><th>Event code</th><th>Release ID</th><th>Attempt ID</th><th>Correlation ID</th></tr></thead>
 <tbody>{rows}</tbody></table></main></body></html>"""
 
@@ -365,8 +366,7 @@ def _render_attempt_list(
 <form method="get" action="/staff/attempts">
 <label>Attempt ID <input name="attempt_id" value="{escape(filters.get('attempt_id', ''))}"></label>
 <label>Correlation ID <input name="correlation_id" value="{escape(filters.get('correlation_id', ''))}"></label>
-<label>From UTC <input name="from" value="{escape(filters.get('from', ''))}"></label>
-<label>To UTC <input name="to" value="{escape(filters.get('to', ''))}"></label>
+{datetime_range_fields(from_value=filters.get('from', ''), to_value=filters.get('to', ''))}
 <label>State <input name="state" value="{escape(filters.get('state', ''))}"></label>
 <button type="submit">Filter</button></form>
 <table><thead><tr><th>Attempt</th><th>Correlation</th><th>Created</th><th>State</th><th>Outcome</th><th>Stages</th><th>Latency</th><th>Evidence</th><th>Issues</th></tr></thead>

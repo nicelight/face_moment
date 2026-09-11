@@ -150,7 +150,9 @@ transport, `staff_access`, `promo` and `processing` MUST NOT write the value.
 
 The minimum same-origin staff surface is:
 
-- `GET /staff/search-settings`: active-operator settings page;
+- `GET /staff/search-settings`: active-operator settings page; the native date
+  picker preserves a saved date, or defaults to today in UTC+7 when none is set
+  (operator update 2026-09-11);
 - `GET /api/serving/spas/{spa_id}/active-visit-date`: return `200`
   `application/json` with exactly `schema_version: 1`, UUID `spa_id`, nullable
   ISO `YYYY-MM-DD` `active_visit_date`, positive integer `settings_revision`
@@ -167,6 +169,24 @@ mismatched CSRF on `PUT` returns `403`; unknown СПА returns `404`; invalid JS
 unknown fields or an invalid calendar date returns `422`. The surface uses the
 existing HTTPS-only staff session and adds no settings framework, date history,
 automatic rollover or client override.
+
+#### Staff площадка names
+
+Operator decision 2026-09-11: the same operator-only settings page provides a
+separate name form for the selected active площадка. `serving_control` owns
+`PUT /api/serving/spas/{spa_id}/name`, accepting exactly `{"name":"…"}` and
+returning `200` with `spa_id` and normalized `name`, `Cache-Control: no-store`.
+Existing session, operator role and CSRF checks apply; missing authentication
+is `401`, wrong role/CSRF/inactive площадка `403`, unknown UUID `404`, empty or
+whitespace-only name, unknown fields or name longer than 255 characters `422`.
+Trim outer whitespace; change only the persisted name. UUID, date, pipeline,
+settings revision and Photo relationships remain unchanged. HTML escapes names.
+
+`IngestTargetRepository.configure_spa` assigns the first unused «Площадка N»
+(starting at 1) when the caller omits the name, and persists it. Explicit names
+are preserved; no migration renames existing площадки. Authenticated inventory
+pages read active UUID/name pairs through the serving-control repository;
+listing names does not depend on pipeline eligibility or change API authority.
 
 #### Missing-date realtime readiness
 
@@ -495,3 +515,8 @@ outside the pilot.
   the larger architecture unit and links to `#modules`.
 - Plans and tasks link relevant graph/contract blocks through existing fields;
   they do not copy subgraphs or introduce graph-specific task fields.
+
+Date-selector format correction (operator, 2026-09-11): every date input on
+this surface displays `dd.mm.yyyy` through validated text with a calendar
+trigger. Calendar selection and manual entry stay synchronized. Transport
+continues using the existing ISO date/UTC timestamp contracts.

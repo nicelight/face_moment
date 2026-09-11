@@ -6,6 +6,7 @@ x-application: &application
   image: "${FACE_MOMENT_IMAGE:-face-moment:dev}"
   restart: unless-stopped
   environment: &application-environment
+    TZ: "Asia/Novosibirsk"
     DATABASE_URL: "postgresql+psycopg://${POSTGRES_USER:-face_moment}:${POSTGRES_PASSWORD:-face_moment_dev}@postgres:5432/${POSTGRES_DB:-face_moment}"
     S3_ENDPOINT_URL: "http://minio:9000"
     S3_ACCESS_KEY: "${MINIO_ROOT_USER:-face_moment}"
@@ -61,6 +62,7 @@ x-application: &application
 services:
   postgres:
     image: pgvector/pgvector:0.8.0-pg16
+    command: ["postgres", "-c", "timezone=Asia/Novosibirsk", "-c", "log_timezone=Asia/Novosibirsk"]
     restart: unless-stopped
     environment:
       POSTGRES_DB: "${POSTGRES_DB:-face_moment}"

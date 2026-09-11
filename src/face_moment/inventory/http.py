@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
+from html import escape
 
 from datetime import date, datetime
 from ipaddress import ip_address
@@ -13,8 +14,10 @@ from fastapi.responses import HTMLResponse
 from starlette.datastructures import UploadFile
 from sqlalchemy.orm import Session
 
+from face_moment.serving_control.ingest_target import IngestTargetRepository
 from face_moment.infrastructure.settings import Settings
 from face_moment.platform.staff_presentation import staff_document
+from face_moment.platform.staff_datetime import date_picker, datetime_range_fields, staff_today
 from face_moment.inventory.ingest_targets import (
     InvalidSessionError,
     IngestTargetContext,
@@ -144,11 +147,12 @@ def register_ingest_target_routes(
                     database_session,
                     session_token=fm_staff_session,
                 )
+                spas = IngestTargetRepository(database_session).list_active_spa_names()
             except ProcessingHealthAccessDeniedError as error:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN) from error
             except InvalidSessionError as error:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from error
-        return HTMLResponse(staff_document(_processing_health_page_html(), "processing-health"))
+        return HTMLResponse(staff_document(_processing_health_page_html(spas), "processing-health"), headers=_NO_STORE_HEADERS)
 
     @app.get("/staff/photo-inventory", response_class=HTMLResponse)
     def photo_inventory_page(
@@ -160,12 +164,13 @@ def register_ingest_target_routes(
                     database_session,
                     session_token=fm_staff_session,
                 )
+                spas = IngestTargetRepository(database_session).list_active_spa_names()
             except InvalidSessionError as error:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     headers=_NO_STORE_HEADERS,
                 ) from error
-        response = HTMLResponse(staff_document(_photo_inventory_page_html(), "photo-inventory"))
+        response = HTMLResponse(staff_document(_photo_inventory_page_html(spas), "photo-inventory"))
         response.headers["Cache-Control"] = "no-store"
         return response
 
@@ -566,7 +571,7 @@ def _photo_upload_page_html() -> str:
         <option value="">Выберите площадку</option>
       </select>
       <label for="visit-date">Дата съёмки</label>
-      <input id="visit-date" name="visit_date" type="text" placeholder="ДД.ММ.ГГГГ" aria-label="Дата съёмки, ДД.ММ.ГГГГ" maxlength="10" pattern="[0-9]{2}[.][0-9]{2}[.][0-9]{4}" required>
+      __VISIT_DATE_PICKER__
       <label for="photos">Фотографии в формате JPEG</label>
       <input id="photos" name="photos" type="file" accept="image/jpeg" multiple required>
       <button type="submit">Загрузить фотографии <span aria-hidden="true">↗</span></button>
@@ -584,15 +589,8 @@ def _photo_upload_page_html() -> str:
     const form = document.querySelector("#photo-upload-form");
     const spaSelect = document.querySelector("#spa-id");
     const visitDateInput = document.querySelector("#visit-date");
-    if (!visitDateInput.value) {
-      const today = new Date();
-      visitDateInput.value = [String(today.getDate()).padStart(2, "0"), String(today.getMonth() + 1).padStart(2, "0"), today.getFullYear()].join(".");
-    }
     function uploadVisitDate() {
-      const [day, month, year] = visitDateInput.value.split(".");
-      const iso = `${year}-${month}-${day}`;
-      const parsed = new Date(`${iso}T00:00:00Z`);
-      return Number(year) > 0 && Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === iso ? iso : null;
+      return StaffDateTime.dateValue(visitDateInput) || null;
     }
     visitDateInput.addEventListener("input", () => visitDateInput.setCustomValidity(""));
     const filesInput = document.querySelector("#photos");
@@ -739,7 +737,7 @@ def _photo_upload_page_html() -> str:
       const spaId = spaSelect.value;
       const visitDate = uploadVisitDate();
       if (!visitDate) {
-        visitDateInput.setCustomValidity("Введите существующую дату в формате ДД.ММ.ГГГГ.");
+        visitDateInput.setCustomValidity("Выберите существующую дату съёмки.");
         visitDateInput.reportValidity();
         return;
       }
@@ -766,10 +764,16 @@ def _photo_upload_page_html() -> str:
     loadTargets();
   </script>
 </body>
-</html>"""
+</html>""".replace("__VISIT_DATE_PICKER__", date_picker("visit-date", staff_today(), name="visit_date"))
 
 
-def _processing_health_page_html() -> str:
+def _spa_options(spas: Sequence[tuple[UUID, str]]) -> str:
+    if not spas:
+        return '<option value="">Нет доступных площадок</option>'
+    return "".join(f'<option value="{spa_id}">{escape(name)}</option>' for spa_id, name in spas)
+
+
+def _processing_health_page_html(spas: Sequence[tuple[UUID, str]] = ()) -> str:
     return """<!doctype html>
 <html lang="en">
 <head>
@@ -781,12 +785,9 @@ def _processing_health_page_html() -> str:
   <main>
     <h1>Processing health</h1>
     <form id="processing-health-query">
-      <label for="health-spa-id">ID площадки</label>
-      <input id="health-spa-id" name="spa_id" required>
-      <label for="accepted-from">Поступили после (дата и время ISO, необязательно)</label>
-      <input id="accepted-from" name="accepted_from">
-      <label for="accepted-before">Поступили до (дата и время ISO, необязательно)</label>
-      <input id="accepted-before" name="accepted_before">
+      <label for="health-spa-id">Площадка</label>
+      <select id="health-spa-id" name="spa_id" required>__SPA_OPTIONS__</select>
+      __DATETIME_RANGE__
       <button type="submit">Обновить состояние</button>
     </form>
     <p id="health-message" role="alert"></p>
@@ -850,6 +851,7 @@ def _processing_health_page_html() -> str:
     const healthMessage = document.querySelector("#health-message");
     const sloMessage = document.querySelector("#slo-message");
     const healthFieldNames = ["spa_id", "accepted_from", "accepted_before"];
+    StaffDateTime.init(healthForm);
 
     function renderValue(id, value, missing = "нет данных") {
       document.querySelector(`#${id}`).textContent = value === null ? missing : String(value);
@@ -921,9 +923,10 @@ def _processing_health_page_html() -> str:
     }
 
     async function loadHealth() {
+      if (!StaffDateTime.sync(healthForm)) return;
       const query = queryFromForm();
       if (!query.includes("spa_id=")) {
-        healthMessage.textContent = "Укажите ID площадки для просмотра состояния.";
+        healthMessage.textContent = "Выберите площадку для просмотра состояния.";
         return;
       }
       try {
@@ -934,7 +937,9 @@ def _processing_health_page_html() -> str:
           healthMessage.textContent = "Не удалось получить состояние обработки.";
           return;
         }
-        renderHealth(await response.json());
+        const payload = await response.json();
+        if (query !== queryFromForm()) return;
+        renderHealth(payload);
       } catch (_) {
         healthMessage.textContent = "Не удалось получить состояние обработки.";
       }
@@ -944,8 +949,9 @@ def _processing_health_page_html() -> str:
       const initialQuery = new URLSearchParams(window.location.search);
       for (const name of healthFieldNames) {
         const value = initialQuery.get(name);
-        if (value !== null) {
-          healthForm.elements.namedItem(name).value = value;
+        if (value !== null && (name !== "spa_id" || Array.from(healthForm.elements.namedItem(name).options).some(option => option.value === value))) {
+          if (name === "spa_id") healthForm.elements.namedItem(name).value = value;
+          else StaffDateTime.setValue(healthForm, name, value);
         }
       }
       void loadHealth();
@@ -956,11 +962,12 @@ def _processing_health_page_html() -> str:
       void loadHealth();
     });
 
+    document.querySelector("#health-spa-id").addEventListener("change", loadHealth);
     loadInitialQuery();
     setInterval(loadHealth, 5000);
   </script>
 </body>
-</html>"""
+</html>""".replace("__SPA_OPTIONS__", _spa_options(spas)).replace("__DATETIME_RANGE__", datetime_range_fields(from_name="accepted_from", to_name="accepted_before", from_label="Поступили после", to_label="Поступили до"))
 
 
 async def _validate_purge_payload(request: Request, *, confirmation: bool) -> None:
@@ -978,7 +985,7 @@ async def _validate_purge_payload(request: Request, *, confirmation: bool) -> No
         raise HTTPException(422, headers=_NO_STORE_HEADERS) from error
 
 
-def _photo_inventory_page_html() -> str:
+def _photo_inventory_page_html(spas: Sequence[tuple[UUID, str]] = ()) -> str:
     return """<!doctype html>
 <html lang="en">
 <head>
@@ -990,8 +997,8 @@ def _photo_inventory_page_html() -> str:
   <main>
     <h1>Photo inventory</h1>
     <form id="recent-statistics-query">
-      <label for="recent-statistics-spa-id">ID площадки</label>
-      <input id="recent-statistics-spa-id" name="spa_id" required>
+      <label for="recent-statistics-spa-id">Площадка</label>
+      <select id="recent-statistics-spa-id" name="spa_id" required>__SPA_OPTIONS__</select>
       <button type="submit">Обновить статистику</button>
     </form>
     <p id="recent-statistics-message" role="alert"></p>
@@ -1030,6 +1037,7 @@ def _photo_inventory_page_html() -> str:
         });
         if (!response.ok) throw new Error("Statistics request failed");
         const payload = await response.json();
+        if (spaId !== recentStatisticsSpaId.value) return;
         recentStatisticsWindows.replaceChildren();
         payload.windows.forEach(renderWindow);
         recentStatisticsMessage.textContent = `Observed at ${payload.observed_at}`;
@@ -1042,6 +1050,12 @@ def _photo_inventory_page_html() -> str:
       event.preventDefault();
       await loadRecentStatistics();
     });
+    const initialSpa = new URLSearchParams(window.location.search).get("spa_id");
+    if (Array.from(recentStatisticsSpaId.options).some(option => option.value === initialSpa)) {
+      recentStatisticsSpaId.value = initialSpa;
+    }
+    recentStatisticsSpaId.addEventListener("change", loadRecentStatistics);
+    void loadRecentStatistics();
     setInterval(loadRecentStatistics, 5000);
 
     const purgeSection = document.querySelector("#inventory-purge");
@@ -1109,4 +1123,4 @@ def _photo_inventory_page_html() -> str:
     setInterval(loadPurge, 5000);
   </script>
 </body>
-</html>"""
+</html>""".replace("__SPA_OPTIONS__", _spa_options(spas))

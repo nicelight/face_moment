@@ -23,6 +23,12 @@ media. The pilot adds no Batch endpoint, jobs API, WebSocket or SSE stream.
 ## Staff Inventory Page And Selection
 
 - Page: `GET /staff/photo-inventory`.
+- The площадка selector is a dropdown of saved active площадка names. UUIDs
+  remain option values and API parameters. Select the first available площадка
+  by default, preserve a valid `spa_id` URL selection, and refresh on change.
+  An empty list shows «Нет доступных площадок» and sends no scoped request.
+  Names are edited by the operator in `/staff/search-settings`; see
+  [Staff площадка names](boundary-map.md#staff-площадка-names).
 - Authentication: active staff session. Every accepted staff role may open the
   page; controls and API results remain role-scoped below.
 - Selection API: `GET /api/inventory/photos` with required UUID `spa_id`, ISO

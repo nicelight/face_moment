@@ -12,7 +12,7 @@ from face_moment.platform.auth.sessions import (
     authenticate_unsafe_staff_request,
     get_current_principal,
 )
-from face_moment.serving_control.ingest_target import Spa
+from face_moment.serving_control.ingest_target import IngestTargetRepository, Spa
 from face_moment.serving_control.realtime_context import RealtimeContextRepository
 
 
@@ -74,6 +74,24 @@ def update_active_search_date(
         active_visit_date=active_visit_date,
     )
     return _record_for_spa(spa)
+
+
+def rename_spa(
+    database_session: Session,
+    *,
+    session_token: str | None,
+    csrf_cookie_token: str | None,
+    csrf_header_token: str | None,
+    spa_id: uuid.UUID,
+    name: str,
+) -> str:
+    principal = authenticate_unsafe_staff_request(
+        database_session, session_token=session_token,
+        csrf_cookie_token=csrf_cookie_token, csrf_header_token=csrf_header_token,
+    )
+    _authorize(principal.role)
+    _load_accessible_spa(database_session, spa_id)
+    return IngestTargetRepository(database_session).rename_spa(spa_id, name)
 
 
 def list_active_search_date_spas(

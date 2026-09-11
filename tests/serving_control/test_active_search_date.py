@@ -372,3 +372,74 @@ def _request(
         if response_headers.get("content-type", "").startswith("application/json")
         else response_body.decode(),
     )
+
+
+def test_spa_rename_persists_in_staff_selectors_and_preserves_identity(
+    active_search_date_fixture: _Fixture,
+) -> None:
+    fixture = active_search_date_fixture
+    cookies = _login(fixture.app, fixture.operator)
+    name = '  Термы <Центр> & бассейн  '
+    status_code, _, payload = _request(
+        fixture.app, "PUT", f"/api/serving/spas/{fixture.spa_id}/name",
+        body={"name": name}, cookies=cookies,
+        headers={"X-CSRF-Token": cookies["fm_staff_csrf"]},
+    )
+    assert status_code == 200
+    assert payload == {"spa_id": str(fixture.spa_id), "name": name.strip()}
+    with Session(fixture.engine) as session:
+        spa = session.get(Spa, fixture.spa_id)
+        assert spa is not None
+        assert spa.name == name.strip()
+        assert spa.settings_revision == 1
+        assert spa.active_visit_date is None
+    for path, selector in (
+        ("/staff/photo-inventory", "recent-statistics-spa-id"),
+        ("/staff/processing-health", "health-spa-id"),
+        ("/staff/search-settings", "spa-id"),
+    ):
+        status_code, headers, page = _request(fixture.app, "GET", path, cookies=cookies)
+        assert status_code == 200
+        assert headers["cache-control"] == "no-store"
+        assert f'<select id="{selector}"' in page
+        assert f'<option value="{fixture.spa_id}">Термы &lt;Центр&gt; &amp; бассейн</option>' in page
+        assert str(fixture.inaccessible_spa_id) not in page
+
+
+def test_spa_rename_rejects_unauthorized_and_invalid_writes(
+    active_search_date_fixture: _Fixture,
+) -> None:
+    fixture = active_search_date_fixture
+    operator = _login(fixture.app, fixture.operator)
+    photographer = _login(fixture.app, fixture.photographer)
+    path = f"/api/serving/spas/{fixture.spa_id}/name"
+    for cookies, headers, body, target, expected in (
+        (None, None, {"name": "Новое имя"}, path, 401),
+        (photographer, {"X-CSRF-Token": photographer["fm_staff_csrf"]}, {"name": "Новое имя"}, path, 403),
+        (operator, None, {"name": "Новое имя"}, path, 403),
+        (operator, {"X-CSRF-Token": operator["fm_staff_csrf"]}, {"name": "   "}, path, 422),
+        (operator, {"X-CSRF-Token": operator["fm_staff_csrf"]}, {"name": "x" * 256}, path, 422),
+        (operator, {"X-CSRF-Token": operator["fm_staff_csrf"]}, {"name": "Имя"}, f"/api/serving/spas/{uuid.uuid4()}/name", 404),
+        (operator, {"X-CSRF-Token": operator["fm_staff_csrf"]}, {"name": "Имя"}, f"/api/serving/spas/{fixture.inaccessible_spa_id}/name", 403),
+    ):
+        assert _request(fixture.app, "PUT", target, cookies=cookies, headers=headers, body=body)[0] == expected
+    with Session(fixture.engine) as session:
+        spa = session.get(Spa, fixture.spa_id)
+        assert spa is not None and spa.name.startswith("task068-active-")
+
+
+def test_unnamed_spas_receive_persisted_numbered_names(
+    active_search_date_fixture: _Fixture,
+) -> None:
+    fixture = active_search_date_fixture
+    with Session(fixture.engine) as session:
+        original = session.get(Spa, fixture.spa_id)
+        assert original is not None
+        repository = IngestTargetRepository(session)
+        first = repository.configure_spa(timezone="UTC", serving_pipeline_revision_id=original.serving_pipeline_revision_id)
+        second = repository.configure_spa(timezone="UTC", serving_pipeline_revision_id=original.serving_pipeline_revision_id)
+        session.commit()
+    with Session(fixture.engine) as session:
+        repository = IngestTargetRepository(session)
+        assert repository.resolve_ingest_target(first.spa_id).name == "Площадка 1"
+        assert repository.resolve_ingest_target(second.spa_id).name == "Площадка 2"

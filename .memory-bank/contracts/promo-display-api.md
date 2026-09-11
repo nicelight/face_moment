@@ -25,6 +25,9 @@ reference from another СПА is not disclosed.
 
 ## Display Configuration
 
+- Identity headers: `X-Face-Moment-Display-Client-Id` (authenticated caller's
+  UUID), `X-Face-Moment-Display-Name` (UTF-8 percent-encoded owner-stored name).
+  JSON below is unchanged; Configuration displays the name and last five ID characters.
 - Method and path: `GET /api/promo/display/config`.
 - Authentication: `Authorization: Bearer <spa-client-token>`.
 - Success: `200 application/json` with exactly:

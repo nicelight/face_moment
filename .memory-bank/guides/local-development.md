@@ -356,6 +356,46 @@ as non-blocking for further testing; the two-second delay is not an accepted
 physical fix. Other requested manual scenarios were reported working. This
 is operator-reported evidence, not an independently observed physical pass.
 
+2026-09-11 yellow-preview check: automatic white balance is enabled; inactive
+temperature readback is 10000 (previous normal-color sample: 3900). Client code
+and camera change history contain no white-balance writes or color filters;
+the recovery change is exact-device reopening after a 2-second delay. This
+inspection changed no camera controls; the cause of the yellow tint is unproven.
+
+Read-only polls at 11:14:30/40/50 on 2026-09-11 all returned auto=1,
+temperature=10000. Chrome 151.0.7922.71 calls `ResetUserAndCameraControlsToDefault`
+when starting V4L2 capture: auto white balance off, controls reset, auto restored.
+[Source](https://chromium.googlesource.com/chromium/src/+/refs/tags/151.0.7922.71/media/capture/video/linux/v4l2_capture_delegate.cc).
+Its involvement in this camera's failure needs a reconnect-time ioctl trace;
+polling alone does not change image color.
+
+Reconnect trace at 11:27 on 2026-09-11: Chrome successfully toggled AWB off/on,
+but all four default-reset `VIDIOC_S_EXT_CTRLS` batches returned `EINVAL`;
+YUYV 640x480 capture started successfully. Operator screenshot was magenta;
+readback was auto=1, temperature=0. This does not establish the cause without
+a successful-start comparison. Operator deferred investigation and fixes;
+trace stopped, application and camera controls unchanged by the investigation.
+
+Controlled comparison at 11:40 on 2026-09-11: operator screenshots confirm
+normal → magenta after USB reconnect → normal after selecting another camera
+and returning. The captured Logitech startup writes, format and return codes
+are identical in the failed and recovered runs; EINVAL occurs in both.
+The recovered run initially reads temperature=10000, versus 0 in the failed
+run, so 10000 alone is not a reliable failure detector. Manual switching adds
+a successful STREAMOFF on the connected Logitech before reopening; physical
+removal yields ENODEV. This narrows the next experiment to stop/reopen of the
+same device, but does not prove its sufficiency or establish a root cause.
+Comparison trace: `/tmp/face-moment-camera-comparison.trace`; tracing stopped.
+
+Operator decision, 2026-09-11: camera configuration offers automatic/manual
+white balance and a temperature slider using the track capability range.
+Manual defaults to 4500 K; mode and temperature are saved per device in local
+browser storage and reapplied on every open, including USB recovery. Camera
+readings of 0/10000 do not override the saved manual value. Unsupported controls
+are disabled; rejected/unconfirmed settings show an error without stopping
+preview. This controls the camera, not a display color filter. Physical camera
+confirmation remains separate from unit coverage in `test_camera.mjs`.
+
 The next manual no-face test also passed per operator report: camera pointed
 at an empty wall, old frames allowed to leave the buffer, test trigger followed
 by normal return to advertising without an automatic stale-photo display.
@@ -378,3 +418,52 @@ passed. Separate isolated browser checks confirmed sessionStorage round-trip
 and retained event rendering in the actual app's `#debug` after reload;
 API responses were mocked and no new real Attempt was created. TLS trust was
 ignored only by the QA browser, so this does not establish a certificate fix.
+
+## Названия площадок в админке
+
+«Библиотека» и «Обработка» показывают выпадающий список сохранённых названий.
+Чтобы переименовать площадку, войдите как оператор, откройте «Настройки поиска»,
+выберите площадку и сохраните поле «Название площадки». После открытия других
+разделов список показывает новое имя. Новые площадки, создаваемые через
+`IngestTargetRepository.configure_spa` без `name`, получают «Площадка 1»,
+«Площадка 2» и далее по первому свободному номеру. Существующие имена сохраняются.
+[Контракт](../contracts/boundary-map.md#staff-площадка-names).
+
+## Server timezone and staff date/time controls
+
+Operator update 2026-09-11: server services default to `Asia/Novosibirsk`
+(UTC+7). `Dockerfile` and the shared Compose application environment set `TZ`;
+PostgreSQL starts with explicit `timezone` and `log_timezone` in that zone,
+including existing databases. Local `uv --env-file .env.local` launches use
+`TZ=Asia/Novosibirsk`; `.env.example` carries the same default. This does not
+change the developer workstation's timezone or reinterpret stored instants.
+The central host is already documented as UTC+7 in
+[server parameters](../../SERVER/serverparams.md).
+
+«События сервера», «История поиска» and «Обработка» use a calendar on the left
+and a clock on the right, in UTC+7 independently of browser timezone. Both
+bounds initially show today/current time. «Применять период» enables the range;
+edits enable it automatically. A saved URL restores the selected interval.
+The browser converts the selection to UTC for existing API queries. Date-only
+upload/search-settings forms use native calendars, defaulting to today in
+UTC+7 where no saved date exists.
+
+[Event filter contract](../contracts/server-event-api.md#staff-filter-controls-operator-update-2026-09-11):
+exact `all`/Severity/Component choices and validation.
+
+### Fixed date display format
+
+Operator correction: all staff date selectors display `dd.mm.yyyy` regardless
+of browser locale. A validated text field sits beside a native calendar
+trigger; picking a date updates the text and typing updates the calendar.
+The uploader and search-settings serialize `YYYY-MM-DD`; period filters still
+convert UTC+7 to UTC. Implementation lives in
+[staff date controls](../../src/face_moment/platform/staff_datetime.py) and
+[date synchronization](../../client/staff-datetime.js).
+
+### Fixed 24-hour time selection
+
+All staff time selectors use hours `00–23`, minutes `00–59` and seconds
+`00–59`, separated by colons. They do not use the locale-dependent native time
+input, so AM/PM never appears. UTC+7 interpretation and UTC query serialization
+remain unchanged. The controls restore all three values from bookmarked URLs.

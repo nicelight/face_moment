@@ -45,6 +45,29 @@ filters are conjunctive. Results order by `occurred_at DESC, event_id DESC` and
 contain at most the latest `100` rows. There is no pagination, arbitrary sort,
 message/full-text query, saved query, live tail, export or dashboard.
 
+## Staff filter controls (operator update 2026-09-11)
+
+The form presents separate native date and time pickers, date on the left and
+clock on the right, labeled UTC+7. Both default to today's date and the current
+time in UTC+7 at page rendering, independent of browser timezone. «Применять
+период» is off without explicit URL bounds; editing either date/time enables
+it. This preserves the default 24-hour search and lets `severity`/`component`
+work without submitting an invalid zero-length interval. Equal/reversed or
+more-than-seven-day periods receive an inline validation message before search.
+Existing UTC URL bounds are converted into the visible UTC+7 controls.
+
+`Severity` is a select: `all (Все)`, `info (Информация)`,
+`warning (Предупреждение)`, `error (Ошибка)`. `Component` is a select:
+`all (Все)`, `runtime (Работа сервиса)`, `realtime (Распознавание)`,
+`promo (Показ фотографий)`, `qr (QR-переходы)`. The `all` choice omits that
+parameter; it does not add a new API enum value. Selected local date/time is
+converted to RFC 3339 UTC for the existing query contract. Empty optional
+filters are omitted without disabling the visible controls.
+
+Implementation: [shared controls](../../src/face_moment/platform/staff_datetime.py),
+[browser conversion](../../client/staff-datetime.js),
+[HTTP form](../../src/face_moment/diagnostics/http.py).
+
 ## HTML Projection And FT-008 Navigation
 
 The page renders only event time, severity, component, event code, release ID
@@ -94,3 +117,11 @@ introduced.
   prove no-query `422`, sanitized `500` and redacted artifacts.
 - Use `playwright cli` for the real browser filter/table/navigation and stale-
   role/stale-retention journey, retaining only redacted synthetic evidence.
+
+Date-selector format correction (operator, 2026-09-11): every date input on
+this surface displays `dd.mm.yyyy` through validated text with a calendar
+trigger. Calendar selection and manual entry stay synchronized. Transport
+continues using the existing ISO date/UTC timestamp contracts.
+
+Time-selector correction: use explicit 24-hour hour/minute/second selects
+(`00–23:00–59:00–59`) independently of browser locale; no AM/PM.

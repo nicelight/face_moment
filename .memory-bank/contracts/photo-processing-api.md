@@ -92,6 +92,12 @@ or traceback is returned.
 ## Processing Health And SLO
 
 - Page: `GET /staff/processing-health`.
+- The площадка selector is a dropdown of saved active площадка names. UUIDs
+  remain option values and API parameters. Select the first available площадка
+  by default, preserve a valid `spa_id` URL selection, and refresh on change.
+  An empty list shows «Нет доступных площадок» and sends no scoped request.
+  Names are edited by the operator in `/staff/search-settings`; see
+  [Staff площадка names](boundary-map.md#staff-площадка-names).
 - API: `GET /api/inventory/processing-health` with required UUID `spa_id` and
   optional paired ISO timestamps `accepted_from` and `accepted_before` for a
   half-open controlled SLO interval `[accepted_from, accepted_before)`.
@@ -99,6 +105,11 @@ or traceback is returned.
   returns `422`.
 - Authentication/authorization: active `operator` or `developer`; a
   photographer receives `403`.
+- Optional SLO bounds use the shared date-left/time-right UTC+7 controls,
+  defaulting to today's date/current time with «Применять период» off. Editing
+  enables the range; validate increasing bounds and convert to UTC before
+  requests. Existing URL bounds populate these controls. Turning the period
+  off omits both timestamps and retains the queue/storage-only view.
 - The page polls every five seconds. WebSocket, SSE, materialized metrics and a
   second observability store are absent.
 
@@ -176,3 +187,11 @@ No custom project-wide error envelope is introduced.
   `inventory`, processing state publication in `processing`, and no business
   orchestration or foreign repository write in transport, infrastructure,
   generic helpers or the composition root.
+
+Date-selector format correction (operator, 2026-09-11): every date input on
+this surface displays `dd.mm.yyyy` through validated text with a calendar
+trigger. Calendar selection and manual entry stay synchronized. Transport
+continues using the existing ISO date/UTC timestamp contracts.
+
+Time-selector correction: use explicit 24-hour hour/minute/second selects
+(`00–23:00–59:00–59`) independently of browser locale; no AM/PM.

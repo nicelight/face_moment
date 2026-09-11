@@ -55,6 +55,15 @@ perform no query. Multiple supplied filters are conjunctive. Results order by
 Attempts. No pagination, saved query, full-text search, export or live tail is
 introduced.
 
+## Date and time selection
+
+Per operator update 2026-09-11 the list uses the same separate calendar/clock
+controls as [server events](server-event-api.md#staff-filter-controls-operator-update-2026-09-11).
+Both display today/current time in UTC+7 by default; the optional period starts
+off unless a URL bound is supplied. Editing enables it; submitting converts
+local values to the existing UTC query fields. Validate increasing bounds
+before navigation. The seven-day server-event limit does not apply here.
+
 ## Promo Query Boundary
 
 `promo` publishes one read-only application query that accepts the exact
@@ -178,3 +187,11 @@ participant data.
   `500` responses with `no-store` and redacted logs/artifacts.
 - Use `playwright cli` for the real-browser filter, table, detail and stale-role
   flow; retain transcript and screenshots under the owning task evidence path.
+
+Date-selector format correction (operator, 2026-09-11): every date input on
+this surface displays `dd.mm.yyyy` through validated text with a calendar
+trigger. Calendar selection and manual entry stay synchronized. Transport
+continues using the existing ISO date/UTC timestamp contracts.
+
+Time-selector correction: use explicit 24-hour hour/minute/second selects
+(`00–23:00–59:00–59`) independently of browser locale; no AM/PM.

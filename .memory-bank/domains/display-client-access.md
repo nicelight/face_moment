@@ -7,6 +7,22 @@ source_of_truth:
 ---
 # Display Client Access
 
+## Operator screen identification update — 2026-09-10
+
+The screen name is editable by operator/developer staff on «Экраны».
+`PUT /api/serving/display-clients/{display_client_id}/name` accepts exactly
+`{"name": "..."}` with a trimmed nonempty name of at most 255 characters.
+It requires an active staff session and the existing CSRF cookie/header pair.
+The owner repository changes only `name`; the HTTP adapter commits success.
+The no-store success response contains `display_client_id` and `name`.
+Failures use 401 (session), 403 (role/CSRF), 404 (unknown screen), or 422
+(invalid input).
+
+Configuration and the staff card show the name and last five ID characters.
+The full UUID remains in the API and collapsed staff table. Configuration
+refreshes identity on opening or token save via
+[display config headers](../contracts/promo-display-api.md).
+
 ## Scope And Owner
 
 `serving_control` owns central `SpaPromoClient` identity, СПА binding, current

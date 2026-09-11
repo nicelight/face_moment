@@ -288,3 +288,24 @@ body.fm-page {
 .fm-device-rename label { display: grid; gap: 8px; }
 .fm-device-rename button { justify-self: start; }
 .fm-device-rename [role="status"]:empty { display: none; }
+
+/* Shared UTC+7 date and time controls: calendar left, clock right. */
+.fm-staff .fm-datetime-range { display: grid; gap: 1rem; }
+.fm-staff .fm-datetime-field { border: 0; padding: 0; margin: 0; min-width: 0; }
+.fm-staff .fm-datetime-field legend { color: var(--fm-text); font-size: 14px; margin-bottom: .5rem; }
+.fm-staff .fm-datetime-field legend span { color: var(--fm-soft); margin-left: .4rem; font-size: 12px; }
+.fm-staff .fm-datetime-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .75rem; }
+.fm-staff .fm-datetime-row input { color-scheme: dark; }
+.fm-staff .fm-range-toggle { flex-direction: row; align-items: center; gap: .6rem; }
+.fm-staff .fm-range-hint { color: var(--fm-soft); font-size: 12px; margin: 0; }
+.fm-staff [data-range-error]:empty { display: none; }
+
+.fm-staff .fm-date-picker { display: block; position: relative; min-width: 0; }
+.fm-staff .fm-date-picker [data-date-text] { padding-right: 3rem; }
+.fm-staff .fm-calendar-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.fm-staff .fm-calendar-native { position: absolute; right: 0; top: 0; width: 44px; height: 100%; min-height: 0; padding: 0; opacity: 0; cursor: pointer; }
+.fm-staff .fm-calendar-native::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; cursor: pointer; }
+.fm-staff .fm-date-picker:focus-within { border-radius: 8px; outline: 1px solid var(--fm-accent); outline-offset: 2px; }
+
+.fm-staff .fm-time-picker { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: .2rem; }
+.fm-staff .fm-time-picker select { padding: .7rem .25rem; text-align: center; font-variant-numeric: tabular-nums; }

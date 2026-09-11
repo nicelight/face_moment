@@ -348,6 +348,51 @@ async function provesPendingReconnectIsCancelled() {
   }
 }
 
+async function provesManualWhiteBalancePersistenceAndRecovery() {
+  const storage = createStorage({ [CAMERA_STORAGE_KEY]: "usb" });
+  const mediaDevices = createMediaDevices([videoDevice("usb", "USB"), videoDevice("other", "Other")]);
+  const calls = [];
+  let reject = false;
+  mediaDevices.getUserMedia = async ({ video }) => {
+    const stream = createStream(video.deviceId.exact);
+    let settings = { whiteBalanceMode: "continuous", colorTemperature: 0 };
+    stream.track.getSettings = () => settings;
+    stream.track.getCapabilities = () => ({
+      whiteBalanceMode: ["continuous", "manual"],
+      colorTemperature: { min: 0, max: 10000, step: 10 },
+    });
+    stream.track.applyConstraints = async ({ advanced: [value] }) => {
+      if (reject) throw new Error("camera_rejected");
+      calls.push({ device: video.deviceId.exact, ...value });
+      settings = { ...settings, ...value };
+    };
+    return stream;
+  };
+  const controller = new CameraController({ mediaDevices, storage });
+  await controller.start();
+  assert.equal(controller.whiteBalanceConfiguration().supported, true);
+  await controller.setWhiteBalance("manual", 4500);
+  assert.equal(controller.whiteBalancePreference().temperature, 4500);
+  await controller.selectDevice("other");
+  assert.equal(controller.whiteBalancePreference().mode, "continuous");
+  await controller.selectDevice("usb");
+  assert.deepEqual(calls.at(-1), { device: "usb", whiteBalanceMode: "manual", colorTemperature: 4500 });
+  controller.destroy();
+  const reloaded = new CameraController({ mediaDevices, storage });
+  await reloaded.start();
+  assert.deepEqual(calls.at(-1), { device: "usb", whiteBalanceMode: "manual", colorTemperature: 4500 });
+  reject = true;
+  await reloaded.setWhiteBalance("manual", 5000);
+  assert.ok(reloaded.whiteBalanceConfiguration().error);
+  assert.equal(reloaded.whiteBalancePreference().temperature, 4500);
+  assert.equal(reloaded.state, "ready");
+  reject = false;
+  await reloaded.setWhiteBalance("continuous", 4500);
+  assert.deepEqual(calls.at(-1), { device: "usb", whiteBalanceMode: "continuous" });
+  reloaded.destroy();
+}
+
+await provesManualWhiteBalancePersistenceAndRecovery();
 await provesPendingReconnectIsCancelled();
 await provesSameCameraReconnectsWithoutSubstitution();
 await provesBrowserVisibleListAndExplicitPersistedPreview();

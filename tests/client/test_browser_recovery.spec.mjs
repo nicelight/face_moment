@@ -207,7 +207,8 @@ for (const state of ["advertising", "active", "result"]) {
     try {
       launched = await launchProfile(profilePath, { seedManagedConfiguration: true });
       await launched.page.goto(`${ORIGIN}/#advertising`);
-      await expect(launched.page.locator('[data-view="advertising"]')).toBeVisible();
+      await expect(launched.page.locator('[data-view="advertising"]')).toBeAttached();
+      await expect(launched.page.locator('#replay-last-promo')).toBeVisible();
       await expect(launched.page.locator("body")).toHaveAttribute(
         "data-sensor-state",
         "recoverable-error",
@@ -218,7 +219,8 @@ for (const state of ["advertising", "active", "result"]) {
 
       launched = await launchProfile(profilePath);
       await launched.page.goto(`${ORIGIN}/#advertising`);
-      await expect(launched.page.locator('[data-view="advertising"]')).toBeVisible();
+      await expect(launched.page.locator('[data-view="advertising"]')).toBeAttached();
+      await expect(launched.page.locator('#replay-last-promo')).toBeVisible();
       await expect(launched.page.locator("body")).toHaveAttribute(
         "data-sensor-state",
         "recoverable-error",

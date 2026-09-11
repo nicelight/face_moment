@@ -38,9 +38,11 @@ for (const [width, height] of [[1450, 833], [390, 844]]) {
     await expect(page.locator('.kiosk-menu')).not.toHaveAttribute('open');
     const menu = page.getByLabel('Меню', { exact: true });
     await expect(menu).toBeInViewport();
+    await page.screenshot({ path: `/tmp/face-moment-clean-kiosk-${width}x${height}.png` });
     await expect(page.getByRole('link', { name: 'Конфигурация', exact: true })).not.toBeVisible();
     await menu.click();
     await expect(page.getByRole('link', { name: 'Конфигурация', exact: true })).toBeVisible();
+    await page.screenshot({ path: `/tmp/face-moment-kiosk-menu-${width}x${height}.png` });
     await page.keyboard.press('Escape');
     await expect(page.locator('.kiosk-menu')).not.toHaveAttribute('open');
     await expect(menu).toBeFocused();

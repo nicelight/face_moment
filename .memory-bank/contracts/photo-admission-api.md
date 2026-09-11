@@ -142,3 +142,15 @@ messages reflect configured values. Invalid ingest targets use `invalid_target`.
 The uploader displays messages as text beside the rejected file. Non-JSON or
 empty edge 413 responses get a size-limit explanation; other unstructured 422
 responses get a JPEG/SPA/date explanation. Unexpected exceptions remain sanitized.
+
+## Staff date picker
+
+Operator update 2026-09-11: the uploader uses a native calendar date input,
+initially today in server UTC+7. It sends the same ISO `YYYY-MM-DD` visit date;
+no time is added to the date-only domain field. Existing selected-date and EXIF
+interpretation rules still use the configured площадка timezone.
+
+Date-selector format correction (operator, 2026-09-11): every date input on
+this surface displays `dd.mm.yyyy` through validated text with a calendar
+trigger. Calendar selection and manual entry stay synchronized. Transport
+continues using the existing ISO date/UTC timestamp contracts.

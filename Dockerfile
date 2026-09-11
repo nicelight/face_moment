@@ -14,7 +14,8 @@ RUN python -m pip wheel --wheel-dir /wheels .
 
 FROM python:3.11-slim-bookworm AS runtime
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
+ENV TZ=Asia/Novosibirsk \
+    PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     FACE_MOMENT_CLIENT_ROOT=/app/client \

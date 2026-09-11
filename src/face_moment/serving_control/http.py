@@ -9,6 +9,7 @@ from fastapi import Cookie, FastAPI, Header, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 from fastapi.responses import HTMLResponse, JSONResponse
 from face_moment.platform.staff_presentation import staff_document
+from face_moment.platform.staff_datetime import date_picker, staff_today
 from sqlalchemy.orm import Session
 
 from face_moment.platform.auth.sessions import (
@@ -22,6 +23,7 @@ from face_moment.serving_control.active_search_date import (
     ActiveSearchDateSpaNotFoundError,
     list_active_search_date_spas,
     read_active_search_date,
+    rename_spa,
     update_active_search_date,
 )
 from face_moment.serving_control.display_client_admin import (
@@ -105,6 +107,31 @@ def register_display_client_admin_routes(
 def register_active_search_date_routes(
     app: FastAPI, *, session_factory: Callable[[], Session]
 ) -> None:
+    @app.put("/api/serving/spas/{spa_id}/name")
+    def rename_spa_route(
+        spa_id: uuid.UUID, payload: DisplayClientNameRequest,
+        fm_staff_session: str | None = Cookie(default=None),
+        fm_staff_csrf: str | None = Cookie(default=None),
+        x_csrf_token: str | None = Header(default=None),
+    ) -> JSONResponse:
+        with _database_session(session_factory) as database_session:
+            try:
+                name = rename_spa(
+                    database_session, session_token=fm_staff_session,
+                    csrf_cookie_token=fm_staff_csrf, csrf_header_token=x_csrf_token,
+                    spa_id=spa_id, name=payload.name,
+                )
+                database_session.commit()
+            except InvalidSessionError as error:
+                raise HTTPException(status_code=401) from error
+            except (CsrfValidationError, ActiveSearchDateAccessDeniedError) as error:
+                raise HTTPException(status_code=403) from error
+            except ActiveSearchDateSpaNotFoundError as error:
+                raise HTTPException(status_code=404) from error
+            except ValueError as error:
+                raise HTTPException(status_code=422, detail="Название должно содержать от 1 до 255 символов") from error
+        return JSONResponse({"spa_id": str(spa_id), "name": name}, headers={"Cache-Control": "no-store"})
+
     @app.get("/staff/search-settings", response_class=HTMLResponse)
     def active_search_date_page(
         fm_staff_session: str | None = Cookie(default=None),
@@ -283,11 +310,17 @@ def _active_search_date_page_html(spas: Sequence[ActiveSearchDateSpa]) -> str:
         <select id="spa-id" name="spa_id">{options}</select>
       </label>
       <label>Visit date
-        <input id="visit-date" name="visit_date" type="date" required>
+        {date_picker("visit-date", staff_today(), name="visit_date")}
       </label>
       <p>Settings revision: <output id="settings-revision">—</output></p>
       <button type="submit">Save active date</button>
       <output id="status" role="status" aria-live="polite"></output>
+    </form>
+    <form id="spa-name-form">
+      <label for="spa-name">Название площадки</label>
+      <input id="spa-name" name="name" required maxlength="255"{disabled}>
+      <button type="submit"{disabled}>Сохранить название площадки</button>
+      <p id="spa-name-status" role="status" aria-live="polite"></p>
     </form>
   </main>
   <script>
@@ -298,13 +331,46 @@ def _active_search_date_page_html(spas: Sequence[ActiveSearchDateSpa]) -> str:
     const statusOutput = document.querySelector("#status");
     const csrfToken = () => document.cookie.split("; ")
       .find((item) => item.startsWith("fm_staff_csrf="))?.slice("fm_staff_csrf=".length) ?? "";
+    const nameInput = document.querySelector("#spa-name");
+    const nameStatus = document.querySelector("#spa-name-status");
+    function showSpaName() {{
+      nameInput.value = spaId.value ? spaId.selectedOptions[0].textContent : "";
+      nameStatus.textContent = "";
+    }}
+    showSpaName();
+    spaId.addEventListener("change", showSpaName);
+    document.querySelector("#spa-name-form").addEventListener("submit", async (event) => {{
+      event.preventDefault();
+      const selected = spaId.selectedOptions[0];
+      if (!selected) return;
+      const button = event.currentTarget.querySelector("button");
+      button.disabled = true;
+      spaId.disabled = true;
+      try {{
+        const response = await fetch(`/api/serving/spas/${{selected.value}}/name`, {{
+          method: "PUT",
+          headers: {{"Content-Type": "application/json", "X-CSRF-Token": csrfToken()}},
+          body: JSON.stringify({{name: nameInput.value}})
+        }});
+        if (!response.ok) throw new Error("Не удалось сохранить название. Введите от 1 до 255 символов.");
+        const data = await response.json();
+        selected.textContent = data.name;
+        nameInput.value = data.name;
+        nameStatus.textContent = "Название площадки сохранено.";
+      }} catch (error) {{
+        nameStatus.textContent = error.message;
+      }} finally {{
+        button.disabled = false;
+        spaId.disabled = false;
+      }}
+    }});
     async function loadActiveDate() {{
       const response = await fetch(`/api/serving/spas/${{spaId.value}}/active-visit-date`, {{
         headers: {{"Accept": "application/json"}}
       }});
       if (!response.ok) throw new Error(`Unable to load active date (${{response.status}})`);
       const data = await response.json();
-      visitDate.value = data.active_visit_date ?? "";
+      StaffDateTime.setDate(visitDate, data.active_visit_date ?? "{staff_today()}");
       revision.value = data.settings_revision;
     }}
     spaId?.addEventListener("change", () => loadActiveDate().catch((error) => {{ statusOutput.value = error.message; }}));
@@ -313,7 +379,7 @@ def _active_search_date_page_html(spas: Sequence[ActiveSearchDateSpa]) -> str:
       const response = await fetch(`/api/serving/spas/${{spaId.value}}/active-visit-date`, {{
         method: "PUT",
         headers: {{"Content-Type": "application/json", "X-CSRF-Token": csrfToken()}},
-        body: JSON.stringify({{visit_date: visitDate.value}})
+        body: JSON.stringify({{visit_date: StaffDateTime.dateValue(visitDate)}})
       }});
       if (!response.ok) {{ statusOutput.value = `Unable to save active date (${{response.status}})`; return; }}
       const data = await response.json();

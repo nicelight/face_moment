@@ -25,6 +25,16 @@
       </nav>
     </details>
 
+    <dialog id="leave-display-dialog" aria-labelledby="leave-display-message">
+      <form method="dialog">
+        <p id="leave-display-message">уйти глубже в систему face-time и закрыть промо экран?</p>
+        <div class="leave-display-actions">
+          <button type="submit" value="leave" class="leave-display-confirm">Уйти глубже в систему</button>
+          <button type="submit" value="stay" class="leave-display-cancel" autofocus>вернуться на экран</button>
+        </div>
+      </form>
+    </dialog>
+
     <main id="client-view" class="client-view" aria-live="polite"></main>
     <p
       id="communication-notice"

@@ -1,4 +1,5 @@
 export const CAMERA_STORAGE_KEY = "face-moment.camera.device-id";
+export const WHITE_BALANCE_STORAGE_PREFIX = "face-moment.camera.white-balance.";
 
 // The deployment may override this through __FACE_MOMENT_CAMERA_CONFIG__.
 // The fallback is deliberately conservative; the pilot's exact site maximum
@@ -174,6 +175,9 @@ export class CameraController {
     this.state = "idle";
     this.started = false;
     this.selectionRevision = 0;
+    this.whiteBalanceBusy = false;
+    this.whiteBalanceError = "";
+    this.whiteBalancePreferences = new Map();
     this.boundDeviceChange = () => {
       void this.handleDeviceChange();
     };
@@ -197,6 +201,89 @@ export class CameraController {
 
   selectedDevice() {
     return this.devices.find((device) => device.deviceId === this.selectedDeviceId) ?? null;
+  }
+
+  whiteBalancePreference() {
+    if (this.whiteBalancePreferences.has(this.selectedDeviceId)) {
+      return this.whiteBalancePreferences.get(this.selectedDeviceId);
+    }
+    try {
+      const saved = JSON.parse(this.storage?.getItem(
+        WHITE_BALANCE_STORAGE_PREFIX + this.selectedDeviceId,
+      ) ?? "null");
+      if (["manual", "continuous"].includes(saved?.mode) &&
+          Number.isFinite(saved.temperature)) return saved;
+    } catch { /* Missing or damaged local settings use the default. */ }
+    return { mode: "continuous", temperature: 4500 };
+  }
+
+  whiteBalanceConfiguration() {
+    const track = this.stream?.getVideoTracks?.()[0];
+    const capabilities = track?.getCapabilities?.() ?? {};
+    const range = capabilities.colorTemperature;
+    return {
+      ...this.whiteBalancePreference(),
+      range,
+      supported: Boolean(track?.applyConstraints &&
+        capabilities.whiteBalanceMode?.includes("manual") &&
+        capabilities.whiteBalanceMode?.includes("continuous") &&
+        Number.isFinite(range?.min) && Number.isFinite(range?.max)),
+      busy: this.whiteBalanceBusy,
+      error: this.whiteBalanceError,
+    };
+  }
+
+  async applyWhiteBalance(track, preference) {
+    const capabilities = track.getCapabilities?.() ?? {};
+    if (!track.applyConstraints ||
+        !capabilities.whiteBalanceMode?.includes(preference.mode)) {
+      if (preference.mode === "manual") throw new Error("white_balance_unsupported");
+      return;
+    }
+    const constraints = { whiteBalanceMode: preference.mode };
+    if (preference.mode === "manual") {
+      const range = capabilities.colorTemperature;
+      if (!range || preference.temperature < range.min ||
+          preference.temperature > range.max) throw new Error("temperature_out_of_range");
+      constraints.colorTemperature = preference.temperature;
+    }
+    await track.applyConstraints({ advanced: [constraints] });
+    const settings = track.getSettings?.();
+    if (settings?.whiteBalanceMode !== preference.mode ||
+        (preference.mode === "manual" && settings?.colorTemperature !== preference.temperature)) {
+      throw new Error("white_balance_not_applied");
+    }
+  }
+
+  async setWhiteBalance(mode, temperature) {
+    if (this.whiteBalanceBusy || this.state !== "ready") return;
+    const track = this.stream?.getVideoTracks?.()[0];
+    if (!track || !["manual", "continuous"].includes(mode) || !Number.isFinite(temperature)) return;
+    const revision = this.selectionRevision;
+    const deviceId = this.selectedDeviceId;
+    this.whiteBalanceBusy = true;
+    this.whiteBalanceError = "";
+    this.onStateChange(this.snapshot());
+    try {
+      await this.applyWhiteBalance(track, { mode, temperature });
+      if (revision !== this.selectionRevision) return;
+      this.whiteBalancePreferences.set(deviceId, { mode, temperature });
+      try {
+        this.storage?.setItem(WHITE_BALANCE_STORAGE_PREFIX + deviceId,
+          JSON.stringify({ mode, temperature }));
+      } catch {
+        this.whiteBalanceError = "Настройка применена, но браузер не смог её сохранить.";
+      }
+    } catch {
+      if (revision === this.selectionRevision) {
+        this.whiteBalanceError = "Камера не подтвердила настройку баланса белого. Попробуйте снова.";
+      }
+    } finally {
+      if (revision === this.selectionRevision) {
+        this.whiteBalanceBusy = false;
+        this.onStateChange(this.snapshot());
+      }
+    }
   }
 
   snapshot() {
@@ -287,6 +374,8 @@ export class CameraController {
   }
 
   stopPreview() {
+    this.whiteBalanceBusy = false;
+    this.whiteBalanceError = "";
     this.stopStream(this.stream);
     this.stream = null;
     if (this.previewElement) this.previewElement.srcObject = null;
@@ -334,6 +423,17 @@ export class CameraController {
         if (this.stream === stream) this.requireReselection("selected_device_ended");
       });
       this.stream = stream;
+      try {
+        await this.applyWhiteBalance(track, this.whiteBalancePreference());
+      } catch {
+        if (selectionRevision === this.selectionRevision) {
+          this.whiteBalanceError = "Не удалось применить сохранённый баланс белого. Попробуйте задать его снова.";
+        }
+      }
+      if (selectionRevision !== this.selectionRevision) {
+        this.stopStream(stream);
+        return this.snapshot();
+      }
       if (persist) this.persistSelectedDeviceId(requestedId);
       this.setPreviewElement(this.previewElement);
       this.setState("ready", { reason: "explicit_selection" });

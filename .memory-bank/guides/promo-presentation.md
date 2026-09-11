@@ -4,6 +4,17 @@ status: active
 ---
 # Promo presentation
 
+## Guest screen and operator menu
+
+Guest screen: «Ловим моменты», advertising, «Фотки вновь» at bottom right.
+Navigation is in the top-right hamburger, hidden during Promo/editor.
+Configuration has a bright «вернуться на основной экран» button aligned right of the test trigger, with 16px text.
+«Рабочее пространство» asks for confirmation: red «Уйти глубже в систему» opens
+`/staff`; green «вернуться на экран» or Escape stays on the client.
+Rename: «Экраны» → «Название экрана» → «Сохранить название»; reopen client
+Configuration to see the name and last five ID characters. See
+[identity and rename rules](../domains/display-client-access.md#operator-screen-identification-update--2026-09-10).
+
 Accepted by the operator on 2026-09-07. This supersedes the six equal cells,
 animated cursor and growing/breathing QR presentation in IDEA_APP.md.
 
@@ -84,9 +95,11 @@ no real Attempt or physical camera was used for editor QA.
 
 ## Replay and display seconds
 
-Operator addition, 2026-09-10: Advertising provides «Фотки вновь», a transparent
-button fixed at the bottom right, available after a successful display.
-It reloads the same four authorized
+Operator update, 2026-09-11: tapping the advertising screen reopens the latest
+successful display; there is no «Фотки вновь» button. Before the first result,
+taps do nothing. Menu/dialog controls keep their own actions. Enter/Space on
+the focused advertising area also replays. Repeated taps while loading or
+showing Promo do not restart it. Replay reloads the same four authorized
 previews and QR, applies the current saved design and returns to advertising
 after a full display interval. Replay does not create a new Attempt, repeat the
 original display acknowledgement or restart capture cooldown. New sensor
@@ -112,7 +125,7 @@ duration and layout controls remain directly accessible.
 
 Validation: 57 client unit checks and all 19 browser tests passed. The new
 `tests/client/test_promo_replay.spec.mjs` exercises the actual app's initial
-disabled button, seconds save/reload, original render/ACK, repeated timed
+inactive advertising taps before any result, seconds save/reload, original render/ACK, repeated timed
 returns to advertising, same four media references/QR/design, no new search
 or duplicate ACK, expired-QR notice and failed-media retry. Camera/detector
 and server responses were isolated fixtures; no real Attempt was created.
