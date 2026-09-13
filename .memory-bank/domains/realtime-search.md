@@ -13,7 +13,7 @@ This specification owns the `processing` part of one admitted automatic
 reference search: immutable context consumption, server-authoritative proposal
 selection, native query preparation and exact compatible Photo search.
 
-`serving_control` owns active date and search settings, `inventory` owns Photo
+`serving_control` owns per-СПА date mode/range and search settings, `inventory` owns Photo
 identity/visibility, and `promo` owns the inference-slot orchestration,
 candidate union, teaser selection, `N`, core Attempt and result session.
 `processing` returns typed search observations through its application
@@ -23,8 +23,30 @@ query preparation or search rules.
 
 ## Active-Search Context Persistence
 
-The `serving_control`-owned persistence extends `face_moment.spas` with nullable
-`active_visit_date`, positive `settings_revision` and `settings_updated_at`.
+Operator decision 2026-09-11 replaces mandatory manual single-day selection
+with per-СПА automatic today or a manual inclusive range, edited in «Площадки».
+Implemented directly on operator instruction, without a new planning workflow.
+The current code preserves the existing start-date field and adds one range end.
+
+`serving_control` owns `search_today` and manual `active_visit_date`/
+`active_visit_date_to` on the СПА,
+plus positive `settings_revision` and `settings_updated_at`. Automatic mode
+resolves today's calendar date from server time in the СПА timezone on every
+new admission; the current pilot timezone is UTC+7. No daily database update,
+cron job or browser clock is needed. Both resolved bounds equal today. Manual
+mode requires two valid dates with From <= To, includes both endpoints, and
+permits a one-day range. An invalid update must leave the saved setting intact.
+Each площадка saves its own settings independently; operator and developer may
+edit them. Automatic mode disables manual date inputs. Returning to manual
+mode should reuse saved manual values. New площадки default to automatic today.
+
+The additive migration enables automatic mode for existing площадки and copies
+their old manual day to both saved bounds for switching back. It increments the
+settings revision once. Historical Attempts/results are not rewritten: a null
+`visit_date_to` means the existing `visit_date` is both bounds. New Attempts and
+sessions persist both bounds. The local shared runtime is upgraded separately
+from code editing, to avoid disrupting concurrent gallery work.
+
 One `face_moment.reference_search_settings` row per
 `(spa_id, pipeline_code, query_source)` stores the threshold,
 `min_query_face_quality`, bounded JSON quality settings, nullable
@@ -38,9 +60,8 @@ and persistent local setting use this value. Existing Attempts retain their
 admitted historical threshold. Other pipeline settings remain explicit.
 The
 active-date staff API is defined by the
-[Boundary Map](../contracts/boundary-map.md#active-search-date). No automatic
-date rollover, automatic threshold change, settings history or generic
-configuration platform is introduced.
+[Boundary Map](../contracts/boundary-map.md#active-search-date). Automatic day rollover is computed at admission; no automatic threshold
+change, settings history or generic configuration platform is introduced.
 
 Migration and repository proof for this owner state uses a uniquely named
 task-owned disposable PostgreSQL database and removes it after the round-trip;
@@ -55,7 +76,7 @@ the owner stores above and the accepted serving revision:
 |---|---|
 | `settings_revision` | Positive owner revision copied into the core Attempt. |
 | `spa_id` | Authoritative UUID from the authenticated display-client principal. |
-| `visit_date` | Nullable owner setting before readiness; required for an admitted search and never supplied by the client. |
+| `visit_date` (inclusive start), `visit_date_to` | Required immutable inclusive bounds resolved from automatic today or the saved manual range; never supplied by the client. |
 | `pipeline_revision_id`, `pipeline_code` | One validated selected serving revision. |
 | `query_source` | Exactly `reference`. |
 | `reference_threshold` | Finite configured cosine-similarity threshold for `(spa_id, pipeline_code, reference)`. |
@@ -63,7 +84,7 @@ the owner stores above and the accepted serving revision:
 | `calibration_id` | Nullable accepted Calibration provenance. |
 | `release_id` | Current server release identity. |
 
-If the active date or another required context value is absent, serving
+If the manual date range is invalid or another required context value is absent, serving
 readiness is closed: the realtime boundary returns `503` before `promo`
 admission, performs no query preparation/search and creates no core Attempt or
 session. A bounded operational event may name the missing field but contains no
@@ -126,7 +147,8 @@ Each accepted selected detection runs one exact pgvector cosine search. Before
 distance comparison, the query filters to:
 
 - the immutable `pipeline_revision_id`;
-- authoritative token-bound `spa_id` and owner-selected `visit_date`;
+- authoritative token-bound `spa_id` and Photo `visit_date` between the
+  immutable `visit_date` and `visit_date_to`, inclusive;
 - active Photos only;
 - complete `ready` state with ready private preview for that same revision;
 - the optional confirmed capture-time window, when one is explicitly present.
@@ -178,6 +200,15 @@ It does not contain a session, global candidate union, selected teaser set,
   queue.
 
 ## Verification Targets
+
+- Automatic mode crosses local midnight without saving settings again; UTC and
+  СПА calendar dates may differ. One in-flight attempt retains its frozen bounds.
+- Two площадки retain independent modes/ranges. Manual endpoints are inclusive;
+  equal dates select one day; reversed or missing bounds cannot be saved.
+- UI switches enable/disable From/To correctly; saving survives reload; the
+  standalone settings menu is removed and the old page routes to «Площадки».
+- Search diagnostics, result union, Attempt and QR session retain the actual
+  resolved range; a historical one-day result still reads as one day.
 
 - Mixed revision, СПА, date, visibility, readiness and optional-time fixtures
   prove all scope filters occur before exact distance comparison and that an

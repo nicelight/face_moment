@@ -1,0 +1,69 @@
+- generic [active] [ref=e1]:
+  - link "К содержимому" [ref=e2] [cursor=pointer]:
+    - /url: "#staff-content"
+  - banner [ref=e3]:
+    - link "Face Moment — главная" [ref=e4] [cursor=pointer]:
+      - /url: /staff
+      - generic [ref=e6]: facemoment
+    - generic [ref=e7]: Рабочее пространство
+    - navigation "Рабочее пространство" [ref=e8]:
+      - link "Главная" [ref=e9] [cursor=pointer]:
+        - /url: /staff
+      - link "Библиотека" [ref=e10] [cursor=pointer]:
+        - /url: /staff/photo-inventory
+      - link "Обработка" [ref=e11] [cursor=pointer]:
+        - /url: /staff/processing-health
+      - link "Экраны" [ref=e12] [cursor=pointer]:
+        - /url: /staff/display-clients
+      - link "Площадки" [ref=e13] [cursor=pointer]:
+        - /url: /staff/spas
+      - link "История поиска" [ref=e14] [cursor=pointer]:
+        - /url: /staff/attempts
+      - link "События сервера" [ref=e15] [cursor=pointer]:
+        - /url: /staff/server-events
+      - link "Калибровка" [ref=e16] [cursor=pointer]:
+        - /url: /staff/calibrations
+      - link "Хранение диагностики" [ref=e17] [cursor=pointer]:
+        - /url: /staff/diagnostics-retention
+      - link "Открыть экран ↗" [ref=e18] [cursor=pointer]:
+        - /url: /display
+      - link "На сайт ↗" [ref=e19] [cursor=pointer]:
+        - /url: /site
+      - group [ref=e20]:
+        - generic "Меню аккаунта" [ref=e21] [cursor=pointer]:
+          - generic "task115-developer-2c43ae2ccef444fb8984f5905f7840a3" [ref=e22]
+          - text: ⌄
+  - main [ref=e23]:
+    - generic [ref=e24]:
+      - paragraph [ref=e25]: Рабочее пространство
+      - heading "Библиотека фотографий" [level=1] [ref=e26]
+      - paragraph [ref=e27]: Свежие поступления, результаты обработки и управление скрытыми фотографиями.
+    - region "Медиа площадок" [ref=e28]:
+      - generic [ref=e29]:
+        - strong [ref=e30]: Аква · Тестовая площадка
+        - link "Медиа ↗" [ref=e31] [cursor=pointer]:
+          - /url: /staff/venue-media?spa_id=0cd1e49e-1908-47c0-bcb9-1360eb8f6426
+    - generic [ref=e32]:
+      - generic [ref=e33]: Площадка
+      - combobox "Площадка" [ref=e34]:
+        - option "Аква · Тестовая площадка" [selected]
+      - button "Обновить статистику" [ref=e35] [cursor=pointer]
+    - alert [ref=e36]: "Обновлено: 12.09.2026 02:04:27"
+    - region "Recent photo statistics" [ref=e37]:
+      - heading "Последние поступления" [level=2] [ref=e38]
+      - list [ref=e39]:
+        - listitem [ref=e40]: "1 minutes: new 4, unprocessed 1, processed 3, failed 0"
+        - listitem [ref=e41]: "5 minutes: new 4, unprocessed 1, processed 3, failed 0"
+        - listitem [ref=e42]: "60 minutes: new 4, unprocessed 1, processed 3, failed 0"
+    - region "Управление скрытыми фото" [ref=e43]:
+      - heading "Скрытые фотографии проекта" [level=2] [ref=e44]
+      - generic [ref=e45]:
+        - button "Восстановить все скрытые фото" [ref=e46] [cursor=pointer]
+        - button "Удалить все скрытые фото навсегда" [ref=e47] [cursor=pointer]
+      - status
+      - alert
+  - contentinfo [ref=e48]:
+    - generic [ref=e49]: © Face Moment · Моменты, которые остаются
+    - generic [ref=e50]: "Время: UTC+7"
+    - link "Перейти на сайт ↗" [ref=e51] [cursor=pointer]:
+      - /url: /site

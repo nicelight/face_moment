@@ -76,6 +76,7 @@ class PromoSession(Base):
     attempt_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
     spa_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
     visit_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    visit_date_to: Mapped[date | None] = mapped_column(Date, nullable=True)
     session_result_photo_ids: Mapped[list[uuid.UUID]] = mapped_column(
         ARRAY(Uuid(as_uuid=True)), nullable=False
     )
@@ -188,6 +189,7 @@ class PromoSessionRepository:
             attempt_id=attempt.id,
             spa_id=attempt.spa_id,
             visit_date=attempt.visit_date,
+            visit_date_to=attempt.visit_date_to or attempt.visit_date,
             session_result_photo_ids=list(assembly.session_result_photo_ids),
             teaser_photo_ids=list(assembly.teaser_photo_ids),
             n=assembly.n,

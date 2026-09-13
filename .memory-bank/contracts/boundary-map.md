@@ -45,6 +45,7 @@ contract.
 | `inventory` | `serving_control` | [Independent Photo admission](#independent-photo-admission) |
 | `inventory` | `processing` | [Independent Photo admission](#independent-photo-admission) |
 | `inventory` | `processing` | [Processing status projections](#processing-status-projections) |
+| `inventory` | `processing` | [Staff inventory media reads](#staff-inventory-media-reads) |
 | `processing` | `inventory` | [Processing input projections](#processing-input-projections) |
 | `processing` | `serving_control` | [Processing input projections](#processing-input-projections) |
 | `serving_control` | `staff_access` | [Active search date](#active-search-date) |
@@ -72,7 +73,7 @@ contracts remain in their registered subject specifications.
 
 | Module | Public application boundary | Owned mutable state and transitions | Forbidden ownership |
 |---|---|---|---|
-| `serving_control` | Read immutable `ServingContext`/`IngestTarget`; apply audited manual setting and serving-revision changes; administer and reveal current display-client credentials to authorized Admins. | СПА/timezone, active `visit_date`, pipeline/settings revision, display-token value/lifecycle and change audit. | Photos, processing results, Attempts, sessions, evidence or Calibration recommendations. |
+| `serving_control` | Read immutable `ServingContext`/`IngestTarget`; apply audited manual setting and serving-revision changes; administer and reveal current display-client credentials to authorized Admins. | СПА/timezone, automatic-today/manual search range, pipeline/settings revision, display-token value/lifecycle and change audit. | Photos, processing results, Attempts, sessions, evidence or Calibration recommendations. |
 | `inventory` | Admit one JPEG; query authorized Photos; soft-delete/restore; restore-all; start/read one global hard purge; read recent per-СПА counters and primary-storage capacity. | Photo identity, uploader, authoritative date, effective capture time, accepted time, original reference, visibility, authorization and purge progress. | Pipeline transition rules, embeddings, Promo integrity, core Attempts or evidence retention. |
 | `processing` | Create initial `pending`; report readiness; validate a pipeline revision; process Photo; exact compatible search; offline evaluate; clean Photo-derived state on purge. | Pipeline catalog, processing state, derivatives/faces/embeddings, quality gates, exact search, validation and evaluation. | Photo admission/visibility, live setting mutation, Promo Attempt/session assembly or evidence retention. |
 | `promo` | Execute a fresh attempt; accept display outcome; exchange/read QR continuation; skip unavailable hard-purged media; run/read retention cleanup. | Core Attempt, result/session, candidate union, teasers, `N`, QR/browser access and latest retention result. | Photo, processing or settings writes and detailed diagnostic evidence. |
@@ -141,41 +142,51 @@ assembled by `inventory`, not another module edge or shared business owner.
 
 ### Active search date
 
-`serving_control` owns the operator-selected active `visit_date` used by
-automatic reference search. It authenticates through the existing
-`staff_access` principal and authorizes the setting inside `serving_control`;
-transport, `staff_access`, `promo` and `processing` MUST NOT write the value.
+`serving_control` owns each площадка's exit-camera search mode and manual
+inclusive From/To range. The operator decision in PRD FR-SRCH-06 (2026-09-11)
+supersedes the old mandatory single active date. Authentication uses the existing
+`staff_access` principal; only `serving_control` writes these settings.
 
 #### Staff active-date surface
 
-The minimum same-origin staff surface is:
+`GET /staff/spas` contains independent settings on each площадка card:
+«Камера на выходе ищет фото за сегодня», and disabled-unless-manual «С»/«По»
+date pickers. Operator and developer can read and save each card. The standalone
+«Настройки поиска» navigation item is removed; `/staff/search-settings` routes
+to `/staff/spas` so existing links remain usable.
 
-- `GET /staff/search-settings`: operator/developer settings page; the native date
-  picker preserves a saved date, or defaults to today in UTC+7 when none is set
-  (operator update 2026-09-11);
-- `GET /api/serving/spas/{spa_id}/active-visit-date`: return `200`
-  `application/json` with exactly `schema_version: 1`, UUID `spa_id`, nullable
-  ISO `YYYY-MM-DD` `active_visit_date`, positive integer `settings_revision`
-  and nullable UTC `updated_at`;
-- `PUT /api/serving/spas/{spa_id}/active-visit-date`: accept exactly one JSON
-  field, `{"visit_date":"YYYY-MM-DD"}`, require the existing matching
-  `fm_staff_csrf` cookie and `X-CSRF-Token`, update the active date and
-  increment the settings revision atomically, then return `200` with the same
-  response shape and the new date/revision/time.
+`GET|PUT /api/serving/spas/{spa_id}/search-dates` uses JSON schema version 1.
+PUT accepts `search_today` (strict boolean) and optional ISO calendar dates
+`date_from`/`date_to`. Manual mode requires both with From <= To. Automatic
+mode may omit both and preserves the previous saved manual range. Unknown
+fields, partial pairs and reversed ranges are rejected. The response contains
+`schema_version`, `spa_id`, `search_today`, saved nullable `date_from`/`date_to`,
+`timezone`, current server-resolved venue `today`, `settings_revision` and UTC
+`updated_at`. Reads and writes use `Cache-Control: no-store`.
 
-An active operator or developer may read/change the one-СПА pilot value. Missing/invalid/
-revoked authentication returns `401`; wrong role, inaccessible СПА or missing/
-mismatched CSRF on `PUT` returns `403`; unknown СПА returns `404`; invalid JSON,
-unknown fields or an invalid calendar date returns `422`. The surface uses the
-existing HTTPS-only staff session and adds no settings framework, date history,
-automatic rollover or client override.
+Updating mode/range and incrementing revision is atomic. The owner resolves
+effective inclusive bounds for every new Attempt through
+[Realtime Reference Search](../domains/realtime-search.md#active-search-context-persistence).
+
+Existing HTTPS staff sessions, operator/developer authorization and matching
+`fm_staff_csrf` cookie/`X-CSRF-Token` on writes remain mandatory. Missing or
+invalid authentication returns `401`; wrong role, inaccessible площадка or
+invalid CSRF returns `403`; unknown площадка returns `404`; malformed fields or
+invalid manual bounds return `422` without changing the saved setting. All
+resulting routes must pass the real HTTPS edge, not only direct ASGI tests.
+
+The old `/api/serving/spas/{spa_id}/active-visit-date` endpoint remains a legacy
+manual-day interface for existing tools: GET reads the saved manual start, and
+PUT explicitly selects manual mode and sets both bounds to the supplied day.
+The staff UI uses the range endpoint. No second settings store is introduced.
 
 #### Staff площадка names
 
 Operator correction 2026-09-11: `GET /staff/spas` is the separate площадка
-list and name-editing page for active operators and developers. Each active
-площадка has its own rename form. `/staff/search-settings` retains only search
-date settings and is also accessible to both roles. `serving_control` owns
+list and name-editing page for active operators and developers. Both this
+page and `/api/serving/spas/*/name` must be forwarded unchanged by the HTTPS
+edge to backend; empty unmatched proxy responses are not a successful page. Each active
+площадка has its own rename form and the search controls defined above. `serving_control` owns
 `PUT /api/serving/spas/{spa_id}/name`, accepting exactly `{"name":"…"}` and
 returning `200` with `spa_id` and normalized `name`, `Cache-Control: no-store`.
 Existing session, operator/developer role and CSRF checks apply; missing authentication
@@ -522,3 +533,21 @@ Date-selector format correction (operator, 2026-09-11): every date input on
 this surface displays `dd.mm.yyyy` through validated text with a calendar
 trigger. Calendar selection and manual entry stay synchronized. Transport
 continues using the existing ISO date/UTC timestamp contracts.
+
+## Staff inventory media reads
+
+`inventory -> processing` extends the existing read edge with persisted
+admission-revision thumbnail availability and processing status for authorized
+staff media browsing. Processing owns its derivative references; inventory owns
+Photo selection, authorization and original references. Infrastructure reads
+private bytes after authorization. See [Staff Venue Media](photo-inventory-api.md#staff-venue-media).
+No module, worker lifecycle, public Promo/QR delivery or Foundation change.
+
+The owner-local read takes Photo IDs with their immutable admission revision
+IDs and returns, per matching pair, only nullable `thumbnail_object_key` and
+`status`. An absent admission row returns null values; later revision rows
+never substitute for it. The object key remains an internal infrastructure
+reference and MUST NOT enter browser payloads or errors. The call performs no
+state transition, inference, object write or on-demand derivative generation.
+Verify admission-lineage selection with two revisions and an absent row;
+staff authorization and byte delivery are verified through the inventory API.

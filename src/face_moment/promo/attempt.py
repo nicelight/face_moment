@@ -125,6 +125,7 @@ class PromoAttempt(Base):
     proposal_count: Mapped[int] = mapped_column(Integer, nullable=False)
     settings_revision: Mapped[int] = mapped_column(Integer, nullable=False)
     visit_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    visit_date_to: Mapped[date | None] = mapped_column(Date, nullable=True)
     pipeline_revision_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), nullable=False
     )
@@ -219,6 +220,7 @@ class PromoAttemptRepository:
         release_id: str,
         deadline_ms: int,
         calibration_id: uuid.UUID | None = None,
+        visit_date_to: date | None = None,
     ) -> PromoAttempt:
         attempt, _ = self.create_or_get_with_admission(
             spa_id=spa_id,
@@ -235,6 +237,7 @@ class PromoAttemptRepository:
             proposal_count=proposal_count,
             settings_revision=settings_revision,
             visit_date=visit_date,
+            visit_date_to=visit_date_to,
             pipeline_revision_id=pipeline_revision_id,
             pipeline_code=pipeline_code,
             query_source=query_source,
@@ -659,8 +662,15 @@ class PromoAttemptRepository:
         if not isinstance(reference_series_ready_at, datetime) or reference_series_ready_at.tzinfo is None:
             raise ValueError("reference_series_ready_at must be timezone-aware")
         visit_date = values["visit_date"]
-        if isinstance(visit_date, datetime):
+        if visit_date is not None and (not isinstance(visit_date, date) or isinstance(visit_date, datetime)):
             raise ValueError("visit_date must be a date or None")
+        visit_date_to = values.get("visit_date_to") or visit_date
+        if visit_date_to is not None and (
+            not isinstance(visit_date_to, date) or isinstance(visit_date_to, datetime)
+            or visit_date is None or visit_date_to < visit_date
+        ):
+            raise ValueError("invalid search date range")
+        values["visit_date_to"] = visit_date_to
         threshold = values["threshold"]
         if not isinstance(threshold, (int, float)) or isinstance(threshold, bool) or not math.isfinite(float(threshold)):
             raise ValueError("threshold must be finite")

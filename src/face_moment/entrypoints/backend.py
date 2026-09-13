@@ -23,6 +23,7 @@ from face_moment.diagnostics.calibration_http import register_calibration_routes
 from face_moment.entrypoints.common import create_role_app, run, server_event_lifecycle
 from face_moment.infrastructure.settings import Settings
 from face_moment.inventory.http import register_ingest_target_routes
+from face_moment.inventory.staff_media_http import register_staff_media_routes
 from face_moment.platform.auth.http import register_staff_session_routes
 from face_moment.promo.http import (
     register_diagnostic_retention_routes,
@@ -81,6 +82,7 @@ def create_app() -> FastAPI:
     register_calibration_routes(app, session_factory=session_factory)
     register_server_event_search_routes(app, session_factory=session_factory)
     register_ingest_target_routes(app, session_factory=session_factory)
+    register_staff_media_routes(app, session_factory=session_factory)
     register_display_client_admin_routes(app, session_factory=session_factory)
     register_active_search_date_routes(app, session_factory=session_factory)
     register_promo_display_routes(app, session_factory=session_factory)

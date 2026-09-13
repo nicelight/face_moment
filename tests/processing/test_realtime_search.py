@@ -446,3 +446,28 @@ def test_rejected_best_score_is_observed_without_admitting_or_loading_photo(
         assert empty.matches == ()
         assert empty.best_cosine_similarity is None
         assert empty.eligible_photo_count == 0
+
+
+def test_manual_search_range_includes_both_endpoints_and_excludes_other_days(disposable_realtime_search: _Fixture) -> None:
+    fixture = disposable_realtime_search
+    with Session(fixture.engine) as session:
+        added = {}
+        for day in (20, 23, 24):
+            added[day], _ = _add_photo(
+                session, marker=f"range-{day}", spa_id=fixture.spa_id,
+                revision_id=fixture.revision.id, embedding=_embedding(1.0, 0.0),
+                prefix=fixture.prefix, visit_date=date(2026, 8, day),
+            )
+        session.flush()
+        result = ExactCompatibleSearchRepository(session).search_with_diagnostics(
+            spa_id=fixture.spa_id, visit_date=date(2026, 8, 21), visit_date_to=date(2026, 8, 23),
+            pipeline_revision_id=fixture.revision.id, query_embedding=_embedding(1.0, 0.0),
+            reference_threshold=0.75,
+        )
+        ids = {match.photo_id for match in result.matches}
+        assert len(ids) == result.eligible_photo_count == 4
+        assert {fixture.eligible_photo_id, fixture.second_photo_id, added[23]} <= ids
+        assert not {added[20], added[24]} & ids
+        assert {session.get(Photo, photo_id).visit_date for photo_id in ids} == {
+            date(2026, 8, 21), date(2026, 8, 22), date(2026, 8, 23),
+        }

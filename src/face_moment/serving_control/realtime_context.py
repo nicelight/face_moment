@@ -9,6 +9,7 @@ import math
 from types import MappingProxyType
 from typing import cast
 import uuid
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy import (
     CheckConstraint,
@@ -123,6 +124,8 @@ class RealtimeContext:
     quality_settings: Mapping[str, object]
     calibration_id: uuid.UUID | None
     release_id: str
+    # visit_date remains the inclusive start; omitted end means one day.
+    visit_date_to: date | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -256,7 +259,37 @@ class RealtimeContextRepository:
             raise ValueError("active_visit_date must be a date or None")
         normalized_updated_at = self._utc(now)
         spa.active_visit_date = active_visit_date
+        spa.active_visit_date_to = active_visit_date
+        spa.search_today = False
         self._touch_spa(spa, normalized_updated_at)
+        self._session.flush()
+        return spa
+
+    def update_search_dates(
+        self, *, spa_id: uuid.UUID, search_today: bool,
+        date_from: date | None, date_to: date | None,
+        now: datetime | None = None,
+    ) -> Spa:
+        """Save one площадка's mode and manual dates in the same owner revision."""
+        if not isinstance(search_today, bool):
+            raise ValueError("search_today must be a boolean")
+        for value in (date_from, date_to):
+            if value is not None and (not isinstance(value, date) or isinstance(value, datetime)):
+                raise ValueError("search dates must be calendar dates")
+        if (date_from is None) != (date_to is None):
+            raise ValueError("both search dates are required")
+        if date_from is not None and date_to is not None and date_from > date_to:
+            raise ValueError("search range is reversed")
+        if not search_today and date_from is None:
+            raise ValueError("manual search requires both dates")
+        timestamp = self._utc(now)
+        spa = self._load_spa(spa_id, for_update=True)
+        spa.search_today = search_today
+        # An automatic-mode save need not discard the remembered manual range.
+        if date_from is not None:
+            spa.active_visit_date = date_from
+            spa.active_visit_date_to = date_to
+        self._touch_spa(spa, timestamp)
         self._session.flush()
         return spa
 
@@ -431,6 +464,7 @@ class RealtimeContextRepository:
         spa_id: uuid.UUID,
         admitted_pipeline_revision_id: uuid.UUID | None,
         release_id: str,
+        now: datetime | None = None,
     ) -> RealtimeContext:
         """Resolve the complete owner snapshot before realtime admission.
 
@@ -449,7 +483,12 @@ class RealtimeContextRepository:
         missing_fields: list[str] = []
         if spa.settings_revision <= 0:
             missing_fields.append("settings_revision")
-        if spa.active_visit_date is None:
+        visit_date: date | None
+        visit_date_to: date | None
+        try:
+            visit_date, visit_date_to = resolve_search_dates(spa, now=self._utc(now))
+        except ValueError:
+            visit_date = visit_date_to = None
             missing_fields.append("visit_date")
 
         try:
@@ -501,7 +540,7 @@ class RealtimeContextRepository:
         except ValueError as error:
             raise RealtimeReadinessClosedError((str(error).split(" ", 1)[0],)) from None
 
-        if spa.active_visit_date is None:
+        if visit_date is None:
             raise RealtimeReadinessClosedError(("visit_date",))
 
         frozen_quality_settings = cast(
@@ -510,7 +549,8 @@ class RealtimeContextRepository:
         return RealtimeContext(
             settings_revision=spa.settings_revision,
             spa_id=spa.id,
-            visit_date=spa.active_visit_date,
+            visit_date=visit_date,
+            visit_date_to=visit_date_to,
             pipeline_revision_id=revision.id,
             pipeline_code=revision.pipeline_code,
             query_source=QuerySource.REFERENCE,
@@ -591,6 +631,20 @@ class RealtimeContextRepository:
     def _touch_spa(spa: Spa, now: datetime | None) -> None:
         spa.settings_revision += 1
         spa.settings_updated_at = RealtimeContextRepository._utc(now)
+
+
+def resolve_search_dates(spa: Spa, *, now: datetime | None = None) -> tuple[date, date]:
+    """Resolve once per admission, using the venue timezone rather than the client."""
+    if spa.search_today:
+        try:
+            today = RealtimeContextRepository._utc(now).astimezone(ZoneInfo(spa.timezone)).date()
+        except (ZoneInfoNotFoundError, ValueError) as error:
+            raise ValueError("invalid SPA timezone") from error
+        return today, today
+    start, end = spa.active_visit_date, spa.active_visit_date_to
+    if start is None or end is None or start > end:
+        raise ValueError("invalid manual search range")
+    return start, end
 
 
 def _freeze_json(value: object) -> object:

@@ -780,3 +780,26 @@ def test_live_caddy_serves_spa_page_and_name_mutation(live_edge: _LiveEdge) -> N
         assert renamed.status == 200
         assert json.loads(renamed.body)["name"] == "Pool"
         assert b'Pool' in _request(live_edge.base_url, page_path, cookies=cookies).body
+
+
+def test_live_caddy_search_dates_save_and_reload(live_edge: _LiveEdge) -> None:
+    path = f"/api/serving/spas/{live_edge.spa_id}/search-dates"
+    assert _request(live_edge.base_url, path).status == 401
+    cookies = live_edge.cookies["developer"]
+    headers = {"Content-Type": "application/json", "X-CSRF-Token": cookies["fm_staff_csrf"]}
+    body = json.dumps({"search_today": False, "date_from": "2026-09-09", "date_to": "2026-09-11"}).encode()
+    assert _request(live_edge.base_url, path, method="PUT", cookies=cookies,
+                    headers={"Content-Type": "application/json"}, data=body).status == 403
+    saved = _request(live_edge.base_url, path, method="PUT", cookies=cookies, headers=headers, data=body)
+    assert saved.status == 200
+    assert json.loads(saved.body)["date_to"] == "2026-09-11"
+    reread = _request(live_edge.base_url, path, cookies=cookies)
+    assert json.loads(reread.body) == json.loads(saved.body)
+    page = _request(live_edge.base_url, "/staff/spas", cookies=cookies)
+    assert page.status == 200 and b'data-spa-search' in page.body
+    assert b'value="09.09.2026"' in page.body and b'value="11.09.2026"' in page.body
+    assert b'name="search_today" checked' not in page.body
+    assert b'href="/staff/search-settings"' not in page.body
+    assert _request(live_edge.base_url, path, method="PUT", cookies=cookies, headers=headers,
+                    data=b'{"search_today":true}').status == 200
+    assert b'name="search_today" checked' in _request(live_edge.base_url, "/staff/spas", cookies=cookies).body

@@ -209,7 +209,7 @@ and [.memory-bank/prd.md](../prd.md) `FR-CAP-01..17`, `FR-UX-01..09`.
 
 ## Promo, QR, And Browser Session
 
-- Issuing a Promo result binds СПА, authoritative `visit_date`, four teaser IDs,
+- Issuing a Promo result binds СПА, immutable inclusive search-date bounds, four teaser IDs,
   `session_result_photo_ids`, `N`, QR expiry context, and one session-wide
   browser access state without per-device grant records.
 - Result-display expiry returns the display to advertising without expiring the

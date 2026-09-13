@@ -486,7 +486,6 @@ def test_missing_owner_value_or_model_admission_closes_realtime_with_503(
 
         assert error.value.status_code == 503
         assert error.value.missing_fields == (
-            "visit_date",
             "reference_search_settings",
             "model_admission",
         )
@@ -529,3 +528,58 @@ def test_client_cannot_supply_context_overrides_or_a_different_model_revision(
         assert error.value.missing_fields == ("model_revision",)
     finally:
         _cleanup(disposable_context_engine, spa_id, revision_id)
+
+
+def test_automatic_search_rolls_over_in_spa_timezone_and_freezes_each_attempt(disposable_context_engine: Engine) -> None:
+    from face_moment.serving_control.ingest_target import Spa
+    spa_id, revision_id = _create_spa(disposable_context_engine)
+    _prepare_complete_realtime_context(disposable_context_engine, spa_id)
+    with Session(disposable_context_engine) as session:
+        spa = session.get(Spa, spa_id)
+        spa.timezone = "Asia/Novosibirsk"
+        repository = RealtimeContextRepository(session)
+        repository.update_search_dates(spa_id=spa_id, search_today=True, date_from=None, date_to=None)
+        session.commit()
+    with Session(disposable_context_engine) as session:
+        repository = RealtimeContextRepository(session)
+        before = repository.resolve_realtime_context(
+            spa_id=spa_id, admitted_pipeline_revision_id=revision_id, release_id="test",
+            now=datetime(2026, 9, 11, 16, 59, 59, tzinfo=timezone.utc),
+        )
+        after = repository.resolve_realtime_context(
+            spa_id=spa_id, admitted_pipeline_revision_id=revision_id, release_id="test",
+            now=datetime(2026, 9, 11, 17, 0, tzinfo=timezone.utc),
+        )
+        assert before.visit_date == before.visit_date_to == date(2026, 9, 11)
+        assert after.visit_date == after.visit_date_to == date(2026, 9, 12)
+        assert before.settings_revision == after.settings_revision
+        repository.update_search_dates(spa_id=spa_id, search_today=False,
+                                       date_from=date(2026, 9, 8), date_to=date(2026, 9, 10))
+        manual = repository.resolve_realtime_context(
+            spa_id=spa_id, admitted_pipeline_revision_id=revision_id, release_id="test",
+            now=datetime(2026, 9, 12, tzinfo=timezone.utc),
+        )
+        assert (manual.visit_date, manual.visit_date_to) == (date(2026, 9, 8), date(2026, 9, 10))
+        assert after.visit_date == after.visit_date_to == date(2026, 9, 12)
+        session.rollback()
+    _cleanup(disposable_context_engine, spa_id, revision_id)
+
+
+def test_search_range_migration_preserves_previous_manual_day(disposable_context_engine: Engine) -> None:
+    spa_id, revision_id = _create_spa(disposable_context_engine)
+    with Session(disposable_context_engine) as session:
+        spa = RealtimeContextRepository(session).update_active_visit_date(
+            spa_id=spa_id, active_visit_date=date(2026, 9, 9),
+        )
+        previous_revision = spa.settings_revision
+        session.commit()
+    config = Config("alembic.ini")
+    alembic_command.downgrade(config, "0022_inventory_hard_purge_run")
+    alembic_command.upgrade(config, "head")
+    from face_moment.serving_control.ingest_target import Spa
+    with Session(disposable_context_engine) as session:
+        spa = session.get(Spa, spa_id)
+        assert spa.search_today is True
+        assert spa.active_visit_date == spa.active_visit_date_to == date(2026, 9, 9)
+        assert spa.settings_revision == previous_revision + 1
+    _cleanup(disposable_context_engine, spa_id, revision_id)

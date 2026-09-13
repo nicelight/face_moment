@@ -1,0 +1,121 @@
+{
+  "id": "TASK-119-T3-FT-012-W3",
+  "title": "Browse private staff venue media from Library",
+  "status": "done",
+  "wave": "W3",
+  "feature": "FT-012",
+  "tier": "T3",
+  "reqs": [
+    "REQ-INV-001",
+    "REQ-INV-002"
+  ],
+  "depends_on": [
+    "TASK-107-T3-FT-012-W2",
+    "TASK-021-T3-FT-002-W2"
+  ],
+  "purpose": "Let staff inspect uploaded venue Photos with useful metadata and originals and remove an unwanted row through existing soft deletion.",
+  "success_outcome": "Library opens an authorized venue/date media table; thumbnails or truthful placeholders link to native originals, metadata is safe and per-row soft deletion respects current ownership and CSRF.",
+  "touched_files": [
+    "src/face_moment/inventory/staff_media.py",
+    "src/face_moment/inventory/staff_media_http.py",
+    "src/face_moment/processing/staff_media_projection.py",
+    "src/face_moment/inventory/http.py",
+    "src/face_moment/entrypoints/backend.py",
+    "client/staff-media.js",
+    "deploy/Caddyfile",
+    "tests/inventory/test_staff_media_api.py",
+    "tests/inventory/test_staff_media_ui.py"
+  ],
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Staff media and existing visibility tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/inventory/test_staff_media_api.py tests/inventory/test_staff_media_ui.py tests/inventory/test_photo_inventory_api.py",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    }
+  ],
+  "verify": [
+    "2026-09-12 independent /verify: PASS for FT-012-AC-008 and REQ-INV-001/002 integration; 10 focused tests, 1 additional CLI/calendar flow, verifier-owned persisted-state/bytes probes, mypy100 and mb-lint116 passed. Evidence: .protocols/TASK-119-T3-FT-012-W3/verification.md and .tasks/TASK-119-T3-FT-012-W3/verify-focused-tests.log, verify-extra-probes.log, verify-browser-extra.log. Status unchanged; T3 red-verify required.",
+    "2026-09-12 independent /red-verify: SEMANTIC_VERDICT: semantic-pass. Evidence: .protocols/TASK-119-T3-FT-012-W3/red-verification.md.",
+    "2026-09-12 GENERAL root manual closure: done after functional PASS and semantic-pass; task-owned AC-008 implemented and independently proved on disposable current-source HTTPS. Later explicitly authorized shared migration/rollout is tracked in .tasks/staff-media-release/."
+  ],
+  "docs": [
+    ".memory-bank/features/FT-012.md",
+    ".memory-bank/contracts/photo-inventory-api.md",
+    ".memory-bank/contracts/boundary-map.md",
+    ".memory-bank/domains/photo-inventory.md",
+    ".memory-bank/tasks/plans/IMPL-FT-012.md"
+  ],
+  "evidence_required": [
+    "FT-012-AC-008 RED: the Library has no venue Media journey or authenticated media table/list/thumbnail/original boundary; GREEN: the same seeded venue/date browser and API probe excludes admission-revision no_faces and returns every other eligible active row, including pending/processing/failed or missing state with placeholders when thumbnails are unavailable, with persisted metadata, correct UTC+7 bounds and admission thumbnail or placeholder, native original bytes and successful CSRF soft deletion; decisive comparison: current-source preimplementation and postimplementation results for the same disposable PostgreSQL/MinIO fixtures, with byte hashes/dimensions and persisted visibility comparison; artifact: redacted results, playwright cli transcript and screenshots under .tasks/TASK-119-T3-FT-012-W3/.",
+    "FT-012-AC-008 / REQ-INV-002 private delivery RED: the requested delivery boundary is absent before implementation, so authorized and denied behavior is not implemented; GREEN: direct list/thumbnail/original requests recheck active session, venue and uploader, missing or revoked sessions yield 401, denied scope yields 403, and denied CSRF deletion changes no state; decisive comparison: allowed and denied role/session/CSRF matrix against disposable fixture IDs and object hashes, plus no protected keys/URLs in responses; artifact: authorization matrix and state comparison under .tasks/TASK-119-T3-FT-012-W3/."
+  ],
+  "anti_goals": [
+    "No new per-photo hard delete, purge behavior, storage schema, derivative generation or metadata pipeline.",
+    "No participant Promo/QR contract changes, reprocessing, global date/search policy changes, frontend framework or saved-filter/pagination subsystem."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Live uploaded Photos and default/operator object prefixes: never delete or mutate them for proof.",
+      "Unrelated concurrent FT-006 search/date and QR changes; shared app restarts, production deployment and live service configuration.",
+      "Direct processing-state writes, Photo/original replacement, public bucket URLs and unauthenticated staff-media delivery."
+    ],
+    "stop_conditions": [
+      "Accepted media scope cannot be implemented through inventory authorization and the processing-owned read projection.",
+      "Proof would require mutating operator data or restarting a shared runtime rather than isolated disposable fixtures."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-012.md#FT-012-AC-008",
+    ".memory-bank/prd.md#staff-media-browsing-operator-request-2026-09-11",
+    ".memory-bank/requirements.md",
+    ".protocols/FT-012/plan.md",
+    ".protocols/FT-012/decision-log.md",
+    ".memory-bank/tasks/plans/IMPL-FT-012.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/photo-inventory-api.md#staff-venue-media",
+    ".memory-bank/contracts/photo-inventory-api.md#venue-media-transport",
+    ".memory-bank/contracts/photo-inventory-api.md#per-photo-visibility",
+    ".memory-bank/contracts/boundary-map.md#staff-inventory-media-reads",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/boundary-map.md#authentication-and-data-specific-delivery",
+    ".memory-bank/domains/photo-inventory.md#staff-venue-media-selection",
+    ".memory-bank/domains/photo-processing.md#persisted-processing-shape",
+    ".memory-bank/domains/staff-access.md#browser-session-contract",
+    ".memory-bank/testing/index.md#current-source-development-gate",
+    ".memory-bank/testing/index.md#ui-verification"
+  ],
+  "constraints": [
+    "Primary owner is inventory at src/face_moment/inventory/; HTTP and backend composition remain thin adapters. Processing owns its admission-revision read projection at src/face_moment/processing/; no direct foreign writes.",
+    "Reuse Library /staff/photo-inventory (alias /staff/library), existing staff shell, motion-theme tokens, date_picker and StaffDateTime helpers; dates display dd.mm.yyyy and are interpreted in server UTC+7.",
+    "Select accepted_at by inclusive calendar dates, default today, exclude admission-revision no_faces rows while retaining all other eligible active rows (including pending, processing, failed and missing state), and do not alter authoritative visit_date or search filters.",
+    "Use persisted Photo metadata/original and the exact immutable admission revision thumbnail; do not substitute a later revision or fetch originals to populate table thumbnails.",
+    "Use playwright cli for real-browser Library → venue Media → date range → original separate-tab → disposable row delete proof; persist transcript and screenshots.",
+    "Current-source tests must use isolated PostgreSQL/MinIO with named disposable fixtures and cleanup. Reuse tests/disposable_postgresql.py where applicable; resolve fixture connection safely at execution.",
+    "Re-read shared files immediately before edits and preserve unrelated concurrent changes. Add the page to checked-in Caddy routing and verify through an isolated real HTTPS edge."
+  ],
+  "invariants": [
+    "Staff private media never bypasses session, venue and immutable uploader authorization or exposes raw object keys.",
+    "This task adds no mutable persistence: read face_moment.photos and processing-owned admission state; the existing visibility mutation changes only Photo.is_active.",
+    "Historical FT-012 claims and done evidence remain with tasks 107–110; only AC-008 and its current security integration delta are proved here."
+  ],
+  "verification_targets": [
+    ".memory-bank/features/FT-012.md#FT-012-AC-008",
+    "Persisted PostgreSQL fixtures at UTC+7 midnight edges prove inclusive From/To, same-day default, invalid/reversed 422, active and admission-revision no_faces filtering, retention of pending/processing/failed and missing-state rows, deterministic order and all matching rows across venues/uploaders.",
+    "Two revision rows with differing no_faces status and an absent admission row prove exact admission-thumbnail/status selection and no_faces exclusion from the table; missing references/objects yield a placeholder or 404 without on-read generation.",
+    "Private original/thumbnail reads prove native JPEG hash/dimensions, no-store on success/errors, missing/purged 404, truthful storage failure, and session/venue/uploader denials on direct requests.",
+    "Disposable soft-delete proof reads back Photo.is_active, preserves bytes/metadata/processing rows, rejects missing/mismatched CSRF without mutation, and removes the browser row only after success.",
+    "playwright cli on an isolated current-source HTTPS edge proves Library link, venue name, date entry/calendar, escaped metadata, empty/error state, thumbnail/placeholder and separate-tab original; record response paths/status/content types plus transcript/screenshots.",
+    "Focused architecture inspection proves inventory owns authorization/orchestration, processing only exposes its read projection, and transport/composition do not own business rules. No configured project-native architecture check was found; inspect the changed imports/owners directly."
+  ]
+}

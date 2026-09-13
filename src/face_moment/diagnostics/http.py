@@ -440,8 +440,10 @@ def _render_search_evidence(manifest: dict[str, object] | None) -> str:
     client = manifest.get("client")
     fields: list[tuple[str, object]] = []
     if isinstance(serving, dict):
+        start = serving.get("visit_date")
+        end = serving.get("visit_date_to") or start
+        fields.append(("Дата поиска", f"{start} — {end}" if end != start else start))
         fields.extend((label, serving.get(key)) for label, key in (
-            ("Дата поиска", "visit_date"),
             ("Модель", "pipeline_code"),
             ("Версия обработки", "pipeline_revision_id"),
             ("Версия настроек", "settings_revision"),

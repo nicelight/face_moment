@@ -187,8 +187,9 @@ validation.
   and proves only a fresh later request can acquire the slot. Deadline and
   restart fixtures prove no late session, `accepted|searching -> interrupted`,
   no replay and fresh post-restart acquisition.
-- Active-date/security fixtures prove the operator-only setting boundary,
-  missing-date `503` with no admission/search, display-token-derived СПА,
+- Search-date/security fixtures prove the operator/developer setting boundary,
+  independent площадка modes, automatic local-midnight rollover, inclusive manual
+  bounds and invalid-range rejection, immutable admitted bounds, display-token-derived СПА,
   client override rejection, rate limiting, private topology and complete token
   redaction. Separate display-client Admin fixtures prove only an active
   operator/developer can read the current token and that the read does not
@@ -263,7 +264,7 @@ validation.
   media/asset requests and timers do not. Exact idle expiry is irreversible and
   survives a database restart without a scheduler or per-device grant.
 - Same-session fixtures compare issued and phone `session_id`, СПА,
-  authoritative `visit_date`, first available ordered teaser and historical
+  immutable inclusive search-date range, first available ordered teaser and historical
   `N`. Soft deletion keeps the issued media readable. Each combination of one,
   several and all hard-purged teaser objects proves ordered skip or `null`
   without union replacement, session rebuild, invalidation or `N`

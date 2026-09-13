@@ -103,6 +103,7 @@ class AdmissionRepositoryValues(TypedDict):
     proposal_count: int
     settings_revision: int
     visit_date: date
+    visit_date_to: date
     pipeline_revision_id: uuid.UUID
     pipeline_code: PipelineCode
     query_source: str
@@ -417,6 +418,7 @@ def admission_values(
         "proposal_count": payload.proposal_count,
         "settings_revision": context.settings_revision,
         "visit_date": context.visit_date,
+        "visit_date_to": context.visit_date_to or context.visit_date,
         "pipeline_revision_id": context.pipeline_revision_id,
         "pipeline_code": context.pipeline_code,
         "query_source": context.query_source.value,

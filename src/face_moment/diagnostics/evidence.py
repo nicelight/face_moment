@@ -619,7 +619,7 @@ class DiagnosticEvidenceProvider:
             raise DiagnosticEvidenceError("current parameters are unavailable")
         parameters = {
             key: serving[key] for key in (
-                "release_id", "visit_date", "pipeline_revision_id", "pipeline_code",
+                "release_id", "visit_date", "visit_date_to", "pipeline_revision_id", "pipeline_code",
                 "settings_revision", "threshold", "quality_settings",
             ) if key in serving
         }

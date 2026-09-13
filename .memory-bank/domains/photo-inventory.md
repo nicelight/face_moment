@@ -36,6 +36,18 @@ active Photos. Existing issued sessions retain their stored IDs and may read
 soft-deleted media. Restore exposes preserved data and timestamps without new
 processing work.
 
+## Staff Venue Media Selection
+
+The separate [Staff Venue Media](../contracts/photo-inventory-api.md#staff-venue-media)
+view reads existing `face_moment.photos` acceptance timestamps and metadata,
+with active visibility, venue and uploader filters, excluding admission-state
+`no_faces` as explicitly requested on 2026-09-11. It introduces no table,
+column, state transition or alternate authoritative visit date. Existing
+private original references and the processing-owned admission-thumbnail
+projection supply bytes after inventory authorization. Repository tests prove
+persisted date/ownership selection and that the reused visibility command only
+changes `is_active`; no storage migration is needed.
+
 ## Recent Statistics Projection
 
 One database observation time anchors the `1`, `5` and `60` minute windows.

@@ -62,6 +62,7 @@ class PhoneSessionView:
     purchase_url: str
     idle_expires_at: datetime
     idle_expires_in_ms: int
+    visit_date_to: str | None = None
 
     def as_response(self) -> dict[str, object]:
         return {
@@ -69,6 +70,7 @@ class PhoneSessionView:
             "session_id": self.session_id,
             "spa_name": self.spa_name,
             "visit_date": self.visit_date,
+            "visit_date_to": self.visit_date_to or self.visit_date,
             "teaser": None if self.teaser is None else self.teaser.as_response(),
             "n": self.n,
             "purchase_url": self.purchase_url,
@@ -184,6 +186,7 @@ class PhoneContinuationService:
             session_id=str(session_row.id),
             spa_name=spa_name,
             visit_date=session_row.visit_date.isoformat(),
+            visit_date_to=(session_row.visit_date_to or session_row.visit_date).isoformat(),
             teaser=teaser,
             n=session_row.n,
             purchase_url=self._purchase_url,

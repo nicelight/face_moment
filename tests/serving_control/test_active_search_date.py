@@ -154,10 +154,8 @@ def test_operator_reads_and_atomically_updates_active_date(
         "/staff/search-settings",
         cookies=cookies,
     )
-    assert page_status == 200
+    assert page_status == 303
     assert page_headers["cache-control"] == "no-store"
-    assert '<h1>Active search date</h1>' in page
-    assert str(fixture.spa_id) in page
 
     path = f"/api/serving/spas/{fixture.spa_id}/active-visit-date"
     initial_status, _, initial = _request(
@@ -400,7 +398,6 @@ def test_spa_rename_persists_in_staff_selectors_and_preserves_identity(
     for path, selector in (
         ("/staff/photo-inventory", "recent-statistics-spa-id"),
         ("/staff/processing-health", "health-spa-id"),
-        ("/staff/search-settings", "spa-id"),
     ):
         status_code, headers, page = _request(fixture.app, "GET", path, cookies=cookies)
         assert status_code == 200
@@ -455,7 +452,7 @@ def test_both_admin_roles_manage_spas_and_search_settings(active_search_date_fix
     cookies = _login(fixture.app, getattr(fixture, role))
     for path in ("/staff/spas", "/staff/search-settings"):
         status, headers, page = _request(fixture.app, "GET", path, cookies=cookies)
-        assert status == 200
+        assert status == (200 if path == "/staff/spas" else 303)
         assert headers["cache-control"] == "no-store"
         if path == "/staff/spas":
             assert f'data-spa-id="{fixture.spa_id}"' in page
@@ -484,3 +481,63 @@ def test_developer_navigation_includes_every_operator_section() -> None:
     for _, _, roles, _ in NAVIGATION:
         if "operator" in roles.split():
             assert "developer" in roles.split()
+
+
+@pytest.mark.parametrize("role", ["operator", "developer"])
+def test_search_ranges_are_saved_per_spa_and_auto_preserves_manual_dates(active_search_date_fixture: _Fixture, role: str) -> None:
+    fixture = active_search_date_fixture
+    cookies = _login(fixture.app, getattr(fixture, role))
+    headers = {"X-CSRF-Token": cookies["fm_staff_csrf"]}
+    path = f"/api/serving/spas/{fixture.spa_id}/search-dates"
+    status, response_headers, initial = _request(fixture.app, "GET", path, cookies=cookies)
+    assert status == 200 and response_headers["cache-control"] == "no-store"
+    assert initial["search_today"] is True
+    assert initial["date_from"] is initial["date_to"] is None
+    assert initial["timezone"] == "Asia/Dushanbe"
+    with Session(fixture.engine) as session:
+        spa = session.get(Spa, fixture.spa_id)
+        other = IngestTargetRepository(session).configure_spa(
+            timezone="UTC", serving_pipeline_revision_id=spa.serving_pipeline_revision_id,
+        )
+        session.commit()
+    manual = {"search_today": False, "date_from": "2026-09-09", "date_to": "2026-09-11"}
+    assert _request(fixture.app, "PUT", path, cookies=cookies, body=manual)[0] == 403
+    status, _, saved = _request(fixture.app, "PUT", path, cookies=cookies, headers=headers, body=manual)
+    assert status == 200
+    assert {key: saved[key] for key in manual} == manual
+    assert saved["settings_revision"] == initial["settings_revision"] + 1
+    for invalid in (
+        {"search_today": False},
+        {"search_today": False, "date_from": "2026-09-11"},
+        {"search_today": False, "date_from": "2026-09-12", "date_to": "2026-09-11"},
+        {"search_today": False, "date_from": "2026-02-30", "date_to": "2026-03-01"},
+        {"search_today": "false"},
+        {"search_today": True, "extra": 1},
+    ):
+        assert _request(fixture.app, "PUT", path, cookies=cookies, headers=headers, body=invalid)[0] == 422
+    assert _request(fixture.app, "GET", path, cookies=cookies)[2] == saved
+    status, _, auto = _request(fixture.app, "PUT", path, cookies=cookies, headers=headers, body={"search_today": True})
+    assert status == 200 and auto["search_today"] is True
+    assert (auto["date_from"], auto["date_to"]) == (manual["date_from"], manual["date_to"])
+    page = _request(fixture.app, "GET", "/staff/spas", cookies=cookies)[2]
+    assert 'role="switch" name="search_today" checked' in page
+    assert 'value="09.09.2026"' in page and 'value="11.09.2026"' in page
+    with Session(fixture.engine) as session:
+        other_spa = session.get(Spa, other.spa_id)
+        assert other_spa.search_today is True
+        assert other_spa.active_visit_date is other_spa.active_visit_date_to is None
+    manual["date_to"] = manual["date_from"]
+    assert _request(fixture.app, "PUT", path, cookies=cookies, headers=headers, body=manual)[0] == 200
+
+
+def test_search_range_authentication_and_spa_scope(active_search_date_fixture: _Fixture) -> None:
+    fixture = active_search_date_fixture
+    path = f"/api/serving/spas/{fixture.spa_id}/search-dates"
+    assert _request(fixture.app, "GET", path)[0] == 401
+    photographer = _login(fixture.app, fixture.photographer)
+    assert _request(fixture.app, "GET", path, cookies=photographer)[0] == 403
+    assert _request(fixture.app, "PUT", path, cookies=photographer,
+                    headers={"X-CSRF-Token": photographer["fm_staff_csrf"]}, body={"search_today": True})[0] == 403
+    operator = _login(fixture.app, fixture.operator)
+    assert _request(fixture.app, "GET", f"/api/serving/spas/{fixture.inaccessible_spa_id}/search-dates", cookies=operator)[0] == 403
+    assert _request(fixture.app, "GET", f"/api/serving/spas/{uuid.uuid4()}/search-dates", cookies=operator)[0] == 404

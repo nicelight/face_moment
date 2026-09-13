@@ -992,10 +992,12 @@ def _photo_inventory_page_html(spas: Sequence[tuple[UUID, str]] = ()) -> str:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Photo inventory</title>
+  <link rel="stylesheet" href="/client/staff-media.css">
 </head>
 <body>
   <main>
     <h1>Photo inventory</h1>
+    <section class="fm-media-venues" aria-label="Медиа площадок">__MEDIA_LINKS__</section>
     <form id="recent-statistics-query">
       <label for="recent-statistics-spa-id">Площадка</label>
       <select id="recent-statistics-spa-id" name="spa_id" required>__SPA_OPTIONS__</select>
@@ -1123,4 +1125,7 @@ def _photo_inventory_page_html(spas: Sequence[tuple[UUID, str]] = ()) -> str:
     setInterval(loadPurge, 5000);
   </script>
 </body>
-</html>""".replace("__SPA_OPTIONS__", _spa_options(spas))
+</html>""".replace("__SPA_OPTIONS__", _spa_options(spas)).replace("__MEDIA_LINKS__", "".join(
+    f'<div class="fm-media-venue-link"><strong>{escape(name)}</strong><a href="/staff/venue-media?spa_id={spa_id}">Медиа ↗</a></div>'
+    for spa_id, name in spas
+) or '<p>Нет доступных площадок</p>')

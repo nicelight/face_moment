@@ -55,6 +55,14 @@ uses `Cache-Control: no-store` and `Referrer-Policy: no-referrer`.
 
 ## Phone Shell And Session Read
 
+### Search-date range compatibility
+
+The v1 phone response adds `visit_date_to`; the existing `visit_date` remains
+the inclusive start. One-day results display one date; multi-day results display
+both endpoints. Historical rows with no end use the start for both bounds, and
+the phone reader also accepts old responses without the added field. Midnight
+and later settings changes never modify an issued session's range or results.
+
 `GET /phone` validates but does not advance the shared state; the preceding QR
 exchange is the explicit navigation that already advanced it. A valid active
 `fm_promo_access` cookie returns `200 text/html`; missing or expired access
@@ -74,6 +82,7 @@ with exactly:
   "session_id": "aa39236f-17e3-41eb-9c22-75a49ef21f93",
   "spa_name": "Pilot SPA",
   "visit_date": "2026-08-06",
+  "visit_date_to": "2026-08-06",
   "teaser": {
     "photo_id": "2b22eb29-f8a3-4083-bc57-6776295effcb",
     "media_url": "/api/phone/media/opaque-reference"
@@ -86,7 +95,7 @@ with exactly:
 ```
 
 `schema_version` is integer `1`; `session_id`, СПА, authoritative
-`visit_date` and `n` come from the issued session and accepted owner
+`visit_date`/`visit_date_to` and `n` come from the issued session and accepted owner
 projections. `n` never changes after issuance. `idle_expires_at` is exactly 60
 minutes after the current shared `browser_last_seen_at`, and
 `idle_expires_in_ms` is the non-negative remaining duration calculated from the

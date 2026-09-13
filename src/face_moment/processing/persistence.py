@@ -177,6 +177,7 @@ class ExactCompatibleSearchRepository:
         pipeline_revision_id: uuid.UUID,
         query_embedding: Sequence[float],
         reference_threshold: float,
+        visit_date_to: date | None = None,
     ) -> tuple[CompatiblePhotoMatch, ...]:
         """Search the immutable compatible ready scope using exact cosine distance."""
         return self.search_with_diagnostics(
@@ -185,6 +186,7 @@ class ExactCompatibleSearchRepository:
             pipeline_revision_id=pipeline_revision_id,
             query_embedding=query_embedding,
             reference_threshold=reference_threshold,
+            visit_date_to=visit_date_to,
         ).matches
 
     def search_with_diagnostics(
@@ -195,11 +197,15 @@ class ExactCompatibleSearchRepository:
         pipeline_revision_id: uuid.UUID,
         query_embedding: Sequence[float],
         reference_threshold: float,
+        visit_date_to: date | None = None,
     ) -> CompatibleSearchObservation:
         """Return accepted matches and the best pre-threshold score in one query."""
 
         if not math.isfinite(float(reference_threshold)):
             raise ValueError("reference_threshold must be finite")
+        visit_date_to = visit_date_to or visit_date
+        if visit_date_to < visit_date:
+            raise ValueError("search date range is reversed")
 
         query_vector = sql_cast(
             bindparam("query_embedding", value=_vector_literal(query_embedding)),
@@ -227,7 +233,7 @@ class ExactCompatibleSearchRepository:
             )
             .where(
                 Photo.spa_id == spa_id,
-                Photo.visit_date == visit_date,
+                Photo.visit_date.between(visit_date, visit_date_to),
                 Photo.is_active.is_(True),
                 PhotoFace.pipeline_revision_id == pipeline_revision_id,
                 PhotoPipelineState.pipeline_revision_id == pipeline_revision_id,

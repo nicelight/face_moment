@@ -17,8 +17,9 @@ read projection and owner-only purge cleanup boundary.
 
 HTTP/UI handlers and the composition root only adapt transport. They MUST NOT
 authorize inventory actions, mutate Photo or processing rows directly, run
-purge work, or disclose object keys, credentials, embeddings or commercial
-media. The pilot adds no Batch endpoint, jobs API, WebSocket or SSE stream.
+purge work, or disclose object keys, credentials or embeddings. Commercial
+media is delivered only by the authorized staff media boundary below or the
+existing Promo/QR boundaries. The pilot adds no Batch endpoint, jobs API, WebSocket or SSE stream.
 
 ## Staff Inventory Page And Selection
 
@@ -190,3 +191,82 @@ exact paths/shapes, roles, CSRF, interval bounds, idempotency, `401/403/404/409/
 storage or protected diagnostic detail. Purge execution and restart proof are
 owned by [Photo Inventory](../domains/photo-inventory.md) and
 [Photo Inventory Verification](../testing/photo-inventory.md).
+
+## Staff Venue Media
+
+Operator request 2026-09-11: the Library provides a «Медиа» link for each
+площадка. It opens a venue-specific page with inclusive From/To date filters
+and a table: thumbnail, date/time added, useful persisted photo information,
+and a final per-photo delete action. Clicking a thumbnail opens the original
+JPEG at its native resolution. Staff media remains authenticated and private;
+no bucket keys or public object URLs are exposed.
+
+The page uses the existing inventory role scope: photographers see their own
+uploads; operator/developer see venue uploads. Every list and media request
+rechecks the active staff session and Photo ownership. The date basis is an
+implementation default of acceptance/upload date (`accepted_at`), pending an
+optional operator preference; it does not change authoritative `visit_date`
+or search scope. Both calendar days are included in server UTC+7. Default:
+today. Additional columns use existing capture time, dimensions/byte size,
+and processing status; no invented metadata is required.
+
+Inventory owns selection and authorization, reads its original object reference
+and obtains thumbnail availability through a processing-owned read boundary.
+Reuse persisted admission-revision thumbnails (default maximum edge 320 px).
+Do not create thumbnails on HTTP reads or download originals to populate the
+table. Missing/pending thumbnails have an explicit placeholder; original access
+remains possible for an authorized existing Photo. Use existing soft-delete
+visibility mutation with CSRF. No new per-photo hard-delete operation is added.
+Operator clarification 2026-09-11: exclude Photos whose admission processing
+status is `no_faces` from the table. Pending/processing/failed or missing state
+has no confirmed no-face outcome and may appear with a placeholder.
+All other selected active photos are reachable; avoid an unannounced result limit.
+Exact routes and serialization are defined below.
+
+Verification covers venue/date bounds including UTC+7 day edges, ownership,
+revoked/missing sessions, missing derivatives, native original bytes, escaped
+metadata, soft-delete/CSRF, browser table navigation and actual HTTPS edge
+routing. Use disposable fixtures for delete proof; retain live uploaded photos.
+
+### Venue media transport
+
+- Page: `GET /staff/venue-media?spa_id=<uuid>`; Library links preserve the venue
+  UUID. The page shows the venue name, uses the existing staff shell/date picker
+  (`dd.mm.yyyy`) and server UTC+7 display helpers, and initially selects today.
+- List: `GET /api/inventory/venue-media?spa_id=<uuid>&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD`.
+  Both ISO dates are required. Select active Photos except admission-state
+  `no_faces`, by `accepted_at` from
+  `date_from` 00:00 UTC+7 inclusive to the day after `date_to` 00:00 UTC+7
+  exclusive; reversed or invalid dates and malformed UUIDs return `422`.
+  No `visit_date` or capture-time filter is imposed on this separate view.
+- Success `200` JSON contains exactly `schema_version: 1`, `spa_id`,
+  `date_from`, `date_to`, and `photos`. Each row contains exactly `photo_id`,
+  `accepted_at`, `captured_at` (timezone-aware ISO timestamps), `width`, `height`,
+  `original_byte_size` (persisted integers), `processing_status` (the existing
+  status enum, or null when the admission state is absent), `thumbnail_url`
+  (same-origin route below, or null), and `original_url` (same-origin route
+  below). Sort by `accepted_at` descending, then `photo_id` ascending. Return
+  all matching rows; no silent cap, saved query or new pagination contract.
+- Thumbnail: `GET /api/inventory/venue-media/{photo_id}/thumbnail`.
+  Original: `GET /api/inventory/venue-media/{photo_id}/original`.
+  Both independently authorize the Photo's venue and immutable uploader under
+  the current session, including direct requests. Existing soft-deleted Photos
+  remain readable by the same authorized staff until hard purge; they are
+  absent from the active table. Unknown/purged Photo or unavailable object
+  returns `404`. A missing derivative reference also returns `404`.
+- Successful media replies return private `image/jpeg` bytes with
+  `Cache-Control: no-store`; original bytes MUST equal the stored JPEG without
+  resizing or re-encoding. Open the original in a separate browser tab; the
+  image retains its native dimensions and browser zoom. Do not redirect to
+  object-store URLs. Missing thumbnails render a placeholder with original
+  access, including a reference whose object disappeared after listing.
+- Missing/expired/revoked sessions return `401`; denied role/venue/uploader
+  access returns `403`; unknown venue returns `404`. Storage/database failures
+  other than missing objects return `5xx`, with no false empty/success result.
+  All page/API/media responses, including failures, use `no-store`.
+- Escape venue names and metadata. The final row action calls the existing
+  visibility endpoint with `active:false` and CSRF; remove the row only after
+  successful mutation and show a failed action without pretending deletion.
+  Empty result, loading and failed list states are explicit.
+- The checked-in HTTPS edge MUST route `/staff/venue-media` to the backend;
+  existing `/api/inventory/*` delivery remains the media transport.

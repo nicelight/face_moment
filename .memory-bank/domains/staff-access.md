@@ -96,7 +96,8 @@ automatic credential rotation are outside the pilot.
 
 Operator decision 2026-09-11: `developer` is the current administrator role and
 must be able to use every section and operation available to `operator`,
-including search-date settings and the separate `/staff/spas` name editor.
+including the `/staff/spas` name editor and per-площадка automatic-today or
+manual inclusive search-date range controls.
 Navigation and server authorization both enforce this rule. Existing
 photographer restrictions and developer-only tools remain unchanged; no new
 role enum or role migration is introduced.

@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from html import escape
 import uuid
+from zoneinfo import ZoneInfo
 
 from fastapi import Cookie, FastAPI, Header, HTTPException, status
-from pydantic import BaseModel, ConfigDict, Field
-from fastapi.responses import HTMLResponse, JSONResponse
+from pydantic import BaseModel, ConfigDict, Field, StrictBool
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from face_moment.platform.staff_presentation import staff_document
-from face_moment.platform.staff_datetime import date_picker, staff_today
+from face_moment.platform.staff_datetime import date_picker
 from sqlalchemy.orm import Session
 
 from face_moment.platform.auth.sessions import (
@@ -25,6 +26,9 @@ from face_moment.serving_control.active_search_date import (
     read_active_search_date,
     rename_spa,
     update_active_search_date,
+    SearchDatesRecord,
+    read_search_dates,
+    update_search_dates,
 )
 from face_moment.serving_control.display_client_admin import (
     DisplayClientAdminAccessDeniedError,
@@ -52,6 +56,26 @@ class ActiveSearchDateResponse(BaseModel):
     schema_version: int
     spa_id: uuid.UUID
     active_visit_date: date | None
+    settings_revision: int
+    updated_at: datetime | None
+
+
+class SearchDatesUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    search_today: StrictBool
+    date_from: date | None = None
+    date_to: date | None = None
+
+
+class SearchDatesResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    schema_version: int = 1
+    spa_id: uuid.UUID
+    search_today: bool
+    date_from: date | None
+    date_to: date | None
+    timezone: str
+    today: date
     settings_revision: int
     updated_at: datetime | None
 
@@ -107,6 +131,47 @@ def register_display_client_admin_routes(
 def register_active_search_date_routes(
     app: FastAPI, *, session_factory: Callable[[], Session]
 ) -> None:
+    @app.get("/api/serving/spas/{spa_id}/search-dates", response_model=SearchDatesResponse)
+    def read_search_dates_route(
+        spa_id: uuid.UUID, fm_staff_session: str | None = Cookie(default=None),
+    ) -> JSONResponse:
+        with _database_session(session_factory) as database_session:
+            try:
+                record = read_search_dates(database_session, session_token=fm_staff_session, spa_id=spa_id)
+            except InvalidSessionError as error:
+                raise HTTPException(status_code=401) from error
+            except ActiveSearchDateAccessDeniedError as error:
+                raise HTTPException(status_code=403) from error
+            except ActiveSearchDateSpaNotFoundError as error:
+                raise HTTPException(status_code=404) from error
+        return _search_dates_response(record)
+
+    @app.put("/api/serving/spas/{spa_id}/search-dates", response_model=SearchDatesResponse)
+    def write_search_dates_route(
+        spa_id: uuid.UUID, payload: SearchDatesUpdateRequest,
+        fm_staff_session: str | None = Cookie(default=None),
+        fm_staff_csrf: str | None = Cookie(default=None),
+        x_csrf_token: str | None = Header(default=None),
+    ) -> JSONResponse:
+        with _database_session(session_factory) as database_session:
+            try:
+                record = update_search_dates(
+                    database_session, session_token=fm_staff_session,
+                    csrf_cookie_token=fm_staff_csrf, csrf_header_token=x_csrf_token,
+                    spa_id=spa_id, search_today=payload.search_today,
+                    date_from=payload.date_from, date_to=payload.date_to,
+                )
+                database_session.commit()
+            except InvalidSessionError as error:
+                raise HTTPException(status_code=401) from error
+            except (CsrfValidationError, ActiveSearchDateAccessDeniedError) as error:
+                raise HTTPException(status_code=403) from error
+            except ActiveSearchDateSpaNotFoundError as error:
+                raise HTTPException(status_code=404) from error
+            except ValueError as error:
+                raise HTTPException(status_code=422, detail="Укажите обе даты: «С» не должна быть позже «По».") from error
+        return _search_dates_response(record)
+
     @app.put("/api/serving/spas/{spa_id}/name")
     def rename_spa_route(
         spa_id: uuid.UUID, payload: DisplayClientNameRequest,
@@ -148,10 +213,10 @@ def register_active_search_date_routes(
     @app.get("/staff/search-settings", response_class=HTMLResponse)
     def active_search_date_page(
         fm_staff_session: str | None = Cookie(default=None),
-    ) -> HTMLResponse:
+    ) -> RedirectResponse:
         with _database_session(session_factory) as database_session:
             try:
-                spas = list_active_search_date_spas(
+                list_active_search_date_spas(
                     database_session,
                     session_token=fm_staff_session,
                 )
@@ -164,9 +229,7 @@ def register_active_search_date_routes(
                     status_code=status.HTTP_403_FORBIDDEN
                 ) from error
 
-        response = HTMLResponse(staff_document(_active_search_date_page_html(spas), "search-settings"))
-        response.headers["Cache-Control"] = "no-store"
-        return response
+        return RedirectResponse("/staff/spas", status_code=303, headers={"Cache-Control": "no-store"})
 
     @app.get(
         "/api/serving/spas/{spa_id}/active-visit-date",
@@ -300,72 +363,11 @@ def _active_search_date_response(record: ActiveSearchDateRecord) -> ActiveSearch
     )
 
 
-def _active_search_date_page_html(spas: Sequence[ActiveSearchDateSpa]) -> str:
-    options = "".join(
-        f'<option value="{escape(str(spa.spa_id))}">{escape(spa.name)}</option>'
-        for spa in spas
+def _search_dates_response(record: SearchDatesRecord) -> JSONResponse:
+    return JSONResponse(
+        SearchDatesResponse.model_validate(record).model_dump(mode="json"),
+        headers={"Cache-Control": "no-store"},
     )
-    empty_state = "No active SPA is configured." if not spas else ""
-    disabled = " disabled" if not spas else ""
-    return f"""<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Active search date</title>
-</head>
-<body>
-  <main>
-    <h1>Active search date</h1>
-    <p>{escape(empty_state)}</p>
-    <form id="active-search-date-form"{disabled}>
-      <label>SPA
-        <select id="spa-id" name="spa_id">{options}</select>
-      </label>
-      <label>Visit date
-        {date_picker("visit-date", staff_today(), name="visit_date")}
-      </label>
-      <p>Settings revision: <output id="settings-revision">—</output></p>
-      <button type="submit">Save active date</button>
-      <output id="status" role="status" aria-live="polite"></output>
-    </form>
-
-  </main>
-  <script>
-    const form = document.querySelector("#active-search-date-form");
-    const spaId = document.querySelector("#spa-id");
-    const visitDate = document.querySelector("#visit-date");
-    const revision = document.querySelector("#settings-revision");
-    const statusOutput = document.querySelector("#status");
-    const csrfToken = () => document.cookie.split("; ")
-      .find((item) => item.startsWith("fm_staff_csrf="))?.slice("fm_staff_csrf=".length) ?? "";
-    async function loadActiveDate() {{
-      const response = await fetch(`/api/serving/spas/${{spaId.value}}/active-visit-date`, {{
-        headers: {{"Accept": "application/json"}}
-      }});
-      if (!response.ok) throw new Error(`Unable to load active date (${{response.status}})`);
-      const data = await response.json();
-      StaffDateTime.setDate(visitDate, data.active_visit_date ?? "{staff_today()}");
-      revision.value = data.settings_revision;
-    }}
-    spaId?.addEventListener("change", () => loadActiveDate().catch((error) => {{ statusOutput.value = error.message; }}));
-    form?.addEventListener("submit", async (event) => {{
-      event.preventDefault();
-      const response = await fetch(`/api/serving/spas/${{spaId.value}}/active-visit-date`, {{
-        method: "PUT",
-        headers: {{"Content-Type": "application/json", "X-CSRF-Token": csrfToken()}},
-        body: JSON.stringify({{visit_date: StaffDateTime.dateValue(visitDate)}})
-      }});
-      if (!response.ok) {{ statusOutput.value = `Unable to save active date (${{response.status}})`; return; }}
-      const data = await response.json();
-      revision.value = data.settings_revision;
-      statusOutput.value = `Saved ${{data.active_visit_date}}`;
-    }});
-    if (spaId?.value) loadActiveDate().catch((error) => {{ statusOutput.value = error.message; }});
-  </script>
-</body>
-</html>"""
-
 
 
 def _spa_admin_page_html(spas: Sequence[ActiveSearchDateSpa]) -> str:
@@ -374,7 +376,31 @@ def _spa_admin_page_html(spas: Sequence[ActiveSearchDateSpa]) -> str:
 <form data-spa-rename data-spa-id="{spa.spa_id}">
 <label>Название площадки<input name="name" value="{escape(spa.name, quote=True)}" required maxlength="255"></label>
 <button type="submit">Сохранить название</button><p role="status" aria-live="polite"></p>
-</form></article>'''
+</form>{_spa_search_dates_form(spa)}</article>'''
         for spa in spas
     ) or '<p>Нет доступных площадок.</p>'
-    return f'<main><h1>Площадки</h1><div class="fm-device-list">{cards}</div></main>'
+    return f'''<!doctype html><html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Площадки</title>
+<link rel="stylesheet" href="/client/spa-search-settings.css">
+<script type="module" src="/client/spa-search-settings.js"></script></head><body>
+<main><h1>Площадки</h1><div class="fm-device-list">{cards}</div></main></body></html>'''
+
+
+def _spa_search_dates_form(spa: ActiveSearchDateSpa) -> str:
+    today = datetime.now(timezone.utc).astimezone(ZoneInfo(spa.timezone)).date()
+    start = (spa.date_from or today).isoformat()
+    end = (spa.date_to or spa.date_from or today).isoformat()
+    prefix = f"search-{spa.spa_id}"
+    return f'''<form class="fm-spa-search" data-spa-search data-spa-id="{spa.spa_id}">
+<h3>Поиск камерой на выходе</h3>
+<label class="fm-search-toggle"><input type="checkbox" role="switch" name="search_today"{' checked' if spa.search_today else ''}>
+<span>Камера на выходе ищет фото за сегодня</span></label>
+<p class="fm-search-hint">«Сегодня» определяется по времени площадки: {escape(spa.timezone)}.</p>
+<fieldset class="fm-search-dates" data-manual-dates{' disabled' if spa.search_today else ''}>
+<legend>За какие дни искать фотографии</legend>
+<label for="{prefix}-from">С{date_picker(prefix + '-from', start, name='date_from')}</label>
+<label for="{prefix}-to">По{date_picker(prefix + '-to', end, name='date_to')}</label>
+</fieldset>
+<p class="fm-search-hint">Обе даты входят в период поиска.</p>
+<button type="submit">Сохранить поиск</button><p role="status" aria-live="polite"></p>
+</form>'''

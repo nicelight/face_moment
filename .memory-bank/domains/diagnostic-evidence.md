@@ -50,11 +50,17 @@ task-owned database and never downgrades operator/default state.
 |---|---|
 | `identity` | `attempt_id`, `client_attempt_id` and correlation-safe trigger identity. |
 | `client` | Client release, detector/model, camera/config and admitted proposal metadata; no credential or authentication state. |
-| `serving` | Release, immutable pipeline revision/code, threshold, quality settings, active date and settings revision copied from the core projection. |
+| `serving` | Release, immutable pipeline revision/code, threshold, quality settings, immutable search-date range and settings revision copied from the core projection. |
 | `detections` | Ordered selected/repeated occurrence observations, rank, quality/gate result, rejection reason and threshold-valid candidate observations. |
 | `result` | Terminal outcome plus selected teaser IDs and complete union/`N` when a result exists. |
 | `display` | Actually received display/QR event and client elapsed value when applicable. |
 | `artifacts` | Optional private artifact descriptors only when a later accepted writer stores an artifact. |
+
+The v1 serving object adds `visit_date_to`, copied from the immutable Attempt.
+`visit_date` remains the inclusive start. Historical evidence without the new
+field remains readable as a one-day search; no manifest rewrite or schema
+version change is needed. Investigation and promoted parameter subsets retain
+both bounds for new range-based attempts.
 
 Version 1 uses this exact structural shape; nullable `result`/`display` values
 mean the corresponding outcome did not occur, while absent applicable data
@@ -79,6 +85,7 @@ requires `incomplete` and a gap:
   "serving": {
     "release_id": "face-moment-runtime",
     "visit_date": "2026-08-25",
+    "visit_date_to": "2026-08-25",
     "pipeline_revision_id": "pipeline-uuid",
     "pipeline_code": "opencv_sface",
     "settings_revision": 4,

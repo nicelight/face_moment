@@ -113,8 +113,16 @@ def test_result_route_publishes_v1_and_terminal_repeat_without_second_search(
 ) -> None:
     app, engine, spa_id, token = realtime_state
     calls: list[str] = []
+    with Session(engine) as session:
+        RealtimeContextRepository(session).update_search_dates(
+            spa_id=spa_id, search_today=False,
+            date_from=datetime(2026, 8, 20).date(), date_to=datetime(2026, 8, 22).date(),
+        )
+        session.commit()
 
-    def search(**_: object) -> RealtimeSearchResult:
+    def search(**kwargs: object) -> RealtimeSearchResult:
+        context = kwargs["context"]
+        assert (context.visit_date, context.visit_date_to) == (datetime(2026, 8, 20).date(), datetime(2026, 8, 22).date())
         calls.append("search")
         return _successful_search_result()
 
@@ -153,6 +161,9 @@ def test_result_route_publishes_v1_and_terminal_repeat_without_second_search(
         assert attempt is not None
         assert attempt.processing_status == "result_issued"
         assert attempt.domain_outcome == "result"
+        stored = session.scalar(select(PromoSession).where(PromoSession.attempt_id == attempt.id))
+        assert (stored.visit_date, stored.visit_date_to) == (attempt.visit_date, attempt.visit_date_to)
+        assert stored.visit_date_to == datetime(2026, 8, 22).date()
         assert session.scalar(
             select(func.count()).select_from(PromoSession).where(
                 PromoSession.attempt_id == attempt.id

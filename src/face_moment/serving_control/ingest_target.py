@@ -30,6 +30,10 @@ class Spa(Base):
         Boolean, nullable=False, default=True, server_default="true"
     )
     active_visit_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    active_visit_date_to: Mapped[date | None] = mapped_column(Date, nullable=True)
+    search_today: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
     settings_revision: Mapped[int] = mapped_column(
         Integer, nullable=False, default=1, server_default="1"
     )

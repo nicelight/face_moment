@@ -136,6 +136,7 @@ class RealtimeSearchService:
         search = self._repository.search_with_diagnostics(
             spa_id=context.spa_id,
             visit_date=context.visit_date,
+            visit_date_to=context.visit_date_to,
             pipeline_revision_id=context.pipeline_revision_id,
             query_embedding=tuple(float(value) for value in query.embedding),
             reference_threshold=context.reference_threshold,

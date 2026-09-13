@@ -444,6 +444,7 @@ def test_multi_phone_exchange_passive_read_activity_and_exact_idle_expiry(
         "session_id": str(service.session_id),
         "spa_name": "Fixture SPA",
         "visit_date": "2026-08-28",
+        "visit_date_to": "2026-08-28",
         "teaser": {
             "photo_id": str(service.photo_id),
             "media_url": "/api/phone/media/fixture-media",
@@ -720,10 +721,12 @@ def test_purchase_target_accepts_browser_normalized_unicode_hosts(
     assert validate_phone_purchase_url(purchase_url) == purchase_url
 
 
+@pytest.mark.parametrize("end_date", [None, date(2026, 8, 30)])
 @pytest.mark.parametrize("availability", itertools.product((False, True), repeat=4))
 def test_phone_assembly_uses_first_available_issued_teaser_without_mutation(
     monkeypatch: pytest.MonkeyPatch,
     availability: tuple[bool, bool, bool, bool],
+    end_date: date | None,
 ) -> None:
     photo_ids = tuple(uuid.uuid4() for _ in range(4))
     row = SimpleNamespace(
@@ -731,6 +734,7 @@ def test_phone_assembly_uses_first_available_issued_teaser_without_mutation(
         attempt_id=uuid.uuid4(),
         spa_id=uuid.uuid4(),
         visit_date=date(2026, 8, 28),
+        visit_date_to=end_date,
         teaser_photo_ids=list(photo_ids),
         session_result_photo_ids=list(photo_ids) + [uuid.uuid4(), uuid.uuid4()],
         n=6,
@@ -790,6 +794,7 @@ def test_phone_assembly_uses_first_available_issued_teaser_without_mutation(
         object_store=Store(),
     )
     view = service.read_session(TICKET, now=START)
+    assert view.as_response()["visit_date_to"] == (end_date or row.visit_date).isoformat()
     expected = next((photo_id for photo_id in photo_ids if photo_id in available), None)
     assert (None if view.teaser is None else view.teaser.photo_id) == (
         None if expected is None else str(expected)

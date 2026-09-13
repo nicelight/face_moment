@@ -9,7 +9,7 @@ from face_moment.platform.staff_datetime import datetime_range_fields
 from face_moment.platform.staff_presentation import staff_document
 from face_moment.diagnostics.http import _render_server_event_page, _render_attempt_list
 from face_moment.inventory.http import _processing_health_page_html, _photo_upload_page_html
-from face_moment.serving_control.http import _active_search_date_page_html, _spa_admin_page_html
+from face_moment.serving_control.http import _spa_admin_page_html
 from face_moment.serving_control.active_search_date import ActiveSearchDateSpa
 spa = uuid.UUID('00000000-0000-0000-0000-000000000001')
 fixed = datetime_range_fields(now=datetime(2026,9,11,20,15,30,tzinfo=timezone.utc), max_days=7)
@@ -23,7 +23,6 @@ print(json.dumps({
   '/staff/processing-health': staff_document(_processing_health_page_html([(spa, 'Площадка 1')]), 'processing-health'),
   '/staff/photo-upload': staff_document(_photo_upload_page_html(), 'photo-upload'),
   '/staff/spas': staff_document(_spa_admin_page_html([ActiveSearchDateSpa(spa, 'Площадка 1')]), 'spas'),
-  '/staff/search-settings': staff_document(_active_search_date_page_html([ActiveSearchDateSpa(spa, 'Площадка 1')]), 'search-settings'),
 }))
 `], { encoding: 'utf8' }));
 
@@ -106,7 +105,7 @@ test('history and processing share the controls and processing restores a bookma
 
 test('date-only forms use calendars and default to today in UTC+7', async ({ page }) => {
   const today = new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
-  for (const path of ['/staff/photo-upload', '/staff/search-settings']) {
+  for (const path of ['/staff/photo-upload']) {
     await page.goto('https://staff.test' + path);
     await expect(page.locator('#visit-date')).toHaveAttribute('type', 'text');
     await expect(page.locator('#visit-date')).toHaveValue(today.split('-').reverse().join('.'));
@@ -160,7 +159,7 @@ test('processing timestamps show seconds only in UTC+7 without Z', async ({ page
 
 
 for (const role of ['operator', 'developer']) {
-  test(`${role} sees both navigation entries and renames a площадка on its own page`, async ({ page }) => {
+  test(`${role} sees площадка settings and renames a площадка on its own page`, async ({ page }) => {
     await page.route('**/api/staff/session', route => route.fulfill({ json: { username: 'Fixture', role } }));
     const writes = [];
     await page.route('**/api/serving/spas/*/name', route => {
@@ -169,7 +168,7 @@ for (const role of ['operator', 'developer']) {
     });
     await page.goto('https://staff.test/staff/spas');
     await expect(page.getByRole('link', { name: 'Площадки', exact: true })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Настройки поиска', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Настройки поиска', exact: true })).toHaveCount(0);
     await page.locator('[data-spa-rename] input').fill('Термы');
     await page.getByRole('button', { name: 'Сохранить название', exact: true }).click();
     await expect(page.locator('[data-spa-title]')).toHaveText('Термы');

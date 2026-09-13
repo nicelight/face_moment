@@ -1,0 +1,23 @@
+.fm-media-back { display: inline-block; margin-bottom: 1rem; color: var(--fm-muted); text-decoration: none; }
+.fm-media-venue { margin: 0 0 1.5rem; overflow-wrap: anywhere; }
+.fm-staff .fm-media-filter { display: flex; flex-direction: row; flex-wrap: wrap; align-items: end; gap: 1rem; padding: 1.25rem; background: var(--fm-panel); border: 1px solid var(--fm-line); border-radius: 12px; }
+.fm-staff .fm-media-filter > label { flex: 0 1 200px; min-width: 170px; }
+.fm-staff .fm-media-filter > button { align-self: end; margin: 0; }
+.fm-media-hint { color: var(--fm-muted); font-size: 12px; }
+.fm-staff .fm-media-table td { vertical-align: middle; }
+.fm-media-preview { position: relative; display: flex; align-items: center; justify-content: center; width: 148px; height: 108px; overflow: hidden; background: var(--fm-bg); border: 1px solid var(--fm-line); border-radius: 8px; text-decoration: none; }
+.fm-media-preview:hover { border-color: var(--fm-accent); }
+.fm-media-preview img { position: absolute; width: 100%; height: 100%; object-fit: contain; }
+.fm-media-placeholder { padding: .5rem; text-align: center; white-space: pre-line; font-size: 11px; color: var(--fm-muted); }
+.fm-media-date { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.fm-media-table small { display: block; margin-top: .25rem; color: var(--fm-muted); white-space: nowrap; }
+.fm-media-state { display: inline-block; padding: .3rem .6rem; border-radius: 5px; background: var(--fm-raised); white-space: nowrap; font-size: 12px; }
+.fm-media-state[data-state="ready"] { color: var(--fm-accent); }
+.fm-media-state[data-state="failed"] { color: #f1b097; }
+.fm-staff .fm-media-delete { background: transparent; color: #f1b097; border-color: #744e42; padding: .55rem .85rem; }
+.fm-staff .fm-media-delete:hover { background: #f1b09712; }
+.fm-media-venues { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+.fm-media-venue-link { display: flex; align-items: center; gap: 1.5rem; justify-content: space-between; padding: 1rem 1.25rem; min-width: 240px; max-width: 100%; background: var(--fm-panel); border: 1px solid var(--fm-line); border-radius: 12px; }
+.fm-media-venue-link strong { overflow-wrap: anywhere; }
+.fm-media-venue-link a { color: var(--fm-accent); white-space: nowrap; }
+@media (max-width: 600px) { .fm-staff .fm-media-filter > label { flex: 1 1 140px; min-width: 120px; } .fm-media-preview { width: 112px; height: 84px; } }

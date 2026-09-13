@@ -1,0 +1,21 @@
+.fm-staff .fm-spa-search { border-top: 1px solid var(--fm-line); padding-top: 1.25rem; margin-top: 1.25rem; }
+.fm-spa-search h3 { margin: 0; font-size: 1rem; }
+.fm-staff .fm-search-toggle { flex-direction: row; align-items: center; gap: .75rem; cursor: pointer; }
+.fm-staff .fm-search-toggle input {
+  appearance: none; width: 44px; height: 26px; min-height: 26px; flex: 0 0 44px;
+  border: 1px solid var(--fm-line); border-radius: 20px; padding: 0;
+  background: var(--fm-panel); position: relative; cursor: pointer;
+}
+.fm-search-toggle input::after {
+  content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%;
+  top: 3px; left: 3px; background: var(--fm-text); transition: transform 150ms;
+}
+.fm-staff .fm-search-toggle input:checked { background: var(--fm-accent); }
+.fm-search-toggle input:checked::after { transform: translateX(18px); background: #152822; }
+.fm-search-toggle input:focus-visible { outline: 2px solid var(--fm-text); outline-offset: 3px; }
+.fm-staff .fm-search-dates { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+.fm-search-dates legend { margin-bottom: .65rem; font-size: .85rem; }
+.fm-search-dates:disabled { opacity: .45; }
+.fm-spa-search .fm-search-hint { font-size: .8rem; color: var(--fm-soft); margin: 0; }
+.fm-spa-search [role="status"]:empty { display: none; }
+@media (prefers-reduced-motion: reduce) { .fm-search-toggle input::after { transition: none; } }

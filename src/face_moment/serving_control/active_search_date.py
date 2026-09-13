@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 import uuid
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -36,6 +37,57 @@ class ActiveSearchDateRecord:
 class ActiveSearchDateSpa:
     spa_id: uuid.UUID
     name: str
+    timezone: str = "Asia/Novosibirsk"
+    search_today: bool = True
+    date_from: date | None = None
+    date_to: date | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class SearchDatesRecord:
+    spa_id: uuid.UUID
+    search_today: bool
+    date_from: date | None
+    date_to: date | None
+    timezone: str
+    today: date
+    settings_revision: int
+    updated_at: datetime | None
+
+
+def read_search_dates(
+    database_session: Session, *, session_token: str | None, spa_id: uuid.UUID,
+) -> SearchDatesRecord:
+    principal = get_current_principal(database_session, session_token=session_token)
+    _authorize(principal.role)
+    return _search_dates_record(_load_accessible_spa(database_session, spa_id))
+
+
+def update_search_dates(
+    database_session: Session, *, session_token: str | None,
+    csrf_cookie_token: str | None, csrf_header_token: str | None,
+    spa_id: uuid.UUID, search_today: bool, date_from: date | None, date_to: date | None,
+) -> SearchDatesRecord:
+    principal = authenticate_unsafe_staff_request(
+        database_session, session_token=session_token,
+        csrf_cookie_token=csrf_cookie_token, csrf_header_token=csrf_header_token,
+    )
+    _authorize(principal.role)
+    _load_accessible_spa(database_session, spa_id)
+    spa = RealtimeContextRepository(database_session).update_search_dates(
+        spa_id=spa_id, search_today=search_today, date_from=date_from, date_to=date_to,
+    )
+    return _search_dates_record(spa)
+
+
+def _search_dates_record(spa: Spa) -> SearchDatesRecord:
+    return SearchDatesRecord(
+        spa_id=spa.id, search_today=spa.search_today,
+        date_from=spa.active_visit_date, date_to=spa.active_visit_date_to,
+        timezone=spa.timezone, today=datetime.now(timezone.utc).astimezone(ZoneInfo(spa.timezone)).date(),
+        settings_revision=spa.settings_revision,
+        updated_at=spa.settings_updated_at.astimezone(timezone.utc) if spa.settings_updated_at else None,
+    )
 
 
 def read_active_search_date(
@@ -107,7 +159,11 @@ def list_active_search_date_spas(
     spas = database_session.scalars(
         select(Spa).where(Spa.active.is_(True)).order_by(Spa.name, Spa.id)
     )
-    return tuple(ActiveSearchDateSpa(spa_id=spa.id, name=spa.name) for spa in spas)
+    return tuple(ActiveSearchDateSpa(
+        spa_id=spa.id, name=spa.name, timezone=spa.timezone,
+        search_today=spa.search_today, date_from=spa.active_visit_date,
+        date_to=spa.active_visit_date_to,
+    ) for spa in spas)
 
 
 def _authorize(role: StaffRole) -> None:

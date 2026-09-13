@@ -309,7 +309,7 @@ Shared PostgreSQL access does not add an edge or write authority.
 
 Each Attempt copies one immutable serving snapshot:
 
-- `settings_revision`, `spa_id`, `visit_date`;
+- `settings_revision`, `spa_id`, resolved inclusive `visit_date`/`visit_date_to`;
 - `pipeline_revision_id`, `pipeline_code`, `query_source=reference`;
 - threshold, quality settings and optional `calibration_id`;
 - `release_id`.

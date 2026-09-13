@@ -45,6 +45,7 @@ def project_realtime_evidence(
         "serving": {
             "release_id": attempt.release_id,
             "visit_date": None if attempt.visit_date is None else attempt.visit_date.isoformat(),
+            "visit_date_to": None if attempt.visit_date is None else (attempt.visit_date_to or attempt.visit_date).isoformat(),
             "pipeline_revision_id": str(attempt.pipeline_revision_id),
             "pipeline_code": attempt.pipeline_code,
             "query_source": attempt.query_source,

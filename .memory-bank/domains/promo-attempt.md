@@ -32,7 +32,7 @@ table with:
 | `local_detection_completed_ms`, `request_started_ms` | Non-negative client monotonic offsets admitted with the request. |
 | `response_received_ms` | Nullable non-negative client monotonic offset reported best-effort after the synchronous response; it is never synthesized from server time. |
 | `proposal_count` | Integer `0..20`. |
-| `settings_revision`, `visit_date`, `pipeline_revision_id`, `pipeline_code`, `query_source`, `release_id` | Immutable serving snapshot copied before inference; `query_source` is `reference`. |
+| `settings_revision`, `visit_date`, `visit_date_to`, `pipeline_revision_id`, `pipeline_code`, `query_source`, `release_id` | Immutable serving snapshot copied before inference; `query_source` is `reference`. |
 | `threshold`, `quality_settings`, `calibration_id` | Immutable applied search inputs; `calibration_id` is nullable. |
 | `deadline_ms` | Positive immutable server deadline configured for this admitted Attempt. |
 | `slot_decided_at`, `search_started_at`, `search_finished_at` | Nullable server stage timestamps sufficient to distinguish busy, active search and terminal search timing. |
@@ -183,7 +183,7 @@ One successful Attempt creates one `face_moment.promo_sessions` row owned by
 |---|---|
 | `id` | Server-generated UUID primary key and response `session_id`. |
 | `attempt_id` | Required unique reference to the owning core Attempt; owner-local cascade is allowed. |
-| `spa_id`, `visit_date` | Immutable values copied from the Attempt snapshot. |
+| `spa_id`, `visit_date`, `visit_date_to` | Immutable inclusive scope copied from the Attempt snapshot. Historical single-date records represent equal bounds. |
 | `session_result_photo_ids` | Ordered unique UUID array containing the complete valid union. |
 | `teaser_photo_ids` | Ordered UUID array of exactly four unique union members. |
 | `n` | Integer equal to the union cardinality and at least four. |

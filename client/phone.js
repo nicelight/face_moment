@@ -80,7 +80,9 @@ export function createPhoneController({
     purchaseUrl = session.purchase_url;
     elements.root.dataset.sessionId = session.session_id;
     elements.spa.textContent = session.spa_name;
-    elements.date.textContent = session.visit_date;
+    const dateTo = session.visit_date_to || session.visit_date;
+    elements.date.textContent = dateTo === session.visit_date
+      ? session.visit_date : `${session.visit_date} — ${dateTo}`;
     elements.count.textContent = String(session.n);
     elements.purchase.setAttribute("href", purchaseUrl);
     const teaserMediaUrl = session.teaser?.media_url || null;

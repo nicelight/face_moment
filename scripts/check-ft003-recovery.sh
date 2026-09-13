@@ -79,6 +79,7 @@ from face_moment.serving_control.ingest_target import Spa, IngestTargetRepositor
 from face_moment.serving_control.realtime_context import (
     QuerySource,
     ReferenceSearchSettings,
+    resolve_search_dates,
 )
 from face_moment.platform.auth.sessions import StaffSession
 
@@ -111,7 +112,11 @@ def active_runtime(session: Session):
             ReferenceSearchSettings.query_source == QuerySource.REFERENCE.value,
         )
     )
-    if context is None or spa.active_visit_date is None:
+    if context is None:
+        fail("active_realtime_context_missing")
+    try:
+        resolve_search_dates(spa)
+    except ValueError:
         fail("active_realtime_context_missing")
     return spa, revision
 
@@ -219,7 +224,7 @@ def setup(marker: str) -> None:
             spa, revision = active_runtime(session)
             spa_id = spa.id
             spa_timezone = spa.timezone
-            visit_date = spa.active_visit_date
+            visit_date, _ = resolve_search_dates(spa)
             client = DisplayClientRepository(session).provision(
                 spa_id=spa_id,
                 name=f"task-051-display-{marker}",

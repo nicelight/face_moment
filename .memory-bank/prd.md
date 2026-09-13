@@ -67,7 +67,7 @@ separate features.
    15 minutes from their server-side `photo.accepted_at`.
 3. Show a fully visible and scannable QR in under 10 seconds from
    `reference_series_ready_at` in at least 19 of 20 controlled attempts.
-4. Preserve СПА, `visit_date`, teaser and `N` consistently within the same
+4. Preserve СПА, the resolved search-date range, teaser and `N` consistently within the same
    search/Promo session when it is continued on the phone.
 5. Validate that, in at least 19 of the 20 controlled attempts, every displayed
    teaser and every unique photograph counted in `N` belongs to at least one
@@ -146,14 +146,25 @@ separate features.
 - May select their own uploaded Photos by СПА, `visit_date` and capture-time
   range, soft-delete them and restore them while they remain soft-deleted.
 
+### Staff media browsing (operator request 2026-09-11)
+
+The Library shall offer «Медиа» for each площадка. The venue media page shall
+provide date-range selection and a table of uploaded photos with thumbnail,
+added date/time, useful existing metadata and a final delete action. Photos
+with confirmed no-face processing outcome are excluded (operator clarification
+2026-09-11). Clicking a
+thumbnail opens the original at native resolution. Existing staff role scope
+and soft-delete semantics apply. This staff function does not introduce public
+original delivery to participants.
+
 ### Face Moment / СПА operator
 
 - Observes photo readiness, failures and Promo operation.
 - May view recent queue statistics per СПА and soft-delete or restore any Photo
   in an accessible СПА, and may invoke the confirmed project-wide restore-all
   or hard-purge action.
-- Explicitly sets the active working `visit_date` for the pilot СПА in the
-  server-side application before automatic attempts use that date for search.
+- Configures exit-camera search per СПА in «Площадки»: automatic today in
+  the СПА timezone, or a manual inclusive date range.
 - May open a sanitized attempt summary containing outcome, stage timeline,
   latency and issue tags; access to other data follows NFR-SEC-04 and
   NFR-SEC-06.
@@ -231,18 +242,28 @@ pilot actor or blocker.
 - **FR-SRCH-02** — Every embedding and face record MUST belong to an immutable
   pipeline revision. Search MUST NOT compare incompatible revisions.
 - **FR-SRCH-03** — Search MUST use exact pgvector cosine search after filtering
-  by serving pipeline revision, СПА and authoritative `visit_date`; an optional
+  by serving pipeline revision, СПА and Photo `visit_date` within the resolved
+  inclusive search-date range; an optional
   time window may be used only when its clock/timezone quality is confirmed.
 - **FR-SRCH-04** — A match MUST pass both the configured query-face quality gate
   and the calibrated reference threshold for the СПА, pipeline code and query
   source. A top-1/top-2 margin MUST NOT be used.
 - **FR-SRCH-05** — The serving reference threshold MUST be calibrated and
   registerable/editable before the controlled acceptance run.
-- **FR-SRCH-06** — The operator MUST explicitly set the active working
-  `visit_date` for the СПА in the server-side application. Every automatic
-  sensor-triggered attempt MUST use that date until the operator changes it;
-  `SpaPromoClient` MUST NOT override it. If no active date is set, search MUST
-  not run and the condition MUST be recorded diagnostically.
+- **FR-SRCH-06** — Each СПА MUST have independent exit-camera search settings
+  in «Площадки». The switch «Камера на выходе ищет фото за сегодня» selects
+  automatic search for the current calendar day in that СПА's timezone,
+  resolved server-side for each new attempt. When switched off, the fields
+  «С» (From) and «По» (To) become enabled and define an inclusive range of
+  Photo `visit_date` values. Both dates are required, From MUST NOT exceed To,
+  and equal dates select one day. Switching the calendar day requires no staff
+  action in automatic mode. `SpaPromoClient` MUST NOT override this scope.
+  Settings are saved per площадка and affect subsequent attempts only.
+  The separate «Настройки поиска» menu is replaced by these площадка controls.
+  This operator decision (2026-09-11) supersedes the previous mandatory
+  manually selected single working date. It applies to the exit camera,
+  not to the separately delivered selfie-search website.
+
 
 ### C. Automatic reference capture and best-effort group behavior
 
@@ -381,7 +402,7 @@ distinct from automatic advertising/prePromo behavior below.
   without another selfie or participant login step implied by the current
   immediate-continuation flow.
 - **FR-UX-04** — The phone landing MUST show the same session's СПА,
-  `visit_date`, an available low-quality teaser when one remains, the issued
+  resolved search-date range, an available low-quality teaser when one remains, the issued
   `N`, and an active `Перейти к покупке` button. Media hard-purged after
   issuance is skipped without invalidating or rebuilding the session.
 - **FR-UX-05** — The Promo display MUST use the operator-approved copy `Ваши фото можно скачать по QR коду или на сайте face-momet.ru`. On the valid phone landing, `Перейти к
@@ -678,8 +699,9 @@ distinct from automatic advertising/prePromo behavior below.
 
 ### Core concepts
 
-- **СПА** — pilot venue with a name, timezone, operator-selected active working
-  `visit_date`, active serving pipeline and calibrated reference threshold.
+- **СПА** — pilot venue with a name, timezone, independent automatic-today
+  or manual inclusive search-date range, active serving pipeline and calibrated
+  reference threshold.
 - **Photo** — independently admitted commercial image linked directly to its
   СПА, authoritative `visit_date`, effective `captured_at`, server-side
   `accepted_at`, uploader identity, active/soft-deleted marker and private
@@ -701,7 +723,7 @@ distinct from automatic advertising/prePromo behavior below.
 - **Selected detection** — one quality-ranked face occurrence used for a search;
   it is not proof of a unique physical person.
 - **Promo/search session** — short-lived context binding СПА, authoritative
-  `visit_date`, four teaser IDs, `session_result_photo_ids`, `N`, QR token and
+  resolved search-date range, four teaser IDs, `session_result_photo_ids`, `N`, QR token and
   one session-wide browser-access state. The QR may open or reuse that context
   within 30 minutes of `qr_issued_at`; after the first successful open, the
   shared context expires after 60 minutes without explicit participant
@@ -734,9 +756,10 @@ distinct from automatic advertising/prePromo behavior below.
   time in the СПА timezone, then that file's server-side upload-start time, then
   01:00 on `visit_date`; it scopes time-range inventory actions but does not
   replace the authoritative `visit_date`.
-- An automatic attempt uses the server-side active working `visit_date` selected
-  by the operator for its СПА; the client token selects the СПА but neither the
-  client clock nor the latest uploaded photo silently selects the date.
+- An automatic attempt freezes the server-resolved search-date range for its
+  СПА: today in the СПА timezone or the saved manual inclusive range. The
+  client token selects the СПА; the client clock and latest upload do not
+  select the scope. Photo `visit_date` remains photographer-owned.
 - A photo is searchable only through a `ready` state for the current compatible
   serving pipeline revision.
 - A soft-deleted Photo and all its related data remain stored but are inactive
@@ -792,7 +815,8 @@ From/To defaults do not force an invalid interval when filtering other fields.
 Operator update 2026-09-11: «Библиотека» and «Обработка» select an active
 площадка by its saved name in a dropdown, with UUID kept internal. The operator
 and administrator (`developer`) can edit площадка names in the separate
-«Площадки» section. Both may use «Настройки поиска». Newly configured
+«Площадки» section. Both configure exit-camera automatic-today/manual-range search on each
+площадка card; the separate «Настройки поиска» menu is removed. Newly configured
 площадки without an explicit name receive «Площадка 1», «Площадка 2», etc.;
 existing explicit names remain unchanged.
 
@@ -882,8 +906,9 @@ payment/fiscal providers, external observability stores and message brokers.
 - A crash after private-object upload but before the per-photo PostgreSQL commit
   may leave one orphan object; losing that one admission is acceptable and the
   photographer may upload the JPEG again.
-- A missing active working `visit_date` prevents search and produces diagnostic
-  evidence rather than falling back to a client clock or arbitrary upload date.
+- An invalid manual search range prevents search with diagnostic evidence.
+  Automatic mode derives today server-side in the СПА timezone without requiring
+  a manually selected date or falling back to a client clock/upload date.
 - `no_faces` is a distinct terminal processing state but breaches the 15-minute
   searchable SLO for its accepted JPEG population.
 - Sensor events arriving during capture/search or successful cooldown are
@@ -944,8 +969,8 @@ payment/fiscal providers, external observability stores and message brokers.
 - A selected serving pipeline is pre-warmed; its reference threshold is
   calibrated before the run. Existing query-quality settings remain configured;
   extended quality-gate Calibration under FR-DEV-08 is not a pilot prerequisite.
-- The operator has explicitly set the active working `visit_date`, and it
-  matches the independently accepted commercial photos intended for the run.
+- The resolved automatic-today or manual date range matches the independently
+  accepted commercial photos intended for the run.
 - Every tester expected in a run has at least four searchable commercial
   photographs in the authoritative СПА/date scope.
 - The 20-attempt set includes the current best-effort group flow; exact attempt
@@ -967,7 +992,7 @@ payment/fiscal providers, external observability stores and message brokers.
   AC-01; no joint pass set is required. Any unrelated included photograph fails
   that attempt; failure to cover every unique person in a group does not.
 - **AC-04** — Every completed phone continuation shows the correct СПА,
-  authoritative `visit_date`, an available teaser belonging to that same
+  resolved search-date range, an available teaser belonging to that same
   session and the same issued `N`; its `Перейти к покупке` button navigates to
   the configured main selfie-search/purchase page. If referenced media was
   hard-purged after issuance, the missing item is skipped without invalidating

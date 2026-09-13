@@ -282,7 +282,7 @@ Attempt `472e284a-569d-426a-832d-dc189533e56e` (09-09 23:36:48 Asia/Dushanbe):
 Порог попытки и текущий — 0.38; similarity максимум 0.5923, минимум среди
 совпадений 0.3833. Открытие по QR ещё не записано; стенд доступен только локально.
 
-Карточки малы: [заметка](../../PAPERCUTS/gpt-6%20__%2009-10-2026%2001.20.md).
+Карточки малы: заметка `PAPERCUTS/gpt-6 __ 09-10-2026 01.20.md`.
 
 ## No server connection notice — 2026-09-10
 
@@ -480,3 +480,36 @@ Persisted values, query serialization and API responses keep exact UTC instants.
 Переименование площадок доступно оператору и администратору (`developer`)
 в разделе «Площадки» (`/staff/spas`). «Настройки поиска» доступны обеим ролям.
 Страница создания новых площадок пока не реализована.
+
+### Пустая страница площадок: HTTPS routing
+
+`/staff/spas` and `/api/serving/spas/*/name` must be listed in
+`deploy/Caddyfile`'s `@backend_canonical` matcher. Adding only a FastAPI route
+leaves Caddy returning an empty `200` for an unmatched request. After changes,
+validate/reload Caddy and check authenticated HTML plus the rename API through
+`https://localhost:8443`, not only the direct backend. The regression is in
+`tests/promo/test_public_edge_routes.py::test_live_caddy_serves_spa_page_and_name_mutation`.
+
+
+## Venue media and search-range rollout — 2026-09-12
+
+Library (`/staff/photo-inventory`, alias `/staff/library`) now links each active
+venue to `/staff/venue-media?spa_id=...`. Select upload dates (both days included,
+UTC+7) to view thumbnails, added/capture timestamps, dimensions/size and status.
+Click a thumbnail for the private native original; the final action reuses
+soft deletion. Admission-state no_faces photos are excluded. Operator/developer
+see venue uploads; photographers see their own.
+
+The operator explicitly authorized deploying both concurrent changes. Built the
+shared current-source image, verified seven media/search/migration files match
+the workspace, applied `0023_search_date_ranges` from live0022, recreated backend,
+realtime and background-worker, and validated/reloaded Caddy. All three roles
+are healthy. HTTPS media/original and `/api/serving/spas/{id}/search-dates` were
+checked as operator and developer without modifying live Photos. Counts stayed
+6 Photos,17 Attempts,12 sessions. The existing manual date2026-09-08 was retained
+for both range bounds; migration enabled search_today and advanced revision7→8.
+
+Rollout evidence: `.tasks/staff-media-release/` (build, migration, service health,
+Caddy validation/reload, image ID and live-check logs). Functional/semantic media
+proof: `.protocols/TASK-119-T3-FT-012-W3/`. The task-owned isolated
+staff-media-test Compose resources were removed after verification.

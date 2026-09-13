@@ -317,3 +317,14 @@ test("phone bundle retains no durable state and declares no-referrer delivery", 
   assert.match(html, /rel="noreferrer"/);
   assert.doesNotMatch(html, /session_id|ticket|teaser_photo_ids/);
 });
+
+
+test("phone preserves a multi-day search range instead of showing only its start", async () => {
+  const state = fixture();
+  const original = sessionResponse();
+  state.responses.push({ ok: true, async json() {
+    return { ...await original.json(), visit_date_to: "2026-08-30" };
+  } });
+  await state.controller.loadSession();
+  assert.equal(state.elements["phone-date"].textContent, "2026-08-28 — 2026-08-30");
+});

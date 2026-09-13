@@ -146,3 +146,48 @@ All four indexed cards satisfy their owned claims and tier obligations;
 obligation is independently owned; every direct module/contract heading
 resolves; Foundation remains transitive; Planning Revision remains `4`; and
 fresh `/review-tasks-plan FT-012` returns `APPROVE` before execution.
+
+## Staff Venue Media Extension
+
+One new task `TASK-119-T3-FT-012-W3` owns `FT-012-AC-008`. Historical
+cards, claims, lifecycle and accumulated evidence remain unchanged. Its W3
+prerequisites are completed visibility (`TASK-107`) and persisted private
+Photo derivatives (`TASK-021`); their Foundation dependency remains transitive.
+T3 follows from the new authenticated private-original delivery boundary.
+
+Inventory at `src/face_moment/inventory/` owns selection and authorization;
+processing supplies the narrow admission-thumbnail read. Library navigation,
+HTTP adapters, browser table and checked-in HTTPS route complete this same
+browsing result. No separately completable derivative-processing outcome is
+introduced. Reuse existing soft delete, staff shell, date helpers and private
+object storage. No migration, worker, public media surface or new framework.
+
+The accepted 2026-09-11 clarification excludes only Photos whose immutable
+admission-revision state is `no_faces` from the table. Pending, processing,
+failed and missing state remain eligible, with a placeholder when no thumbnail
+is available. Direct media authorization is unchanged. AC-008 proof compares
+these states, including differing later revision status, to show the table
+exclusion follows admission lineage without introducing image generation.
+
+Canonical coverage: extend [Photo Inventory API](../../contracts/photo-inventory-api.md#staff-venue-media)
+for exact routes/payloads, [Boundary Map](../../contracts/boundary-map.md#staff-inventory-media-reads)
+for its existing read edge, and [Photo Inventory](../../domains/photo-inventory.md#staff-venue-media-selection)
+for acceptance-date reads. Reuse [Staff Access](../../domains/staff-access.md#browser-session-contract),
+[Processing Shape](../../domains/photo-processing.md#persisted-processing-shape)
+and [UI verification](../../testing/index.md#ui-verification). No new spec.
+Planning Revision remains `4`; Constitution KISS, private delivery and isolated
+proof govern the extension.
+
+Expected paths: `inventory/staff_media.py`, `inventory/staff_media_http.py`,
+`processing/staff_media_projection.py` below `src/face_moment/`,
+`client/staff-media.js`, existing Library/backend adapters and `deploy/Caddyfile`.
+They are advisory. The task card defines focused typecheck/API/UI gates and
+claim-linked RED/GREEN using disposable database rows and object prefixes.
+Browser proof uses `playwright cli` and actual isolated HTTPS routing, preserving
+live uploads and concurrent FT-006 edits. No production-only task is required.
+
+
+### Extension delivery
+TASK119 closed on 2026-09-12 with independent functional PASS and semantic-pass;
+see its `.protocols/TASK-119-T3-FT-012-W3/` reports. All four historical cards
+remain unchanged. AC-008 uses existing private derivatives and excludes no_faces.

@@ -4,6 +4,35 @@ status: active
 ---
 # Changelog
 
+## [2026-09-11] Per-площадка exit-camera search dates
+
+- Operator requested direct KISS implementation: each «Площадки» card offers
+  automatic today in its timezone or an inclusive manual «С»/«По» range.
+  The separate settings menu is removed; its old page redirects to площадки.
+- `serving_control` resolves each Attempt's range; exact search, result/session,
+  diagnostics and phone continuation preserve both bounds. Additive fields
+  retain historical one-day records without rewriting them.
+- Migration `0023_search_date_ranges` enables automatic mode while preserving
+  the old day as the saved manual range. No new task workflow was launched;
+  Planning Revision 4, Foundation and existing task statuses remain unchanged.
+- Verified scoped Python tests, migration round-trip, real Caddy save/reload,
+  browser controls and phone tests; mypy passes. The shared running app was not
+  restarted or migrated while the gallery agent works in parallel.
+- [Search contract](domains/realtime-search.md),
+  [staff API](contracts/boundary-map.md#active-search-date),
+  [phone compatibility](contracts/qr-continuation-api.md#search-date-range-compatibility).
+
+## [2026-09-11] Fix blank площадка page through HTTPS
+
+- Added `/staff/spas` and `/api/serving/spas/*/name` to Caddy backend routing.
+  Missing matchers had returned empty `200` responses before reaching FastAPI.
+- Caddy validated and reloaded. Authenticated real HTTPS requests verified page
+  content for operator/developer and mutation CSRF rejection. A real Chromium
+  session rendered the page successfully; 3 routing/live-Caddy regression tests
+  passed, including successful renaming in disposable state.
+- [Routing explanation](guides/local-development.md#пустая-страница-площадок-https-routing),
+  [live browser screenshot](../.tasks/spa-edge/spas-live.png).
+
 ## [2026-09-11] Compact single-field time controls
 
 - Replaced three time dropdowns with one `HH:mm:ss` field and clock icon across
@@ -515,3 +544,41 @@ leave reverses smoothly from the current scale; clicking never waits for zoom.
 
 The operator subsequently adjusted the final Fluid hover target to 150%;
 the 4-second transition and smooth return remain unchanged.
+
+
+## 2026-09-11 — Staff venue media request
+
+Recorded the operator's Library → venue Media table, date filters, thumbnail /
+original viewing and per-row soft-delete request in PRD, FT-012 and the existing
+inventory contract/boundary map. Existing processing creates 320px thumbnails
+and 1024px previews by default. Bounded FT-012 planning delta; revision 4 and
+historical task evidence unchanged. Implementation and checks remain pending.
+
+## 2026-09-12 — Staff media implementation
+
+TASK-119 adds Library links to venue media, upload-date filtering in UTC+7,
+private thumbnails/native originals, persisted metadata and existing soft delete.
+The operator clarified that no_faces Photos must be omitted. API tests (9),
+real HTTPS/Playwright CLI journey (1), mypy and mb-lint pass; independent task
+verification is next. See `.protocols/TASK-119-T3-FT-012-W3/handoff.md`.
+Shared runtime was not restarted during concurrent FT-006 work.
+
+
+## 2026-09-12 — Staff media independently verified
+
+TASK-119 closed as done by GENERAL after independent functional PASS and
+semantic-pass. Feature extension, task-plan handoff and task evidence are
+synchronized; Planning Revision4 and historical requirement acceptance remain
+unchanged. The operator also explicitly requested applying migration0023 and
+updating shared services for both agents' changes after completion; rollout
+preflight confirms live0022 and isolated search-settings tests23PASS.
+
+
+## 2026-09-12 — Both changes deployed
+
+On explicit operator request, applied migration0023_search_date_ranges to the
+shared database and updated backend/realtime/background-worker to the newly
+built image; validated/reloaded Caddy. All services healthy. Live HTTPS checks
+as operator and developer passed Library, venue Media, actual thumbnail/original,
+venue settings and search-dates API. Photo/Attempt/session counts preserved
+(6/17/12). See guides/local-development.md and .tasks/staff-media-release/.
