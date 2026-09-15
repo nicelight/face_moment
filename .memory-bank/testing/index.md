@@ -29,6 +29,34 @@ last_updated: 2026-09-04
 
 ## Quality gates
 
+### Functional multi-venue operation (AC-27)
+
+- [Native integration](../../tests/processing/test_multi_venue_runtime.py):
+  disposable PostgreSQL/pgvector, real MinIO, actual YuNet/SFace assets and both
+  production lifecycles twice. Eight Photos use identical people/JPEG bytes
+  across two venues; admission snapshots distinct detector thresholds. Native
+  worker output, token-bound search, independent dates/similarity thresholds,
+  exact four-photo session populations, foreign Promo-media rejection and QR
+  phone name/date/teaser scope are verified. Conflicting revisions close both
+  startups. No adapter/search/persistence stubs in this test.
+- [Shared revision tests](../../tests/serving_control/test_shared_serving_revision.py):
+  zero/conflicting selections, forbidden creation, other-venue pending guard,
+  atomic global switch, historical state/settings preservation and concurrent
+  creation/switch against PostgreSQL.
+- [Realtime concurrency](../../tests/promo/test_realtime_attempt_integration.py):
+  common `busy` across two venues, duplicate `in_progress`, deadline/failure
+  release. Inference is deliberately held at a test seam to prove concurrency.
+- Existing settings/date/search tests retain isolation coverage; the
+  [local reprocessing tests](../../tests/processing/test_photo_reprocessing.py)
+  verify a global two-venue revision change and idempotent pending publication.
+- [Packaged smoke](../../scripts/smoke-runtime.sh) seeds two active venues before
+  actual native process startup and container/dependency restarts, using its
+  own project/volumes. It does not create production venues.
+- This verifies functional operation, not 10–15 venue capacity, recognition
+  quality on a venue's camera or a physical multi-screen browser session.
+
+### Standard gates
+
 - Baseline code DoD: configured build/typecheck and relevant unit tests
 - lint / typecheck
 - unit tests

@@ -145,6 +145,11 @@ teaser IDs, union or `N`.
   authorized media responses and generates the QR locally from `qr_url`.
 - Final Promo, optional Chime and success cooldown begin only after the four
   teasers and fully visible QR have formed one complete display result.
+- Operator-approved paper entrance (2026-09-16) keeps QR offscreen until four
+  photo arrivals finish, then brings it into its saved position. Fully-visible
+  timing, display ACK and the result-display timer follow QR settlement
+  (~3.06 seconds after insertion). The text entrance follows one second later
+  and does not delay ACK. Reduced-motion skips this cosmetic sequence.
 - Any non-result outcome, invalid/partial result, media/decode/QR/render error,
   stale response, camera/sensor/network/processing failure or missing display
   configuration leaves or returns the client to usable local advertising and

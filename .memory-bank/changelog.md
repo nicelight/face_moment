@@ -4,7 +4,51 @@ status: active
 ---
 # Changelog
 
+## [2026-09-16] Functional multi-venue runtime
+
+- Direct operator request, without a new DevRails queue: aligned product,
+  architecture, boundary, processing and lifecycle docs with PRD Multi-venue
+  operation, FR-SRCH-01, NFR-ARCH-01 and AC-27.
+- Model consumers resolve one shared eligible revision across active venues.
+  Empty/conflicting selection fails explicitly. Creation rejects another
+  active revision; global switches serialize with creation/admission and guard
+  every venue before atomically changing all pointers. No migration/data reset.
+- Local preprocessing application supports multi-venue snapshots. Existing
+  per-venue settings/search/worker paths, one realtime slot and sequential
+  worker are retained. Historical data and inactive Calibration remain intact.
+- 69 focused tests passed, including native two-venue PostgreSQL/MinIO/SFace
+  search/Promo/QR, production lifecycles twice, conflict startup and cross-venue
+  busy. Mypy passed for 106 source files. Updated the existing rename test to
+  match the current Library venue links.
+- [Verification scope](testing/index.md#functional-multi-venue-operation-ac-27)
+  and [local operation](guides/local-development.md): commands and limits.
+- Fresh dependency image build failed its downloaded-package SHA-256 check;
+  the check was not bypassed. Packaged runtime verification uses current source
+  layered on the previously working local image, with a recorded build limit.
+- Two-venue packaged smoke passed, including actual container/dependency
+  restarts and HTTPS. Existing local backend/realtime/worker were restarted and
+  are healthy; existing display token/config and HTTPS probes passed. Before/after
+  hashes preserve 42 Photos, settings, tokens, all 54 prior Attempts, 26 prior
+  sessions and 270 prior objects. Two new sessions appeared through ongoing
+  local activity; prior rows were independently compared unchanged. No test
+  venues or revision changes were made in the working database.
+- [Detailed evidence](../../.protocols/multi-venue-report.md): checks, local
+  preservation and build limitation. All owned temporary test resources removed.
+
 ## [2026-09-16] Venue advertising playlists
+
+- Added local screen configuration for an advertising caption and numeric text
+  size (8–200 px), replacing three presets while preserving legacy values.
+  Plain text overlays all advertising media at top left, hides outside
+  advertising and persists in the kiosk's existing localStorage.
+
+- Operator-approved Promo entrance: four staggered paper-card arrivals, then
+  matching QR arrival, then text pressed into place one second after QR settles.
+  Timing refined by operator: photo travel/stagger 50% longer (1350/270 ms),
+  text duration subsequently increased to 6000 ms with linear easing so motion
+  no longer settles early; full sequence approximately 10 seconds.
+  Authored layout/reduced motion preserved; display ACK/timer follow actual
+  QR entrance completion (~3.06 sec).
 
 - Operator presentation update: finished Promo fades to black in 3 seconds,
   then advertising reveals in 1 second after its first material is ready.

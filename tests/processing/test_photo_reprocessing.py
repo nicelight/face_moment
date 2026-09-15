@@ -49,6 +49,41 @@ def test_reprocessed_ready_photo_search_preserves_admission_revision() -> None:
             assert session.get(PhotoPipelineState, (photo_id, old_id)).status == 'no_faces'
 
 
+def test_local_preprocessing_switches_and_reprocesses_both_venues(tmp_path, monkeypatch):
+    import importlib.util
+    from pathlib import Path
+    from types import SimpleNamespace
+    from face_moment.infrastructure.settings import Settings
+    from face_moment.serving_control.ingest_target import Spa
+    from tests.serving_control.test_serving_revision_switch import _add_photo as add_photo
+
+    spec = importlib.util.spec_from_file_location('multi_venue_preprocessing', Path('scripts/apply-local-photo-preprocessing.py'))
+    procedure = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(procedure)
+    monkeypatch.setattr(procedure, 'admit_selected_model', lambda **kwargs: SimpleNamespace(ready=True))
+    with disposable_postgresql_engine('multi_venue_preprocessing') as engine:
+        before = {'photos': {}, 'spas': {}}
+        with Session(engine) as session:
+            old = PipelineRevisionRepository(session).publish_eligible(
+                pipeline_code=PipelineCode.OPENCV_SFACE, validated_at=datetime.now(timezone.utc), **PIPELINE_COMPATIBILITY)
+            for zone in ('UTC', 'Asia/Dushanbe'):
+                venue = IngestTargetRepository(session).configure_spa(timezone=zone, serving_pipeline_revision_id=old.id)
+                photo_id = add_photo(session, spa_id=venue.spa_id, revision_id=old.id,
+                    marker=uuid.uuid4().hex, status='no_faces')
+                before['photos'][str(photo_id)] = {'inventory': {'spa_id': str(venue.spa_id)}}
+                before['spas'][str(venue.spa_id)] = {'serving_pipeline_revision_id': str(old.id)}
+            session.commit()
+        procedure.apply(engine, Settings.from_env(), before, tmp_path)
+        procedure.apply(engine, Settings.from_env(), before, tmp_path)
+        with Session(engine) as session:
+            new = IngestTargetRepository(session).resolve_committed_serving_revision().id
+            assert new != old.id
+            for photo_id, value in before['photos'].items():
+                assert session.get(Spa, uuid.UUID(value['inventory']['spa_id'])).serving_pipeline_revision_id == new
+                assert session.get(PhotoPipelineState, (uuid.UUID(photo_id), new)).status == 'pending'
+                assert session.get(PhotoPipelineState, (uuid.UUID(photo_id), old.id)).status == 'no_faces'
+
+
 def test_ensure_revision_pending_is_transactional_and_preserves_every_existing_status() -> None:
     with disposable_postgresql_engine('task118_pending') as engine:
         with Session(engine) as session:

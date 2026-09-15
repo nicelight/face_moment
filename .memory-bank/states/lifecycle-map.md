@@ -60,15 +60,20 @@ Sources: [IDEA_APP.md](../../IDEA_APP.md),
 
 ## Ordinary Serving-Revision Change Guard
 
-An authenticated manual command may change one СПА from current revision A to
+An authenticated manual command may change all venues from shared revision A to
 validated B, but it introduces no new revision-switch lifecycle or job state.
 Before B commits, `serving_control` serializes the serving-context update with
-admission and consults the processing-owned A-state guard. Any Photo admitted
+admission and consults the processing-owned A-state guard for every venue. Any Photo admitted
 against A with exact A state `pending` or `processing` rejects the command and
 leaves A committed; `ready`, `no_faces` and `failed` are terminal and permit
 the change. The rejection changes no Photo state and does not start the B
 maintenance/restart path. Calibration/model comparison is test-only and never
 creates an exception to this guard.
+
+All venue revision pointers change atomically; a blocker anywhere preserves
+the current selection everywhere. Conflicting active revisions explicitly reject
+startup and ordinary switches. No model or threshold is selected from an
+arbitrary venue. Venue settings and historical processing states remain intact.
 
 Source: accepted operator decision in
 [FT-002](../features/FT-002.md#clarifications); application ownership and

@@ -29,18 +29,14 @@ def bind_model_consumer(settings: Settings) -> ModelConsumerBinding:
     """Resolve the committed revision, then admit only its direct adapter."""
 
     from face_moment.processing.model_admission import admit_selected_model
-    from face_moment.processing.revisions import PipelineRevisionRepository
     from face_moment.serving_control.ingest_target import IngestTargetRepository
 
     database_engine = create_engine(settings.database_url, pool_pre_ping=True)
     try:
         with Session(database_engine) as session:
-            committed_target = IngestTargetRepository(
+            revision = IngestTargetRepository(
                 session
-            ).resolve_committed_serving_target()
-            revision = PipelineRevisionRepository(session).resolve_eligible(
-                committed_target.pipeline_revision_id
-            )
+            ).resolve_committed_serving_revision()
         adapter = admit_selected_model(revision=revision, settings=settings)
     except Exception:
         database_engine.dispose()

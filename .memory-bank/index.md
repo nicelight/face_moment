@@ -40,8 +40,8 @@ status: active
 - [.memory-bank/roles/implementer.md](roles/implementer.md): Implementer role contract.
 - [.memory-bank/roles/reviewer.md](roles/reviewer.md): Reviewer role contract.
 - [.memory-bank/roles/judge.md](roles/judge.md): Fresh read-only orchestration trajectory reviewer.
-- [.memory-bank/prd.md](prd.md): Clarified Product Requirements Document for the current one-СПА pilot.
-- [.memory-bank/product.md](product.md): Face Moment one-СПА pilot product
+- [.memory-bank/prd.md](prd.md): Product requirements, including functional multi-venue operation.
+- [.memory-bank/product.md](product.md): Face Moment shared multi-venue product
   identity, value, flow, constraints and non-goals (C4 L1).
 - [.memory-bank/requirements.md](requirements.md): stable `REQ-*` requirements
   and `REQ -> Epic -> Feature -> Test` traceability.
@@ -80,6 +80,8 @@ status: active
 - [.memory-bank/guides/local-development.md](guides/local-development.md):
   local-first Python loop через `uv` с PostgreSQL/MinIO в Docker и отдельным
   packaged Compose smoke; versioned Photo reprocessing и сохранение истории.
+- [Multi-venue verification](testing/index.md#functional-multi-venue-operation-ac-27):
+  shared revision, native two-venue processing/search, restart and isolation evidence.
 - [.memory-bank/adrs/](adrs/): ADR решения.
 - [opencv5_Migration.md](../opencv5_Migration.md): операторский стратегический
   план перехода runtime на OpenCV 5.

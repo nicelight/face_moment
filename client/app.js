@@ -29,6 +29,8 @@ import { readClientDiagnosticEvents, saveClientDiagnosticEvents } from "./client
 import { openPromoLayoutEditor } from "./promo-layout-editor.js";
 import { MAX_PROMO_SECONDS, readPromoSeconds, savePromoSeconds } from "./promo-display-preferences.js";
 import { createAdvertisingPlayer } from "./advertising-player.js";
+import { animatePromoEntrance } from "./promo-entrance.js";
+import { MIN_CAPTION_SIZE, MAX_CAPTION_SIZE, readAdvertisingCaption, saveAdvertisingCaption } from "./advertising-caption.js";
 
 const view = document.querySelector("#client-view");
 const promoHandoff = document.createElement("div");
@@ -192,6 +194,7 @@ function render() {
     refreshClientDiagnostics();
   }
   if (name === "configuration") mountPromoDurationConfiguration(card);
+  if (name === "configuration") mountAdvertisingCaptionConfiguration(card);
   if (name === "configuration") mountQualityConfiguration(card);
   if (name === "configuration") mountCameraConfiguration(card);
   if (name === "configuration") mountTriggerConfiguration(card);
@@ -296,6 +299,50 @@ function mountPromoDurationConfiguration(card) {
   });
   card.append(form);
   refreshConfiguredScreen();
+}
+
+function mountAdvertisingCaptionConfiguration(card) {
+  const settings = readAdvertisingCaption();
+  const form = document.createElement("form");
+  form.className = "advertising-caption-panel";
+  const textLabel = document.createElement("label");
+  textLabel.htmlFor = "advertising-caption-text";
+  textLabel.textContent = "Текст поверх рекламы";
+  const text = document.createElement("textarea");
+  text.id = "advertising-caption-text";
+  text.rows = 3;
+  text.value = settings.text;
+  text.placeholder = "Оставьте пустым, чтобы скрыть надпись";
+  const sizeLabel = document.createElement("label");
+  sizeLabel.htmlFor = "advertising-caption-size";
+  sizeLabel.textContent = "Размер текста, px (8–200)";
+  const size = document.createElement("input");
+  size.id = "advertising-caption-size";
+  size.type = "number";
+  size.min = String(MIN_CAPTION_SIZE);
+  size.max = String(MAX_CAPTION_SIZE);
+  size.step = "1";
+  size.required = true;
+  size.value = settings.size;
+  const save = document.createElement("button");
+  save.type = "submit";
+  save.textContent = "Сохранить текст рекламы";
+  const status = document.createElement("p");
+  status.setAttribute("role", "status");
+  status.textContent = "В левом верхнем углу всех рекламных фото и видео. Сохраняется в браузере этого экрана.";
+  form.append(textLabel, text, sizeLabel, size, save, status);
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+    try {
+      saveAdvertisingCaption(text.value, size.value);
+      status.textContent = "Сохранено. Надпись применится при возврате к рекламе.";
+    } catch (error) {
+      status.textContent = error instanceof TypeError
+        ? "Введите целый размер текста от 8 до 200 px."
+        : "Не удалось сохранить. Разрешите хранение данных в браузере и повторите.";
+    }
+  });
+  card.append(form);
 }
 
 function refreshConfiguredScreen() {
@@ -1279,6 +1326,7 @@ attemptOutcomeController = createAttemptOutcomeController({
 promoDisplayController = createPromoDisplayController({
   container: view,
   requireDisplayConfig: true,
+  onPresent: animatePromoEntrance,
   onLoading: ({ attemptId }) => {
     clearPromoHandoff();
     advertisingPlayer.stop();

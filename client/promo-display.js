@@ -472,6 +472,7 @@ export class PromoDisplayController {
     onComplete = () => {},
     onLoading = () => {},
     onPrepared = () => {},
+    onPresent = null,
     onFailure = () => {},
     onBeforeExpired = null,
     onExpired = () => {},
@@ -497,6 +498,7 @@ export class PromoDisplayController {
     this.onComplete = onComplete;
     this.onLoading = onLoading;
     this.onPrepared = onPrepared;
+    this.onPresent = onPresent;
     this.onFailure = onFailure;
     this.onBeforeExpired = onBeforeExpired;
     this.onExpired = onExpired;
@@ -563,6 +565,7 @@ export class PromoDisplayController {
     const card = this.renderedCard;
     this.renderedCard = null;
     if (!card) return;
+    card.getAnimations?.({ subtree: true }).forEach(animation => animation.cancel());
     const children = Array.from(
       this.container.childNodes ?? this.container.children ?? [],
     );
@@ -825,6 +828,13 @@ export class PromoDisplayController {
       const bounds = qr.svg.getBoundingClientRect?.();
       if (bounds && (bounds.width <= 0 || bounds.height <= 0)) {
         throw new Error("promo_qr_not_visible");
+      }
+      if (this.onPresent) {
+        await this.onPresent(card);
+        if (generation !== this.generation || !this.isVisible) {
+          this.releasePreviewResource(previewResource);
+          return { stale: true, attemptId };
+        }
       }
       if (configuration !== null) {
         this.scheduleDisplayExpiry(attemptId, promoDurationMs(configuration.result_display_ms), replay);

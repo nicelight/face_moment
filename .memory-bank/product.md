@@ -1,5 +1,5 @@
 ---
-description: Product definition (C4 L1) for the Face Moment one-СПА pilot.
+description: Product definition (C4 L1) for Face Moment with functional multi-venue operation.
 status: draft
 last_updated: 2026-08-31
 ---
@@ -7,7 +7,7 @@ last_updated: 2026-08-31
 
 ## Product Identity
 
-Face Moment is a controlled one-СПА smoke pilot that turns fresh professional
+Face Moment is a controlled multi-venue application that turns fresh professional
 JPEG photographs into an automatic personalized Promo at the participant's
 exit. A sensor-triggered display finds four valid low-quality teaser photos and
 continues the same short-lived result on the participant's phone through QR,
@@ -103,8 +103,10 @@ surface.
 
 ## Constraints
 
-- One selected СПА, one central CPU-only server in the Russian Federation and
-  one configured `SpaPromoClient`.
+- Multiple active venues share one central CPU-only server in the Russian
+  Federation and one serving model/revision. Each `SpaPromoClient` belongs to
+  its token's venue; settings and data remain independent. One shared realtime
+  slot and one sequential worker remain; capacity for 10–15 venues is unproven.
 - `SpaPromoClient` is a browser-native Chromium client loaded from the central
   HTTPS origin. It talks directly to one fixed-name mDNS ESP32 through one
   authenticated 10-second HTTP long-poll request at a time; there is no local

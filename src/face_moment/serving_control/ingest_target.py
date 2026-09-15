@@ -6,7 +6,7 @@ from datetime import date, datetime
 from typing import TYPE_CHECKING, Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, Float, ForeignKey, Integer, String, Uuid, select
+from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, Float, ForeignKey, Integer, String, Uuid, select, text
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from face_moment.infrastructure.database import Base
@@ -101,7 +101,7 @@ class CommittedServingTargetUnavailableError(LookupError):
 
 
 class IngestTargetRepository:
-    """Serving-control owner boundary for pilot SPA target configuration."""
+    """Venue settings and application-wide serving revision owner boundary."""
 
     def __init__(self, session: Session) -> None:
         self._session = session
@@ -113,6 +113,7 @@ class IngestTargetRepository:
         timezone: str,
         serving_pipeline_revision_id: uuid.UUID,
     ) -> IngestTarget:
+        self._lock_revision_configuration()
         if name is None:
             names = set(self._session.scalars(select(Spa.name)))
             number = 1
@@ -122,6 +123,11 @@ class IngestTargetRepository:
         normalized_name = self._normalize_name(name)
         normalized_timezone = self._validate_timezone(timezone)
         revision = self._resolve_eligible_revision(serving_pipeline_revision_id)
+        active_revisions = self._active_revision_ids()
+        if active_revisions and active_revisions != [revision.id]:
+            raise CommittedServingTargetUnavailableError(
+                "new venue must use the shared active serving revision"
+            )
         spa = Spa(
             name=normalized_name,
             timezone=normalized_timezone,
@@ -160,8 +166,9 @@ class IngestTargetRepository:
         spa_id: uuid.UUID,
         target_pipeline_revision_id: uuid.UUID,
     ) -> ServingRevisionSwitchResult:
-        """Apply and durably commit one guarded A-to-B decision.
+        """Apply and durably commit a global guarded A-to-B decision.
 
+        spa_id identifies an active initiating venue; all venues switch together.
         The command owns its session transaction.  A caller may have performed
         read-only work on this dedicated session first; SQLAlchemy's autobegin
         is therefore allowed and is completed explicitly here.
@@ -184,8 +191,16 @@ class IngestTargetRepository:
         target_pipeline_revision_id: uuid.UUID,
     ) -> ServingRevisionSwitchResult:
         """Evaluate and flush one switch inside the command-owned transaction."""
-        spa = self._load_spa(spa_id, for_update=True)
+        self._lock_revision_configuration()
+        # Lock every venue in a stable order, also serializing Photo admission.
+        spas = list(self._session.scalars(select(Spa).order_by(Spa.id)
+            .with_for_update().execution_options(populate_existing=True)))
+        spa = self._load_spa(spa_id)
         current_pipeline_revision_id = spa.serving_pipeline_revision_id
+        if self._active_revision_ids() != [current_pipeline_revision_id]:
+            raise CommittedServingTargetUnavailableError(
+                "active venues must have exactly one shared serving revision"
+            )
 
         try:
             target_revision = self._resolve_eligible_revision(
@@ -213,12 +228,11 @@ class IngestTargetRepository:
             read_serving_revision_guard,
         )
 
-        guard = read_serving_revision_guard(
+        if any(read_serving_revision_guard(
             self._session,
-            spa_id=spa.id,
-            pipeline_revision_id=current_pipeline_revision_id,
-        )
-        if guard.blocks_revision_change:
+            spa_id=venue.id,
+            pipeline_revision_id=venue.serving_pipeline_revision_id,
+        ).blocks_revision_change for venue in spas):
             return ServingRevisionSwitchResult(
                 spa_id=spa.id,
                 requested_pipeline_revision_id=target_pipeline_revision_id,
@@ -227,7 +241,8 @@ class IngestTargetRepository:
                 reason="current_revision_has_active_processing",
             )
 
-        spa.serving_pipeline_revision_id = target_revision.id
+        for venue in spas:
+            venue.serving_pipeline_revision_id = target_revision.id
         self._session.flush()
         return ServingRevisionSwitchResult(
             spa_id=spa.id,
@@ -267,7 +282,10 @@ class IngestTargetRepository:
         return targets
 
     def resolve_committed_serving_target(self) -> IngestTarget:
-        """Return the one active target whose revision is committed to serve."""
+        """Legacy disabled Calibration settings require an unambiguous venue.
+
+        Runtime model binding uses resolve_committed_serving_revision instead.
+        """
 
         spa_ids = list(
             self._session.scalars(
@@ -279,6 +297,26 @@ class IngestTargetRepository:
                 "exactly one active SPA target is required"
             )
         return self.resolve_ingest_target(spa_ids[0])
+
+    def _lock_revision_configuration(self) -> None:
+        # Serializes supported creation/switch commands, including an empty DB.
+        # Transaction-scoped; normal venue reads and inference take no such lock.
+        self._session.execute(text("SELECT pg_advisory_xact_lock(17901, 1)"))
+
+    def _active_revision_ids(self) -> list[uuid.UUID]:
+        return list(self._session.scalars(
+            select(Spa.serving_pipeline_revision_id)
+            .where(Spa.active.is_(True)).distinct()
+        ))
+
+    def resolve_committed_serving_revision(self) -> EligiblePipelineRevision:
+        """Resolve shared model identity without selecting any venue settings."""
+        revisions = self._active_revision_ids()
+        if len(revisions) != 1:
+            raise CommittedServingTargetUnavailableError(
+                "active venues must have exactly one shared serving revision"
+            )
+        return self._resolve_eligible_revision(revisions[0])
 
     @staticmethod
     def _normalize_name(name: str) -> str:

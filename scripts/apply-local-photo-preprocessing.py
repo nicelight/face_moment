@@ -113,12 +113,15 @@ def assert_preserved(before, after):
 def apply(engine, settings, before, directory):
     journal_path = directory/'target.json'
     selected_settings = replace(settings, sface_preprocessing_version=VERSION)
-    spa_ids = {p['inventory']['spa_id'] for p in before['photos'].values()}
-    if len(spa_ids) != 1:
-        raise RuntimeError('Expected one local SPA')
-    spa_id = uuid.UUID(next(iter(spa_ids)))
-    old_id = uuid.UUID(before['spas'][str(spa_id)]['serving_pipeline_revision_id'])
+    active_spas = {id: spa for id, spa in before['spas'].items() if spa.get('active', True)}
+    old_revisions = {spa['serving_pipeline_revision_id'] for spa in active_spas.values()}
+    if len(old_revisions) != 1:
+        raise RuntimeError('Expected one shared revision across active local venues')
+    old_id = uuid.UUID(next(iter(old_revisions)))
+    # Only the command's initiating identity; model selection above is global.
+    spa_id = uuid.UUID(sorted(active_spas)[0])
     with Session(engine) as session:
+        IngestTargetRepository(session).resolve_committed_serving_revision()
         revisions = PipelineRevisionRepository(session)
         old = revisions.resolve_eligible(old_id)
         candidate = replace(old, id=uuid.uuid4(), preprocessing_version=VERSION)

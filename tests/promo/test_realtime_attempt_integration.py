@@ -419,13 +419,27 @@ async def _async_request(
     (False, "result"), (True, "result"),
     (False, "internal_failure"), (False, "deadline"),
 ])
+@pytest.mark.parametrize("cross_venue", [False, True])
 def test_concurrent_real_route_returns_before_inference_release(
     realtime_state: tuple[FastAPI, Engine, uuid.UUID, str],
     monkeypatch: pytest.MonkeyPatch,
     racing_key: bool,
     first_outcome: str,
+    cross_venue: bool,
 ) -> None:
     app, engine, spa_id, token = realtime_state
+    competing_token = token
+    if cross_venue:
+        with Session(engine) as session:
+            repo = IngestTargetRepository(session)
+            other = repo.configure_spa(timezone="UTC",
+                serving_pipeline_revision_id=repo.resolve_ingest_target(spa_id).pipeline_revision_id)
+            context = RealtimeContextRepository(session)
+            context.update_active_visit_date(spa_id=other.spa_id, active_visit_date=datetime(2026, 8, 22).date())
+            context.provision_reference_settings(spa_id=other.spa_id, pipeline_code=PipelineCode.OPENCV_SFACE,
+                reference_threshold=.7, min_query_face_quality=.5, quality_settings={"version": 1})
+            competing_token = DisplayClientRepository(session).provision(spa_id=other.spa_id, name="Second venue").token_value
+            session.commit()
     started, release = threading.Event(), threading.Event()
     probe_started = time.monotonic()
     calls: list[int] = []
@@ -516,12 +530,12 @@ def test_concurrent_real_route_returns_before_inference_release(
             assert duplicate_response[0] == 200
             assert duplicate_response[2]["outcome"] == "in_progress"
             trace.append("duplicate_in_progress_before_release")
-            competing = await asyncio.wait_for(_async_request(app, other_body, content_type, token), 1)
+            competing = await asyncio.wait_for(_async_request(app, other_body, content_type, competing_token), 1)
             assert competing[0] == 200 and competing[2]["outcome"] == "busy"
             assert not release.is_set() and len(calls) == 1
             trace.append("distinct_busy_before_release")
             with Session(engine) as session:
-                rows = session.scalars(select(PromoAttempt).where(PromoAttempt.spa_id == spa_id)).all()
+                rows = session.scalars(select(PromoAttempt).where(PromoAttempt.client_attempt_id.in_([owner_id, other_id]))).all()
                 assert len(rows) == 2
                 by_key = {row.client_attempt_id: row for row in rows}
                 assert by_key[owner_id].processing_status == "accepted"

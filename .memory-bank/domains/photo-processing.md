@@ -107,14 +107,22 @@ the application image or stored in PostgreSQL. Deployment settings provide the
 absolute in-container detector and recognizer paths; exact setting names and
 path layout remain composition-root details.
 
-At process startup, the composition root resolves the one active СПА's selected
-validated revision from PostgreSQL, instantiates only that revision's direct
+At process startup, the composition root resolves the single shared validated
+revision of all active venues from PostgreSQL, instantiates only that revision's direct
 adapter and verifies the configured detector/recognizer identity, preparation
 versions, embedding dimension and computed `weights_sha256` against the
 persisted compatibility identity. Missing files, an absent or ineligible
 selection, or any identity/hash mismatch keeps the process unavailable before
 it claims or mutates processing work. It does not fall back to the other
 pipeline.
+
+Multiple active venues are supported; zero active venues or conflicting active
+revisions explicitly close startup. Model selection never chooses an arbitrary
+venue or inherits its settings. The existing per-venue revision columns remain
+the storage representation; no singleton table or migration is needed.
+`IngestTargetRepository.resolve_committed_serving_revision` publishes the shared
+model identity. Photo admission snapshots each venue's own detector threshold;
+the sequential worker processes compatible Photos across all active venues.
 
 This startup binding remains the only adapter used for serving, realtime and
 ordinary Photo work. During an already-claimed
@@ -264,7 +272,7 @@ durable job row, model-selection policy or generic operation framework.
 
 ### Ordinary serving-revision guard
 
-For a manual switch of one СПА from its exact current revision A to target B,
+For a global manual switch from the shared current revision A to target B,
 `processing` owns one read-only guard projection. Given the stable serving
 context and A, it examines only Photos in that СПА whose immutable
 `admission_pipeline_revision_id` is A and their exact `(photo_id, A)` state.
@@ -272,6 +280,16 @@ It blocks while any such state is `pending` or `processing`; `ready`,
 `no_faces` and `failed` are terminal and do not block. The projection does not
 claim work, create a B state, mutate an A state, select B or change any model
 asset.
+
+`serving_control` evaluates this guard for every venue and changes all venue
+revision pointers atomically, including inactive venues. A pending/processing
+blocker in any venue rejects the whole switch. The retained `spa_id` argument
+identifies an active initiating venue, not the update scope. Conflicting active
+revisions reject the command before mutation. Creation must use the existing
+shared active revision; creating the first venue establishes it. A PostgreSQL
+transaction advisory lock serializes creation/switch commands, including first
+creation; ordered venue row locks serialize switches with admission. Venue
+settings, tokens, Photo identity and historical revision outcomes are preserved.
 
 `serving_control` is the only caller that may turn this result into a revision
 decision. The serving-selection update and admission's serving-context read

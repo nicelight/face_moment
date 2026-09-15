@@ -402,8 +402,12 @@ def test_spa_rename_persists_in_staff_selectors_and_preserves_identity(
         status_code, headers, page = _request(fixture.app, "GET", path, cookies=cookies)
         assert status_code == 200
         assert headers["cache-control"] == "no-store"
-        assert f'<select id="{selector}"' in page
-        assert f'<option value="{fixture.spa_id}">Термы &lt;Центр&gt; &amp; бассейн</option>' in page
+        if path == "/staff/photo-inventory":
+            assert '<strong>Термы &lt;Центр&gt; &amp; бассейн</strong>' in page
+            assert f'href="/staff/venue-media?spa_id={fixture.spa_id}"' in page
+        else:
+            assert f'<select id="{selector}"' in page
+            assert f'<option value="{fixture.spa_id}">Термы &lt;Центр&gt; &amp; бассейн</option>' in page
         assert str(fixture.inaccessible_spa_id) not in page
 
 

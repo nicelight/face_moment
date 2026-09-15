@@ -317,13 +317,14 @@ minimal developer surface, apply and retention are owned by
 ### Manual serving-revision switch
 
 - Owner: `serving_control`.
-- Input: an authenticated operator's explicit target revision B for one СПА;
-  its current committed revision A is resolved inside the owner boundary.
+- Input: an authenticated operator's explicit global target revision B and an
+  active initiating `spa_id`; shared current A is resolved inside the owner boundary.
+  The retained venue argument does not request a venue-specific model change.
 - Output: an audited success/failure result naming the requested and currently
   committed revisions.
 - `serving_control` asks `processing` to validate the target; only a validated
   revision may serve. Before B commits, it also asks `processing` for the
-  read-only guard scoped to that СПА and exact current A. The guard reports
+  read-only guard for every venue and its exact current revision. The guard reports
   whether any Photo admitted against A has its `(photo_id, A)` state in
   `pending` or `processing`; `serving_control` neither reads nor writes those
   processing-owned rows directly.
@@ -333,6 +334,12 @@ minimal developer surface, apply and retention are owned by
   records the failure result, keeps A committed, and changes no Photo state,
   assets or process. `ready`, `no_faces` and `failed` A states are terminal and
   do not block.
+- Creation/switch commands serialize with a transaction advisory lock; switches
+  lock all venue rows in UUID order and update all revision pointers atomically.
+  Any venue's guard blocks the entire switch. Creation with a different active
+  revision and switches from conflicting active revisions fail explicitly.
+  Startup resolves the shared eligible revision without selecting a venue.
+  Settings remain venue-local; model changes use maintenance and consumer restart.
 - Calibration/model comparison is test-only. It neither invokes this command
   nor supplies an exception to its guard; only a separate authenticated manual
   serving-control action can request a revision change.

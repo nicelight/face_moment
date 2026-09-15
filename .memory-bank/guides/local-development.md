@@ -92,12 +92,48 @@ persistence and readiness after dependency/application restarts. It creates no
 Photo or Promo session. This verifies the packaged SFace path; it does not
 establish Buffalo end-to-end readiness, complete other tasks or deploy the server.
 
-The exit trap removes the run's containers, networks, volumes and test image.
-Logs and redacted `compose-topology.json` remain under
-`.tasks/ASTRA-findings/10-packaged-smoke/runtime-<run-id>/`; use `EVIDENCE_DIR`
-to choose another evidence directory. Success requires exit 0 and
-`runtime_smoke=ok`, `owned_cleanup_status=0`, `owned_image_cleanup_status=0`
-in `smoke.log`. On failure, retain that directory for diagnosis.
+The seed now contains two active venues sharing one revision. The smoke proves
+model startup/restart does not depend on having exactly one venue.
+
+The exit trap removes the run's containers, networks, volumes and owned image
+tag. Logs and redacted `compose-topology.json` stay in `EVIDENCE_DIR` (default:
+`.tasks/ASTRA-findings/10-packaged-smoke/runtime-<run-id>/`). Success requires
+`runtime_smoke=ok`, `owned_cleanup_status=0`, `owned_image_cleanup_status=0`.
+`SMOKE_PREBUILT_IMAGE` may name an explicitly built current-source local image;
+this tests runtime packaging/restarts but not a fresh dependency build.
+Never reuse smoke credentials or fixture version labels in production.
+
+## Общая модель нескольких площадок — 2026-09-16
+
+Все активные площадки используют одну eligible serving revision. Параметры
+модели и assets задаются на уровне приложения; площадки сохраняют свои даты,
+часовые пояса, пороги, токены и данные. Создание через repository принимает
+только общую активную revision; UI создания остаётся отдельной задачей.
+
+`switch_serving_revision(spa_id=..., target_pipeline_revision_id=...)` теперь
+переключает все площадки атомарно; `spa_id` лишь указывает инициирующую площадку.
+Pending/processing работа любой площадки блокирует смену по прежнему exact-A
+guard. Выполняйте переключение в maintenance, затем перезапустите realtime и
+worker с соответствующими assets/settings. Hot reload модели не добавлен.
+Локальная `scripts/apply-local-photo-preprocessing.py` поддерживает snapshot
+нескольких площадок и сохраняет прежние embeddings/исходники; это отдельная
+явная операция, включение мультиплощадочности её не запускает.
+
+При конфликтующих активных revisions startup выдаёт явную ошибку конфигурации.
+Не исправляйте её выбором первой площадки: поддерживаемые команды не создают
+такой конфигурации, а историческое/direct-SQL расхождение требует явного
+согласования общей revision. Неактивная legacy Calibration UI остаётся 410;
+её старый одноплощадочный helper не участвует в startup или worker.
+
+[Проверки AC-27](../testing/index.md#functional-multi-venue-operation-ac-27):
+реальные изолированные данные и границы сделанных выводов.
+
+Локально применено: перезапущены backend/realtime/background-worker с имеющимся
+source overlay; все healthy, HTTPS и существующий display token работают.
+Миграция не требовалась (БД уже на `0026_advertising_playlists`). Хеши прежних
+42 Photos, настроек/токенов, 54 Attempts, 26 sessions и 270 объектов сохранились.
+Рабочая БД по-прежнему содержит одну площадку; две проверены только изолированно.
+[Отчёт](../../.protocols/multi-venue-report.md): результаты и ограничение сборки.
 
 For server deployment, rebuild from source and consult
 [server parameters](../../SERVER/serverparams.md). The saved topology has

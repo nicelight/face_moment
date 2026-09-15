@@ -127,7 +127,14 @@ print(f'isolated_topology=ok project={project} private_subnet={subnet}')
 print('host_published_services=edge loopback=true model_mount=read-only shared_image=true')
 PY
 
-dc build backend
+if [[ -n "${SMOKE_PREBUILT_IMAGE:-}" ]]; then
+  # Explicit local fallback: verify packaging/restarts with an already built
+  # current-source image, without claiming a fresh dependency build.
+  docker image tag "${SMOKE_PREBUILT_IMAGE}" "${FACE_MOMENT_IMAGE}"
+  echo 'dependency_build=prebuilt-image'
+else
+  dc build backend
+fi
 IMAGE_BUILT=1
 RESOURCES_STARTED=1
 dc up -d --wait --wait-timeout 180 postgres minio
@@ -173,6 +180,7 @@ try:
             weights_sha256=assets.weights_sha256(), embedding_dimension=128,
             **{k: getattr(assets, k) for k in ('detector_id', 'detector_version', 'recognizer_id', 'recognizer_version', 'preprocessing_version', 'alignment_version', 'normalization_version')})
         spa = IngestTargetRepository(session).configure_spa(name='packaged-smoke', timezone='UTC', serving_pipeline_revision_id=revision.id)
+        IngestTargetRepository(session).configure_spa(name='packaged-smoke-second', timezone='Asia/Dushanbe', serving_pipeline_revision_id=revision.id)
         client = DisplayClientRepository(session).provision(spa_id=spa.spa_id, name='smoke-display')
         token = client.token_value
     print(token)

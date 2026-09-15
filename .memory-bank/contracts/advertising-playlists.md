@@ -64,6 +64,16 @@ New capture/result loading cancels the cosmetic handoff overlay.
 
 ## Cache and updates
 
+Per-screen browser configuration also includes «Текст поверх рекламы» and
+numeric caption size from 8 to 200 CSS pixels (default 32). Legacy
+small/medium/large values map to their previous computed size on this viewport;
+the next save persists pixels. `advertising-caption.js` stores this small
+setting in localStorage; it does not change the venue playlist. A plain-text,
+multiline white caption with a dark shadow appears at top left above images and
+videos, stays still across advertising crossfades and hides whenever advertising
+stops. Empty text hides it. Changes apply on returning from configuration.
+The existing black Promo handoff covers both media and caption.
+
 Poll every 30 seconds, compare venue/revision, apply latest list between assets.
 Deleted current item finishes first; if its ID is absent, start the new list's
 first item at that boundary. No sync service or cold-start offline guarantee.

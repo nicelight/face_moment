@@ -1,4 +1,5 @@
 import { readDisplayClientToken } from './display-client-config.js';
+import { readAdvertisingCaption } from './advertising-caption.js';
 
 /** A single playlist, two visual layers and an explicit browser media cache. */
 export function createAdvertisingPlayer({ onReady = () => {} } = {}) {
@@ -7,6 +8,9 @@ export function createAdvertisingPlayer({ onReady = () => {} } = {}) {
   layer.hidden = true;
   layer.setAttribute('aria-hidden', 'true');
   document.body.prepend(layer);
+  const caption = document.createElement('div');
+  caption.className = 'advertising-caption';
+  document.body.append(caption);
   let playlist = null, pending = null;
   let token = null, cache = null;
   let identity = 0, generation = 0, running = false;
@@ -237,6 +241,9 @@ export function createAdvertisingPlayer({ onReady = () => {} } = {}) {
   }
 
   function start() {
+    const settings = readAdvertisingCaption();
+    caption.textContent = settings.text;
+    caption.style.fontSize = `${settings.size}px`;
     if (!running) restart();
     void refresh();
   }

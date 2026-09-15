@@ -479,6 +479,8 @@ body:has(.promo-card) { overflow: hidden; }
 .promo-custom-layout .promo-copy h2 { font-size: calc(3.1vmin * var(--promo-text-scale, 1)); text-align: left; }
 .promo-custom-layout .promo-title { font-size: calc(5.8vmin * var(--promo-text-scale, 1)); }
 .promo-custom-layout .promo-qr-panel { aspect-ratio: 1; }
+.promo-card.has-paper-entrance { overflow: hidden; }
+.promo-card.has-paper-entrance .promo-photo-card { animation: none; }
 .promo-editor-open { overflow: hidden; }
 .promo-editor { position: fixed; inset: 0; z-index: 100; }
 .promo-editor .promo-card { z-index: 0; }

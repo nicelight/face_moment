@@ -19,15 +19,19 @@ source_of_truth:
 
 ## System Goal
 
-Deliver the one-СПА pilot as one greenfield modular-monolith release with
+Deliver the shared multi-venue application as one modular-monolith release with
 predictable process-restart recovery, searchable per-photo inventory,
 low-latency Promo/QR continuation and data-class-aware diagnostics, without
 speculative distributed infrastructure.
 
 ## Main Constraints
 
-- One central CPU-only server, one display client and one configured replica of
+- One central CPU-only server, venue-bound display clients and one configured replica of
   each long-running server role.
+- All active venues share one serving model/revision. Startup rejects conflicting
+  revisions explicitly. Model switches are global; venue data, timezones and
+  settings remain independent. Keep one realtime slot with `busy` and one
+  sequential Photo worker; no 10–15 venue capacity guarantee is established.
 - Ordinary process crashes recover automatically. Chromium/display restarts
   automatically and reloads once the central HTTPS origin is reachable; no
   cold-start advertising guarantee applies while that origin is unavailable.

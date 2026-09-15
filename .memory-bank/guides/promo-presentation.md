@@ -56,6 +56,30 @@ file. Existing open tabs need a reload to receive the updated presentation.
 Sources: [PRD](../prd.md), [FT-005](../features/FT-005.md),
 [display contract](../contracts/promo-display-api.md).
 
+## Paper entrance — 2026-09-16
+
+Operator approved a one-shot sequence for the real result and replay:
+four photos arrive from left/top/lower-left/bottom with 270 ms staggering,
+1350 ms travel, gentle rotation and a shrinking airborne shadow. After photo 4
+settles (2.16 sec), QR arrives from the right over 900 ms (until
+3.06 sec). One second after QR settles, the entire text block presses onto the
+screen over 6000 ms with linear easing; the sequence ends at approximately 10 seconds.
+Timing refinement: photo travel/stagger increased by 50%; text duration is now
+6 seconds following the operator's latest adjustment. Linear easing replaces
+the front-loaded curve so the visible motion lasts longer, rather than settling
+early while the animation clock continues.
+After entrance all six elements remain still. Saved positions, sizes and angles
+are preserved through individual translate/rotate/scale animation properties.
+Reduced-motion skips entrance; the composition editor does not animate.
+
+[promo-entrance.js](../../client/promo-entrance.js) owns the visual sequence.
+`PromoDisplayController.onPresent` waits for QR's entrance before recording
+actual fully-visible timing, sending display ACK and starting the display timer.
+This intentionally adds about 3.06 seconds before scan-ready confirmation;
+server QR/session lifetimes are unchanged. Text entrance does not delay ACK.
+Functional/visual tests remain waived by the operator; physical smoothness and
+QR scanning remain operator checks.
+
 ## Local composition editor
 
 Operator request, 2026-09-10: Configuration → «Поправить расположение фоток»
