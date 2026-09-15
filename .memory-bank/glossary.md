@@ -1,7 +1,7 @@
 ---
 description: Канонический словарь терминов со специальным значением в Face Moment.
 status: active
-last_updated: 2026-09-01
+last_updated: 2026-09-13
 source_of_truth:
   - .memory-bank/glossary.md
 ---
@@ -49,6 +49,7 @@ source_of_truth:
 
 | Термин | Значение в Face Moment | Не путать с |
 |---|---|---|
+| Захват | Одна попытка получить изображения лиц гостей, проходящих перед камерой на выходе из СПА: по сигналу датчика или тестовому запуску клиент формирует и обрабатывает серию кадров для обнаружения лиц. Захват может завершиться без обнаруженных или пригодных для поиска лиц. | Самим событием прохода, отдельным обнаружением лица или полной принятой сервером цепочкой `Attempt`, включающей поиск и показ результата. |
 | Reference series | Sensor/test-triggered набор кадров из client ring buffer, который local detector обходит хронологически до конца либо до получения первых 20 face proposal occurrences. | Набором коммерческих upload-файлов, обязательным diagnostic frame upload или standalone selfie. |
 | Face proposal occurrence | Одно обнаружение лица local detector в одном кадре reference series; один человек может дать несколько occurrences, и client не выполняет person deduplication. | Распознанной person identity или server-side `Selected detection`. |
 | Selected detection | Полученный face occurrence, выбранный server-side contract для отдельного поиска; всего обрабатывается не более пяти. | Client-side top-5 или уникальным физическим человеком. |

@@ -131,11 +131,12 @@ def register_ingest_target_routes(
                     database_session,
                     session_token=fm_staff_session,
                 )
+                principal = get_current_principal(database_session, session_token=fm_staff_session)
             except InvalidSessionError as error:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from error
             except PhotographerAccessDeniedError as error:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN) from error
-        return HTMLResponse(staff_document(_photo_upload_page_html(), "photo-upload"))
+        return HTMLResponse(staff_document(_photo_upload_page_html(str(principal.staff_user_id)), "photo-upload"), headers=_NO_STORE_HEADERS)
 
     @app.get("/staff/processing-health", response_class=HTMLResponse)
     def processing_health_page(
@@ -553,7 +554,7 @@ def _client_ip(request: Request) -> str:
     return "unknown" if request.client is None else request.client.host
 
 
-def _photo_upload_page_html() -> str:
+def _photo_upload_page_html(history_owner: str = "") -> str:
     return """<!doctype html>
 <html lang="en">
 <head>
@@ -581,6 +582,8 @@ def _photo_upload_page_html() -> str:
     <p id="form-message" role="alert"></p>
     <section aria-label="Upload results">
       <h2>Результаты загрузки</h2>
+      <button type="button" id="upload-history" data-owner="__HISTORY_OWNER__">История загрузок</button>
+      <p id="upload-history-message" role="status"></p>
       <p class="fm-upload-totals">Результаты: <span id="upload-settled" data-rolling-count>0</span> <span id="upload-selected-total"></span></p>
       <ol id="upload-results"></ol>
     </section>
@@ -597,6 +600,43 @@ def _photo_upload_page_html() -> str:
     const results = document.querySelector("#upload-results");
     const formMessage = document.querySelector("#form-message");
     const terminalProcessingStatuses = new Set(["ready", "no_faces", "failed"]);
+    const historyButton = document.querySelector("#upload-history");
+    const historyMessage = document.querySelector("#upload-history-message");
+    const historyKey = `face-moment.upload-history.v1.${historyButton.dataset.owner}`;
+    const visibleHistory = new Set();
+    function readHistory() {
+      try {
+        const items = JSON.parse(localStorage.getItem(historyKey) || "[]");
+        return Array.isArray(items) ? items.filter(item => item &&
+          typeof item.id === "string" && typeof item.name === "string" &&
+          typeof item.visitDate === "string" && typeof item.outcome === "string"
+        ).slice(-300) : [];
+      } catch (_) { return []; }
+    }
+    function saveHistory(entry) {
+      try {
+        const items = readHistory();
+        const index = items.findIndex(item => item.id === entry.id);
+        if (index >= 0) items[index] = entry;
+        else items.push(entry);
+        items.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+        localStorage.setItem(historyKey, JSON.stringify(items.slice(-300)));
+      } catch (_) {
+        historyMessage.textContent = "Браузер не разрешил сохранить историю загрузок.";
+      }
+    }
+    historyButton.addEventListener("click", () => {
+      const items = readHistory();
+      historyMessage.textContent = items.length
+        ? `Сохранено записей: ${items.length}. История хранится в этом браузере.`
+        : "История пуста. Здесь появятся загрузки, выполненные после установки этой функции.";
+      for (const entry of [...items].reverse()) {
+        if (visibleHistory.has(entry.id)) continue;
+        const row = appendResultRow({ name: entry.name }, entry.visitDate, entry);
+        setResult(row, entry.outcome === "uploading" ? "Результат загрузки неизвестен" : entry.outcome, entry.detail || "");
+        if (typeof entry.photoId === "string") void pollProcessingStatus(entry.photoId, row);
+      }
+    });
 
     function csrfToken() {
       const prefix = "fm_staff_csrf=";
@@ -604,7 +644,11 @@ def _photo_upload_page_html() -> str:
       return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : "";
     }
 
-    function appendResultRow(file, visitDate) {
+    function appendResultRow(file, visitDate, savedEntry = null) {
+      const entry = savedEntry || { id: crypto.randomUUID(), name: file.name,
+        visitDate, spaId: spaSelect.value, createdAt: Date.now(), outcome: "uploading", detail: "" };
+      visibleHistory.add(entry.id);
+      saveHistory(entry);
       const row = document.createElement("li");
       const name = document.createElement("span");
       const date = document.createElement("span");
@@ -616,12 +660,15 @@ def _photo_upload_page_html() -> str:
       outcome.setAttribute("aria-live", "polite");
       row.append(name, date, outcome, detail);
       results.append(row);
-      return { outcome, detail };
+      return { outcome, detail, entry };
     }
 
     function setResult(row, outcome, detail = "") {
       row.outcome.textContent = outcome;
       row.detail.textContent = detail ? ` — ${detail}` : "";
+      row.entry.outcome = outcome;
+      row.entry.detail = detail;
+      saveHistory(row.entry);
     }
 
     function renderProcessingStatus(payload, row) {
@@ -677,6 +724,7 @@ def _photo_upload_page_html() -> str:
         });
         if (response.status === 201) {
           const payload = await response.json();
+          row.entry.photoId = payload.photo.photo_id;
           const warning = payload.warnings.includes("exif_visit_date_mismatch")
             ? "EXIF date differs; selected date retained"
             : "";
@@ -764,7 +812,7 @@ def _photo_upload_page_html() -> str:
     loadTargets();
   </script>
 </body>
-</html>""".replace("__VISIT_DATE_PICKER__", date_picker("visit-date", staff_today(), name="visit_date"))
+</html>""".replace("__HISTORY_OWNER__", escape(history_owner, quote=True)).replace("__VISIT_DATE_PICKER__", date_picker("visit-date", staff_today(), name="visit_date"))
 
 
 def _spa_options(spas: Sequence[tuple[UUID, str]]) -> str:
@@ -998,13 +1046,9 @@ def _photo_inventory_page_html(spas: Sequence[tuple[UUID, str]] = ()) -> str:
   <main>
     <h1>Photo inventory</h1>
     <section class="fm-media-venues" aria-label="Медиа площадок">__MEDIA_LINKS__</section>
-    <form id="recent-statistics-query">
-      <label for="recent-statistics-spa-id">Площадка</label>
-      <select id="recent-statistics-spa-id" name="spa_id" required>__SPA_OPTIONS__</select>
-      <button type="submit">Обновить статистику</button>
-    </form>
     <p id="recent-statistics-message" role="alert"></p>
-    <section aria-label="Recent photo statistics">
+    <section id="recent-statistics" aria-label="Статистика площадки" hidden>
+      <h2 id="recent-statistics-spa-name"></h2>
       <h2>Последние поступления</h2>
       <ol id="recent-statistics-windows"></ol>
     </section>
@@ -1019,45 +1063,49 @@ def _photo_inventory_page_html(spas: Sequence[tuple[UUID, str]] = ()) -> str:
     </section>
   </main>
   <script>
-    const recentStatisticsForm = document.querySelector("#recent-statistics-query");
-    const recentStatisticsSpaId = document.querySelector("#recent-statistics-spa-id");
+    const recentStatisticsButtons = document.querySelectorAll("[data-statistics-spa-id]");
+    const recentStatisticsSection = document.querySelector("#recent-statistics");
+    const recentStatisticsSpaName = document.querySelector("#recent-statistics-spa-name");
+    let selectedStatisticsSpaId = null;
+    let statisticsRequest = 0;
     const recentStatisticsMessage = document.querySelector("#recent-statistics-message");
     const recentStatisticsWindows = document.querySelector("#recent-statistics-windows");
 
     function renderWindow(window) {
       const item = document.createElement("li");
-      item.textContent = `${window.minutes} minutes: new ${window.new}, unprocessed ${window.unprocessed}, processed ${window.processed}, failed ${window.failed}`;
+      item.textContent = `За ${window.minutes} мин: новых — ${window.new}, ожидают обработки — ${window.unprocessed}, обработано — ${window.processed}, с ошибкой — ${window.failed}`;
       recentStatisticsWindows.append(item);
     }
 
     async function loadRecentStatistics() {
-      const spaId = recentStatisticsSpaId.value.trim();
+      const spaId = selectedStatisticsSpaId;
       if (!spaId) return;
+      const request = ++statisticsRequest;
       try {
         const response = await fetch(`/api/inventory/recent-statistics?spa_id=${encodeURIComponent(spaId)}`, {
           credentials: "same-origin",
         });
-        if (!response.ok) throw new Error("Statistics request failed");
+        if (!response.ok) throw new Error("Не удалось загрузить статистику");
         const payload = await response.json();
-        if (spaId !== recentStatisticsSpaId.value) return;
+        if (request !== statisticsRequest) return;
         recentStatisticsWindows.replaceChildren();
         payload.windows.forEach(renderWindow);
         recentStatisticsMessage.textContent = `Обновлено: ${StaffDateTime.formatTimestamp(payload.observed_at)}`;
       } catch (error) {
+        if (request !== statisticsRequest) return;
         recentStatisticsMessage.textContent = error.message;
       }
     }
 
-    recentStatisticsForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      await loadRecentStatistics();
-    });
-    const initialSpa = new URLSearchParams(window.location.search).get("spa_id");
-    if (Array.from(recentStatisticsSpaId.options).some(option => option.value === initialSpa)) {
-      recentStatisticsSpaId.value = initialSpa;
-    }
-    recentStatisticsSpaId.addEventListener("change", loadRecentStatistics);
-    void loadRecentStatistics();
+    recentStatisticsButtons.forEach(button => button.addEventListener("click", () => {
+      selectedStatisticsSpaId = button.dataset.statisticsSpaId;
+      recentStatisticsSpaName.textContent = button.closest(".fm-media-venue-link").querySelector("strong").textContent;
+      recentStatisticsButtons.forEach(item => item.setAttribute("aria-pressed", String(item === button)));
+      recentStatisticsWindows.replaceChildren();
+      recentStatisticsSection.hidden = false;
+      recentStatisticsMessage.textContent = "Загружаем статистику…";
+      void loadRecentStatistics();
+    }));
     setInterval(loadRecentStatistics, 5000);
 
     const purgeSection = document.querySelector("#inventory-purge");
@@ -1125,7 +1173,8 @@ def _photo_inventory_page_html(spas: Sequence[tuple[UUID, str]] = ()) -> str:
     setInterval(loadPurge, 5000);
   </script>
 </body>
-</html>""".replace("__SPA_OPTIONS__", _spa_options(spas)).replace("__MEDIA_LINKS__", "".join(
-    f'<div class="fm-media-venue-link"><strong>{escape(name)}</strong><a href="/staff/venue-media?spa_id={spa_id}">Медиа ↗</a></div>'
+</html>""".replace("__MEDIA_LINKS__", "".join(
+    f'<div class="fm-media-venue-link"><strong>{escape(name)}</strong><a href="/staff/venue-media?spa_id={spa_id}">Медиа ↗</a>'
+    f'<button type="button" data-statistics-spa-id="{spa_id}" aria-pressed="false">Обновить статистику</button></div>'
     for spa_id, name in spas
 ) or '<p>Нет доступных площадок</p>')

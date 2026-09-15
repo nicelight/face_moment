@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Iterator
 from contextlib import contextmanager
+from uuid import UUID
 
 import pytest
 from fastapi import FastAPI
@@ -29,6 +30,10 @@ def photo_inventory_page_app(monkeypatch: pytest.MonkeyPatch) -> FastAPI:
 
     monkeypatch.setattr(inventory_http, "_database_session", database_session)
     monkeypatch.setattr(inventory_http, "get_current_principal", current_principal)
+    monkeypatch.setattr(
+        inventory_http.IngestTargetRepository, "list_active_spa_names",
+        lambda _: [(UUID(int=1), "Первая СПА"), (UUID(int=2), "Вторая СПА")],
+    )
     return create_app()
 
 
@@ -43,8 +48,12 @@ def test_photo_inventory_statistics_page_requires_staff_and_polls_every_five_sec
         )
         assert status_code == 200
         assert "Photo inventory" in page
-        assert 'id="recent-statistics-query"' in page
-        assert 'id="recent-statistics-spa-id"' in page
+        assert 'id="recent-statistics-query"' not in page
+        assert 'id="recent-statistics-spa-id"' not in page
+        assert 'id="recent-statistics-spa-name"' in page
+        assert page.count('data-statistics-spa-id=') == 2
+        assert page.count("Первая СПА") == 1
+        assert page.count("Вторая СПА") == 1
         assert "/api/inventory/recent-statistics?spa_id=${encodeURIComponent(spaId)}" in page
         assert "setInterval(loadRecentStatistics, 5000);" in page
         assert "payload.windows.forEach(renderWindow);" in page

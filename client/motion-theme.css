@@ -237,6 +237,9 @@ body.fm-page {
 .fm-token { display: flex; flex-direction: column; gap: .5rem; }
 .fm-token code { overflow-wrap: anywhere; padding: .75rem; background: #0b1414; border-radius: 8px; }
 .fm-token button { align-self: flex-start; }
+.fm-token .fm-device-advertising { align-self: flex-start; }
+.fm-token .fm-copy-status:empty { display: none; }
+.fm-page main .fm-capture-diagnostics button { margin-inline: .75rem; padding: .35rem .75rem; }
 .fm-login main:not(.fm-dashboard) { width: min(1160px, 100% - 2.5rem); margin: 2rem auto; display: grid; border: 1px solid var(--fm-line); border-radius: 20px; overflow: hidden; }
 .fm-login-art { min-height: 240px; position: relative; overflow: hidden; padding: 2rem; display: flex; flex-direction: column; justify-content: space-between; }
 .fm-login-art > :not(.fm-aurora) { position: relative; z-index: 1; }

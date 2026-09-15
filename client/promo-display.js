@@ -103,7 +103,7 @@ export function validateDisplayConfiguration(configuration) {
   ) {
     throw new TypeError("promo_display_configuration_invalid");
   }
-  const fields = Object.keys(configuration).sort().join(",");
+  const fields = Object.keys(configuration).filter(name => name !== "capture_detector_threshold").sort().join(",");
   if (fields !== "result_display_ms,schema_version,success_cooldown_ms") {
     throw new TypeError("promo_display_configuration_fields_invalid");
   }
@@ -115,10 +115,16 @@ export function validateDisplayConfiguration(configuration) {
       throw new TypeError(`promo_${name}_invalid`);
     }
   }
+  const captureThreshold = configuration.capture_detector_threshold;
+  if (captureThreshold !== undefined && (
+    typeof captureThreshold !== "number" || !Number.isFinite(captureThreshold) ||
+    captureThreshold <= 0 || captureThreshold > 1
+  )) throw new TypeError("capture_detector_threshold_invalid");
   return Object.freeze({
     schema_version: 1,
     result_display_ms: configuration.result_display_ms,
     success_cooldown_ms: configuration.success_cooldown_ms,
+    ...(captureThreshold === undefined ? {} : { capture_detector_threshold: captureThreshold }),
   });
 }
 
@@ -467,6 +473,7 @@ export class PromoDisplayController {
     onLoading = () => {},
     onPrepared = () => {},
     onFailure = () => {},
+    onBeforeExpired = null,
     onExpired = () => {},
     clock = () => globalThis.performance?.now?.(),
     setTimeoutImpl = (callback, delay) => globalThis.setTimeout(callback, delay),
@@ -491,6 +498,7 @@ export class PromoDisplayController {
     this.onLoading = onLoading;
     this.onPrepared = onPrepared;
     this.onFailure = onFailure;
+    this.onBeforeExpired = onBeforeExpired;
     this.onExpired = onExpired;
     this.clock = clock;
     this.setTimeoutImpl = setTimeoutImpl;
@@ -668,11 +676,16 @@ export class PromoDisplayController {
   scheduleDisplayExpiry(attemptId, durationMs, replay = false) {
     this.clearDisplayExpiryTimer();
     const generation = this.generation;
-    this.displayExpiryTimer = this.setTimeoutImpl(() => {
+    this.displayExpiryTimer = this.setTimeoutImpl(async () => {
       this.displayExpiryTimer = null;
       if (generation !== this.generation || !this.isVisible) return;
       this.cancelPendingWork();
       this.generation += 1;
+      const expiryGeneration = this.generation;
+      if (this.onBeforeExpired) {
+        await this.onBeforeExpired();
+        if (expiryGeneration !== this.generation || !this.isVisible) return;
+      }
       this.isVisible = false;
       this.isReplaying = false;
       this.removeRenderedCard();

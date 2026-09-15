@@ -69,6 +69,7 @@ class AtomicPhotoAdmission:
                 captured_at=validated.captured_at,
                 captured_at_source=validated.captured_at_source,
                 admission_pipeline_revision_id=current_target.pipeline_revision_id,
+                photo_yunet_threshold=current_target.photo_yunet_threshold,
                 uploader_id=uploader_id,
                 checksum_sha256=validated.checksum_sha256,
                 original_object_key=candidate.staged_candidate.key,

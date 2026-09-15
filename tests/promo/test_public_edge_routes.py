@@ -419,6 +419,11 @@ def test_canonical_route_groups_are_named_without_prefix_stripping() -> None:
         "/api/serving/spas/*/name",
         "/staff/spas",
         "/api/diagnostics/retention",
+        "/api/diagnostics/people",
+        "/api/diagnostics/people/*",
+        "/api/diagnostics/photo-faces/*",
+        "/api/diagnostics/captures",
+        "/api/diagnostics/captures/*",
         "/staff/search-settings",
         "/staff/photo-inventory",
         "/staff/calibrations",
@@ -449,6 +454,7 @@ def test_live_caddy_forwards_promo_auth_media_and_ack(live_edge: _LiveEdge) -> N
         "schema_version": 1,
         "result_display_ms": 15000,
         "success_cooldown_ms": 30000,
+        "capture_detector_threshold": 0.5,
     }
     assert config.headers.get("cache-control") == "no-store"
 
@@ -498,8 +504,6 @@ def test_live_caddy_preserves_staff_roles_csrf_and_full_paths(live_edge: _LiveEd
     route_paths = (
         "/staff/search-settings",
         "/staff/photo-inventory",
-        "/staff/calibrations",
-        f"/staff/calibrations/{uuid.uuid4()}",
         "/staff/diagnostics-retention",
         "/api/diagnostics/retention",
         f"/api/serving/spas/{spa}/active-visit-date",
@@ -561,11 +565,11 @@ def test_live_caddy_preserves_staff_roles_csrf_and_full_paths(live_edge: _LiveEd
 
     assert _request(
         live_edge.base_url, "/staff/calibrations", cookies=developer
-    ).status == 200
+    ).status == 410
     for cookies in (operator, photographer):
         assert _request(
             live_edge.base_url, "/staff/calibrations", cookies=cookies
-        ).status == 403
+        ).status == 410
     assert _request(
         live_edge.base_url,
         "/staff/calibrations",
@@ -573,15 +577,39 @@ def test_live_caddy_preserves_staff_roles_csrf_and_full_paths(live_edge: _LiveEd
         cookies=developer,
         headers={"Content-Type": "application/x-www-form-urlencoded"},
         data=b"",
-    ).status == 403
+    ).status == 410
     assert _request(
         live_edge.base_url, "/staff/calibrations/00000000-0000-0000-0000-000000000000", cookies=developer
-    ).status == 404
+    ).status == 410
 
     for path in ("/api/diagnostics/retention", "/staff/diagnostics-retention"):
         for cookies in (operator, developer):
             assert _request(live_edge.base_url, path, cookies=cookies).status == 200
         assert _request(live_edge.base_url, path, cookies=photographer).status == 403
+
+
+def test_live_caddy_capture_identity_routes_keep_auth_and_csrf(live_edge: _LiveEdge) -> None:
+    operator = live_edge.cookies["operator"]
+    prefix = "/api/diagnostics"
+    for path in (f"{prefix}/people", f"{prefix}/photo-faces/{uuid.uuid4()}",
+                 f"{prefix}/captures/{uuid.uuid4()}"):
+        assert _request(live_edge.base_url, path).status == 401
+        assert _request(live_edge.base_url, path, cookies=live_edge.cookies["photographer"]).status == 403
+    created = _request(live_edge.base_url, f"{prefix}/people", method="POST", cookies=operator,
+        headers={"Content-Type": "application/json", "X-CSRF-Token": operator["fm_staff_csrf"]},
+        data=b'{"name":"capture-edge-test"}')
+    assert created.status == 200
+    person_id = json.loads(created.body)["id"]
+    listing = _request(live_edge.base_url, f"{prefix}/people", cookies=operator)
+    assert listing.status == 200 and person_id in listing.body.decode()
+    assert listing.headers["cache-control"] == "no-store"
+    assert _request(live_edge.base_url, f"{prefix}/people/{person_id}", method="DELETE", cookies=operator).status == 403
+    removed = _request(live_edge.base_url, f"{prefix}/people/{person_id}", method="DELETE", cookies=operator,
+        headers={"X-CSRF-Token": operator["fm_staff_csrf"]})
+    assert removed.status == 200 and json.loads(removed.body)["deleted"]
+    capture_list = _request(live_edge.base_url,
+        f"{prefix}/captures?spa_id={live_edge.spa_id}&date_from=2020-01-01&date_to=2030-01-01", cookies=operator)
+    assert capture_list.status == 200 and json.loads(capture_list.body)["attempts"]
 
 
 def test_live_caddy_dispatches_realtime_and_keeps_body_caps(live_edge: _LiveEdge) -> None:
@@ -635,7 +663,7 @@ def test_live_caddy_dispatches_realtime_and_keeps_body_caps(live_edge: _LiveEdge
     over_upload = _request_with_declared_content_length(
         live_edge.base_url,
         "/api/inventory/photos",
-        content_length=11 * 1024 * 1024 + 1,
+        content_length=101 * 1024 * 1024 + 1,
     )
     assert over_upload.status == 413
     assert "/api/inventory/photos" not in live_edge.backend_observations
@@ -780,6 +808,36 @@ def test_live_caddy_serves_spa_page_and_name_mutation(live_edge: _LiveEdge) -> N
         assert renamed.status == 200
         assert json.loads(renamed.body)["name"] == "Pool"
         assert b'Pool' in _request(live_edge.base_url, page_path, cookies=cookies).body
+
+
+def test_live_caddy_similarity_threshold_and_disabled_calibration(live_edge: _LiveEdge) -> None:
+    from face_moment.serving_control.realtime_context import RealtimeContextRepository
+
+    with Session(live_edge.engine) as session:
+        RealtimeContextRepository(session).provision_reference_settings(
+            spa_id=live_edge.spa_id, pipeline_code=PipelineCode.OPENCV_SFACE,
+            reference_threshold=0.45, min_query_face_quality=0.6, quality_settings={"version": 1},
+        )
+        session.commit()
+    path = f"/api/serving/spas/{live_edge.spa_id}/similarity-threshold"
+    assert _request(live_edge.base_url, path).status == 401
+    cookies = live_edge.cookies["operator"]
+    response = _request(live_edge.base_url, path, cookies=cookies)
+    assert response.status == 200
+    current = json.loads(response.body)
+    payload = {key: current[key] for key in ("threshold", "pipeline_revision_id", "settings_revision")}
+    payload["threshold"] = 0.61
+    body = json.dumps(payload).encode()
+    assert _request(live_edge.base_url, path, method="PUT", cookies=cookies,
+        headers={"Content-Type": "application/json"}, data=body).status == 403
+    saved = _request(live_edge.base_url, path, method="PUT", cookies=cookies,
+        headers={"X-CSRF-Token": cookies["fm_staff_csrf"], "Content-Type": "application/json"}, data=body)
+    assert saved.status == 200 and json.loads(saved.body)["threshold"] == 0.61
+    assert json.loads(_request(live_edge.base_url, path, cookies=cookies).body)["threshold"] == 0.61
+    for old_path in ("/staff/calibrations", "/staff/calibrations/threshold", f"/staff/calibrations/{uuid.uuid4()}"):
+        for method in ("GET", "POST"):
+            disabled = _request(live_edge.base_url, old_path, method=method, cookies=cookies)
+            assert disabled.status == 410 and "отключена" in json.loads(disabled.body)["detail"]
 
 
 def test_live_caddy_search_dates_save_and_reload(live_edge: _LiveEdge) -> None:

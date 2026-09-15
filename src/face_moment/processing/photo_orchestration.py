@@ -25,6 +25,7 @@ from face_moment.processing.terminal_publication import (
     TerminalPublicationRepository,
 )
 from face_moment.processing.worker_claims import WorkerClaimRepository
+from face_moment.processing.sface_adapter import SFacePhotoAdapter
 
 
 class TerminalPhotoAdapter(Protocol):
@@ -65,11 +66,15 @@ class PhotoProcessingOrchestrator:
         """Run one claimed Photo without owning claim or terminal policy."""
 
         try:
-            original_object_key, revision, decoded_photo = self._load_inputs(
+            original_object_key, revision, decoded_photo, detector_threshold = self._load_inputs(
                 photo_id=photo_id,
                 pipeline_revision_id=pipeline_revision_id,
             )
-            faces = self._adapter_for(revision).process_for_terminal(decoded_photo)
+            adapter = self._adapter_for(revision)
+            if isinstance(adapter, SFacePhotoAdapter):
+                faces = adapter.process_for_terminal(decoded_photo, detector_threshold=detector_threshold)
+            else:
+                faces = adapter.process_for_terminal(decoded_photo)
             if not faces:
                 return self._publish_no_faces(
                     photo_id=photo_id,
@@ -98,7 +103,7 @@ class PhotoProcessingOrchestrator:
         *,
         photo_id: uuid.UUID,
         pipeline_revision_id: uuid.UUID,
-    ) -> tuple[str, EligiblePipelineRevision, NDArray[np.uint8]]:
+    ) -> tuple[str, EligiblePipelineRevision, NDArray[np.uint8], float]:
         with self._session_factory() as session:
             photo = session.get(Photo, photo_id)
             if photo is None:
@@ -107,6 +112,7 @@ class PhotoProcessingOrchestrator:
                 pipeline_revision_id
             )
             original_object_key = photo.original_object_key
+            detector_threshold = photo.photo_yunet_threshold
 
         decoded = cv2.imdecode(
             np.frombuffer(
@@ -116,7 +122,7 @@ class PhotoProcessingOrchestrator:
         )
         if decoded is None:
             raise ValueError("private original cannot be decoded")
-        return original_object_key, revision, cast(NDArray[np.uint8], decoded)
+        return original_object_key, revision, cast(NDArray[np.uint8], decoded), detector_threshold
 
     def _adapter_for(
         self, revision: EligiblePipelineRevision

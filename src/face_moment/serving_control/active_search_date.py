@@ -41,6 +41,8 @@ class ActiveSearchDateSpa:
     search_today: bool = True
     date_from: date | None = None
     date_to: date | None = None
+    photo_yunet_threshold: float = 0.9
+    capture_blazeface_threshold: float = 0.5
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,6 +165,8 @@ def list_active_search_date_spas(
         spa_id=spa.id, name=spa.name, timezone=spa.timezone,
         search_today=spa.search_today, date_from=spa.active_visit_date,
         date_to=spa.active_visit_date_to,
+        photo_yunet_threshold=spa.photo_yunet_threshold,
+        capture_blazeface_threshold=spa.capture_blazeface_threshold,
     ) for spa in spas)
 
 

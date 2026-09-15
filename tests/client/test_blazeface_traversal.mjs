@@ -123,6 +123,27 @@ async function provesLoadFailureIsRecoverableAndHasNoFallback() {
   );
 }
 
+async function provesThresholdUpdatesExistingDetectorAndValidatesInput() {
+  const calls = [];
+  const detector = await createBlazeFaceDetector({ runtimeLoader: async () => ({
+    FilesetResolver: { forVisionTasks: async () => ({}) },
+    FaceDetector: { createFromOptions: async () => ({
+      setOptions: async options => { calls.push(options); },
+      detect: () => ({ detections: [] }), close() {},
+    }) },
+  }) });
+  await detector.setThreshold(0.5);
+  await detector.setThreshold(0.65);
+  await detector.setThreshold(0.65);
+  await detector.setThreshold(0.5);
+  assert.deepEqual(calls, [{ minDetectionConfidence: 0.65 }, { minDetectionConfidence: 0.5 }]);
+  for (const invalid of [0, -1, 1.1, NaN, Infinity, '0.6', null]) {
+    await assert.rejects(() => detector.setThreshold(invalid), TypeError);
+  }
+  detector.close();
+}
+
+await provesThresholdUpdatesExistingDetectorAndValidatesInput();
 await provesChronologicalDetectorOrderAndImmediateFirst20Stop();
 await provesRepeatedOccurrencesRemainDistinct();
 await provesOnlyThePinnedMediaPipeAssetIsLoaded();

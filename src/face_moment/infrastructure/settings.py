@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-DEFAULT_REALTIME_DEADLINE_MS = 3000
+DEFAULT_REALTIME_DEADLINE_MS = 7000
 DEFAULT_REALTIME_RATE_LIMIT = 60
 DEFAULT_REALTIME_RATE_WINDOW_SECONDS = 60
 DEFAULT_PROMO_QR_TICKET_SECRET = "face-moment-development-only-qr-ticket"
@@ -92,7 +92,7 @@ class Settings:
             staff_login_rate_window_seconds=_positive_int(
                 "STAFF_LOGIN_RATE_WINDOW_SECONDS", "60"
             ),
-            photo_upload_rate_limit=_positive_int("PHOTO_UPLOAD_RATE_LIMIT", "10"),
+            photo_upload_rate_limit=_positive_int("PHOTO_UPLOAD_RATE_LIMIT", "60"),
             photo_upload_rate_window_seconds=_positive_int(
                 "PHOTO_UPLOAD_RATE_WINDOW_SECONDS", "60"
             ),

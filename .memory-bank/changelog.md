@@ -4,6 +4,66 @@ status: active
 ---
 # Changelog
 
+## [2026-09-16] Venue advertising playlists
+
+- Operator presentation update: finished Promo fades to black in 3 seconds,
+  then advertising reveals in 1 second after its first material is ready.
+  Existing server session/QR/ACK and advertising crossfade settings are preserved.
+
+- Operator refinement: removed global advertising navigation/dashboard entry;
+  each screen card now opens its venue playlist with «Реклама» below token copy.
+  Playlist back navigation returns to «Экраны»; venue ownership is unchanged.
+
+- Operator-approved direct KISS implementation: staff advertising for
+  operator/developer, shared venue order/settings, existing private MinIO.
+  Migration 0026 adds independent tables without changing Photo/Promo/history.
+- Sequential display, first/random restart after unsuccessful recognition and
+  personalized display, native crop/crossfade and audio stop. Cache Storage
+  warms media; 30-second polling applies updates between materials.
+- Codec validation and automatic tests waived by operator.
+  [Contract and code](contracts/advertising-playlists.md): behavior and limitations.
+- Applied locally: migration 0026, backend restart and Caddy reload succeeded;
+  original data volumes retained. Functional checks remain operator-owned.
+
+## [2026-09-15] Capture identity и ручной similarity threshold
+
+- [Capture identity](domains/capture-identity.md): глобальные люди, связи с
+  существующими photo faces, private crops и независимая диагностика. Crops
+  хранятся обычные 90 суток; оценки верно/неверно и пропуски временные.
+- Порог сходства перенесён в карточку площадки для текущей serving model,
+  без второго хранилища. Calibration отключена от меню, HTTP и worker,
+  включая startup interruption; прежние код и данные оставлены.
+- Применено к локальным контейнерам по разрешению оператора: migration 0025,
+  исходники, Caddy, существующий retention timer. Ручной cleanup не запускался.
+  [Повторный запуск и проверки](guides/local-development.md#capture-identity-и-порог-сходства--локальное-применение).
+
+## [2026-09-14] Per-площадка YuNet/BlazeFace controls
+
+- Each площадка now exposes independent guarded edits for photographer-photo
+  YuNet and browser BlazeFace confidence. Save locks the value; cancelling edits
+  restores the last saved value. Today's-only mode saves automatically and
+  hides the manual date range and its save button.
+- Migration `0024_spa_detector_thresholds` adds venue values (`0.90` / `0.50`)
+  and freezes the admission-time YuNet setting on new Photos. Existing Photos
+  are not reprocessed. Native photo processing restores the detector threshold
+  after each operation; reference matching and Calibration retain their paths.
+- Authenticated display config carries the venue's BlazeFace threshold and is
+  consumed before each browser detection, then reused for Promo. Caddy routes
+  the two protected setting writes to backend. Existing three-field display
+  responses remain readable during rollout.
+- Verified mypy, 31 focused Python checks, 60 client checks, 25/26 initial
+  PostgreSQL regressions, then five focused integration checks including the
+  populated migration round-trip and worker snapshot. Two Chromium UI checks
+  cover desktop/mobile. Caddy config validation passes. The single existing
+  inventory-selector assertion failure is recorded in
+  [session findings](../PAPERCUTS/gpt-6%20__%2009-14-2026%2008.56.md).
+- The shared running database/application/edge were not migrated or restarted.
+  Rollout requires migration to `0024`, updated backend/worker and Caddy config,
+  then a browser refresh. No task statuses or planning revision were changed.
+- [Settings contract](contracts/boundary-map.md#per-площадка-detector-thresholds),
+  [browser config](contracts/promo-display-api.md),
+  [processing ownership](domains/photo-processing.md).
+
 ## [2026-09-11] Per-площадка exit-camera search dates
 
 - Operator requested direct KISS implementation: each «Площадки» card offers

@@ -1,5 +1,8 @@
+import { createCaptureDiagnostics } from './capture-identity.js';
+
 const root = document.querySelector('[data-staff-media]');
 if (root) {
+  const diagnostics = root.dataset.captureDiagnostics === 'true' ? createCaptureDiagnostics(root) : null;
   const form = root.querySelector('#media-filter');
   const rows = root.querySelector('#media-rows');
   const status = root.querySelector('#media-status');
@@ -45,6 +48,7 @@ if (root) {
       link.append(image);
     }
     previewCell.append(link);
+    diagnostics?.addPhotoFaces(previewCell, photo);
     cell(row, StaffDateTime.formatTimestamp(photo.accepted_at)).className = 'fm-media-date';
     cell(row, StaffDateTime.formatTimestamp(photo.captured_at)).className = 'fm-media-date';
     const dimensions = cell(row, `${photo.width} × ${photo.height}`);
@@ -98,6 +102,7 @@ if (root) {
     root.setAttribute('aria-busy', 'true');
     try {
       const query = new URLSearchParams({ spa_id: root.dataset.spaId, date_from: from, date_to: to });
+      diagnostics?.loadCaptures(query);
       const response = await fetch(`/api/inventory/venue-media?${query}`, { credentials: 'same-origin', cache: 'no-store' });
       if (!response.ok) throw new Error(response.status === 401 ? 'Сессия завершилась. Войдите заново.' : 'Не удалось загрузить фотографии. Повторите попытку.');
       const payload = await response.json();

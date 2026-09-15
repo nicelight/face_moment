@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from types import SimpleNamespace
 from collections.abc import Iterator
 from contextlib import contextmanager
 
@@ -25,6 +26,7 @@ def uploader_page_app(monkeypatch: pytest.MonkeyPatch) -> FastAPI:
 
     monkeypatch.setattr(inventory_http, "_database_session", database_session)
     monkeypatch.setattr(inventory_http, "read_ingest_target_context", read_context)
+    monkeypatch.setattr(inventory_http, "get_current_principal", lambda *args, **kwargs: SimpleNamespace(staff_user_id="photographer-id"))
     return create_app()
 
 

@@ -15,20 +15,28 @@ from face_moment.processing.initial_pending import PhotoPipelineState
 class StaffMediaProcessingProjection:
     status: str
     thumbnail_object_key: str | None
+    pipeline_revision_id: UUID | None = None
 
 
 def read_staff_media_projections(
-    session: Session, *, photo_revisions: Sequence[tuple[UUID, UUID]]
+    session: Session, *, photo_revisions: Sequence[tuple[UUID, UUID]],
+    preferred_revision_id: UUID | None = None,
 ) -> dict[UUID, StaffMediaProcessingProjection]:
-    """Read only supplied Photo/revision pairs; never substitute newer states."""
+    """Prefer the venue's serving state when present, otherwise admission state."""
     if not photo_revisions:
         return {}
+    pairs = set(photo_revisions)
+    if preferred_revision_id is not None:
+        pairs.update((photo_id, preferred_revision_id) for photo_id, _ in photo_revisions)
     rows = session.execute(
         select(PhotoPipelineState.photo_id, PhotoPipelineState.status,
-               PhotoPipelineState.thumbnail_object_key).where(
+               PhotoPipelineState.thumbnail_object_key, PhotoPipelineState.pipeline_revision_id).where(
             tuple_(PhotoPipelineState.photo_id, PhotoPipelineState.pipeline_revision_id)
-            .in_(photo_revisions)
+            .in_(pairs)
         )
     )
-    return {photo_id: StaffMediaProcessingProjection(status, thumbnail_key)
-            for photo_id, status, thumbnail_key in rows}
+    result: dict[UUID, StaffMediaProcessingProjection] = {}
+    for photo_id, status, thumbnail_key, revision_id in rows:
+        if photo_id not in result or revision_id == preferred_revision_id:
+            result[photo_id] = StaffMediaProcessingProjection(status, thumbnail_key, revision_id)
+    return result

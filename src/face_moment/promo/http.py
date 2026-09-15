@@ -31,6 +31,7 @@ from face_moment.promo.display_config import (
     InvalidDisplayConfigurationError,
     read_display_configuration,
 )
+from face_moment.serving_control.detector_thresholds import read_capture_detector_threshold
 from face_moment.promo.display_media import (
     PromoMediaNotFoundError,
     resolve_teaser_media,
@@ -124,10 +125,11 @@ def register_promo_display_routes(
                 ) from error
 
             display_name = DisplayClientRepository(database_session).get(principal.display_client_id).name
+            capture_threshold = read_capture_detector_threshold(database_session, spa_id=principal.spa_id)
 
         response = JSONResponse(
             status_code=status.HTTP_200_OK,
-            content=configuration.as_response(),
+            content={**configuration.as_response(), "capture_detector_threshold": capture_threshold},
         )
         response.headers.update(_NO_STORE_HEADERS)
         response.headers["X-Face-Moment-Display-Client-Id"] = str(principal.display_client_id)

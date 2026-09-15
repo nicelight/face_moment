@@ -4,6 +4,9 @@ status: active
 ---
 # Contracts
 
+- [Advertising Playlists](advertising-playlists.md): venue administration, scoped display,
+  cyclic playback, media cache and polling.
+
 - [Boundary Map](boundary-map.md): capability ownership, public boundaries and
   cross-slice write rules.
 - [Attempt Investigation API](attempt-investigation-api.md): exact role-scoped

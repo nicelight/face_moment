@@ -9,6 +9,11 @@ source_of_truth:
 
 ## Scope And Owner
 
+Operator extension 2026-09-15: [capture-identity.md](capture-identity.md) permits
+the bounded `captures` section and private crop descriptors in `artifacts`.
+Capture proposed identity is diagnostic output, not an ordinary annotation;
+credentials and embeddings remain forbidden. JPEG uses the existing 90-day ordinary retention.
+
 `diagnostics` owns optional detailed evidence linked to the promo-owned core
 Attempt. `promo` writes it only through the diagnostics application boundary;
 the diagnostics repository MUST NOT mutate core Attempts, results or sessions.

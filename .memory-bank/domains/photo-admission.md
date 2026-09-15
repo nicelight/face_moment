@@ -37,6 +37,7 @@ The serving target used by admission resolves:
 | `timezone` | `serving_control`; valid IANA timezone used for EXIF interpretation. |
 | `visit_date` | Selected by the photographer for this upload and validated by `serving_control`; it is not silently replaced by EXIF, filename, browser time or upload time. |
 | `pipeline_revision_id` | `serving_control` points to one immutable revision owned by `processing`; admission does not validate, switch or implement that revision. |
+| `photo_yunet_threshold` | Per-площадка photographer detector setting, read under the admission target lock and frozen on the new Photo for worker retries. Existing Photos retain their value. |
 
 The implementation MUST provide an owner-backed configuration/test path for one
 active СПА and one serving revision. It MUST NOT seed production identities in

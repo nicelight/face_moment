@@ -7,6 +7,13 @@ last_updated: 2026-09-04
 
 ## Subject specifications
 
+- Per-площадка detector controls: `tests/serving_control/test_detector_thresholds.py`
+  covers authenticated independent settings and immutable admission snapshots;
+  `tests/processing/test_sface_adapter.py` covers native threshold application and
+  restoration. `tests/client/test_spa_detector_controls.mjs` and
+  `tests/client/test_spa_detector_settings.spec.mjs` cover automatic-today saving,
+  date visibility, threshold save/cancel and two responsive Chromium layouts.
+
 - [Client realtime verification](client-realtime.md): chronological
   first-at-most-20 BlazeFace submission, browser/ESP32 transport, crop/JPEG/
   manifest contract, one-clock Promo latency, diagnostic markers,

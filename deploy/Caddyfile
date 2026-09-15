@@ -15,7 +15,7 @@ https://localhost:8443 {
 
 	@realtime_attempts path /api/realtime/attempts /api/realtime/attempts/*/client-timing
 	@phone_continuation path /q /phone /api/phone/*
-	@backend_canonical path /api/promo/* /api/serving/display-clients/*/name /api/serving/spas/*/active-visit-date /api/serving/spas/*/search-dates /api/serving/spas/*/name /api/diagnostics/retention /staff/search-settings /staff/spas /staff/photo-inventory /staff/venue-media /staff/calibrations /staff/calibrations/* /staff/diagnostics-retention
+	@backend_canonical path /api/promo/* /api/serving/display-clients/*/name /api/serving/spas/*/active-visit-date /api/serving/spas/*/search-dates /api/serving/spas/*/similarity-threshold /api/serving/spas/*/detector-thresholds/* /api/serving/spas/*/name /api/diagnostics/retention /api/diagnostics/people /api/diagnostics/people/* /api/diagnostics/photo-faces/* /api/diagnostics/captures /api/diagnostics/captures/* /staff/search-settings /staff/spas /staff/photo-inventory /staff/venue-media /staff/calibrations /staff/calibrations/* /staff/diagnostics-retention
 
 	route {
 		respond @inventory_photo_upload_without_length 413
@@ -29,6 +29,16 @@ https://localhost:8443 {
 		}
 
 		handle /api/staff/* {
+			reverse_proxy backend:8000 {
+				header_up X-Forwarded-For {remote_host}
+			}
+		}
+
+		@advertising_admin path /staff/advertising /api/advertising/*
+		handle @advertising_admin {
+			request_body {
+				max_size 2050MiB
+			}
 			reverse_proxy backend:8000 {
 				header_up X-Forwarded-For {remote_host}
 			}

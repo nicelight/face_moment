@@ -83,16 +83,6 @@ async def _worker_lifecycle(
             process_inventory_purge=InventoryHardPurge(
                 session_factory=binding.session_factory, object_store=object_store,
             ).process_one,
-            claim_requested_calibration=lambda: _claim_requested_calibration(
-                binding.session_factory
-            ),
-            execute_claimed_calibration=lambda run_id: _execute_claimed_calibration(
-                run_id,
-                binding.session_factory, object_store, settings
-            ),
-            interrupt_running_calibrations=lambda: _interrupt_running_calibrations(
-                binding.session_factory
-            ),
         )
         recovered_count = await asyncio.to_thread(worker.recover_startup)
         state["health"] = {

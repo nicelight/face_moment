@@ -15,6 +15,9 @@ import numpy as np
 from numpy.typing import NDArray
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
+from starlette.background import BackgroundTask
+
+from face_moment.diagnostics.capture_identity import attach_captures
 
 from face_moment.entrypoints.common import bind_server_events, create_role_app, run
 from face_moment.entrypoints.model_consumers import bind_model_consumer
@@ -364,6 +367,7 @@ def _admit_realtime_attempt(
                 ),
             )
         execution = None
+        capture_observations: dict[int, dict[str, object]] = {}
         if payload.proposal_count == 0:
             repository.mark_no_proposals(attempt)
             execution = RealtimeAttemptExecution(outcome="no_proposals")
@@ -382,6 +386,7 @@ def _admit_realtime_attempt(
                         context=context,
                         engine=engine,
                         occurrences=_reference_occurrences(payload),
+                        capture_observations=capture_observations,
                     )
 
                 execution = execute_realtime_attempt(
@@ -420,13 +425,23 @@ def _admit_realtime_attempt(
             gap_reason=evidence_gap,
             issue_tags=evidence_tags,
         )
-        return _response_for_attempt(
+        response = _response_for_attempt(
             attempt,
             database_session=database_session,
             qr_ticket_secret=state.get(
                 "qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
             ),
         )
+        if "object_store" in state:
+            response.background = BackgroundTask(
+                attach_captures, session_factory,
+                object_store=state["object_store"], attempt_id=evidence_attempt_id,
+                created_at=attempt.created_at, revision_id=context.pipeline_revision_id,
+                threshold=context.reference_threshold,
+                crops=tuple(part.body for part in payload.occurrences),
+                observations=capture_observations,
+            )
+        return response
 
 
 async def _read_limited_body(request: Request) -> bytes:
@@ -453,8 +468,10 @@ def _response_for_attempt(
     database_session: Session,
     qr_ticket_secret: bytes | str,
 ) -> Response:
+    identity_headers = {"X-Face-Moment-Attempt-Id": str(attempt.id)}
     if attempt.processing_status == "internal_failure":
         return JSONResponse(
+            headers=identity_headers,
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"detail": "realtime processing is not available"},
         )
@@ -466,6 +483,7 @@ def _response_for_attempt(
         ).response_for_attempt(attempt.id)
         return JSONResponse(
             status_code=status.HTTP_200_OK,
+            headers=identity_headers,
             content={
                 "schema_version": 1,
                 "attempt_id": attempt_id,
@@ -477,6 +495,7 @@ def _response_for_attempt(
         )
     if outcome is None:
         return JSONResponse(
+            headers=identity_headers,
             status_code=status.HTTP_200_OK,
             content={
                 "schema_version": 1,
@@ -486,6 +505,7 @@ def _response_for_attempt(
         )
     return JSONResponse(
         status_code=status.HTTP_200_OK,
+        headers=identity_headers,
         content={
             "schema_version": 1,
             "attempt_id": attempt_id,

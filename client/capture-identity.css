@@ -1,0 +1,12 @@
+.fm-capture-grid { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1rem 0; }
+.fm-capture-card { display: flex; flex-direction: column; gap: .5rem; width: 180px; padding: .75rem; border: 1px solid currentColor; border-radius: .75rem; }
+.fm-capture-card img { width: 100%; height: 150px; object-fit: contain; }
+.fm-capture-card select { width: 100%; }
+.fm-capture-card p { margin: 0; }
+.fm-capture-card ol { margin: 0; padding-left: 1.25rem; overflow-wrap: anywhere; }
+.fm-identity-person { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .75rem 0; }
+.fm-identity-person input { flex: 1; min-width: 130px; }
+.fm-identity-faces { margin-top: .75rem; }
+.fm-capture-attempt { margin: 1rem 0; padding: 1rem; border: 1px solid currentColor; border-radius: .75rem; }
+.fm-capture-attempt summary { cursor: pointer; overflow-wrap: anywhere; }
+.fm-capture-attempt fieldset { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1rem 0; }

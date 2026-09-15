@@ -318,6 +318,43 @@ def test_orchestration_uses_only_the_claimed_revision_adapter_and_publishes_read
     assert _runtime_snapshot(engine) == _CANONICAL_RUNTIME
 
 
+def test_orchestration_uses_photo_threshold_snapshot(
+    disposable_processing_state: tuple[Engine, PrivateObjectStore, str, list[str]],
+) -> None:
+    from face_moment.processing.sface_adapter import SFacePhotoAdapter
+    from face_moment.serving_control.ingest_target import Spa
+
+    engine, object_store, run_prefix, derivative_prefixes = disposable_processing_state
+    fixture = _claimed_fixture(engine, object_store, run_prefix=run_prefix,
+        derivative_prefixes=derivative_prefixes, pipeline_code=PipelineCode.OPENCV_SFACE)
+    with Session(engine) as session:
+        photo = session.get(Photo, fixture.photo_id)
+        photo.photo_yunet_threshold = 0.72
+        session.get(Spa, photo.spa_id).photo_yunet_threshold = 0.8
+        session.commit()
+    observed = []
+
+    class SnapshotAdapter(SFacePhotoAdapter):
+        def __init__(self):
+            pass
+
+        @property
+        def pipeline_revision_id(self):
+            return fixture.pipeline_revision_id
+
+        def process_for_terminal(self, photo, *, detector_threshold=None):
+            observed.append(detector_threshold)
+            return ()
+
+    result = PhotoProcessingOrchestrator(session_factory=lambda: Session(engine),
+        object_store=object_store, sface_adapter=SnapshotAdapter(),
+        buffalo_adapter=_RecordingAdapter(pipeline_revision_id=uuid.uuid4(), label="unused"),
+        derivative_creator=_creator(object_store)).process_claimed(
+            photo_id=fixture.photo_id, pipeline_revision_id=fixture.pipeline_revision_id)
+    assert result == "no_faces"
+    assert observed == [0.72]
+
+
 def test_orchestration_publishes_no_faces_without_derivatives(
     disposable_processing_state: tuple[Engine, PrivateObjectStore, str, list[str]],
 ) -> None:

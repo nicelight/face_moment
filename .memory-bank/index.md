@@ -27,6 +27,9 @@ status: active
 
 ## Навигация
 
+- [Advertising playlists](contracts/advertising-playlists.md): реклама площадок,
+  воспроизведение, Cache Storage и обновления.
+
 - [.memory-bank/constitution.md](constitution.md): Project Constitution — top governing policy for agents.
 - [.memory-bank/mbb/index.md](mbb/index.md): Правила ведения Memory Bank (MBB).
 - [.memory-bank/roles/index.md](roles/index.md): Router for agent role contracts.

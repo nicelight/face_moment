@@ -184,6 +184,7 @@ def test_real_worker_process_restart_recovers_and_drains_active_and_queued_work(
         for label in ("active", "queued"):
             photo = Photo(
                 spa_id=target.spa_id,
+                admission_pipeline_revision_id=revision.id,
                 visit_date=date(2026, 8, 14),
                 captured_at=datetime(2026, 8, 14, 9, 0, tzinfo=timezone.utc),
                 captured_at_source=CapturedAtSource.UPLOAD_STARTED_AT,
@@ -310,6 +311,7 @@ def test_bound_worker_stops_claiming_after_committed_revision_changes_until_rest
         for label, revision_id in (("a", revision_a.id), ("b", revision_b.id)):
             photo = Photo(
                 spa_id=target.spa_id,
+                admission_pipeline_revision_id=revision_id,
                 visit_date=date(2026, 8, 14),
                 captured_at=datetime(2026, 8, 14, 9, 0, tzinfo=timezone.utc),
                 captured_at_source=CapturedAtSource.UPLOAD_STARTED_AT,

@@ -228,7 +228,8 @@ def _render_annotation_page(
 <section><h2>Current annotations</h2>{annotation_rows}</section>
 <section><h2>Add detection annotation</h2><form data-protected method="post" action="{action}">
 <input type="hidden" name="target_kind" value="detection">
-<label>Detection occurrence <input name="detection_occurrence_index" type="number" min="0" required></label>
+<label>Номер обнаружения лица <input name="detection_occurrence_index" type="number" min="0" step="1" required aria-describedby="detection-occurrence-help" title="Укажите occurrence_index нужного лица из диагностики этого захвата. Это не rank и не ID фотографии; нумерация начинается с 0."></label>
+<p id="detection-occurrence-help">В деталях этого захвата найдите нужное лицо в разделе detections и скопируйте его occurrence_index (например, 2). По этому номеру имя и оценка результата привязываются к конкретному обнаружению лица. Один человек может иметь несколько обнаружений.</p>
 <label>Participant name <input name="participant_name" maxlength="200" required></label>
 <label>Outcome <select name="outcome"><option value="correct">correct</option><option value="false">false</option></select></label>
 <button type="submit">Create detection annotation</button></form></section>
@@ -268,6 +269,13 @@ def _render_annotation_row(annotation: GroundTruthAnnotationSnapshot) -> str:
 _FORM_SCRIPT = r"""
 const csrfToken = () => document.cookie.split("; ")
   .find((item) => item.startsWith("fm_staff_csrf="))?.slice("fm_staff_csrf=".length) ?? "";
+const occurrenceInput = document.querySelector('input[type="number"][name="detection_occurrence_index"]');
+if (occurrenceInput) {
+  occurrenceInput.addEventListener("invalid", () => {
+    occurrenceInput.setCustomValidity("Введите occurrence_index нужного лица из диагностики этого захвата: целое число от 0. Это не rank и не ID фотографии.");
+  });
+  occurrenceInput.addEventListener("input", () => occurrenceInput.setCustomValidity(""));
+}
 for (const form of document.querySelectorAll("form[data-protected]")) {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();

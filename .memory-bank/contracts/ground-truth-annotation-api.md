@@ -34,6 +34,12 @@ its FT-008 base projection still contains no participant name or annotation.
 Successful mutations return `303` to the annotation GET route. Every response,
 including errors and redirects, carries `Cache-Control: no-store`.
 
+The detection-number control explains that it expects the current Attempt's
+`detections[].occurrence_index`, not `rank` or a Photo ID. Its Russian label,
+hover hint and visible accessible description explain the name/outcome binding
+and repeated occurrences of one person. Native invalid-input feedback uses the
+same guidance and clears when the user edits the value.
+
 ## Authorization And Mutation Contract
 
 Every request evaluates the current staff session. Only an active `developer`

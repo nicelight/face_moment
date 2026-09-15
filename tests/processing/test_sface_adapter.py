@@ -23,6 +23,8 @@ from face_moment.processing.sface_adapter import (
 class _YuNetFixture:
     def __init__(self, calls: list[str]) -> None:
         self._calls = calls
+        self.threshold = 0.9
+        self.observed_thresholds: list[float] = []
         self.detections = np.array(
             [[10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0.98]],
             dtype=np.float32,
@@ -32,11 +34,18 @@ class _YuNetFixture:
         assert size == (32, 32)
         self._calls.append("yunet.setInputSize")
 
+    def getScoreThreshold(self) -> float:
+        return self.threshold
+
+    def setScoreThreshold(self, threshold: float) -> None:
+        self.threshold = threshold
+
     def detect(
         self, photo: NDArray[np.uint8]
     ) -> tuple[bool, NDArray[np.float32] | None]:
         assert photo.shape == (32, 32, 3)
         self._calls.append("yunet.detect")
+        self.observed_thresholds.append(self.threshold)
         return True, self.detections
 
 
@@ -215,6 +224,25 @@ def test_sface_adapter_rejects_a_buffalo_derived_value_as_photo_input(
         adapter.process_photo(_BuffaloDerivedValue())  # type: ignore[arg-type]
 
     assert calls == []
+
+
+def test_photo_threshold_override_is_scoped_and_restored_on_failure(tmp_path: Path) -> None:
+    calls: list[str] = []
+    assets = _assets(tmp_path)
+    detector = _YuNetFixture(calls)
+    recognizer = _SFaceFixture(calls)
+    adapter = SFacePhotoAdapter(revision=_revision(assets), assets=assets,
+                               detector=detector, recognizer=recognizer)
+    photo = np.zeros((32, 32, 3), dtype=np.uint8)
+    assert len(adapter.process_for_terminal(photo, detector_threshold=0.72)) == 1
+    assert detector.observed_thresholds == [0.72]
+    assert detector.threshold == 0.9
+    adapter.prepare_reference_query(photo)
+    assert detector.observed_thresholds == [0.72, 0.9]
+    detector.detections[0, :4] = [1, 2, 3, 4]  # fixture alignment deliberately fails
+    with pytest.raises(AssertionError):
+        adapter.process_for_terminal(photo, detector_threshold=0.6)
+    assert detector.threshold == 0.9
 
 
 class _RecordingYuNet:

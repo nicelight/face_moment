@@ -105,12 +105,19 @@ def test_authenticated_config_route_returns_exact_no_store_shape(
     )
     monkeypatch.setattr(promo_http, "_database_session", database)
     client_id = uuid.uuid4()
+    spa_id = uuid.uuid4()
     monkeypatch.setattr(
         promo_http,
         "authenticate_display_client",
-        lambda *_args, **_kwargs: DisplayClientPrincipal(client_id, uuid.uuid4()),
+        lambda *_args, **_kwargs: DisplayClientPrincipal(client_id, spa_id),
     )
     monkeypatch.setattr(promo_http, "DisplayClientRepository", lambda session: SimpleNamespace(get=lambda id: SimpleNamespace(name="Экран у выхода")))
+    def capture_threshold(database_session, *, spa_id):
+        assert database_session is session
+        assert spa_id == expected_spa_id
+        return 0.65
+    expected_spa_id = spa_id
+    monkeypatch.setattr(promo_http, "read_capture_detector_threshold", capture_threshold)
 
     response = route.endpoint(_request())
 
@@ -121,7 +128,7 @@ def test_authenticated_config_route_returns_exact_no_store_shape(
     assert unquote(response.headers["x-face-moment-display-name"]) == "Экран у выхода"
     assert response.media_type == "application/json"
     assert response.body == (
-        b'{"schema_version":1,"result_display_ms":111,"success_cooldown_ms":222}'
+        b'{"schema_version":1,"result_display_ms":111,"success_cooldown_ms":222,"capture_detector_threshold":0.65}'
     )
 
 

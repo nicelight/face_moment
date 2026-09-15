@@ -63,6 +63,17 @@ document.querySelectorAll("[data-copy-token]").forEach(button => button.addEvent
     token.querySelector(".fm-copy-status").textContent = "Токен скопирован";
   } catch { token.querySelector(".fm-copy-status").textContent = "Не удалось скопировать. Выделите токен и скопируйте вручную."; }
 }));
+document.querySelectorAll('[data-copy-capture-json]').forEach(button => button.addEventListener('click', async event => {
+  event.preventDefault();
+  const details = button.closest('.fm-capture-diagnostics');
+  const status = details.querySelector('[role="status"]');
+  try {
+    await navigator.clipboard.writeText(details.querySelector('pre').textContent);
+    status.textContent = 'JSON скопирован';
+  } catch {
+    status.textContent = 'Не удалось скопировать. Выделите JSON и скопируйте вручную.';
+  }
+}));
 void loadIdentity();
 
 for (const form of document.querySelectorAll('.fm-device-rename')) {

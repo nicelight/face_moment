@@ -14,8 +14,12 @@ source_of_truth:
 - Feature `spec_design_status` lives in feature frontmatter, not in this index.
 
 ## Spec Registry
+Capture diagnostics: [domains/capture-identity.md](domains/capture-identity.md):
+operator-authorized registry, face labels, private ordinary-retention crops and temporary evaluations.
+
 | Type | Path | Status | Scope | Change route |
 |---|---|---|---|---|
+| contract | [Advertising Playlists](contracts/advertising-playlists.md) | active | Venue playlists, browser cache and display cycle. | Explicit operator delta |
 | governance | [.memory-bank/constitution.md](constitution.md) | active | Top governing policy. | /constitution |
 | invariants | [.memory-bank/invariants.md](invariants.md) | active | Global MUST/NEVER rules grounded in ratified governance decisions. | /constitution, /spec-init, or /spec-design |
 | glossary | [.memory-bank/glossary.md](glossary.md) | active | Canonical Face Moment vocabulary and disambiguation rules. | /brief, /spec-init, or /spec-design |

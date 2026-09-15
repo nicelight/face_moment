@@ -258,6 +258,10 @@ class BuffaloPhotoAdapter:
             reference_quality_score=score,
             native_face_count=len(faces),
             gate_observations=(("native_detection_confidence", score),),
+            prepared_query=PreparedReferenceQuery(
+                pipeline_revision_id=self._revision.id,
+                embedding=max(faces, key=lambda item: float(item.native_face.det_score)).embedding,
+            ),
         )
 
     def prepare_reference_query(

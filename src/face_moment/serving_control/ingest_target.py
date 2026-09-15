@@ -6,7 +6,7 @@ from datetime import date, datetime
 from typing import TYPE_CHECKING, Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Uuid, select
+from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, Float, ForeignKey, Integer, String, Uuid, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from face_moment.infrastructure.database import Base
@@ -20,6 +20,10 @@ _MAX_TIMEZONE_LENGTH = 255
 
 class Spa(Base):
     __tablename__ = "spas"
+    __table_args__ = (
+        CheckConstraint("photo_yunet_threshold > 0 AND photo_yunet_threshold <= 1", name="ck_spas_photo_yunet_threshold"),
+        CheckConstraint("capture_blazeface_threshold > 0 AND capture_blazeface_threshold <= 1", name="ck_spas_capture_blazeface_threshold"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -33,6 +37,12 @@ class Spa(Base):
     active_visit_date_to: Mapped[date | None] = mapped_column(Date, nullable=True)
     search_today: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default="true"
+    )
+    photo_yunet_threshold: Mapped[float] = mapped_column(
+        Float, nullable=False, default=0.9, server_default="0.9"
+    )
+    capture_blazeface_threshold: Mapped[float] = mapped_column(
+        Float, nullable=False, default=0.5, server_default="0.5"
     )
     settings_revision: Mapped[int] = mapped_column(
         Integer, nullable=False, default=1, server_default="1"
@@ -56,6 +66,7 @@ class IngestTarget:
     name: str
     timezone: str
     pipeline_revision_id: uuid.UUID
+    photo_yunet_threshold: float = 0.9
 
 
 @dataclass(frozen=True, slots=True)
@@ -311,4 +322,5 @@ class IngestTargetRepository:
             name=spa.name,
             timezone=spa.timezone,
             pipeline_revision_id=revision.id,
+            photo_yunet_threshold=spa.photo_yunet_threshold,
         )

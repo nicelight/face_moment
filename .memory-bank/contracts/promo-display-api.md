@@ -27,7 +27,7 @@ reference from another СПА is not disclosed.
 
 - Identity headers: `X-Face-Moment-Display-Client-Id` (authenticated caller's
   UUID), `X-Face-Moment-Display-Name` (UTF-8 percent-encoded owner-stored name).
-  JSON below is unchanged; Configuration displays the name and last five ID characters.
+  Configuration displays the name and last five ID characters.
 - Method and path: `GET /api/promo/display/config`.
 - Authentication: `Authorization: Bearer <spa-client-token>`.
 - Success: `200 application/json` with exactly:
@@ -36,7 +36,8 @@ reference from another СПА is not disclosed.
   {
     "schema_version": 1,
     "result_display_ms": 15000,
-    "success_cooldown_ms": 30000
+    "success_cooldown_ms": 30000,
+    "capture_detector_threshold": 0.5
   }
   ```
 
@@ -47,6 +48,16 @@ duration or create a settings framework. The same `result_display_ms` value is
 used when `promo` fixes
 `display_expires_at = qr_issued_at + result_display_ms` for a newly issued
 result.
+
+Operator addition, 2026-09-14: `capture_detector_threshold` comes from the
+authenticated display token's площадка and is a finite number in `(0, 1]`.
+It controls browser BlazeFace only. The browser obtains this configuration
+before series detection and updates its already loaded detector; the same
+configuration is reused for Promo rendering. The existing five-second config
+deadline remains in force. A client accepts the old three-field response with
+the historical `0.5` capture default during a rollout; new responses always
+include the venue value. Refresh already loaded kiosk pages after deploying
+the client change.
 
 Operator addition, 2026-09-10: the kiosk may override its **local visible
 duration** with a positive whole-second preference from Configuration. The

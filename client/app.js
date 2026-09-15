@@ -28,8 +28,47 @@ import "./motion-ui.js";
 import { readClientDiagnosticEvents, saveClientDiagnosticEvents } from "./client-diagnostic-history.js";
 import { openPromoLayoutEditor } from "./promo-layout-editor.js";
 import { MAX_PROMO_SECONDS, readPromoSeconds, savePromoSeconds } from "./promo-display-preferences.js";
+import { createAdvertisingPlayer } from "./advertising-player.js";
 
 const view = document.querySelector("#client-view");
+const promoHandoff = document.createElement("div");
+promoHandoff.className = "promo-ad-handoff";
+promoHandoff.hidden = true;
+promoHandoff.setAttribute("aria-hidden", "true");
+promoHandoff.addEventListener("click", event => event.stopPropagation());
+document.body.append(promoHandoff);
+let handoffAnimation = null;
+const advertisingPlayer = createAdvertisingPlayer({ onReady: revealAdvertisingFromBlack });
+
+function clearPromoHandoff() {
+  handoffAnimation?.cancel();
+  handoffAnimation = null;
+  promoHandoff.hidden = true;
+}
+
+async function fadePromoToBlack() {
+  clearPromoHandoff();
+  promoHandoff.hidden = false;
+  promoHandoff.style.opacity = "0";
+  const animation = promoHandoff.animate([{ opacity: 0 }, { opacity: 1 }],
+    { duration: 3000, easing: "linear", fill: "forwards" });
+  handoffAnimation = animation;
+  await animation.finished.catch(() => {});
+  if (handoffAnimation !== animation) return;
+  promoHandoff.style.opacity = "1";
+  handoffAnimation = null;
+  animation.cancel();
+}
+
+function revealAdvertisingFromBlack() {
+  if (promoHandoff.hidden || handoffAnimation) return;
+  const animation = promoHandoff.animate([{ opacity: 1 }, { opacity: 0 }],
+    { duration: 1000, easing: "linear", fill: "forwards" });
+  handoffAnimation = animation;
+  void animation.finished.then(() => {
+    if (handoffAnimation === animation) clearPromoHandoff();
+  }).catch(() => {});
+}
 const signalProgress = createSignalProgress();
 const communicationNoticeController = createCommunicationNoticeController({
   element: document.querySelector("#communication-notice"),
@@ -43,6 +82,7 @@ let attemptOutcomeController;
 let promoDisplayController;
 let displayIdentityRevision = 0;
 let successfulCooldownAttemptId = null;
+let activeRequestCapture = null;
 const attemptTimingSnapshots = new Map();
 const displayConfigSnapshots = new Map();
 const clientDiagnosticEvents = readClientDiagnosticEvents();
@@ -106,6 +146,9 @@ function render() {
   if (!view) return;
   if (promoDisplayController?.isVisible) return;
   const name = currentView();
+  if (name === "advertising" && !triggerController?.activeAttempt &&
+      attemptOutcomeController?.state !== "result") advertisingPlayer.start();
+  else advertisingPlayer.stop();
   const content = views[name];
   view.replaceChildren();
 
@@ -201,6 +244,7 @@ async function replayFromAdvertising() {
     return;
   }
   advertisingReplayPending = true;
+  advertisingPlayer.stop();
   status.textContent = "Открываем последние фотографии…";
   try {
     await promoDisplayController.replayLastResult();
@@ -208,6 +252,7 @@ async function replayFromAdvertising() {
     status.textContent = "Не удалось открыть фотографии. Коснитесь экрана, чтобы повторить попытку.";
   } finally {
     advertisingReplayPending = false;
+    if (!promoDisplayController?.isVisible) advertisingPlayer.start();
   }
 }
 
@@ -327,6 +372,7 @@ function mountDisplayClientConfiguration(card) {
   save.addEventListener("click", () => {
     try {
       saveDisplayClientToken(input.value);
+      void advertisingPlayer.refresh();
       input.value = "";
       status.textContent = "Токен сохранён в профиле; запросы используют только Authorization Bearer.";
       document.body.dataset.displayClientState = "configured";
@@ -450,7 +496,7 @@ function newRealtimeAttemptId() {
   return attemptId;
 }
 
-async function submitReadyReferenceSeries(detail, proposals) {
+async function submitReadyReferenceSeries(detail, proposals, displayConfig) {
   const captureId = detail?.attemptId;
   let attemptId;
   let timingRecorder;
@@ -468,7 +514,7 @@ async function submitReadyReferenceSeries(detail, proposals) {
     timingRecorder.recordRequestStarted();
     window.dispatchEvent(
       new CustomEvent("face-moment:attempt-request-start", {
-        detail: { attemptId, captureId, timing: timingRecorder.snapshot() },
+        detail: { attemptId, captureId, timing: timingRecorder.snapshot(), displayConfig },
       }),
     );
 
@@ -488,6 +534,7 @@ async function submitReadyReferenceSeries(detail, proposals) {
       onRequestReady: () => signalProgress.phase(attemptId, "search"),
     });
     timingRecorder.recordResponseReceived();
+    signalProgress.serverIdentity(attemptId, submitted.response.headers?.get?.("X-Face-Moment-Attempt-Id"));
     const responseTiming = timingRecorder.snapshot();
     void reportClientResponseTiming({
       attemptId,
@@ -536,7 +583,10 @@ window.addEventListener("face-moment:attempt-request-start", (event) => {
       attemptId,
       captureId: event.detail?.captureId,
     });
-    const configuration = promoDisplayController?.loadDisplayConfiguration?.({ attemptId });
+    activeRequestCapture = { attemptId, captureId: event.detail?.captureId };
+    const configuration = event.detail?.displayConfig
+      ? Promise.resolve(event.detail.displayConfig)
+      : promoDisplayController?.loadDisplayConfiguration?.({ attemptId });
     if (configuration) {
       // Observe the rejection at request start. The result event may arrive
       // later, while the display configuration request is still pending.
@@ -1110,8 +1160,17 @@ window.addEventListener("face-moment:trigger-request", (event) => {
   }
 });
 
+function finishingCaptureId(detail) {
+  const captureId = detail?.attemptId === activeRequestCapture?.attemptId
+    ? activeRequestCapture.captureId
+    : detail?.attemptId;
+  const active = jpegQualityController.getActiveAttemptSnapshot();
+  return active && captureId === active.attemptId ? captureId : null;
+}
+
 window.addEventListener("face-moment:attempt-finished", (event) => {
   const detail = event.detail;
+  if (finishingCaptureId(detail) === null) return;
   if (detail?.success !== true) signalProgress.cancel(detail?.attemptId);
   const finished = triggerController?.finishAttempt({
     success: event.detail?.success === true,
@@ -1120,9 +1179,13 @@ window.addEventListener("face-moment:attempt-finished", (event) => {
   if (detail?.success === true && finished && detail.attemptId !== undefined) {
     successfulCooldownAttemptId = detail.attemptId;
   }
+  if (finished && detail?.success !== true && currentView() === "advertising" &&
+      !promoDisplayController?.isVisible) advertisingPlayer.start();
 });
 
 window.addEventListener("face-moment:attempt-start", (event) => {
+  clearPromoHandoff();
+  advertisingPlayer.stop();
   successfulCooldownAttemptId = null;
   const snapshot = jpegQualityController.startAttempt(event.detail?.attemptId);
   document.body.dataset.activeAttemptJpegQuality = String(snapshot.jpegQuality);
@@ -1134,25 +1197,46 @@ window.addEventListener("face-moment:attempt-start", (event) => {
 });
 
 window.addEventListener("face-moment:attempt-finished", (event) => {
-  jpegQualityController.finishAttempt(event.detail?.attemptId);
+  const captureId = finishingCaptureId(event.detail);
+  if (captureId === null) return;
+  jpegQualityController.finishAttempt(captureId);
+  activeRequestCapture = null;
   delete document.body.dataset.activeAttemptJpegQuality;
 });
 
 window.addEventListener("face-moment:reference-series-ready", async (event) => {
   signalProgress.begin(event.detail?.attemptId);
+  let displayConfig;
   try {
+    displayConfig = await promoDisplayController.loadDisplayConfiguration();
+  } catch (error) {
+    if (jpegQualityController.getActiveAttemptSnapshot()?.attemptId !== event.detail?.attemptId) return;
+    updateTriggerStatus("unavailable", "Не удалось получить конфигурацию с сервера. Проверьте соединение и доступ клиента.");
+    window.dispatchEvent(new CustomEvent("face-moment:attempt-finished", {
+      detail: { attemptId: event.detail?.attemptId, success: false, reason: "configuration_failure" },
+    }));
+    return;
+  }
+  if (jpegQualityController.getActiveAttemptSnapshot()?.attemptId !== event.detail?.attemptId) return;
+  try {
+    updateTriggerStatus("processing", "Конфигурация получена; обрабатываем лица.");
     const detector = await getBlazeFaceDetector();
+    if (jpegQualityController.getActiveAttemptSnapshot()?.attemptId !== event.detail?.attemptId) return;
+    await detector.setThreshold(displayConfig.capture_detector_threshold ?? 0.5);
     const proposals = await detectReferenceSeries(event.detail?.frames, {
       detector,
     });
     document.body.dataset.detectorState = "ready";
+    detectorFailureMessage = false;
+    document.querySelectorAll("[data-detector-error]").forEach(notice => notice.remove());
     window.dispatchEvent(
       new CustomEvent("face-moment:proposals-ready", {
         detail: { proposals },
       }),
     );
-    void submitReadyReferenceSeries(event.detail, proposals);
+    void submitReadyReferenceSeries(event.detail, proposals, displayConfig);
   } catch (error) {
+    if (jpegQualityController.getActiveAttemptSnapshot()?.attemptId !== event.detail?.attemptId) return;
     renderDetectorFailure();
     window.dispatchEvent(
       new CustomEvent("face-moment:attempt-finished", {
@@ -1196,6 +1280,8 @@ promoDisplayController = createPromoDisplayController({
   container: view,
   requireDisplayConfig: true,
   onLoading: ({ attemptId }) => {
+    clearPromoHandoff();
+    advertisingPlayer.stop();
     recordClientDiagnostic("Загрузка фотографий", { attemptId });
     signalProgress.phase(attemptId, "photos");
   },
@@ -1229,6 +1315,7 @@ promoDisplayController = createPromoDisplayController({
     document.body.dataset.promoState = "advertising";
     returnToAdvertisingAfterPromoFailure(detail);
   },
+  onBeforeExpired: fadePromoToBlack,
   onExpired: returnToAdvertisingAfterDisplayExpiry,
 });
 triggerController = createReferenceCaptureController({

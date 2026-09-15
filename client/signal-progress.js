@@ -19,9 +19,10 @@ export function createSignalProgress({ document = globalThis.document, parent = 
     return `<path class="signal-guide" d="${d}"/><path class="signal-packet" d="${d}" pathLength="100" style="animation-delay:-${i * .57 / .4}s"/>`
       + ([0, 6].includes(i) ? `<path class="signal-fill" d="${d}" pathLength="100"/>` : "");
   }).join("");
-  element.innerHTML = `<svg class="signal-routes" viewBox="0 0 1000 600" preserveAspectRatio="none" fill="none" aria-hidden="true">${paths}</svg><p class="signal-caption" role="status" aria-live="polite" aria-atomic="true"></p>`;
+  element.innerHTML = `<svg class="signal-routes" viewBox="0 0 1000 600" preserveAspectRatio="none" fill="none" aria-hidden="true">${paths}</svg><div class="signal-footer"><p class="signal-attempt-id"></p><p class="signal-caption" role="status" aria-live="polite" aria-atomic="true"></p></div>`;
   parent.append(element);
   const caption = element.querySelector(".signal-caption");
+  const identity = element.querySelector(".signal-attempt-id");
   const fills = element.querySelectorAll(".signal-fill");
   let captureId = null, attemptId = null, hiding = null;
 
@@ -31,6 +32,8 @@ export function createSignalProgress({ document = globalThis.document, parent = 
     element.classList.remove("is-revealing");
     document.body.classList.remove("signal-active");
     captureId = null; attemptId = null;
+    identity.textContent = "";
+    identity.hidden = true;
   }
   function setProgress(value) {
     fills.forEach(path => { path.style.strokeDashoffset = String(100 - value); });
@@ -48,6 +51,12 @@ export function createSignalProgress({ document = globalThis.document, parent = 
     },
     bind(capture, attempt) {
       if (String(capture) === captureId) attemptId = String(attempt);
+    },
+    serverIdentity(id, serverId) {
+      if (captureId === null || String(id) !== attemptId || hiding !== null) return;
+      if (typeof serverId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(serverId)) return;
+      identity.textContent = `Attempt ID: ${serverId}`;
+      identity.hidden = false;
     },
     phase(id, phase) {
       if (captureId === null || (String(id) !== captureId && String(id) !== attemptId)) return;

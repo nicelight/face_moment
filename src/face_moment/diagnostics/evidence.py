@@ -36,6 +36,7 @@ _ORDINARY_TOP_LEVEL_KEYS = frozenset(
         "result",
         "display",
         "artifacts",
+        "captures",
     }
 )
 _PROTECTED_ORDINARY_KEYS = frozenset(
@@ -905,6 +906,11 @@ def _validate_ordinary_manifest(
     if normalized.get("schema_version") != CURRENT_SCHEMA_VERSION:
         raise DiagnosticEvidenceError("ordinary manifest schema_version must be 1")
     detections = normalized.get("detections")
+    captures = normalized.get("captures")
+    if captures is not None and (not isinstance(captures, dict)
+            or not isinstance(captures.get("items"), list)
+            or len(captures["items"]) > 20):
+        raise DiagnosticEvidenceError("captures must contain at most twenty items")
     if detections is not None and (
         not isinstance(detections, list) or len(detections) > _MAX_DETECTIONS
     ):

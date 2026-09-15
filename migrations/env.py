@@ -19,8 +19,10 @@ from face_moment.serving_control import display_client_access
 from face_moment.serving_control import realtime_context
 from face_moment.diagnostics import evidence as diagnostic_evidence
 from face_moment.diagnostics import calibration_runs
+from face_moment.diagnostics import capture_identity
 from face_moment.promo import attempt as promo_attempt
 from face_moment.promo import retention as promo_retention
+from face_moment.promo import advertising
 
 _ = staff_principals
 _ = hard_purge
@@ -34,8 +36,10 @@ _ = display_client_access
 _ = realtime_context
 _ = diagnostic_evidence
 _ = calibration_runs
+_ = capture_identity
 _ = promo_attempt
 _ = promo_retention
+_ = advertising
 
 config = context.config
 if config.config_file_name is not None:

@@ -22,6 +22,14 @@ infrastructure adapters, generic helpers and the composition root MUST NOT
 claim work, publish processing state, or reproduce compatible-searchability
 rules.
 
+Operator decision, 2026-09-14: photographer-photo YuNet confidence is configurable
+per площадка, independently of face-match cosine and browser BlazeFace. New
+admission freezes `Photo.photo_yunet_threshold`; native terminal processing uses
+this value and restores the detector's previous confidence in `finally`. This
+does not alter server-reference or offline Calibration detection. Saving venue
+settings schedules no reprocessing. Migration `0024` preserves historical
+behavior with `0.90` defaults and adds no worker or queue.
+
 ## Pipeline Revision And Engine Contract
 
 ### Compatibility identity

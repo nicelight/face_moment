@@ -10,7 +10,9 @@
 .signal-packet { stroke: #8ae4c9; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 14 86; animation: signal-travel 12.5s linear infinite; opacity: .65; }
 .signal-packet:nth-of-type(4n) { stroke: #b29cce; opacity: .4; }
 .signal-fill { stroke: #b0f2d9; stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 100 100; stroke-dashoffset: 100; transition: stroke-dashoffset 400ms ease-in-out; opacity: .85; }
-.signal-caption { position: absolute; inset: auto 1.5rem max(1.5rem, env(safe-area-inset-bottom)); text-align: center; color: #a9c0b59c; font: 12px/1.4 "Avenir Next", "Segoe UI", sans-serif; letter-spacing: .06em; margin: 0; }
+.signal-footer { position: absolute; inset: auto 1.5rem max(1.5rem, env(safe-area-inset-bottom)); text-align: center; }
+.signal-attempt-id { margin: 0 0 .65rem; color: #b9cec4; font: 12px/1.5 monospace; overflow-wrap: anywhere; }
+.signal-caption { color: #a9c0b59c; font: 12px/1.4 "Avenir Next", "Segoe UI", sans-serif; letter-spacing: .06em; margin: 0; }
 .signal-active { overflow: hidden; }
 .signal-active .site-header, .signal-active .navigation, .signal-active .client-view > :not(.promo-card) { visibility: hidden; }
 .signal-active .fm-fluid-spot, .signal-active .fm-aurora i { animation-play-state: paused !important; }

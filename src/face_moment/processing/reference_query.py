@@ -20,6 +20,7 @@ class ReferenceQualityObservation:
     reference_quality_score: float
     native_face_count: int
     gate_observations: tuple[tuple[str, float], ...]
+    prepared_query: PreparedReferenceQuery | None = None
 
     def __post_init__(self) -> None:
         if not math.isfinite(self.reference_quality_score):
@@ -74,6 +75,7 @@ def select_reference_queries(
     occurrences: Sequence[ReferenceOccurrence],
     min_query_face_quality: float,
     quality_settings: Mapping[str, object],
+    capture_observations: dict[int, dict[str, object]] | None = None,
 ) -> tuple[ReferenceQueryObservation, ...]:
     """Inspect all occurrences and prepare the deterministic top five."""
 
@@ -87,16 +89,20 @@ def select_reference_queries(
     if len(set(occurrence_indices)) != len(occurrence_indices):
         raise ValueError("occurrence_index must be unique within one request")
 
-    inspected = tuple(
-        (
-            occurrence,
-            engine.inspect_reference_crop(
-                occurrence.crop,
-                quality_settings,
-            ),
-        )
-        for occurrence in indexed_occurrences
-    )
+    inspected = []
+    for occurrence in indexed_occurrences:
+        try:
+            quality = engine.inspect_reference_crop(occurrence.crop, quality_settings)
+        except Exception:
+            if capture_observations is not None:
+                capture_observations[occurrence.occurrence_index] = {"reason": "preparation_failed"}
+            raise
+        inspected.append((occurrence, quality))
+        if capture_observations is not None:
+            capture_observations[occurrence.occurrence_index] = {
+                "query": quality.prepared_query,
+                "reason": "no_face" if quality.native_face_count == 0 else "preparation_unavailable",
+            }
     ranked = sorted(
         inspected,
         key=lambda item: (
@@ -104,6 +110,9 @@ def select_reference_queries(
             item[0].occurrence_index,
         ),
     )[:5]
+    if capture_observations is not None:
+        for rank, (occurrence, _) in enumerate(ranked, start=1):
+            capture_observations[occurrence.occurrence_index]["rank"] = rank
 
     observations: list[ReferenceQueryObservation] = []
     for rank, (occurrence, quality) in enumerate(ranked, start=1):

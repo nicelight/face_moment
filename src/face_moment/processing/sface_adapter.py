@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -25,6 +26,10 @@ from face_moment.processing.yunet_photo_preprocessing import (
 
 class YuNetDetector(Protocol):
     def setInputSize(self, size: tuple[int, int]) -> None: ...
+
+    def getScoreThreshold(self) -> float: ...
+
+    def setScoreThreshold(self, threshold: float) -> None: ...
 
     def detect(
         self, photo: NDArray[np.uint8]
@@ -223,6 +228,10 @@ class SFacePhotoAdapter:
             reference_quality_score=score,
             native_face_count=len(faces),
             gate_observations=(("native_detection_confidence", score),),
+            prepared_query=PreparedReferenceQuery(
+                pipeline_revision_id=self._revision.id,
+                embedding=max(faces, key=lambda item: self._detection_confidence(item.native_detection)).embedding,
+            ),
         )
 
     def prepare_reference_query(
@@ -241,12 +250,25 @@ class SFacePhotoAdapter:
         )
 
     def process_for_terminal(
-        self, photo: NDArray[np.uint8]
+        self, photo: NDArray[np.uint8], *, detector_threshold: float | None = None,
     ) -> tuple[TerminalFace, ...]:
         """Adapt this revision's native results for terminal publication."""
 
+        if detector_threshold is None:
+            faces = self.process_photo(photo)
+        else:
+            if not math.isfinite(detector_threshold) or not 0 < detector_threshold <= 1:
+                raise ValueError("detector threshold must be in (0, 1]")
+            previous = self._detector.getScoreThreshold()
+            try:
+                self._detector.setScoreThreshold(detector_threshold)
+                faces = self.process_photo(photo)
+            finally:
+                # The shared worker may later run offline calibration. Its
+                # detector must not inherit a photographer-photo override.
+                self._detector.setScoreThreshold(previous)
         terminal_faces: list[TerminalFace] = []
-        for index, face in enumerate(self.process_photo(photo)):
+        for index, face in enumerate(faces):
             x, y, w, h = (float(value) for value in face.native_detection[:4])
             if self._photo_edges is not None:
                 # alignCrop already used the unmodified mapped native geometry.

@@ -93,6 +93,7 @@ class RealtimeSearchService:
         context: RealtimeContext,
         engine: FaceEngine,
         occurrences: Sequence[ReferenceOccurrence],
+        capture_observations: dict[int, dict[str, object]] | None = None,
     ) -> RealtimeSearchResult:
         """Search every selected acceptable occurrence independently."""
 
@@ -101,6 +102,7 @@ class RealtimeSearchService:
             occurrences=occurrences,
             min_query_face_quality=context.min_query_face_quality,
             quality_settings=context.quality_settings,
+            capture_observations=capture_observations,
         )
         phash_cache: dict[uuid.UUID, int] = {}
         detections = tuple(
@@ -182,6 +184,7 @@ def search_realtime_references(
     context: RealtimeContext,
     engine: FaceEngine,
     occurrences: Sequence[ReferenceOccurrence],
+    capture_observations: dict[int, dict[str, object]] | None = None,
 ) -> RealtimeSearchResult:
     """Public processing application boundary for one realtime search."""
 
@@ -189,4 +192,5 @@ def search_realtime_references(
         context=context,
         engine=engine,
         occurrences=occurrences,
+        capture_observations=capture_observations,
     )

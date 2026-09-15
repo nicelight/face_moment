@@ -167,6 +167,20 @@ its restart command and the `/site`, `/staff`, `/display` review routes.
 
 ## Full-resolution JPEG uploads
 
+The upload results panel now offers «История загрузок». The browser retains
+the latest 300 upload records in localStorage, scoped to the authenticated
+photographer UUID. Records store names, selected date/SPA, result and accepted
+Photo ID, not image bytes or credentials. Loading history refreshes accepted
+Photo processing statuses through the existing authenticated endpoint.
+Previously lost page-only results cannot be recovered by this local history;
+uploads interrupted before an acceptance response remain explicitly unknown.
+
+Operator decision, 2026-09-13: the default upload rate limit is 60 files per
+60 seconds per authenticated photographer and client IP. This permits the
+observed 38-file upload selection within the ordinary limit. The setting is
+`PHOTO_UPLOAD_RATE_LIMIT`; the window remains `PHOTO_UPLOAD_RATE_WINDOW_SECONDS`.
+The source-mounted backend must restart to load a changed default.
+
 Operator decision, 2026-09-08: remove the need to manually shrink ordinary
 camera JPEGs before upload. Defaults now admit up to 100 MiB compressed,
 200,000,000 decoded pixels and 20,000 pixels on either side. All three limits
@@ -513,3 +527,78 @@ Rollout evidence: `.tasks/staff-media-release/` (build, migration, service healt
 Caddy validation/reload, image ID and live-check logs). Functional/semantic media
 proof: `.protocols/TASK-119-T3-FT-012-W3/`. The task-owned isolated
 staff-media-test Compose resources were removed after verification.
+
+## Local stand refresh — 2026-09-15
+
+Operator update: серверный лимит realtime обработки повышен с 3000 до 7000 мс
+через default `REALTIME_DEADLINE_MS` в `compose.yaml` и Python settings.
+Source-mounted realtime пересоздан; healthy, effective Settings = 7000 мс.
+Изменение действует для новых Attempts; исторические deadline_ms сохранены.
+Четыре unit-проверки orchestration прошли; две DB-backed проверки не стартовали
+в host-запуске без DATABASE_URL. Это изменение лимита не исправляет отклонение
+reference crops серверным детектором.
+
+Restarted the existing Compose services to load current source. The old
+`migrate` container could not resolve database revision `0023_search_date_ranges`.
+Ran the existing migration service with the workspace `migrations/` mounted
+read-only at `/app/migrations`; upgrade to `0024_spa_detector_thresholds`
+completed. Restarted backend, realtime and background-worker afterwards.
+Until the migration container is updated, plain Compose restart also restarts
+that stale one-shot container; use current migration files when applying upgrades.
+
+## Capture identity и порог сходства — локальное применение
+
+Оператор уточнил: новые изменения должны сразу работать в локальных контейнерах.
+Образ `face-moment:dev` пересобран, БД обновлена до `0025_capture_identity_labels`;
+backend/realtime/worker healthy. Исходники подключены read-only через
+`.protocols/local-testing/compose-source.yaml`, включая worker. Caddy перечитан.
+Старый migration container заменён актуальным; проблема неизвестной revision выше
+устранена. Существующие фотографии, Attempts и значения порогов не сбрасывались.
+
+«Площадки → Настройки площадки → Порог сходства» читает текущую serving revision
+конкретной площадки и существующие `reference_search_settings`. PUT проверяет
+конечность/диапазон `[-1, 1]`, session/CSRF, права operator/developer и обе
+переданные версии: settings revision и pipeline revision. Сохраняет только
+ручной порог, оставляя quality settings; live calibration provenance очищается,
+как и в прежнем ручном сохранении. Исторические результаты не меняются.
+Без модели/настроек форма недоступна, значения по умолчанию не выдумываются.
+API: `/api/serving/spas/{spa_id}/similarity-threshold` (GET/PUT).
+Уточнение UI: порог сходства использует тот же переключатель разрешения
+редактирования и расположение input/button, что пороги детекторов. Выключение
+переключателя отменяет черновик; успешное сохранение снова блокирует поля.
+Пояснение вынесено в tooltip переключателя с указанным оператором default 0.38;
+это текст подсказки, не сброс сохранённых значений.
+
+Calibration удалена из меню, все прежние `/staff/calibrations` и дочерние
+маршруты отвечают `410`. Worker больше не получает callbacks выбора, исполнения
+и startup interruption Calibration. Старые файлы, таблицы, миграции и записи
+сохранены; cleanup не расширялся и вручную не запускался. Новый capture identity
+не зависит от Calibration. Для переноса порога новой миграции нет.
+
+Для повторного применения изменений исходников на этом локальном стенде:
+
+```bash
+docker compose --env-file .env.testing -f compose.yaml -f .protocols/local-testing/compose-source.yaml up -d --no-deps --wait --wait-timeout 120 background-worker
+docker compose --env-file .env.testing -f compose.yaml -f .protocols/local-testing/compose-source.yaml restart backend realtime background-worker
+docker compose --env-file .env.testing exec -T edge caddy reload --config /etc/caddy/Caddyfile
+```
+
+Открыть `https://localhost:8443/staff/spas` и обновить страницу. Для обычного
+запуска без source overlay сначала пересобрать образ. User timer
+`face-moment-retention-cleanup.timer` включён; локальный override использует
+`.env.testing`, source overlay и `DOCKER_CONTEXT=desktop-linux`. Crops имеют
+обычный срок хранения Attempt (по умолчанию 90 суток).
+
+Проверки: отдельные PostgreSQL/MinIO и настоящий Caddy для API/HTTPS;
+`test_similarity_threshold.py` проверяет save/reopen, разделение площадок,
+неверную revision, finite/range, права/CSRF, `410` и сохранность requested/running
+Calibration при работе default worker. `test_background_worker_runtime.py`
+проверяет реальную БД/MinIO и цикл обработки с тестовым face adapter, не native
+распознавание. Native YuNet/SFace отдельно покрыт `test_capture_identity.py`.
+JS controls проверяются DOM fixtures, не полноценной камерной сессией браузера.
+Известный прежний тест переименования площадки ожидает удалённый селектор
+`recent-statistics-spa-id`; отмечен в PAPERCUTS, медиатека здесь не менялась.
+Финальный focused набор: 20 Python checks passed, 7 JS checks passed,
+mypy — 104 source files без ошибок; read-only HTTPS smoke локального стенда
+успешен. Временные PostgreSQL/MinIO контейнеры проверки удалены, данные
+локального приложения не удалялись.

@@ -150,8 +150,10 @@ supersedes the old mandatory single active date. Authentication uses the existin
 #### Staff active-date surface
 
 `GET /staff/spas` contains independent settings on each площадка card:
-«Камера на выходе ищет фото за сегодня», and disabled-unless-manual «С»/«По»
-date pickers. Operator and developer can read and save each card. The standalone
+«камера на выходе ищет лица ТОЛЬКО из сегодняшних фоток». Automatic mode hides
+the manual date controls, hint and save button; switching mode saves immediately.
+Manual mode exposes «С»/«По» and explicitly saves the range. Failed mode writes
+restore the last saved mode. Operator and developer can read and save each card. The standalone
 «Настройки поиска» navigation item is removed; `/staff/search-settings` routes
 to `/staff/spas` so existing links remain usable.
 
@@ -179,6 +181,28 @@ The old `/api/serving/spas/{spa_id}/active-visit-date` endpoint remains a legacy
 manual-day interface for existing tools: GET reads the saved manual start, and
 PUT explicitly selects manual mode and sets both bounds to the supplied day.
 The staff UI uses the range endpoint. No second settings store is introduced.
+
+#### Per-площадка detector thresholds
+
+Operator decision, 2026-09-14: each card also has independent edit switches for
+photographer-photo YuNet and browser capture BlazeFace thresholds. Each numeric
+value is in `(0, 1]`, initially `0.90` and `0.50` respectively. Switching editing
+off cancels unsaved input; a successful explicit save locks the field and turns
+the edit switch off. Failed saves retain the editable draft.
+
+`PUT /api/serving/spas/{spa_id}/detector-thresholds/{detector}` accepts only
+`{"threshold": number}`, where detector is `photo_yunet` or `capture_blazeface`.
+The existing operator/developer, active-площадка and CSRF rules apply. Each write
+updates only that threshold and the settings revision, not the other detector
+or search dates. PostgreSQL owns the values in `spas`.
+
+New Photo admission snapshots the площадка's YuNet threshold on the Photo.
+Worker retries use that snapshot; saving a setting never reprocesses existing
+Photos. Only photographer-photo terminal processing consumes this override;
+server reference matching and offline Calibration retain their existing paths.
+The authenticated display configuration projects the token-scoped BlazeFace
+threshold. The browser reads it before each new series detection, applies it
+to the existing detector and reuses the configuration for the resulting Promo.
 
 #### Staff площадка names
 

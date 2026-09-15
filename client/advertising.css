@@ -1,0 +1,34 @@
+.ad-admin { width: min(100%, 1100px); margin: 0 auto; padding: 24px 16px 48px; }
+.ad-admin p { color: var(--fm-soft); }
+.ad-venues { display: grid; gap: 12px; }
+.ad-venue { display: flex; justify-content: space-between; padding: 20px; border: 1px solid var(--fm-line); border-radius: 12px; text-decoration: none; }
+.ad-venue:hover { border-color: var(--fm-accent); }
+.ad-admin label { display: grid; gap: 8px; }
+.ad-admin input, .ad-admin select, .ad-admin button { min-height: 44px; font: inherit; font-size: 16px; border-radius: 8px; padding: 8px 12px; border: 1px solid var(--fm-line); background: var(--fm-panel); color: var(--fm-text); }
+.ad-admin button[type=submit] { background: var(--fm-accent); color: var(--fm-bg); font-weight: 600; }
+.ad-admin :is(input, select, button, a):focus-visible { outline: 2px solid var(--fm-accent); outline-offset: 3px; }
+.ad-admin :disabled { opacity: .5; }
+#ad-upload { display: flex; flex-wrap: wrap; align-items: end; gap: 16px; padding: 24px 0; }
+#ad-upload input { max-width: 100%; }
+.ad-table-wrap { overflow-x: auto; border: 1px solid var(--fm-line); border-radius: 12px; }
+.ad-admin table { width: 100%; border-collapse: collapse; }
+.ad-admin th, .ad-admin td { text-align: left; padding: 12px; border-bottom: 1px solid var(--fm-line); }
+.ad-admin tbody tr:last-child td { border-bottom: 0; }
+.ad-admin th { color: var(--fm-muted); font-weight: 400; }
+.ad-filename { overflow-wrap: anywhere; min-width: 140px; }
+.ad-preview { width: 80px; height: 80px; display: grid; place-items: center; background: #000; border-radius: 6px; overflow: hidden; text-decoration: none; }
+.ad-preview img { width: 100%; height: 100%; object-fit: cover; }
+.ad-video-preview { color: #ff8b31 !important; font-size: 30px; }
+.ad-settings { display: grid; gap: 20px; padding: 24px 0; }
+.ad-settings .ad-checkbox { display: flex; align-items: center; }
+.ad-checkbox input { min-height: auto; width: 20px; height: 20px; accent-color: var(--fm-accent); }
+#ad-error { color: #ffb3a7; }
+@media (min-width: 700px) { .ad-admin { padding-inline: 32px; } .ad-settings { grid-template-columns: 1fr 1fr; } .ad-checkbox { grid-column: 1 / -1; } }
+
+/* Two browser-native media layers; only the incoming image fades. */
+.ad-player { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.promo-ad-handoff { position: fixed; inset: 0; z-index: 50; background: #000; }
+.ad-player > :is(img, video) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
+body[data-ad-playing] .site-header { visibility: hidden; }
+.fm-kiosk #client-view { position: relative; z-index: 1; }
+@media (prefers-reduced-motion: reduce) { .ad-player > :is(img, video) { transition: none !important; } }

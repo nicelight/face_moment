@@ -152,7 +152,11 @@ def test_result_realtime_path_persists_diagnostics_evidence(
     assert evidence.ordinary_manifest["detections"][0]["best_cosine_similarity"] == 0.99
     assert evidence.ordinary_manifest["detections"][0]["eligible_photo_count"] == 6
     assert "selfie" not in _all_keys(evidence.ordinary_manifest)
-    assert evidence.ordinary_manifest["artifacts"] == []
+    # This synthetic store has no put method; optional capture failure must not
+    # change the successful participant result.
+    assert len(evidence.ordinary_manifest["artifacts"]) == 1
+    assert evidence.ordinary_manifest["artifacts"][0]["kind"] == "capture_crop"
+    assert evidence.ordinary_manifest["captures"]["items"][0]["image_saved"] is False
 
 
 def test_zero_proposal_realtime_path_records_absent_search_without_blocking(

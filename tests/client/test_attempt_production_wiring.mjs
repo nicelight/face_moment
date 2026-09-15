@@ -24,7 +24,7 @@ assert.match(app, /submitRealtimeAttempt\(\{/);
 assert.match(app, /new CustomEvent\("face-moment:attempt-request-start"/);
 assert.match(app, /new CustomEvent\("face-moment:attempt-response"/);
 assert.match(app, /new CustomEvent\("face-moment:attempt-transport-failure"/);
-assert.match(app, /void submitReadyReferenceSeries\(event\.detail, proposals\)/);
+assert.match(app, /void submitReadyReferenceSeries\(event\.detail, proposals, displayConfig\)/);
 assert.match(app, /async function createAndWarmBlazeFaceDetector\(\)/);
 assert.match(app, /warmupImage\.width = 64;/);
 assert.match(app, /warmupImage\.height = 64;/);

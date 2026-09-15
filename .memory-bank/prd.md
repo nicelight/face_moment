@@ -4,7 +4,7 @@ status: draft
 type: prd
 clarification_status: complete
 constitution_checked: true
-last_updated: 2026-09-02
+last_updated: 2026-09-16
 ---
 # PRD
 
@@ -12,7 +12,7 @@ last_updated: 2026-09-02
 
 The [Project Constitution](constitution.md), accepted operator decisions and
 [.memory-bank/analysis/product-brief.md](analysis/product-brief.md) govern this
-consolidated one-СПА pilot contract. Historical brainstorming and `IDEA_*`
+consolidated pilot contract, including multi-venue operation. Historical brainstorming and `IDEA_*`
 files remain discovery evidence only; they do not add or reopen requirements
 beyond the resolved behavior, constraints and acceptance criteria below.
 
@@ -42,7 +42,8 @@ navigation uses the known `attempt_id` only.
 
 ## Product Summary
 
-Face Moment is a controlled one-СПА smoke pilot that tests whether fresh
+Face Moment is a controlled pilot supporting multiple active СПА on one
+central runtime. It tests whether fresh
 professional JPEG photographs can become searchable in time for a fully
 automatic, sensor-triggered Promo experience at the participant's exit. The
 display must find four personal low-quality teaser photographs, show a fully
@@ -81,12 +82,21 @@ separate features.
 8. Let authorized users safely hide, restore and permanently purge selected
    commercial Photos, and let staff observe recent per-СПА ingest/processing
    activity without introducing another queueing subsystem.
+9. Support multiple active venues and their display clients on the existing
+   server processes, with independent venue data/settings and one shared
+   serving pipeline revision. A one-venue smoke setup is not a runtime limit.
 
 ## Non-goals
 
 - Public rollout to ordinary СПА visitors or production-readiness claims based
   on the 20-attempt smoke run.
 - Deployment to 10-15 СПА in the current pilot.
+- Different serving models or pipeline revisions for different venues are
+  outside the application's supported functionality, not merely deferred pilot
+  work. Model selection is shared across the application, not a per-venue
+  option. A capacity/concurrency guarantee for a particular number of venues
+  is also outside current acceptance; functional multi-venue support does not
+  imply a scale-out implementation.
 - Payment provider integration, receipt, refund, actual original delivery or
   repeated paid download.
 - Sale of individual photographs; the post-pilot direction is one fixed price
@@ -235,10 +245,45 @@ pilot actor or blocker.
 
 ### B. Face processing and scoped search
 
-- **FR-SRCH-01** — The one-СПА pilot MUST use one selected and pre-warmed serving
-  pipeline for participant-facing search. SFace and Buffalo M MUST retain their
+- **FR-SRCH-01** — Active venues on the shared runtime MUST use one selected
+  and pre-warmed serving pipeline revision for participant-facing search.
+  Startup MUST NOT require exactly one active venue. SFace and Buffalo M MUST retain their
   native detector/preprocessing/alignment paths and may be compared on pilot
   data without combining their participant-facing results.
+
+#### Multi-venue operation — operator decision 2026-09-16
+
+- Multiple active venues and their screens MUST work through the existing
+  backend, realtime process and sequential photo worker, including after
+  restart. Each display token continues to identify its own venue.
+- Model binding resolves the shared eligible pipeline revision, not a single
+  venue chosen as the only serving target. Conflicting active revisions MUST
+  NOT be resolved by silently selecting an arbitrary venue/model; report an
+  explicit configuration error. Supported configuration changes must preserve
+  the shared-revision invariant. Different serving models/revisions per venue
+  are not supported by the application; do not introduce per-venue model
+  selection or multi-model routing. Any supported model switch is global,
+  while historical embeddings retain their original immutable revision.
+- Venue names, timezones, search dates, similarity/quality and detector
+  settings remain independent. Uploaded Photos, search results, Attempts,
+  Promo/QR sessions and venue advertising remain scoped to their owning
+  venue. Existing explicitly global people registry, staff permissions and
+  project-wide administrative operations are not redefined as venue-local.
+- The shared worker processes eligible photos from all active venues using
+  their own persisted processing settings. Realtime resolves search settings
+  from the requesting screen's venue; one shared model does not imply shared
+  thresholds or a cross-venue search.
+- Keep one global realtime inference slot, existing deadline/typed `busy`
+  behavior and one sequential worker. Additional processes, queues or
+  multi-model orchestration are not part of this change.
+- Existing venue identities, tokens, photos and historical results MUST be
+  preserved. Enabling multiple venues does not reset or copy over existing
+  settings and does not require reprocessing existing photographs.
+- The admin UI for creating a venue is a separate requested change, not a
+  prerequisite for verifying multi-venue runtime on isolated test data.
+
+The remaining search requirements apply independently within each venue:
+
 - **FR-SRCH-02** — Every embedding and face record MUST belong to an immutable
   pipeline revision. Search MUST NOT compare incompatible revisions.
 - **FR-SRCH-03** — Search MUST use exact pgvector cosine search after filtering
@@ -386,6 +431,51 @@ seconds in Configuration. Original and replayed results use that duration;
 replay does not create a new search/session or renew the QR. The latest result
 is retained only for the current page lifetime. This explicit replay is
 distinct from automatic advertising/prePromo behavior below.
+
+#### Advertising playlist administration — operator decisions 2026-09-16
+
+- Staff menu «Реклама» opens a list of venue names. Selecting a venue opens
+  its own ordered advertising playlist and settings, shared by its displays.
+  Existing `operator` and `developer` roles have access; the current `tester`
+  account has the `developer` role. No new tester role is requested.
+- The page lists all advertising media uploaded for that venue: image preview
+  for a photo, a black square with an orange play triangle for a video,
+  extension, duration, editable queue position, and a delete button.
+- Upload on this page accepts JPEG/PNG/WebP images and ready WebM video with
+  VP9 and Opus when an audio track exists. Validate actual media, not just its
+  extension. Automatic transcoding and generated video thumbnails are excluded.
+- One shared photo-display duration is configured below the playlist, not on
+  individual images. Initial proposed 5 seconds was accepted with the other
+  defaults; videos play their full detected duration.
+- Below the playlist are the shared photo duration, crossfade in seconds, and
+  «начинать со случайного номера в списке». Crossfade defaults to 1 second;
+  zero disables it. Crossfade is between advertising items only, starting
+  before the outgoing item ends; existing transitions to participant results
+  are not changed by this request.
+- After participant photographs, random-start enabled chooses a random item
+  and plays it from its beginning, then continues sequentially with wrapping.
+  Disabled starts at the first item. This is not playlist shuffle.
+- Video sound is required and stops when advertising is interrupted. A kiosk
+  Chrome autoplay-policy setup script is explicitly deferred. Audio crossfade
+  is optional only if trivial/native; no additional audio-mixing subsystem.
+- Media fills the display with cropped edges if supported natively; otherwise
+  preserve the whole image with bars. Native CSS cover is sufficient for the
+  accepted Chromium display, so no custom crop pipeline is needed.
+- Changing a position moves the item and shifts other positions; duplicate
+  positions are not allowed. New uploads append. A shared Save action applies
+  order/settings edits. Empty playlist uses the existing background; an
+  unplayable item is skipped rather than blocking advertising.
+- Preserve FR-UX-01/NFR-REL-02: a loaded display retains locally available
+  advertising during transient server/network loss. Offline browser restart
+  remains outside the requirement. Verify overlapping videos on the actual
+  display hardware; do not assume crossfade has negligible decoding cost.
+
+Remaining clarification before implementation (owner: operator/product,
+destination: this section): random-start behavior on initial display entry
+and unsuccessful capture; media/playlist size and resolution expectations;
+when saved changes/deletions become visible on an already running display.
+This discussion does not authorize implementation or declare the new feature
+implementation-ready.
 
 - **FR-UX-01** — Between attempts, the display MUST show locally available
   advertising. Capture/search MAY use a non-personal prePromo state; it MUST NOT
@@ -610,7 +700,8 @@ distinct from automatic advertising/prePromo behavior below.
 - **NFR-REL-03** — Realtime processing MUST use one inference slot and one
   server deadline without a waiter queue. A concurrent admitted request receives
   typed `busy`; stale reference work is not durable and MUST NOT be replayed
-  after restart.
+  after restart. The inference slot is shared across venues; the number of
+  configured venues is not restricted to one.
 - **NFR-REL-04** — The PostgreSQL-backed photo-processing queue MUST survive
   backend and worker restarts without losing its existing `pending` or
   `processing` population. On worker startup, unfinished `processing` work MUST
@@ -676,7 +767,8 @@ distinct from automatic advertising/prePromo behavior below.
 ### Architecture and maintainability constraints
 
 - **NFR-ARCH-01** — The pilot runs on one central CPU-only server in the Russian
-  Federation with one pilot СПА and no external cloud face-recognition API.
+  Federation with multiple supported active venues and no external cloud
+  face-recognition API. A per-venue model process is not required.
 - **NFR-ARCH-02** — The simple baseline is backend + one sequential
   `BackgroundPhotoWorker` + one synchronous `RealtimeFaceService`, PostgreSQL +
   pgvector and private MinIO/S3-compatible storage.
@@ -962,7 +1054,9 @@ payment/fiscal providers, external observability stores and message brokers.
 
 ### Controlled pilot setup
 
-- One selected СПА, one configured `SpaPromoClient`, an adaptive display (including a 1920x1080 test viewport)
+- The latency/quality smoke run uses one selected СПА and one configured
+  `SpaPromoClient`; this test setup does not restrict runtime venue count.
+  It uses an adaptive display (including a 1920x1080 test viewport)
   and validated camera/sensor/lighting geometry at 3-5 metres.
 - The managed Chromium kiosk has Local Network Access and can reach its
   configured authenticated ESP32 route.
@@ -1089,6 +1183,14 @@ payment/fiscal providers, external observability stores and message brokers.
   including separate versioned model delivery, `1.2 × max(width, height)`
   clipping, 512-pixel downscale without upscale, selected manifest fields and
   the explicit omitted fields.
+
+- **AC-27** — With at least two active venues using the same eligible model
+  revision, realtime and the worker start and restart successfully. Both
+  venues' photographs are processed and each screen searches only its own
+  venue using its own settings; Promo/QR continuation preserves that venue.
+  Test distinct settings and adversarially similar cross-venue photo fixtures,
+  preservation of existing data, and explicit rejection of conflicting model
+  revisions. The existing shared-slot `busy` behavior remains applicable.
 
 The smoke run validates the pilot path only. It does not demonstrate public
 production readiness, target 10-15-СПА capacity or complete group coverage.

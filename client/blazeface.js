@@ -54,7 +54,17 @@ export async function createBlazeFaceDetector({
       minDetectionConfidence: 0.5,
     });
 
+    let currentThreshold = 0.5;
     return {
+      async setThreshold(threshold) {
+        if (typeof threshold !== "number" || !Number.isFinite(threshold) || threshold <= 0 || threshold > 1) {
+          throw new TypeError("blazeface_threshold_invalid");
+        }
+        if (threshold !== currentThreshold) {
+          await detector.setOptions({ minDetectionConfidence: threshold });
+          currentThreshold = threshold;
+        }
+      },
       detect(image) {
         return detector.detect(image);
       },

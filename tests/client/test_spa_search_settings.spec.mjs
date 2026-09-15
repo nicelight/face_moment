@@ -38,6 +38,7 @@ test('independent площадка switches, calendar range, validation and save
     return route.fulfill({ status: 404 });
   });
   await page.goto('https://staff.test/staff/spas');
+  await page.locator('.fm-spa-settings > summary').first().click();
   const first = page.locator(`[data-spa-search][data-spa-id="${spaA}"]`);
   const second = page.locator(`[data-spa-search][data-spa-id="${spaB}"]`);
   await expect(first.getByRole('switch')).toBeChecked();

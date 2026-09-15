@@ -254,7 +254,7 @@ probe('/staff/login', 200)
 probe('/staff/photo-inventory', 401)
 probe('/api/promo/display/config', 401)
 config = json.loads(probe('/api/promo/display/config', 200, authenticated=True))
-assert config == {'schema_version': 1, 'result_display_ms': 5000, 'success_cooldown_ms': 1000}
+assert config == {'schema_version': 1, 'result_display_ms': 5000, 'success_cooldown_ms': 1000, 'capture_detector_threshold': 0.5}
 probe('/api/promo/media/' + 'A' * 43, 404, authenticated=True)
 probe('/api/promo/sessions/' + str(uuid.uuid4()) + '/display', 404, authenticated=True, body={'schema_version': 1, 'status': 'failed'})
 PY

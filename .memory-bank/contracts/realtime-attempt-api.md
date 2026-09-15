@@ -7,6 +7,14 @@ source_of_truth:
 ---
 # Realtime Attempt API
 
+## Displayed server identity
+
+Responses projected from an admitted Attempt include
+`X-Face-Moment-Attempt-Id: <PromoAttempt.id>` for the client animation label.
+The existing JSON `attempt_id` remains the client request/correlation identity.
+Pre-admission rejections supply no server identity. No preliminary admission
+request is introduced; the label appears only after the existing response.
+
 ## Scope And Ownership
 
 This contract specializes the `SpaPromoClient -> realtime` boundary in the

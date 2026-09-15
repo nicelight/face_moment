@@ -412,7 +412,10 @@ def _render_attempt_detail(view: AttemptInvestigationView) -> str:
             f"<p>Completeness: {escape(evidence.completeness)}</p>"
             f"<p>Gap reason: {_text(evidence.gap_reason)}</p>"
             f"{_render_search_evidence(evidence.ordinary_manifest)}"
-            f"<details><summary>Исходные диагностические данные (JSON)</summary><pre>{escape(manifest)}</pre></details>"
+            '<details class="fm-capture-diagnostics"><summary>Диагностика распознаний захвата(JSON) '
+            '<button type="button" data-copy-capture-json>Копировать</button>'
+            '<span role="status" class="fm-copy-status"></span></summary>'
+            f"<pre>{escape(manifest)}</pre></details>"
             f'<p><a href="/staff/attempts/{core.attempt_id}/annotations">Annotations</a></p></section>'
         )
     return f"""<!doctype html>

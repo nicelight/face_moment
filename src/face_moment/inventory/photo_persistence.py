@@ -10,6 +10,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    Float,
     Integer,
     LargeBinary,
     String,
@@ -45,6 +46,7 @@ class Photo(Base):
         ),
         CheckConstraint("width > 0", name="ck_photos_width_positive"),
         CheckConstraint("height > 0", name="ck_photos_height_positive"),
+        CheckConstraint("photo_yunet_threshold > 0 AND photo_yunet_threshold <= 1", name="ck_photos_yunet_threshold"),
         UniqueConstraint(
             "spa_id",
             "visit_date",
@@ -87,6 +89,9 @@ class Photo(Base):
     checksum_sha256: Mapped[bytes] = mapped_column(LargeBinary(length=32), nullable=False)
     original_object_key: Mapped[str] = mapped_column(Text, nullable=False)
     original_byte_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    photo_yunet_threshold: Mapped[float] = mapped_column(
+        Float, nullable=False, default=0.9, server_default="0.9"
+    )
     width: Mapped[int] = mapped_column(Integer, nullable=False)
     height: Mapped[int] = mapped_column(Integer, nullable=False)
     is_active: Mapped[bool] = mapped_column(

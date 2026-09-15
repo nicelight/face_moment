@@ -40,7 +40,7 @@ def read_staff_media_venue_name(session: Session, *, session_token: str | None,
 
 def read_staff_venue_media(session: Session, *, session_token: str | None,
                           spa_id: UUID, date_from: date, date_to: date) -> dict[str, object]:
-    principal, _ = _authorize_venue(session, session_token, spa_id)
+    principal, venue = _authorize_venue(session, session_token, spa_id)
     if date_from > date_to:
         raise InvalidPhotoInventorySelectionError('reversed dates')
     start = datetime.combine(date_from, time.min, STAFF_TIMEZONE)
@@ -54,7 +54,8 @@ def read_staff_venue_media(session: Session, *, session_token: str | None,
         statement = statement.where(Photo.uploader_id == principal.staff_user_id)
     photos = session.scalars(statement.order_by(Photo.accepted_at.desc(), Photo.id)).all()
     states = read_staff_media_projections(session, photo_revisions=[
-        (photo.id, photo.admission_pipeline_revision_id) for photo in photos])
+        (photo.id, photo.admission_pipeline_revision_id) for photo in photos],
+        preferred_revision_id=venue.serving_pipeline_revision_id)
     rows = []
     for photo in photos:
         state = states.get(photo.id)
@@ -83,13 +84,14 @@ def read_staff_photo_bytes(session: Session, *, session_token: str | None,
     photo = session.get(Photo, photo_id)
     if photo is None:
         raise PhotoInventoryNotFoundError
-    _authorize_venue(session, session_token, photo.spa_id)
+    _, venue = _authorize_venue(session, session_token, photo.spa_id)
     if principal.role is StaffRole.PHOTOGRAPHER and photo.uploader_id != principal.staff_user_id:
         raise PhotoInventoryAccessDeniedError
     key = photo.original_object_key
     if thumbnail:
         projection = read_staff_media_projections(session, photo_revisions=[
-            (photo.id, photo.admission_pipeline_revision_id)]).get(photo.id)
+            (photo.id, photo.admission_pipeline_revision_id)],
+            preferred_revision_id=venue.serving_pipeline_revision_id).get(photo.id)
         if projection is None or projection.thumbnail_object_key is None:
             raise PhotoInventoryNotFoundError
         key = projection.thumbnail_object_key

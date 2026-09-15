@@ -1,0 +1,7 @@
+[Unit]
+Description=Face Moment ordinary diagnostic retention cleanup
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/face-moment/retention-cleanup.env
+ExecStart=/usr/bin/docker compose --project-directory ${FACE_MOMENT_PROJECT_DIR} run --rm backend python -m face_moment.entrypoints.retention_cleanup
