@@ -3,7 +3,7 @@ import { promoDurationMs } from "./promo-display-preferences.js";
 import { getDisplayRequestHeaders } from "./display-client-config.js";
 
 const PROMO_COPY = "Ваши фото можно скачать по QR коду или на сайте face-momet.ru";
-const MEDIA_PATH_PREFIX = "/api/promo/media/";
+const MEDIA_PATH_PREFIX = "/api/promo/sessions/";
 const DISPLAY_CONFIG_PATH = "/api/promo/display/config";
 const DISPLAY_PATH_PREFIX = "/api/promo/sessions/";
 const DISPLAY_ACK_TIMEOUT_MS = 5_000;
@@ -72,7 +72,10 @@ export function validatePromoResult(result, { origin = defaultOrigin() } = {}) {
     if (photoIds.has(item.photo_id)) throw new TypeError("promo_teasers_not_unique");
     photoIds.add(item.photo_id);
     const mediaUrl = sameOriginUrl(item.media_url, origin, "promo_media_url");
-    if (!mediaUrl.pathname.startsWith(MEDIA_PATH_PREFIX)) {
+    if (
+      !mediaUrl.pathname.startsWith(MEDIA_PATH_PREFIX)
+      || !mediaUrl.pathname.includes("/media/", MEDIA_PATH_PREFIX.length)
+    ) {
       throw new TypeError("promo_media_url_path_invalid");
     }
     return Object.freeze({

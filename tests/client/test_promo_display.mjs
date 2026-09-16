@@ -13,7 +13,7 @@ const ORIGIN = "https://central.example.test";
 function result({ teaserCount = 4, duplicate = false } = {}) {
   const teasers = Array.from({ length: teaserCount }, (_, index) => ({
     photo_id: duplicate && index === teaserCount - 1 ? "photo-0" : `photo-${index}`,
-    media_url: `${ORIGIN}/api/promo/media/${String(index).padStart(43, "r")}`,
+    media_url: `${ORIGIN}/api/promo/sessions/synthetic-session/media/${String(index).padStart(43, "r")}`,
   }));
   return {
     session_id: "session-076",
@@ -368,7 +368,7 @@ test("preview timeout releases URLs already created by completed siblings", asyn
     documentImpl: fakeDocument(),
     loadingDeadlineMs: 10,
     fetchImpl: (url) => {
-      if (String(url).includes("/api/promo/media/") && mediaCalls++ === 0) {
+      if (String(url).includes("/api/promo/sessions/synthetic-session/media/") && mediaCalls++ === 0) {
         return new Promise((resolve) => { releaseStalledFetch = resolve; });
       }
       return Promise.resolve({
@@ -435,11 +435,11 @@ test("one stalled preview fails the complete preparation and cancels transport",
     documentImpl: fakeDocument(),
     loadingDeadlineMs: 10,
     fetchImpl: (url, options) => {
-      if (String(url).includes("/api/promo/media/") && mediaCalls++ === 0) {
+      if (String(url).includes("/api/promo/sessions/synthetic-session/media/") && mediaCalls++ === 0) {
         stalledSignal = options.signal;
         return new Promise(() => {});
       }
-      if (String(url).includes("/api/promo/media/")) {
+      if (String(url).includes("/api/promo/sessions/synthetic-session/media/")) {
         return Promise.resolve({
           ok: true,
           blob: async () => new Blob(["jpeg-fixture"], { type: "image/jpeg" }),
@@ -473,7 +473,7 @@ test("a stalled decode is bounded and an actual decode error is normalized", asy
     documentImpl: fakeDocument(),
     loadingDeadlineMs: 10,
     fetchImpl: async (url) => {
-      if (String(url).includes("/api/promo/media/")) {
+      if (String(url).includes("/api/promo/sessions/synthetic-session/media/")) {
         return {
           ok: true,
           blob: async () => new Blob(["jpeg-fixture"], { type: "image/jpeg" }),
@@ -505,7 +505,7 @@ test("a stalled decode is bounded and an actual decode error is normalized", asy
     origin: ORIGIN,
     documentImpl: fakeDocument(),
     loadingDeadlineMs: 10,
-    fetchImpl: async (url) => String(url).includes("/api/promo/media/")
+    fetchImpl: async (url) => String(url).includes("/api/promo/sessions/synthetic-session/media/")
       ? {
           ok: true,
           blob: async () => new Blob(["jpeg-fixture"], { type: "image/jpeg" }),
@@ -536,7 +536,7 @@ test("late completion after a deadline cannot replace the next usable result", a
     documentImpl: fakeDocument(),
     loadingDeadlineMs: 10,
     fetchImpl: (url) => {
-      if (String(url).includes("/api/promo/media/")) {
+      if (String(url).includes("/api/promo/sessions/synthetic-session/media/")) {
         if (firstAttempt && mediaCalls++ === 0) {
           return new Promise((resolve) => {
             releaseStalledPreview = () => resolve({

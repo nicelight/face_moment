@@ -11,7 +11,7 @@ from fastapi.routing import APIRoute
 from starlette.requests import Request
 
 from face_moment.entrypoints.backend import create_app
-from face_moment.promo import PromoMediaNotFoundError, derive_media_ref, resolve_teaser_media
+from face_moment.promo import PromoMediaNotFoundError, resolve_teaser_media
 from face_moment.promo import display_media
 from face_moment.promo import http as promo_http
 from face_moment.serving_control.display_client_auth import (
@@ -39,12 +39,14 @@ class _DatabaseSession:
         self.row = row
         self.preview_key = preview_key
         self.revision_id = uuid.uuid4()
+        self.scalar_calls = 0
 
     def scalars(self, _statement: object) -> list[object]:
-        return [self.row]
+        raise AssertionError("display media must not scan Promo sessions")
 
-    def scalar(self, _statement: object) -> uuid.UUID:
-        return self.revision_id
+    def scalar(self, _statement: object) -> object:
+        self.scalar_calls += 1
+        return self.row if self.scalar_calls == 1 else self.revision_id
 
 
 def _request(path: str) -> Request:
@@ -65,19 +67,19 @@ def _media_route(app) -> APIRoute:
     route = next(
         route
         for route in app.routes
-        if isinstance(route, APIRoute) and route.path == "/api/promo/media/{media_ref}"
+        if isinstance(route, APIRoute)
+        and route.path == "/api/promo/sessions/{session_id}/media/{photo_id}"
     )
     return route
 
 
-def test_media_reference_is_opaque_and_authorized_projection_reads_private_preview(
+def test_addressed_session_media_reads_private_preview_without_history_scan(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     session_id = uuid.uuid4()
     photo_id = uuid.uuid4()
     spa_id = uuid.uuid4()
     row = SimpleNamespace(id=session_id, attempt_id=uuid.uuid4(), spa_id=spa_id, teaser_photo_ids=[photo_id])
-    media_ref = derive_media_ref(session_id, photo_id, qr_ticket_secret=SECRET)
     store = _ObjectStore()
     projection_calls: list[dict[str, object]] = []
 
@@ -100,34 +102,31 @@ def test_media_reference_is_opaque_and_authorized_projection_reads_private_previ
     body = resolve_teaser_media(
         database,
         spa_id=spa_id,
-        media_ref=media_ref,
-        qr_ticket_secret=SECRET,
+        session_id=session_id,
+        photo_id=photo_id,
         object_store=store,  # type: ignore[arg-type]
     )
 
-    assert len(media_ref) == 43
-    assert str(photo_id) not in media_ref
     assert body == b"jpeg-preview"
+    assert database.scalar_calls == 2
     assert store.keys == ["private/task076/preview.jpg"]
     assert projection_calls == [{"photo_id": photo_id, "spa_id": spa_id, "pipeline_revision_id": database.revision_id}]
 
     with pytest.raises(PromoMediaNotFoundError):
         resolve_teaser_media(
-            _DatabaseSession(row, "private/task076/preview.jpg"),
+            _DatabaseSession(None, "private/task076/preview.jpg"),
             spa_id=spa_id,
-            media_ref="é" * 43,
-            qr_ticket_secret=SECRET,
+            session_id=uuid.uuid4(),
+            photo_id=photo_id,
             object_store=store,  # type: ignore[arg-type]
         )
 
     with pytest.raises(PromoMediaNotFoundError):
         resolve_teaser_media(
             _DatabaseSession(row, "private/task076/preview.jpg"),
-            spa_id=uuid.uuid4(),
-            media_ref=derive_media_ref(
-                uuid.uuid4(), photo_id, qr_ticket_secret=SECRET
-            ),
-            qr_ticket_secret=SECRET,
+            spa_id=spa_id,
+            session_id=session_id,
+            photo_id=uuid.uuid4(),
             object_store=store,  # type: ignore[arg-type]
         )
 
@@ -138,7 +137,6 @@ def test_missing_projection_or_object_is_404_owned_failure(
     session_id = uuid.uuid4()
     photo_id = uuid.uuid4()
     row = SimpleNamespace(id=session_id, attempt_id=uuid.uuid4(), spa_id=uuid.uuid4(), teaser_photo_ids=[photo_id])
-    media_ref = derive_media_ref(session_id, photo_id, qr_ticket_secret=SECRET)
     monkeypatch.setattr(
         display_media,
         "read_photo_processing_projection",
@@ -148,8 +146,8 @@ def test_missing_projection_or_object_is_404_owned_failure(
         resolve_teaser_media(
             _DatabaseSession(row, None),
             spa_id=row.spa_id,
-            media_ref=media_ref,
-            qr_ticket_secret=SECRET,
+            session_id=session_id,
+            photo_id=photo_id,
             object_store=_ObjectStore(),  # type: ignore[arg-type]
         )
 
@@ -161,7 +159,6 @@ def test_issued_media_survives_soft_delete_while_preview_exists(
     photo_id = uuid.uuid4()
     spa_id = uuid.uuid4()
     row = SimpleNamespace(id=session_id, attempt_id=uuid.uuid4(), spa_id=spa_id, teaser_photo_ids=[photo_id])
-    media_ref = derive_media_ref(session_id, photo_id, qr_ticket_secret=SECRET)
     store = _ObjectStore()
     monkeypatch.setattr(
         display_media,
@@ -176,8 +173,8 @@ def test_issued_media_survives_soft_delete_while_preview_exists(
     assert resolve_teaser_media(
         _DatabaseSession(row, "private/task076/soft-deleted-preview.jpg"),
         spa_id=spa_id,
-        media_ref=media_ref,
-        qr_ticket_secret=SECRET,
+        session_id=session_id,
+        photo_id=photo_id,
         object_store=store,  # type: ignore[arg-type]
     ) == b"jpeg-preview"
     assert store.keys == ["private/task076/soft-deleted-preview.jpg"]
@@ -190,7 +187,6 @@ def test_object_store_not_found_is_404_but_technical_failure_propagates(
     photo_id = uuid.uuid4()
     spa_id = uuid.uuid4()
     row = SimpleNamespace(id=session_id, attempt_id=uuid.uuid4(), spa_id=spa_id, teaser_photo_ids=[photo_id])
-    media_ref = derive_media_ref(session_id, photo_id, qr_ticket_secret=SECRET)
     monkeypatch.setattr(
         display_media,
         "read_photo_processing_projection",
@@ -214,8 +210,8 @@ def test_object_store_not_found_is_404_but_technical_failure_propagates(
         resolve_teaser_media(
             _DatabaseSession(row, "private/task076/missing.jpg"),
             spa_id=spa_id,
-            media_ref=media_ref,
-            qr_ticket_secret=SECRET,
+            session_id=session_id,
+            photo_id=photo_id,
             object_store=MissingStore(),  # type: ignore[arg-type]
         )
 
@@ -233,8 +229,8 @@ def test_object_store_not_found_is_404_but_technical_failure_propagates(
         resolve_teaser_media(
             _DatabaseSession(row, "private/task076/missing.jpg"),
             spa_id=spa_id,
-            media_ref=media_ref,
-            qr_ticket_secret=SECRET,
+            session_id=session_id,
+            photo_id=photo_id,
             object_store=MissingBucketStore(),  # type: ignore[arg-type]
         )
     assert missing_bucket.value.response["Error"]["Code"] == "NoSuchBucket"
@@ -247,8 +243,8 @@ def test_object_store_not_found_is_404_but_technical_failure_propagates(
         resolve_teaser_media(
             _DatabaseSession(row, "private/task076/missing.jpg"),
             spa_id=spa_id,
-            media_ref=media_ref,
-            qr_ticket_secret=SECRET,
+            session_id=session_id,
+            photo_id=photo_id,
             object_store=FailingStore(),  # type: ignore[arg-type]
         )
 
@@ -282,7 +278,10 @@ def test_backend_registers_exact_media_route_with_auth_no_store_and_standard_fai
     monkeypatch.setattr(promo_http, "resolve_teaser_media", lambda *_args, **_kwargs: b"jpeg")
     app.state.promo_display_object_store = _ObjectStore()
 
-    response = route.endpoint(_request("/api/promo/media/" + "r" * 43), "r" * 43)
+    session_id = uuid.uuid4()
+    photo_id = uuid.uuid4()
+    path = f"/api/promo/sessions/{session_id}/media/{photo_id}"
+    response = route.endpoint(_request(path), session_id, photo_id)
     assert response.status_code == 200
     assert response.media_type == "image/jpeg"
     assert response.headers["cache-control"] == "no-store"
@@ -293,7 +292,7 @@ def test_backend_registers_exact_media_route_with_auth_no_store_and_standard_fai
         lambda *_args, **_kwargs: (_ for _ in ()).throw(InvalidDisplayClientCredentials()),
     )
     with pytest.raises(HTTPException) as error:
-        route.endpoint(_request("/api/promo/media/" + "r" * 43), "r" * 43)
+        route.endpoint(_request(path), session_id, photo_id)
     assert error.value.status_code == 401
     assert error.value.headers == {"Cache-Control": "no-store"}
 
@@ -303,7 +302,7 @@ def test_backend_registers_exact_media_route_with_auth_no_store_and_standard_fai
         lambda *_args, **_kwargs: (_ for _ in ()).throw(DisplayClientRateLimitError()),
     )
     with pytest.raises(HTTPException) as error:
-        route.endpoint(_request("/api/promo/media/" + "r" * 43), "r" * 43)
+        route.endpoint(_request(path), session_id, photo_id)
     assert error.value.status_code == 429
     assert error.value.headers == {"Cache-Control": "no-store"}
 
@@ -322,6 +321,6 @@ def test_backend_registers_exact_media_route_with_auth_no_store_and_standard_fai
             lambda *_args, _error=resolver_error, **_kwargs: (_ for _ in ()).throw(_error),
         )
         with pytest.raises(HTTPException) as error:
-            route.endpoint(_request("/api/promo/media/" + "r" * 43), "r" * 43)
+            route.endpoint(_request(path), session_id, photo_id)
         assert error.value.status_code == expected_status
         assert error.value.headers == {"Cache-Control": "no-store"}

@@ -2,10 +2,6 @@
 
 from __future__ import annotations
 
-import base64
-import hashlib
-import hmac
-from collections.abc import Iterable
 import uuid
 
 from botocore.exceptions import ClientError
@@ -19,103 +15,58 @@ from face_moment.promo.session import PromoSession
 
 
 class PromoMediaNotFoundError(LookupError):
-    """The reference is unknown or its issued preview is unavailable."""
-
-
-def derive_media_ref(
-    session_id: uuid.UUID,
-    photo_id: uuid.UUID,
-    *,
-    qr_ticket_secret: bytes | str,
-) -> str:
-    """Derive an opaque same-origin reference without exposing IDs."""
-
-    secret = _secret_bytes(qr_ticket_secret)
-    message = b"face-moment:promo-media:v1:" + session_id.bytes + photo_id.bytes
-    digest = hmac.new(secret, message, hashlib.sha256).digest()
-    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+    """The requested issued preview is unknown or unavailable."""
 
 
 def resolve_teaser_media(
     database_session: Session,
     *,
     spa_id: uuid.UUID,
-    media_ref: str,
-    qr_ticket_secret: bytes | str,
+    session_id: uuid.UUID,
+    photo_id: uuid.UUID,
     object_store: PrivateObjectStore,
 ) -> bytes:
     """Read one retained preview referenced by an issued Promo session."""
 
-    if not _valid_media_ref(media_ref):
-        raise PromoMediaNotFoundError(media_ref)
-
-    matched_photo_id: uuid.UUID | None = None
-    matched_attempt_id: uuid.UUID | None = None
-    sessions: Iterable[PromoSession] = database_session.scalars(
-        select(PromoSession).where(PromoSession.spa_id == spa_id)
+    session_row = database_session.scalar(
+        select(PromoSession).where(
+            PromoSession.id == session_id,
+            PromoSession.spa_id == spa_id,
+        )
     )
-    for session_row in sessions:
-        for photo_id in session_row.teaser_photo_ids:
-            expected = derive_media_ref(
-                session_row.id,
-                photo_id,
-                qr_ticket_secret=qr_ticket_secret,
-            )
-            if hmac.compare_digest(expected, media_ref):
-                matched_photo_id = photo_id
-                matched_attempt_id = session_row.attempt_id
-                break
-        if matched_photo_id is not None:
-            break
-
-    if matched_photo_id is None:
-        raise PromoMediaNotFoundError(media_ref)
+    if session_row is None or photo_id not in session_row.teaser_photo_ids:
+        raise PromoMediaNotFoundError(str(photo_id))
 
     revision_id = database_session.scalar(
-        select(PromoAttempt.pipeline_revision_id).where(PromoAttempt.id == matched_attempt_id)
+        select(PromoAttempt.pipeline_revision_id).where(
+            PromoAttempt.id == session_row.attempt_id
+        )
     )
     if revision_id is None:
-        raise PromoMediaNotFoundError(media_ref)
+        raise PromoMediaNotFoundError(str(photo_id))
 
     projection = read_photo_processing_projection(
         database_session,
-        photo_id=matched_photo_id,
+        photo_id=photo_id,
         spa_id=spa_id,
         pipeline_revision_id=revision_id,
     )
     if projection is None:
-        raise PromoMediaNotFoundError(media_ref)
+        raise PromoMediaNotFoundError(str(photo_id))
     preview_key = projection.preview_object_key
     if not isinstance(preview_key, str) or not preview_key:
-        raise PromoMediaNotFoundError(media_ref)
+        raise PromoMediaNotFoundError(str(photo_id))
 
     try:
         body = object_store.read(key=preview_key)
     except ClientError as error:
         error_code = error.response.get("Error", {}).get("Code")
         if error_code == "NoSuchKey":
-            raise PromoMediaNotFoundError(media_ref) from error
+            raise PromoMediaNotFoundError(str(photo_id)) from error
         raise
     if not body:
-        raise PromoMediaNotFoundError(media_ref)
+        raise PromoMediaNotFoundError(str(photo_id))
     return body
 
 
-def _valid_media_ref(value: str) -> bool:
-    return (
-        isinstance(value, str)
-        and len(value) == 43
-        and value.isascii()
-        and all(character.isalnum() or character in "-_" for character in value)
-    )
-
-
-def _secret_bytes(value: bytes | str) -> bytes:
-    if isinstance(value, str):
-        value = value.encode("utf-8")
-    if not isinstance(value, bytes) or not value:
-        raise ValueError("promo media secret must be non-empty")
-    return value
-
-
-__all__ = ["PromoMediaNotFoundError", "derive_media_ref", "resolve_teaser_media"]
+__all__ = ["PromoMediaNotFoundError", "resolve_teaser_media"]

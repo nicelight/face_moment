@@ -75,12 +75,27 @@ restart covered by this runbook.
 
 Public proxy preparation (not a deployment performed by this runbook):
 
-- Application hostname: `FACE_MOMENT_PUBLIC_HOST=face.natureonzoom.win` in the
+- Application hostname: `FACE_MOMENT_PUBLIC_HOST=face-moment.ru` in the
   central deployment `.env` and VPS `/etc/caddy/face-moment.env`.
 - VPS also sets `FACE_MOMENT_FRP_HOST=face-time.moment-studio.ru`; retain the
   existing central `/etc/frp/face-moment.env` and FRP client hostname. The two
   environment files serve different purposes; do not copy the VPS file over FRP.
-- Cloudflare record `face` is DNS-only and points to `46.8.200.99`.
+- The public origin is `https://face-moment.ru` (operator decision 2026-09-16,
+  replacing `https://face.natureonzoom.win`). REG.RU DNS servers are
+  `ns1.reg.ru` / `ns2.reg.ru`; the apex A record must resolve to `46.8.200.99`.
+  Confirm public DNS propagation before requesting the certificate.
+- The external Caddy on the VPS obtains and automatically renews the public
+  HTTPS certificate through ACME (for example, Let's Encrypt). No purchased
+  REG.RU certificate, manual certificate upload, Certbot or DNS API integration
+  is required. Configure the public hostname in the VPS Caddy site and keep
+  inbound TCP ports `80` and `443` reachable. Preserve Caddy's persistent data
+  directory, including certificate/account state, across deployments.
+- Wrong DNS records (including a stale AAAA record) or blocked validation ports
+  can prevent certificate issuance or renewal. At deployment, check Caddy logs
+  and verify `https://face-moment.ru` with normal browser/certificate validation.
+  The public certificate terminates at the VPS; the internal Caddy's separate
+  `tls internal` configuration remains unchanged. See
+  [Caddy Automatic HTTPS](https://caddyserver.com/docs/automatic-https).
 - Before deployment acceptance, observe the immediate remote IP inside central
   Caddy for a controlled request through VPS/FRP and set that exact single IP as
   `FACE_MOMENT_FRP_PROXY_IP` in the central deployment `.env`. A host-loopback

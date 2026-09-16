@@ -12,7 +12,7 @@ test('local duration persists; latest Promo replays without search or ACK and re
     requests.push({ pathname, method: route.request().method() });
     if (pathname === '/client/blazeface.js') return route.fulfill({ contentType: 'text/javascript', body: 'export async function createBlazeFaceDetector(){return {detect:async()=>[],close(){}}} export async function detectReferenceSeries(){return []}' });
     if (pathname === '/api/promo/display/config') return route.fulfill({ json: { schema_version: 1, result_display_ms: 60_000, success_cooldown_ms: 1000 } });
-    if (pathname.startsWith('/api/promo/media/')) return mediaUnavailable
+    if (pathname.startsWith('/api/promo/sessions/synthetic-session/media/')) return mediaUnavailable
       ? route.fulfill({ status: 503 })
       : route.fulfill({ contentType: 'image/jpeg', body: media });
     if (pathname === '/api/promo/sessions/synthetic-replay/display' || pathname.endsWith('/client-timing')) return route.fulfill({ json: {} });
@@ -57,7 +57,7 @@ test('local duration persists; latest Promo replays without search or ACK and re
       attemptId: 'synthetic-replay', captureId: 'synthetic-capture', timing: { referenceSeriesReadyMonotonicMs: performance.now() },
       response: { status: 200, json: async () => ({ schema_version: 1, attempt_id: 'synthetic-replay', outcome: 'result', result: {
         session_id: 'synthetic-replay', n: 4, qr_url: `${location.origin}/q?ticket=synthetic-replay`, qr_first_open_expires_at: '2020-01-01T00:00:00Z',
-        teasers: [1, 2, 3, 4].map(i => ({ photo_id: `synthetic-photo-${i}`, media_url: `${location.origin}/api/promo/media/${i}` })),
+        teasers: [1, 2, 3, 4].map(i => ({ photo_id: `synthetic-photo-${i}`, media_url: `${location.origin}/api/promo/sessions/synthetic-session/media/${i}` })),
       } }) },
     } }));
   });
@@ -71,12 +71,12 @@ test('local duration persists; latest Promo replays without search or ACK and re
   await expect(card).toHaveCount(0, { timeout: 3000 });
   await expect(replay).toHaveAttribute('aria-disabled', 'false');
   await expect(page.getByRole('button', { name: 'Фотки вновь', exact: true })).toHaveCount(0);
-  const beforeMenu = requests.filter(r => r.pathname.startsWith('/api/promo/media/')).length;
+  const beforeMenu = requests.filter(r => r.pathname.startsWith('/api/promo/sessions/synthetic-session/media/')).length;
   await page.getByLabel('Меню', { exact: true }).click();
   await expect(page.locator('.kiosk-menu')).toHaveAttribute('open', '');
   await expect(card).toHaveCount(0);
   await page.getByLabel('Меню', { exact: true }).click();
-  expect(requests.filter(r => r.pathname.startsWith('/api/promo/media/')).length).toBe(beforeMenu);
+  expect(requests.filter(r => r.pathname.startsWith('/api/promo/sessions/synthetic-session/media/')).length).toBe(beforeMenu);
   const beforeReplay = requests.length;
   for (let repeat = 0; repeat < 2; repeat++) {
     const beforeThisReplay = requests.length;
@@ -91,8 +91,8 @@ test('local duration persists; latest Promo replays without search or ACK and re
     const visibleAt = Date.now();
     await expect(card.locator('.promo-teaser')).toHaveCount(4);
     expect(await snapshot()).toEqual(original);
-    expect(requests.slice(beforeThisReplay).filter(r => r.pathname.startsWith('/api/promo/media/')).map(r => r.pathname).sort())
-      .toEqual([1, 2, 3, 4].map(i => `/api/promo/media/${i}`));
+    expect(requests.slice(beforeThisReplay).filter(r => r.pathname.startsWith('/api/promo/sessions/synthetic-session/media/')).map(r => r.pathname).sort())
+      .toEqual([1, 2, 3, 4].map(i => `/api/promo/sessions/synthetic-session/media/${i}`));
     await expect(card.locator('.promo-replay-notice')).toContainText('Срок действия QR истёк');
     await expect(card).toHaveCount(0, { timeout: 3000 });
     expect(Date.now() - visibleAt).toBeGreaterThan(600);

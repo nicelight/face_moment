@@ -113,7 +113,7 @@ function sessionResponse({ idleMs = 3_600_000, teaser = true } = {}) {
         teaser: teaser
           ? {
               photo_id: "2b22eb29-f8a3-4083-bc57-6776295effcb",
-              media_url: "/api/phone/media/opaque-reference",
+              media_url: "/api/phone/media/2b22eb29-f8a3-4083-bc57-6776295effcb",
             }
           : null,
         n: 12,
@@ -148,7 +148,7 @@ test("passive protected read renders only in-memory session state", async () => 
   assert.equal(state.elements["phone-count"].textContent, "12");
   assert.equal(
     state.elements["phone-teaser"].src,
-    "/api/phone/media/opaque-reference",
+    "/api/phone/media/2b22eb29-f8a3-4083-bc57-6776295effcb",
   );
   assert.equal(
     state.elements["phone-purchase"].attributes.get("href"),
@@ -290,7 +290,7 @@ test("browser-normalized media identity permits at most one passive recovery", a
   await state.controller.loadSession();
 
   state.elements["phone-teaser"].src =
-    "https://central.example.test/api/phone/media/opaque-reference";
+    "https://central.example.test/api/phone/media/2b22eb29-f8a3-4083-bc57-6776295effcb";
   await state.elements["phone-teaser"].listeners.get("error")();
   await state.elements["phone-teaser"].listeners.get("error")();
 

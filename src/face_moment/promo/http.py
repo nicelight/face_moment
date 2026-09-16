@@ -318,8 +318,8 @@ def register_phone_continuation_routes(
             headers=_PHONE_HEADERS,
         )
 
-    @app.get("/api/phone/media/{media_ref}")
-    def phone_media(request: Request, media_ref: str) -> Response:
+    @app.get("/api/phone/media/{photo_id}")
+    def phone_media(request: Request, photo_id: uuid.UUID) -> Response:
         context = _protected_phone_context(app, request)
         if isinstance(context, Response):
             return context
@@ -331,7 +331,7 @@ def register_phone_continuation_routes(
                     database_session,
                     settings=settings,
                     purchase_url=purchase_url,
-                ).read_media(ticket, media_ref, now=timestamp)
+                ).read_media(ticket, photo_id, now=timestamp)
             except PromoSessionNotFoundError:
                 return _phone_empty(status.HTTP_401_UNAUTHORIZED, delete_cookie=True)
             except PhoneMediaNotFoundError:
@@ -350,8 +350,12 @@ def _register_promo_media_and_outcome_routes(
 ) -> None:
     """Keep the existing authenticated display routes grouped together."""
 
-    @app.get("/api/promo/media/{media_ref}")
-    def promo_media(request: Request, media_ref: str) -> Response:
+    @app.get("/api/promo/sessions/{session_id}/media/{photo_id}")
+    def promo_media(
+        request: Request,
+        session_id: uuid.UUID,
+        photo_id: uuid.UUID,
+    ) -> Response:
         settings = Settings.from_env()
         with _database_session(session_factory) as database_session:
             try:
@@ -376,10 +380,8 @@ def _register_promo_media_and_outcome_routes(
                 body = resolve_teaser_media(
                     database_session,
                     spa_id=principal.spa_id,
-                    media_ref=media_ref,
-                    qr_ticket_secret=getattr(
-                        settings, "promo_qr_ticket_secret", DEFAULT_PROMO_QR_TICKET_SECRET
-                    ),
+                    session_id=session_id,
+                    photo_id=photo_id,
                     object_store=getattr(
                         app.state,
                         "promo_display_object_store",

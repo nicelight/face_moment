@@ -4,6 +4,31 @@ status: active
 ---
 # Changelog
 
+## 2026-09-16 — Address Promo media by session and Photo
+
+Display media now loads one session by `session_id` and checks its СПА plus
+teaser `photo_id`; signed references and historical-session scans are removed.
+Phone media now uses the active access cookie plus `{photo_id}` and checks the
+same issued session directly; the shared HMAC media-reference code is removed.
+No schema migration is needed. Validation passed: mypy over 106 source files,
+80 client unit tests, 64 focused phone/display backend tests, and the native
+two-СПА PostgreSQL/MinIO integration path.
+Local mounted-source backend and realtime roles were restarted healthy; no
+managed local kiosk process was present to reload.
+
+## 2026-09-16 — Apply preview pHash migration to local Docker runtime
+
+Explicit operator request: applied `0026_advertising_playlists ->
+0027_preview_phash` to the existing local `face-moment` Compose database using
+the current repository migrations in a one-off migrate container. Preserved
+`.env.testing` and `.protocols/local-testing/compose-source.yaml` runtime setup.
+Restarted backend, background-worker and realtime to load mounted current source;
+all three are healthy and their `/healthz` endpoints report `ready: true`.
+Both model-consuming roles report loaded models and completed recovery (0 recovered).
+Photo processing states remain 35 ready and 12 no_faces, all with null pHash;
+no backfill or reprocessing was performed. These legacy ready Photos are now
+excluded from new searches. This was a local deployment, not a remote-server update.
+
 ## 2026-09-16 — Persist preview pHash outside realtime search
 
 Operator-authorized KISS change: compute pHash v1 when creating the preview,

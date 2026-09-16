@@ -67,7 +67,7 @@ async function routeClient(
       });
       return;
     }
-    if (requestPath.startsWith("/api/promo/media/")) {
+    if (requestPath.startsWith("/api/promo/sessions/synthetic-session/media/")) {
       if (routeOverrides.media) {
         await routeOverrides.media(route);
         return;
@@ -203,7 +203,7 @@ async function dispatchAttemptResult(page, attemptId) {
                 qr_first_open_expires_at: "2099-01-01T00:00:00Z",
                 teasers: [1, 2, 3, 4].map((index) => ({
                   photo_id: `${id}-photo-${index}`,
-                  media_url: `${globalThis.location.origin}/api/promo/media/${id}-${index}`,
+                  media_url: `${globalThis.location.origin}/api/promo/sessions/synthetic-session/media/${id}-${index}`,
                 })),
               },
             }),
@@ -420,7 +420,7 @@ test("FT-003-AC-008 optional assets do not block the valid result seam", async (
                   qr_first_open_expires_at: "2099-01-01T00:00:00Z",
                   teasers: [1, 2, 3, 4].map((index) => ({
                     photo_id: `synthetic-photo-${index}`,
-                    media_url: `${globalThis.location.origin}/api/promo/media/synthetic-photo-${index}`,
+                    media_url: `${globalThis.location.origin}/api/promo/sessions/synthetic-session/media/synthetic-photo-${index}`,
                   })),
                 },
               }),

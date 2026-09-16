@@ -45,7 +45,7 @@ async function routeClient(context) {
       });
       return;
     }
-    if (requestPath.startsWith("/api/promo/media/")) {
+    if (requestPath.startsWith("/api/promo/sessions/synthetic-session/media/")) {
       await route.fulfill({
         status: 200,
         contentType: "image/jpeg",
@@ -162,7 +162,7 @@ async function enterParticipantState(page, state) {
               qr_first_open_expires_at: "2099-01-01T00:00:00Z",
               teasers: [1, 2, 3, 4].map((index) => ({
                 photo_id: `synthetic-photo-${index}`,
-                media_url: `${globalThis.location.origin}/api/promo/media/synthetic-photo-${index}`,
+                media_url: `${globalThis.location.origin}/api/promo/sessions/synthetic-session/media/synthetic-photo-${index}`,
               })),
             },
           }),

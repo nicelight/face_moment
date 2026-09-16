@@ -1,7 +1,7 @@
 ---
 description: Exact public QR ticket exchange, session-wide browser access, protected phone read and expiry contract.
 status: active
-last_updated: 2026-08-06
+last_updated: 2026-09-16
 source_of_truth:
   - .memory-bank/contracts/qr-continuation-api.md
 ---
@@ -85,7 +85,7 @@ with exactly:
   "visit_date_to": "2026-08-06",
   "teaser": {
     "photo_id": "2b22eb29-f8a3-4083-bc57-6776295effcb",
-    "media_url": "/api/phone/media/opaque-reference"
+    "media_url": "/api/phone/media/2b22eb29-f8a3-4083-bc57-6776295effcb"
   },
   "n": 12,
   "purchase_url": "https://example.invalid/purchase",
@@ -130,17 +130,20 @@ permission is exposed.
 
 Each `media_url` resolves through:
 
-- method and path: `GET /api/phone/media/{media_ref}`;
+- method and path: `GET /api/phone/media/{photo_id}`;
 - authentication: the active `fm_promo_access` cookie;
 - success: `200 image/jpeg` containing one low-quality no-watermark preview
   referenced by that same issued session;
 - response headers: `Cache-Control: no-store` and
   `Referrer-Policy: no-referrer`.
 
-`media_ref` is opaque. Unknown, foreign-session or unavailable references
-return non-disclosing `404` without raw MinIO keys, participant-facing presigned
-URLs, replacement selection or session mutation. Media reads are passive and
-never extend idle access.
+`photo_id` is the UUID returned for the selected teaser. The active
+`fm_promo_access` cookie already resolves the authorized session; the server
+checks that `photo_id` is among its four teaser IDs. No HMAC, media-token row or
+historical-session scan is used. Unknown, foreign-session, non-teaser or
+unavailable IDs return non-disclosing `404` without raw MinIO keys,
+participant-facing presigned URLs, replacement selection or session mutation.
+Media reads are passive and never extend idle access.
 
 Both phone teaser selection and media delivery read previews for the immutable
 pipeline revision of the session's issuing Promo Attempt. They never substitute

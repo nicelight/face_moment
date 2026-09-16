@@ -41,7 +41,7 @@ EXPECTED_ROUTES = {
     "/phone",
     "/api/phone/session",
     "/api/phone/activity",
-    "/api/phone/media/{media_ref}",
+    "/api/phone/media/{photo_id}",
 }
 
 
@@ -114,7 +114,7 @@ class FakePhoneService:
         deadline = self.last_seen_at + timedelta(minutes=60)
         teaser = PhoneTeaser(
             photo_id=str(self.photo_id),
-            media_url="/api/phone/media/fixture-media",
+            media_url=f"/api/phone/media/{self.photo_id}",
         )
         return PhoneSessionView(
             session_id=str(self.session_id),
@@ -138,12 +138,12 @@ class FakePhoneService:
         return PhoneActivityView(deadline, 3_600_000)
 
     def read_media(
-        self, ticket: str, media_ref: str, *, now: datetime | None = None
+        self, ticket: str, photo_id: uuid.UUID, *, now: datetime | None = None
     ) -> bytes:
         self.calls.append("media")
         self._active(ticket, _aware(now))
-        if not self.media_available or media_ref != "fixture-media":
-            raise PhoneMediaNotFoundError(media_ref)
+        if not self.media_available or photo_id != self.photo_id:
+            raise PhoneMediaNotFoundError(str(photo_id))
         return b"fixture-jpeg"
 
     def _active(self, ticket: str, timestamp: datetime) -> None:
@@ -274,8 +274,9 @@ def _invoke(
     request: Request,
 ) -> Response:
     endpoint = _route(app, path, method)
-    if path == "/api/phone/media/{media_ref}":
-        return endpoint(request, "fixture-media")  # type: ignore[operator]
+    if path == "/api/phone/media/{photo_id}":
+        photo_id = uuid.UUID(request.url.path.rsplit("/", maxsplit=1)[1])
+        return endpoint(request, photo_id)  # type: ignore[operator]
     if method == "POST":
         return asyncio.run(endpoint(request))  # type: ignore[operator]
     return endpoint(request)  # type: ignore[operator]
@@ -357,10 +358,10 @@ def test_phone_limiter_ignores_untrusted_raw_forwarded_client_header() -> None:
             ),
         ),
         (
-            "/api/phone/media/{media_ref}",
+            "/api/phone/media/{photo_id}",
             "GET",
             lambda ip: _request(
-                "/api/phone/media/fixture-media", ticket=TICKET, ip=ip
+                f"/api/phone/media/{uuid.uuid4()}", ticket=TICKET, ip=ip
             ),
         ),
     ],
@@ -447,7 +448,7 @@ def test_multi_phone_exchange_passive_read_activity_and_exact_idle_expiry(
         "visit_date_to": "2026-08-28",
         "teaser": {
             "photo_id": str(service.photo_id),
-            "media_url": "/api/phone/media/fixture-media",
+            "media_url": f"/api/phone/media/{service.photo_id}",
         },
         "n": 9,
         "purchase_url": PURCHASE_URL,
@@ -558,22 +559,22 @@ def test_safe_redirect_validation_activity_and_media_failures_are_non_disclosing
 
     media = _invoke(
         app,
-        "/api/phone/media/{media_ref}",
-        request=_request("/api/phone/media/fixture-media", ticket=TICKET),
+        "/api/phone/media/{photo_id}",
+        request=_request(f"/api/phone/media/{service.photo_id}", ticket=TICKET),
     )
     assert media.status_code == 200 and media.body == b"fixture-jpeg"
     assert media.headers["content-type"] == "image/jpeg"
     service.media_available = False
     disappeared = _invoke(
         app,
-        "/api/phone/media/{media_ref}",
-        request=_request("/api/phone/media/fixture-media", ticket=TICKET),
+        "/api/phone/media/{photo_id}",
+        request=_request(f"/api/phone/media/{service.photo_id}", ticket=TICKET),
     )
     assert disappeared.status_code == 404 and disappeared.body == b""
     assert service.immutable["n"] == 9
 
 
-def test_percent_encoded_non_ascii_unknown_media_ref_returns_empty_404(
+def test_unknown_teaser_photo_id_returns_empty_404(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     session_row = SimpleNamespace(
@@ -589,7 +590,6 @@ def test_percent_encoded_non_ascii_unknown_media_ref_returns_empty_404(
 
     service = PhoneContinuationService.__new__(PhoneContinuationService)
     service._sessions = SessionRepository()
-    service._qr_ticket_secret = b"fixture-secret"
 
     app = create_app()
     database = FakeDatabaseSession()
@@ -607,9 +607,10 @@ def test_percent_encoded_non_ascii_unknown_media_ref_returns_empty_404(
     monkeypatch.setattr(promo_http, "_phone_service", lambda *_args, **_kwargs: service)
     app.state.promo_phone_clock = lambda: START
 
-    response = _route(app, "/api/phone/media/{media_ref}", "GET")(
-        _request("/api/phone/media/%C3%A9", ticket=TICKET),
-        "é",
+    unknown_photo_id = uuid.UUID("00000000-0000-4000-8000-000000000002")
+    response = _route(app, "/api/phone/media/{photo_id}", "GET")(
+        _request(f"/api/phone/media/{unknown_photo_id}", ticket=TICKET),
+        unknown_photo_id,
     )
 
     assert response.status_code == 404
@@ -808,8 +809,8 @@ def test_phone_assembly_uses_first_available_issued_teaser_without_mutation(
 
     if expected is not None:
         assert view.teaser is not None
-        media_ref = view.teaser.media_url.rsplit("/", maxsplit=1)[1]
-        assert service.read_media(TICKET, media_ref, now=START).startswith(b"jpeg:")
+        photo_id = uuid.UUID(view.teaser.media_url.rsplit("/", maxsplit=1)[1])
+        assert service.read_media(TICKET, photo_id, now=START).startswith(b"jpeg:")
     else:
         with pytest.raises(PhoneMediaNotFoundError):
-            service.read_media(TICKET, "x" * 43, now=START)
+            service.read_media(TICKET, uuid.uuid4(), now=START)

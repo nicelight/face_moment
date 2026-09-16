@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-import hmac
 import threading
 from typing import Protocol
 import uuid
@@ -17,7 +16,6 @@ from sqlalchemy.orm import Session
 from face_moment.diagnostics.server_events import ServerEventCode, ServerEventSink
 from face_moment.processing import read_photo_processing_projection
 from face_moment.promo.attempt import PromoAttempt, PromoAttemptRepository
-from face_moment.promo.display_media import derive_media_ref
 from face_moment.promo.purchase_url import (
     PhoneContinuationConfigurationError,
     validate_phone_purchase_url,
@@ -135,7 +133,6 @@ class PhoneContinuationService:
             database_session,
             qr_ticket_secret=qr_ticket_secret,
         )
-        self._qr_ticket_secret = qr_ticket_secret
         self._purchase_url = validate_phone_purchase_url(purchase_url)
         self._object_store = object_store
         self._event_sink = event_sink
@@ -223,7 +220,7 @@ class PhoneContinuationService:
     def read_media(
         self,
         ticket: str,
-        media_ref: str,
+        photo_id: uuid.UUID,
         *,
         now: datetime | None = None,
     ) -> bytes:
@@ -232,35 +229,21 @@ class PhoneContinuationService:
         except PromoBrowserAccessExpiredError:
             self._emit_expired()
             raise
-        if not media_ref.isascii():
-            raise PhoneMediaNotFoundError(media_ref)
-        for photo_id in session_row.teaser_photo_ids:
-            expected = derive_media_ref(
-                session_row.id,
-                photo_id,
-                qr_ticket_secret=self._qr_ticket_secret,
-            )
-            if not hmac.compare_digest(expected, media_ref):
-                continue
-            body = self._read_preview(session_row, photo_id)
-            if body is None:
-                break
-            return body
-        raise PhoneMediaNotFoundError(media_ref)
+        if photo_id not in session_row.teaser_photo_ids:
+            raise PhoneMediaNotFoundError(str(photo_id))
+        body = self._read_preview(session_row, photo_id)
+        if body is None:
+            raise PhoneMediaNotFoundError(str(photo_id))
+        return body
 
     def _first_available_teaser(self, session_row: PromoSession) -> PhoneTeaser | None:
         for photo_id in session_row.teaser_photo_ids:
             body = self._read_preview(session_row, photo_id)
             if body is None:
                 continue
-            media_ref = derive_media_ref(
-                session_row.id,
-                photo_id,
-                qr_ticket_secret=self._qr_ticket_secret,
-            )
             return PhoneTeaser(
                 photo_id=str(photo_id),
-                media_url=f"/api/phone/media/{media_ref}",
+                media_url=f"/api/phone/media/{photo_id}",
             )
         return None
 

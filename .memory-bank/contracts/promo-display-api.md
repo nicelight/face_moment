@@ -1,7 +1,7 @@
 ---
 description: Exact authenticated Promo display configuration, teaser-media and post-render acknowledgement API contract.
 status: active
-last_updated: 2026-08-06
+last_updated: 2026-09-16
 source_of_truth:
   - .memory-bank/contracts/promo-display-api.md
 ---
@@ -71,16 +71,19 @@ See [local presentation behavior](../guides/promo-presentation.md#replay-and-dis
 
 Each `media_url` in Realtime Attempt API Response Version 1 resolves through:
 
-- method and path: `GET /api/promo/media/{media_ref}`;
+- method and path:
+  `GET /api/promo/sessions/{session_id}/media/{photo_id}`;
 - authentication: the same display-client Bearer principal;
 - success: `200 image/jpeg` containing the low-quality no-watermark preview
   for exactly one of that session's four teaser Photos;
 - response headers: `Cache-Control: no-store`.
 
-`media_ref` is an opaque same-origin application reference. It MUST resolve
-through the `promo` session plus accepted inventory/processing projections and
-MUST NOT expose a raw MinIO key or produce a participant-facing presigned URL.
-Unknown, unavailable, hard-purged or foreign-СПА references return `404`
+Both path values are UUIDs already present in the authenticated realtime
+result. The server MUST load the session by primary key, require its `spa_id`
+to equal the display principal's СПА, and require `photo_id` among that
+session's four teaser IDs. It MUST NOT scan historical sessions, sign the IDs,
+expose a raw MinIO key or produce a participant-facing presigned URL. Unknown,
+unavailable, hard-purged, non-teaser or foreign-СПА combinations return `404`
 without replacement selection or session/`N` mutation. The display treats any
 missing or undecodable teaser as render failure and never presents a partial
 Promo.
@@ -181,8 +184,9 @@ teaser IDs, union or `N`.
 - Contract tests cover the exact three paths, strict JSON shapes, authenticated
   principal scope, standard statuses, `no-store` delivery and absence of raw
   storage/credential material.
-- Media fixtures prove four authorized low-quality no-watermark previews,
-  foreign/missing/hard-purged `404` and zero partial/replacement result.
+- Media fixtures prove primary-key session lookup without historical scans,
+  four authorized low-quality no-watermark previews,
+  foreign/non-teaser/missing/hard-purged `404` and zero partial/replacement result.
 - State tests prove pending `-> confirmed|failed`, duplicate idempotency,
   conflicting/late rejection, derived terminal `unconfirmed` and unchanged
   session/ticket/expiry/teaser/union/`N` values.

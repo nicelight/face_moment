@@ -60,7 +60,7 @@ test('configuration editor saves, restores and applies local layout to a real re
     const container = document.createElement('div'); document.body.append(container);
     const controller = new PromoDisplayController({ container, fetchImpl: async () => new Response(blob, { headers: { 'Content-Type': 'image/jpeg' } }) });
     const result = await controller.showResult({ attemptId: 'synthetic-layout', result: { session_id: 'synthetic-layout', n: 4,
-      teasers: [0, 1, 2, 3].map(i => ({ photo_id: `synthetic-${i}`, media_url: `${location.origin}/api/promo/media/${i}` })),
+      teasers: [0, 1, 2, 3].map(i => ({ photo_id: `synthetic-${i}`, media_url: `${location.origin}/api/promo/sessions/synthetic-session/media/${i}` })),
       qr_url: `${location.origin}/q?ticket=synthetic-layout`, qr_first_open_expires_at: '2099-01-01T00:00:00Z' } });
     const elements = [...container.querySelectorAll('[data-layout-part]')].map(el => ({ part: el.dataset.layoutPart, left: el.style.left, top: el.style.top, transform: el.style.transform }));
     container.remove();

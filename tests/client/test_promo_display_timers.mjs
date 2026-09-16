@@ -45,7 +45,7 @@ function result() {
     session_id: "session-078",
     teasers: Array.from({ length: 4 }, (_, index) => ({
       photo_id: `photo-${index}`,
-      media_url: `${ORIGIN}/api/promo/media/${String(index).padStart(43, "r")}`,
+      media_url: `${ORIGIN}/api/promo/sessions/synthetic-session/media/${String(index).padStart(43, "r")}`,
     })),
     n: 4,
     qr_url: `${ORIGIN}/q?ticket=fixture-ticket-078`,
@@ -187,7 +187,7 @@ test("delayed confirmed acknowledgement cannot extend or revive expired display"
     clock: () => 100,
     fetchImpl: (url) => {
       calls.push(url);
-      if (String(url).includes("/api/promo/media/")) {
+      if (String(url).includes("/api/promo/sessions/synthetic-session/media/")) {
         return Promise.resolve(mediaResponse());
       }
       resolveAcknowledgementStarted();
@@ -354,7 +354,7 @@ test("app display expiry releases capture for the next trigger without success c
     origin: ORIGIN,
     documentImpl: displayDocument(),
     fetchImpl: (url) => {
-      if (String(url).includes("/api/promo/media/")) {
+      if (String(url).includes("/api/promo/sessions/synthetic-session/media/")) {
         return Promise.resolve(mediaResponse());
       }
       reportCalls.push(url);
@@ -579,7 +579,7 @@ test("ordinary successful acknowledgement keeps capture cooldown after display e
     origin: ORIGIN,
     documentImpl: displayDocument(),
     fetchImpl: (url) => {
-      if (String(url).includes("/api/promo/media/")) {
+      if (String(url).includes("/api/promo/sessions/synthetic-session/media/")) {
         return Promise.resolve(mediaResponse());
       }
       reportCalls.push(url);

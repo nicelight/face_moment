@@ -22,7 +22,7 @@ for (const [width, height] of [[1920,1080], [1280,1024], [1080,1080], [1080,1920
         return new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg'));
       }));
       const controller = new PromoDisplayController({ container: document.querySelector('#result'), fetchImpl: async url => new Response(blobs[Number(url.at(-1))], {headers:{'Content-Type':'image/jpeg'}}) });
-      const result = await controller.showResult({attemptId:'layout', result:{session_id:'layout', teasers:blobs.map((_,i)=>({photo_id:`photo-${i}`,media_url:`${location.origin}/api/promo/media/${i}`})), n:4, qr_url:`${location.origin}/q?ticket=layout`, qr_first_open_expires_at:'2026-09-07T12:00:00Z'}});
+      const result = await controller.showResult({attemptId:'layout', result:{session_id:'layout', teasers:blobs.map((_,i)=>({photo_id:`photo-${i}`,media_url:`${location.origin}/api/promo/sessions/synthetic-session/media/${i}`})), n:4, qr_url:`${location.origin}/q?ticket=layout`, qr_first_open_expires_at:'2026-09-07T12:00:00Z'}});
       if (result.state !== 'result') throw new Error(JSON.stringify(result));
     });
     await expect(page.locator('.promo-photo-card')).toHaveCount(4);

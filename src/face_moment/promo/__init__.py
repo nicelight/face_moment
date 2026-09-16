@@ -40,7 +40,6 @@ from face_moment.promo.realtime_orchestration import (
 )
 from face_moment.promo.display_media import (
     PromoMediaNotFoundError,
-    derive_media_ref,
     resolve_teaser_media,
 )
 from face_moment.promo.display_outcome import (
@@ -99,7 +98,6 @@ __all__ = [
     "derive_qr_ticket",
     "hash_qr_ticket",
     "PromoMediaNotFoundError",
-    "derive_media_ref",
     "resolve_teaser_media",
     "DisplayOutcome",
     "DisplayOutcomeRepository",

@@ -133,19 +133,19 @@ Non-`result` responses omit `result`. A `result` response contains exactly:
   "teasers": [
     {
       "photo_id": "2b22eb29-f8a3-4083-bc57-6776295effcb",
-      "media_url": "/api/promo/media/opaque-reference-1"
+      "media_url": "/api/promo/sessions/aa39236f-17e3-41eb-9c22-75a49ef21f93/media/2b22eb29-f8a3-4083-bc57-6776295effcb"
     },
     {
       "photo_id": "095965bd-e2b7-4133-b6c1-830dd13a93cf",
-      "media_url": "/api/promo/media/opaque-reference-2"
+      "media_url": "/api/promo/sessions/aa39236f-17e3-41eb-9c22-75a49ef21f93/media/095965bd-e2b7-4133-b6c1-830dd13a93cf"
     },
     {
       "photo_id": "4e37e349-947c-41d7-b7e8-7c4c16a0918d",
-      "media_url": "/api/promo/media/opaque-reference-3"
+      "media_url": "/api/promo/sessions/aa39236f-17e3-41eb-9c22-75a49ef21f93/media/4e37e349-947c-41d7-b7e8-7c4c16a0918d"
     },
     {
       "photo_id": "b731c61f-af11-476b-805e-dd847a749f1d",
-      "media_url": "/api/promo/media/opaque-reference-4"
+      "media_url": "/api/promo/sessions/aa39236f-17e3-41eb-9c22-75a49ef21f93/media/b731c61f-af11-476b-805e-dd847a749f1d"
     }
   ],
   "n": 12,
@@ -159,6 +159,11 @@ integer at least four, and URLs MUST be same-origin application paths. This is
 the smallest synchronous handoff needed by later Promo presentation and QR
 features; it does not transfer result selection or session ownership to
 FT-003.
+
+Each display `media_url` is exactly
+`/api/promo/sessions/{session_id}/media/{photo_id}` using the enclosing result's
+session ID and that teaser's Photo ID. UUIDs are routing values, not access
+tokens; the authenticated media endpoint owns СПА and teaser-membership checks.
 
 ## Admission, Idempotency And Failures
 

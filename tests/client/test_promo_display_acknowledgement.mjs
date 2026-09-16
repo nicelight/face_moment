@@ -11,7 +11,7 @@ function result(sessionId = "session-077") {
     session_id: sessionId,
     teasers: Array.from({ length: 4 }, (_, index) => ({
       photo_id: `${sessionId}-photo-${index}`,
-      media_url: `${ORIGIN}/api/promo/media/${String(index).padStart(43, "r")}`,
+      media_url: `${ORIGIN}/api/promo/sessions/synthetic-session/media/${String(index).padStart(43, "r")}`,
     })),
     n: 4,
     qr_url: `${ORIGIN}/q?ticket=${sessionId}-ticket`,
@@ -547,7 +547,7 @@ test("non-cooperative confirmed acknowledgement is settled by the deadline race"
       documentImpl: displayDocument(),
       clock: () => 9_421,
       fetchImpl: async (url) => {
-        if (String(url).includes("/api/promo/media/")) return mediaResponse();
+        if (String(url).includes("/api/promo/sessions/synthetic-session/media/")) return mediaResponse();
         acknowledgementStarted();
         return new Promise(() => {});
       },

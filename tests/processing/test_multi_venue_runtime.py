@@ -120,13 +120,16 @@ def test_native_two_venues_restart_photo_search_and_qr(monkeypatch):
                                 assert attempt.visit_date == date(2026, 9, 15+i)
                                 assert set(promo.session_result_photo_ids) == photo_ids[venue.spa_id]
                                 for teaser in result['teasers']:
-                                    media_ref = teaser['media_url'].rsplit('/', 1)[1]
+                                    teaser_photo_id = uuid.UUID(teaser['photo_id'])
+                                    assert teaser['media_url'] == (
+                                        f"/api/promo/sessions/{promo.id}/media/{teaser_photo_id}"
+                                    )
                                     assert resolve_teaser_media(session, spa_id=venue.spa_id,
-                                        media_ref=media_ref, qr_ticket_secret=settings.promo_qr_ticket_secret,
+                                        session_id=promo.id, photo_id=teaser_photo_id,
                                         object_store=store)
                                     with pytest.raises(PromoMediaNotFoundError):
                                         resolve_teaser_media(session, spa_id=venues[1-i].spa_id,
-                                            media_ref=media_ref, qr_ticket_secret=settings.promo_qr_ticket_secret,
+                                            session_id=promo.id, photo_id=teaser_photo_id,
                                             object_store=store)
                                 ticket = result['qr_url'].split('ticket=')[1]
                                 opened, first = PromoSessionRepository(session,

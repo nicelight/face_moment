@@ -36,7 +36,6 @@ from face_moment.processing.initial_pending import PhotoPipelineState
 from face_moment.promo import (
     PromoAttemptRepository,
     ResultAssembly,
-    derive_media_ref,
 )
 from face_moment.serving_control import DisplayClientRepository, IngestTargetRepository
 from tests.disposable_postgresql import disposable_postgresql_engine
@@ -63,7 +62,7 @@ class _LiveEdge:
     engine: object
     spa_id: uuid.UUID
     session_id: uuid.UUID
-    media_ref: str
+    photo_id: uuid.UUID
     display_token: str
     cookies: dict[str, dict[str, str]]
     realtime_observations: list[dict[str, object]]
@@ -378,11 +377,7 @@ def live_edge(monkeypatch: pytest.MonkeyPatch) -> Iterator[_LiveEdge]:
                 engine=engine,
                 spa_id=target.spa_id,
                 session_id=result.session_id,
-                media_ref=derive_media_ref(
-                    result.session_id,
-                    photo_ids[0],
-                    qr_ticket_secret=DISPLAY_SECRET,
-                ),
+                photo_id=photo_ids[0],
                 display_token=display_token,
                 cookies=cookies,
                 realtime_observations=realtime_server.observations,
@@ -460,7 +455,7 @@ def test_live_caddy_forwards_promo_auth_media_and_ack(live_edge: _LiveEdge) -> N
 
     media = _request(
         live_edge.base_url,
-        f"/api/promo/media/{live_edge.media_ref}",
+        f"/api/promo/sessions/{live_edge.session_id}/media/{live_edge.photo_id}",
         headers=auth,
     )
     assert media.status == 200
@@ -470,7 +465,7 @@ def test_live_caddy_forwards_promo_auth_media_and_ack(live_edge: _LiveEdge) -> N
 
     assert _request(
         live_edge.base_url,
-        "/api/promo/media/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        f"/api/promo/sessions/{uuid.uuid4()}/media/{live_edge.photo_id}",
         headers=auth,
     ).status == 404
 
