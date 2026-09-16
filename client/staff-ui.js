@@ -95,7 +95,9 @@ for (const form of document.querySelectorAll('.fm-device-rename')) {
       if (!response.ok) throw new Error('rename_failed');
       const saved = await response.json();
       input.value = saved.name;
-      form.closest('.fm-device-card').querySelector('h2').textContent = saved.name;
+      const card = form.closest('.fm-device-card');
+      card.querySelector('h2').textContent = saved.name;
+      card.querySelector('.fm-device-face')?.setAttribute('aria-label', `Открыть экран «${saved.name}» в новой вкладке`);
       for (const row of document.querySelectorAll('.fm-device-table tbody tr')) {
         if (row.querySelector('[data-field="display-client-id"]')?.textContent === form.dataset.clientId) {
           row.querySelector('[data-field="name"]').textContent = saved.name;

@@ -185,6 +185,12 @@ def test_admin_page_lists_current_tokens_and_survives_reload_and_restart(
         assert str(spa_id) in first_body
         assert f'data-field="active">{str(active).lower()}</td>' in first_body
         assert token in first_body
+        assert (
+            f'<a class="fm-device-face" href="/client1" target="_blank" '
+            f'rel="noopener noreferrer" aria-label="Открыть экран «{name}» в новой вкладке" '
+            'data-tilt>'
+        ) in first_body
+    assert 'href="/client1?token=' not in first_body
 
     fixture.engine.dispose()
     restarted_engine = create_engine(fixture.database_url, pool_pre_ping=True)

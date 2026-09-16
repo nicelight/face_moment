@@ -69,7 +69,7 @@ test('staff screen rename updates card and table; failure preserves last saved n
   await context.addCookies([{ name: 'fm_staff_csrf', value: 'synthetic-csrf', url: origin }]);
   // Faithful bounded markup fixture for _display_client_page_html; no real staff session.
   const markup = `<meta charset="utf-8"><body data-staff-page="display-clients"><span id="staff-account-name"></span><span id="staff-identity"></span><main>
-    <article class="fm-device-card"><h2>Экран у входа</h2><form class="fm-device-rename" data-client-id="${id}"><label>Название экрана<input name="name" value="Экран у входа" required maxlength="255"></label><button type="submit">Сохранить название</button><p role="status"></p></form></article>
+    <article class="fm-device-card"><a class="fm-device-face" href="/client1" target="_blank" rel="noopener noreferrer" aria-label="Открыть экран «Экран у входа» в новой вкладке" data-tilt><p class="fm-eyebrow">КИОСК / РАЗРЕШЁН</p><h2>Экран у входа</h2></a><form class="fm-device-rename" data-client-id="${id}"><label>Название экрана<input name="name" value="Экран у входа" required maxlength="255"></label><button type="submit">Сохранить название</button><p role="status"></p></form></article>
     <details class="fm-device-table"><summary>Таблица настроенных экранов</summary><table><tbody><tr><td data-field="display-client-id">${id}</td><td data-field="name">Экран у входа</td></tr></tbody></table></details>
     </main><script type="module" src="/client/staff-ui.js"></script></body>`;
   await page.route(`${origin}/**`, async route => {
@@ -86,6 +86,7 @@ test('staff screen rename updates card and table; failure preserves last saved n
   await page.getByLabel('Название экрана').fill(' Экран у бассейна ');
   await page.getByRole('button', { name: 'Сохранить название', exact: true }).click();
   await expect(page.locator('.fm-device-card h2')).toHaveText('Экран у бассейна');
+  await expect(page.locator('.fm-device-face')).toHaveAttribute('aria-label', 'Открыть экран «Экран у бассейна» в новой вкладке');
   await expect(page.locator('[data-field="name"]')).toHaveText('Экран у бассейна');
   expect(writes).toEqual([{ method: 'PUT', csrf: 'synthetic-csrf', body: { name: 'Экран у бассейна' } }]);
   failRename = true;

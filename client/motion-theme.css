@@ -230,7 +230,7 @@ body.fm-page {
 .fm-count-strip > span { height: 1.25em; flex: 0 0 1.25em; display: block; }
 .fm-device-list { display: grid; gap: 1rem; margin: 1.5rem 0; }
 .fm-device-card { border: 1px solid var(--fm-line); background: var(--fm-panel); border-radius: 16px; padding: 1rem; min-width: 0; }
-.fm-device-face { position: relative; overflow: hidden; border: 1px solid #5b7f6c; background: linear-gradient(135deg, #324337, #152822 70%); border-radius: 12px; padding: 1.5rem; min-height: 155px; transform-style: preserve-3d; transition: transform 500ms ease-out; isolation: isolate; }
+.fm-device-face { display: block; color: inherit; text-decoration: none; position: relative; overflow: hidden; border: 1px solid #5b7f6c; background: linear-gradient(135deg, #324337, #152822 70%); border-radius: 12px; padding: 1.5rem; min-height: 155px; transform-style: preserve-3d; transition: transform 500ms ease-out; isolation: isolate; }
 .fm-device-face::before { content: ""; pointer-events: none; position: absolute; inset: 0; z-index: -1; opacity: .14; background: radial-gradient(ellipse at var(--mx, 30%) var(--my, 25%), #e4ffc4, transparent 67%); }
 .fm-device-face h2 { margin: 2rem 0 .5rem; font-size: 24px; }
 .fm-device-meta { color: var(--fm-muted); font-size: 11px; overflow-wrap: anywhere; margin: 1rem 0; }

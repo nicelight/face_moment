@@ -460,9 +460,10 @@ def _display_client_page_html(clients: Sequence[DisplayClientAdminRecord], spas:
     options = "".join(f'<option value="{spa.spa_id}">{escape(spa.name)}</option>' for spa in spas)
     cards = "".join(
         '<article class="fm-device-card">'
-        '<div class="fm-device-face" data-tilt>'
+        f'<a class="fm-device-face" href="/client1" target="_blank" rel="noopener noreferrer" '
+        f'aria-label="Открыть экран «{escape(client.name, quote=True)}» в новой вкладке" data-tilt>'
         f'<p class="fm-eyebrow">КИОСК / {"РАЗРЕШЁН" if client.active else "ОТКЛЮЧЁН"}</p>'
-        f'<h2>{escape(client.name)}</h2></div>'
+        f'<h2>{escape(client.name)}</h2></a>'
         f'<p class="fm-device-meta">Площадка: {escape(names.get(client.spa_id, str(client.spa_id)))}<br>'
         f'ID экрана: …{escape(str(client.display_client_id)[-5:])}</p>'
         f'<form class="fm-device-rename" data-client-id="{client.display_client_id}">'
