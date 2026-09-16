@@ -135,6 +135,18 @@ validation.
 
 ## Client State And Recovery Proof
 
+- `tests/client/test_attempt_watchdog.mjs` proves the 20-second request watchdog
+  covers pending transport and JSON body, aborts the current signal, allows a
+  fresh capture, ignores late success/failure and clears timers on completion.
+  `test_realtime_attempt.mjs` also rejects submission when encoding finishes
+  after cancellation. The app timeout callback uses the existing communication
+  notice and capture-completion path.
+- `tests/infrastructure/test_realtime_io_timeouts.py` uses an isolated PostgreSQL
+  connection to cancel a slow query and recover after rollback, plus a local
+  HTTP server to stall S3 headers/body and prove finite waiting without retries.
+  Native inference interruption is excluded; existing startup-recovery tests
+  continue to cover the accepted manual restart path.
+
 - Physical and test triggers enter the same trigger-acceptance path, retain
   distinguishable source metadata, ignore overlap and use a fresh reference
   series after every failure. Late response, timeout and reconnect fixtures

@@ -9,6 +9,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from face_moment.infrastructure.settings import Settings
+from face_moment.infrastructure.database import create_realtime_database_engine
 if TYPE_CHECKING:
     from face_moment.processing.model_admission import AdmittedModelAdapter
 
@@ -25,13 +26,21 @@ class ModelConsumerBinding:
         self.database_engine.dispose()
 
 
-def bind_model_consumer(settings: Settings) -> ModelConsumerBinding:
+def bind_model_consumer(
+    settings: Settings, *, realtime_io: bool = False
+) -> ModelConsumerBinding:
     """Resolve the committed revision, then admit only its direct adapter."""
 
     from face_moment.processing.model_admission import admit_selected_model
     from face_moment.serving_control.ingest_target import IngestTargetRepository
 
-    database_engine = create_engine(settings.database_url, pool_pre_ping=True)
+    database_engine = (
+        create_realtime_database_engine(
+            settings.database_url, deadline_ms=settings.realtime_deadline_ms
+        )
+        if realtime_io
+        else create_engine(settings.database_url, pool_pre_ping=True)
+    )
     try:
         with Session(database_engine) as session:
             revision = IngestTargetRepository(

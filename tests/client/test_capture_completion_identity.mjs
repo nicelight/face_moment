@@ -14,6 +14,9 @@ function fixture() {
   const quality = createJpegQualityController({ storage: null });
   const context = {
     activeRequestCapture: null, successfulCooldownAttemptId: null,
+    clearPromoHandoff() {},
+    advertisingPlayer: { start() {}, stop() {} },
+    currentView: () => 'advertising',
     jpegQualityController: quality,
     attemptOutcomeController: { beginAttempt() {} },
     triggerController: { finishAttempt(detail) { completed.push(detail); return true; } },

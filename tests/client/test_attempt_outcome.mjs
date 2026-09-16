@@ -88,6 +88,7 @@ async function provesLateWorkCannotReplaceNewerState() {
   assert.equal(stale.stale, true);
   assert.equal(controller.state, "searching");
   assert.equal(controller.isCurrent("attempt-new"), true);
+  controller.handleTransportFailure("attempt-new");
 }
 
 async function provesHttpAndTypedResponseFailuresUseNoProse() {

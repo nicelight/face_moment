@@ -182,7 +182,7 @@ FT-003.
 
 ### Bounded client waiting and realtime I/O
 
-Operator-approved KISS correction (2026-09-16): the browser has one 10-second
+Operator-approved KISS correction (2026-09-16): the browser has one 20-second
 watchdog from request-attempt start through crop encoding, upload and response
 JSON consumption. Expiry aborts transport, finishes the attempt as a client
 communication failure, restores advertising without success cooldown, and

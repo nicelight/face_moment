@@ -9,7 +9,7 @@ const VALID_OUTCOMES = new Set([
   "in_progress",
 ]);
 
-export const REALTIME_REQUEST_TIMEOUT_MS = 10_000;
+export const REALTIME_REQUEST_TIMEOUT_MS = 20_000;
 
 export const REALTIME_ATTEMPT_OUTCOMES = Object.freeze([
   ...VALID_OUTCOMES,

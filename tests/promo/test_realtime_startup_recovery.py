@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import replace
 from collections.abc import Iterator
 from datetime import date, datetime, timezone
 from types import SimpleNamespace
@@ -117,12 +118,13 @@ def _run_realtime_lifecycle(
         adapter=FakeAdapter(),
         close=lambda: None,
     )
-    monkeypatch.setattr(realtime, "bind_model_consumer", lambda _settings: binding)
+    monkeypatch.setattr(realtime, "bind_model_consumer", lambda _settings, **_kw: binding)
     state: dict[str, object] = {"ready": False}
 
     async def enter_and_exit() -> None:
         async with realtime._realtime_lifecycle(  # noqa: SLF001
-            SimpleNamespace(
+            replace(
+                Settings.from_env(),
                 realtime_result_display_ms=15_000,
                 realtime_success_cooldown_ms=30_000,
             ),

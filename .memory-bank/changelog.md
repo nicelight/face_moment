@@ -4,6 +4,27 @@ status: active
 ---
 # Changelog
 
+## [2026-09-16] KISS-восстановление клиента после зависшего realtime-запроса
+
+- [Realtime contract](contracts/realtime-attempt-api.md#bounded-client-waiting-and-realtime-io):
+  watchdog клиента 20 секунд (увеличен с 10 по уточнению оператора) охватывает
+  подготовку запроса, fetch и JSON body;
+  abort возвращает рекламу и разрешает новый capture, поздний ответ игнорируется.
+  Серверный default остаётся 7000 мс, без гарантии общего HTTP-дедлайна.
+- Только realtime: DB connect/pool/lock wait 3 секунды, SQL/TCP timeout по
+  realtime deadline; MinIO connect/read 2 секунды без SDK retries.
+  Native hang по-прежнему требует ручного restart; новых процессов нет.
+- Проверки: `npm run test:unit` — 80 passed; mypy — 106 source files без ошибок.
+  На временном PostgreSQL прошли 41 профильная Python-проверка из
+  `test_realtime_io_timeouts.py`, `test_realtime_orchestration.py`,
+  `test_realtime_startup_recovery.py`, `test_realtime_attempt_integration.py`
+  и `test_model_asset_admission.py` (40 в общем запуске, startup recovery после
+  исправления устаревшего fixture — отдельным запуском). MinIO stalls проверены
+  локальным HTTP fixture, без обращения к рабочим объектам.
+- Для повторения Python-проверок: `uv run --locked --env-file .env.local python
+  -m pytest` с указанными файлами; нужен доступный изолированный PostgreSQL.
+  Рабочие сервисы в рамках этого исправления не перезапускались.
+
 ## [2026-09-16] Добавление экрана с выбором площадки
 
 - По запросу оператора добавлена форма «Добавить экран» в «Экраны»: название,

@@ -400,7 +400,7 @@ def test_both_model_consumer_roles_bind_before_reporting_readiness(
     settings = Settings.from_env()
     adapter = _RecordingAdapter(uuid.uuid4(), warmed=True)
 
-    def bind(_settings: Settings) -> ModelConsumerBinding:
+    def bind(_settings: Settings, **_kwargs: object) -> ModelConsumerBinding:
         return ModelConsumerBinding(
             database_engine=disposable_model_database,
             session_factory=lambda: Session(disposable_model_database),
@@ -490,7 +490,7 @@ def test_both_roles_fail_closed_before_readiness_when_binding_fails(
     monkeypatch.setenv("REALTIME_RESULT_DISPLAY_MS", "15000")
     monkeypatch.setenv("REALTIME_SUCCESS_COOLDOWN_MS", "1000")
 
-    def fail(_settings: Settings) -> ModelConsumerBinding:
+    def fail(_settings: Settings, **_kwargs: object) -> ModelConsumerBinding:
         raise ModelAdmissionError("fixture mismatch")
 
     monkeypatch.setattr(common, "wait_for_dependencies", lambda *_args, **_kwargs: None)

@@ -90,14 +90,14 @@ async def _realtime_lifecycle(
     state["server_event_emitter"] = event_binding.emitter
     try:
         display_configuration = read_display_configuration(settings)
-        binding = bind_model_consumer(settings)
+        binding = bind_model_consumer(settings, realtime_io=True)
     except Exception:
         state.pop("server_event_emitter", None)
         event_binding.close()
         raise
     state["session_factory"] = binding.session_factory
     state["model_adapter"] = binding.adapter
-    state["object_store"] = PrivateObjectStore(settings)
+    state["object_store"] = PrivateObjectStore(settings, realtime_io=True)
     state["admitted_pipeline_revision_id"] = binding.adapter.pipeline_revision_id
     state["realtime_deadline_ms"] = getattr(
         settings, "realtime_deadline_ms", DEFAULT_REALTIME_DEADLINE_MS

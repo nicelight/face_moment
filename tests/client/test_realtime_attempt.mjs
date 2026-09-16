@@ -141,6 +141,25 @@ await provesOrdinaryRequestShapeAndOrder();
 await provesZeroOccurrenceIsManifestOnly();
 await provesTheBoundIsRejectedWithoutClientTruncation();
 await provesSubmissionUsesExactlyOnePostAndDoesNotBranch();
+
+// Encoding can finish after the watchdog: never send the expired request.
+const abort = new AbortController();
+let releaseCrop;
+let cropStarted;
+const encoding = new Promise(resolve => { cropStarted = resolve; });
+const lateSubmission = submitRealtimeAttempt({
+  ...options({ proposals: [proposal(0)] }),
+  signal: abort.signal,
+  cropEncoder: () => {
+    cropStarted();
+    return new Promise(resolve => { releaseCrop = resolve; });
+  },
+  fetchImpl: () => { assert.fail("expired capture must not be submitted"); },
+});
+await encoding;
+abort.abort();
+releaseCrop(new Blob(["jpeg"], { type: "image/jpeg" }));
+await assert.rejects(lateSubmission, { name: "AbortError" });
 console.log(
   "realtime attempt GREEN: exact v1 manifest/parts, first-20 boundary, zero-occurrence manifest-only request and one POST",
 );
