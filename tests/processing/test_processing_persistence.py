@@ -151,7 +151,7 @@ def test_empty_cutover_round_trip_preserves_prerequisite_rows_and_shape() -> Non
         assert {
             column["name"]
             for column in inspector.get_columns("photo_pipeline_states", schema=APP_SCHEMA)
-        } == expected_state_columns
+        } >= expected_state_columns  # Later migrations may add processing fields.
         with engine.connect() as connection:
             photo_face_columns = {
                 row[0]

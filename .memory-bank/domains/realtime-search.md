@@ -159,12 +159,18 @@ returned only when query quality passes and cosine similarity is greater than
 or equal to the immutable calibrated threshold. Results are ordered by
 descending similarity and then ascending `photo_id` for deterministic ties.
 
-For every unique threshold-valid Photo needed by result assembly, `processing`
-loads its private ready preview and computes one deterministic 64-bit pHash
-with the owner-local `opencv_phash64_v1` adapter. The hash is returned only for
-Hamming-distance ranking; it is not a match gate, identity, persisted
-lifecycle or reason to admit a weak candidate. On-demand computation is the
-initial KISS path; persistence/caching requires measured latency evidence.
+Operator decision, 2026-09-16: exact search requires a non-null
+`photo_pipeline_states.preview_phash64_v1` for the selected revision. Processing
+computes `opencv_phash64_v1` once from the encoded preview during derivative
+creation and publishes it atomically with ready state. Search reads the stored
+hash with its matches and never loads or decodes preview media. pHash remains
+ranking-only among eligible Photos; it does not change the face similarity gate.
+
+Historical rows remain null: no backfill, automatic reprocessing, lazy media
+read or fallback hash. Photos without a hash are excluded before similarity
+ranking, diagnostic eligible counts and result assembly, including the QR result
+union and N. Existing sessions and inventory/media access remain unchanged.
+The four-teaser diversity algorithm remains unchanged.
 
 The typed result returned to `promo` contains, in selected-detection order:
 
@@ -222,7 +228,8 @@ It does not contain a session, global candidate union, selected teaser set,
   while missing/mismatched or other-pipeline assets keep readiness closed with
   no Attempt, inference or processing-state mutation until an operator restart.
 - Candidate fixtures prove threshold inclusion, per-Photo best-match grouping,
-  deterministic ordering and on-demand pHash output without pHash admission.
+  deterministic ordering and stored pHash output without preview reads; null
+  hashes are excluded and zero/full unsigned 64-bit values remain valid.
 - Ownership proof locates the implementation under `processing`, follows only
   accepted `inventory`/`serving_control` projections and finds no transport,
   generic-util, infrastructure, composition-root or foreign-write bypass.

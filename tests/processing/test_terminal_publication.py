@@ -336,6 +336,12 @@ def test_terminal_publication_converges_after_repeat_and_precommit_interruption(
             )
             session.commit()
         normal_terminal = _state_snapshot(engine, normal)
+        with Session(engine) as session:
+            state = session.get(PhotoPipelineState, (normal.photo_id, normal.pipeline_revision_id))
+            assert state.preview_phash64_v1 == f"{normal_derivatives.phash64:016x}"
+        # Independent scenarios must not configure two active serving revisions.
+        _cleanup(engine, object_store, normal)
+        normal = None
 
         interrupted = _fixture(engine, object_store)
         interrupted_derivatives = _creator(object_store).create(
@@ -357,6 +363,9 @@ def test_terminal_publication_converges_after_repeat_and_precommit_interruption(
             )
             session.rollback()
         precommit_snapshot = _state_snapshot(engine, interrupted)
+        with Session(engine) as session:
+            state = session.get(PhotoPipelineState, (interrupted.photo_id, interrupted.pipeline_revision_id))
+            assert state.preview_phash64_v1 is None
         assert precommit_snapshot[0] == "processing"
         assert precommit_snapshot[7] == ()
         assert precommit_snapshot[8:] == ("photo_processing", precommit_snapshot[9])

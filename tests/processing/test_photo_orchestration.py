@@ -31,6 +31,7 @@ from face_moment.processing.derivatives import (
     DerivativeEncoding,
     DerivativeEncodingConfig,
     PrivatePhotoDerivativeCreator,
+    opencv_phash64_v1,
 )
 from face_moment.processing.initial_pending import PhotoPipelineState
 from face_moment.processing.photo_orchestration import PhotoProcessingOrchestrator
@@ -305,7 +306,7 @@ def test_orchestration_uses_only_the_claimed_revision_adapter_and_publishes_read
     assert other.calls == []
     assert state.preview_object_key is not None
     assert state.thumbnail_object_key is not None
-    assert object_store.read(key=state.preview_object_key)
+    assert state.preview_phash64_v1 == f"{opencv_phash64_v1(object_store.read(key=state.preview_object_key)):016x}"
     assert object_store.read(key=state.thumbnail_object_key)
     with Session(engine) as session:
         assert len(
@@ -384,6 +385,7 @@ def test_orchestration_publishes_no_faces_without_derivatives(
 
     state = _state(engine, fixture)
     assert result == state.status == "no_faces"
+    assert state.preview_phash64_v1 is None
     assert (state.preview_object_key, state.thumbnail_object_key) == (None, None)
     assert sface.calls == ["sface"]
     assert buffalo.calls == []
@@ -528,7 +530,13 @@ def test_admitted_exif_coordinates_reach_terminal_publication(
             ),
         ),
     ).process_claimed(photo_id=photo_id, pipeline_revision_id=revision_id)
-    assert decoded_shapes == [expected_pixels.shape]
+    # The original is decoded once; pHash additionally decodes the bounded
+    # encoded preview in grayscale, preserving the exact v1 hash algorithm.
+    assert decoded_shapes == [
+        expected_pixels.shape,
+        (expected_height * 24 // max(expected_width, expected_height),
+         expected_width * 24 // max(expected_width, expected_height)),
+    ]
     assert adapter.calls == ["sface"]
     assert result == ("pending" if out_of_bounds else "ready")
     assert object_store.read(key=staged.key) == original

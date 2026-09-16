@@ -13,6 +13,7 @@ from face_moment.processing.derivatives import (
     DerivativeEncodingConfig,
     PrivatePhotoDerivativeCreator,
     derivative_object_key,
+    opencv_phash64_v1,
 )
 
 
@@ -87,6 +88,7 @@ def test_private_derivative_creation_is_deterministic_and_owner_cleaned() -> Non
             for key in expected_keys
         }
 
+        assert first.phash64 == opencv_phash64_v1(object_store.read(key=first.preview_object_key))
         assert first == second
         assert {first.preview_object_key, first.thumbnail_object_key} == expected_keys
         assert object_store.list_keys(prefix=derivative_prefix) == expected_keys

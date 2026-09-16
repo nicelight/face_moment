@@ -116,6 +116,7 @@ class TerminalPublicationRepository:
         state.status_changed_at = now
         state.searchable_at = now
         state.last_error = None
+        state.preview_phash64_v1 = f"{derivatives.phash64:016x}"
         state.preview_object_key = derivatives.preview_object_key
         state.thumbnail_object_key = derivatives.thumbnail_object_key
         self._finish_processing_operation()
@@ -147,6 +148,7 @@ class TerminalPublicationRepository:
         state.status_changed_at = datetime.now(timezone.utc)
         state.searchable_at = None
         state.last_error = None
+        state.preview_phash64_v1 = None
         state.preview_object_key = None
         state.thumbnail_object_key = None
         self._finish_processing_operation()

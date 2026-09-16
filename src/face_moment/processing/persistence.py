@@ -58,6 +58,7 @@ class CompatiblePhotoMatch:
     pipeline_revision_id: uuid.UUID
     cosine_similarity: float
     preview_object_key: str
+    phash64: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -219,6 +220,7 @@ class ExactCompatibleSearchRepository:
                     "pipeline_revision_id"
                 ),
                 PhotoPipelineState.preview_object_key.label("preview_object_key"),
+                PhotoPipelineState.preview_phash64_v1,
                 func.min(cosine_distance).label("cosine_distance"),
             )
             .select_from(PhotoFace)
@@ -239,12 +241,14 @@ class ExactCompatibleSearchRepository:
                 PhotoPipelineState.pipeline_revision_id == pipeline_revision_id,
                 PhotoPipelineState.status == "ready",
                 PhotoPipelineState.preview_object_key.is_not(None),
+                PhotoPipelineState.preview_phash64_v1.is_not(None),
                 PhotoPipelineState.thumbnail_object_key.is_not(None),
             )
             .group_by(
                 Photo.id,
                 PhotoPipelineState.pipeline_revision_id,
                 PhotoPipelineState.preview_object_key,
+                PhotoPipelineState.preview_phash64_v1,
             )
             .subquery("compatible_scope")
         )
@@ -255,6 +259,7 @@ class ExactCompatibleSearchRepository:
                 scoped.c.pipeline_revision_id,
                 similarity.label("cosine_similarity"),
                 scoped.c.preview_object_key,
+                scoped.c.preview_phash64_v1,
                 func.count().over().label("eligible_photo_count"),
                 func.row_number().over(
                     order_by=(desc(similarity), asc(scoped.c.photo_id))
@@ -277,6 +282,7 @@ class ExactCompatibleSearchRepository:
                 pipeline_revision_id=row.pipeline_revision_id,
                 cosine_similarity=float(row.cosine_similarity),
                 preview_object_key=row.preview_object_key,
+                phash64=int(row.preview_phash64_v1, 16),
             )
             for row in rows
             if float(row.cosine_similarity) >= float(reference_threshold)

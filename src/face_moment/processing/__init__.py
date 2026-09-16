@@ -1,5 +1,6 @@
 """Processing capability seam used by the Foundation proof."""
 
+from face_moment.processing.derivatives import opencv_phash64_v1
 from face_moment.processing.face_engine import FaceEngine, FakeFaceEngine
 from face_moment.processing.initial_pending import InitialPendingRepository
 from face_moment.processing.purge_cleanup import (
@@ -23,7 +24,6 @@ from face_moment.processing.realtime_search import (
     PhotoMatchObservation,
     RealtimeSearchResult,
     RealtimeSearchService,
-    opencv_phash64_v1,
     search_realtime_references,
 )
 from face_moment.processing.serving_revision_guard import (

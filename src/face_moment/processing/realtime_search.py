@@ -5,12 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 import uuid
 
-import cv2
-import numpy as np
-
-from face_moment.processing.derivatives import PrivateDerivativeObjectStore
 from face_moment.processing.persistence import (
-    CompatiblePhotoMatch,
     ExactCompatibleSearchRepository,
 )
 from face_moment.processing.reference_query import (
@@ -55,37 +50,14 @@ class RealtimeSearchResult:
     detections: tuple[DetectionSearchObservation, ...]
 
 
-def opencv_phash64_v1(image_bytes: bytes) -> int:
-    """Compute the deterministic 64-bit OpenCV-compatible pHash value."""
-
-    decoded = cv2.imdecode(
-        np.frombuffer(image_bytes, dtype=np.uint8),
-        cv2.IMREAD_GRAYSCALE,
-    )
-    if decoded is None:
-        raise ValueError("private preview cannot be decoded")
-    resized = cv2.resize(decoded, (32, 32), interpolation=cv2.INTER_AREA)
-    coefficients = np.asarray(
-        cv2.dct(np.asarray(resized, dtype=np.float32))[:8, :8],
-        dtype=np.float32,
-    )
-    average = float(np.mean(coefficients))
-    value = 0
-    for coefficient in coefficients.reshape(-1):
-        value = (value << 1) | int(float(coefficient) > average)
-    return value
-
-
 class RealtimeSearchService:
     """Compose W1 selection with processing-owned exact compatible search."""
 
     def __init__(
         self,
         repository: ExactCompatibleSearchRepository,
-        object_store: PrivateDerivativeObjectStore,
     ) -> None:
         self._repository = repository
-        self._object_store = object_store
 
     def search(
         self,
@@ -104,12 +76,10 @@ class RealtimeSearchService:
             quality_settings=context.quality_settings,
             capture_observations=capture_observations,
         )
-        phash_cache: dict[uuid.UUID, int] = {}
         detections = tuple(
             self._search_detection(
                 context=context,
                 observation=observation,
-                phash_cache=phash_cache,
             )
             for observation in selected
         )
@@ -120,7 +90,6 @@ class RealtimeSearchService:
         *,
         context: RealtimeContext,
         observation: ReferenceQueryObservation,
-        phash_cache: dict[uuid.UUID, int],
     ) -> DetectionSearchObservation:
         query = observation.query
         if query is None:
@@ -150,37 +119,22 @@ class RealtimeSearchService:
             quality_gate_passed=observation.quality_gate_passed,
             rejection_reason=observation.rejection_reason,
             matches=tuple(
-                self._with_phash(match=match, phash_cache=phash_cache)
+                PhotoMatchObservation(
+                    photo_id=match.photo_id,
+                    cosine_similarity=match.cosine_similarity,
+                    preview_object_key=match.preview_object_key,
+                    phash64=match.phash64,
+                )
                 for match in search.matches
             ),
             best_cosine_similarity=search.best_cosine_similarity,
             eligible_photo_count=search.eligible_photo_count,
         )
 
-    def _with_phash(
-        self,
-        *,
-        match: CompatiblePhotoMatch,
-        phash_cache: dict[uuid.UUID, int],
-    ) -> PhotoMatchObservation:
-        phash = phash_cache.get(match.photo_id)
-        if phash is None:
-            phash = opencv_phash64_v1(
-                self._object_store.read(key=match.preview_object_key)
-            )
-            phash_cache[match.photo_id] = phash
-        return PhotoMatchObservation(
-            photo_id=match.photo_id,
-            cosine_similarity=match.cosine_similarity,
-            preview_object_key=match.preview_object_key,
-            phash64=phash,
-        )
-
 
 def search_realtime_references(
     *,
     repository: ExactCompatibleSearchRepository,
-    object_store: PrivateDerivativeObjectStore,
     context: RealtimeContext,
     engine: FaceEngine,
     occurrences: Sequence[ReferenceOccurrence],
@@ -188,7 +142,7 @@ def search_realtime_references(
 ) -> RealtimeSearchResult:
     """Public processing application boundary for one realtime search."""
 
-    return RealtimeSearchService(repository, object_store).search(
+    return RealtimeSearchService(repository).search(
         context=context,
         engine=engine,
         occurrences=occurrences,

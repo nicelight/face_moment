@@ -4,6 +4,21 @@ status: active
 ---
 # Changelog
 
+## 2026-09-16 — Persist preview pHash outside realtime search
+
+Operator-authorized KISS change: compute pHash v1 when creating the preview,
+persist it in the existing Photo/revision state, and load it directly in exact
+search. No backfill or reprocessing of old photos; null hashes exclude a Photo
+from new search results and N. Four-teaser diversity stays unchanged.
+See [Photo Processing](domains/photo-processing.md) and
+[Realtime Search](domains/realtime-search.md). Migration: `0027_preview_phash`.
+Validation: 60 focused processing/Promo/diagnostics tests passed on disposable
+PostgreSQL/MinIO, including migration downgrade/re-upgrade, null/zero/full-range
+hashes, repeated search without media reads and transactional publication.
+Mypy and Python package build passed. Existing runtime/database were not upgraded.
+Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
+
+
 ## [2026-09-16] Подготовлено исправление IP и публичного origin в прокси
 
 - [Public proxy contract](contracts/qr-continuation-api.md#public-proxy-identity-operator-decision-2026-09-16):

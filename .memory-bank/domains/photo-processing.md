@@ -162,11 +162,16 @@ processing records; they never replace or multiply that lineage fact.
 | `status_changed_at` | Required server timestamp of the current transition. |
 | `searchable_at` | Set only when `ready` is published; immutable thereafter. |
 | `last_error` | Nullable bounded operator-safe failure text; never contains credentials, model paths, object keys or traceback payloads. |
+| `preview_phash64_v1` | Nullable 16-character lowercase hexadecimal OpenCV pHash v1 of the encoded preview; version is part of the column name. New ready publications persist it atomically with derivative keys and faces. Historical nulls remain unchanged and are excluded from realtime search. |
 | `preview_object_key`, `thumbnail_object_key` | Nullable private deterministic derivative keys; both are present for `ready`, absent for `no_faces`. |
 
-`ready` is valid only when both derivatives and at least one complete compatible
-face row are publishable. `no_faces` is valid only when the engine completed
-successfully with no faces. `failed` is terminal after the third failed claim.
+`ready` publication requires both derivatives, their preview pHash v1 and at
+least one complete compatible face row. Operator decision, 2026-09-16: migration
+`0027_preview_phash` adds only the nullable hash field and format constraint;
+no existing photos are backfilled or reprocessed. Existing ready status and
+historical processing timestamps stay unchanged; realtime eligibility additionally
+requires the stored hash. `no_faces` has no hash and is valid only when the
+engine completed successfully with no faces. `failed` is terminal after the third failed claim.
 Pending/processing rows and every terminal row remain durable until the owning
 inventory purge explicitly commands processing cleanup.
 

@@ -48,6 +48,28 @@ class PrivatePhotoDerivatives:
 
     preview_object_key: str
     thumbnail_object_key: str
+    phash64: int
+
+
+def opencv_phash64_v1(image_bytes: bytes) -> int:
+    """Compute the deterministic 64-bit OpenCV-compatible pHash value."""
+
+    decoded = cv2.imdecode(
+        np.frombuffer(image_bytes, dtype=np.uint8),
+        cv2.IMREAD_GRAYSCALE,
+    )
+    if decoded is None:
+        raise ValueError("private preview cannot be decoded")
+    resized = cv2.resize(decoded, (32, 32), interpolation=cv2.INTER_AREA)
+    coefficients = np.asarray(
+        cv2.dct(np.asarray(resized, dtype=np.float32))[:8, :8],
+        dtype=np.float32,
+    )
+    average = float(np.mean(coefficients))
+    value = 0
+    for coefficient in coefficients.reshape(-1):
+        value = (value << 1) | int(float(coefficient) > average)
+    return value
 
 
 class InvalidPrivatePhotoError(ValueError):
@@ -102,10 +124,9 @@ class PrivatePhotoDerivativeCreator:
             pipeline_revision_id=pipeline_revision_id,
             artifact_kind=_THUMBNAIL_KIND,
         )
-        self._object_store.put(
-            key=preview_key,
-            body=self._encode(original, self._encoding.preview),
-        )
+        preview_bytes = self._encode(original, self._encoding.preview)
+        phash64 = opencv_phash64_v1(preview_bytes)
+        self._object_store.put(key=preview_key, body=preview_bytes)
         self._object_store.put(
             key=thumbnail_key,
             body=self._encode(original, self._encoding.thumbnail),
@@ -113,6 +134,7 @@ class PrivatePhotoDerivativeCreator:
         return PrivatePhotoDerivatives(
             preview_object_key=preview_key,
             thumbnail_object_key=thumbnail_key,
+            phash64=phash64,
         )
 
     @staticmethod

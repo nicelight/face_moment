@@ -373,7 +373,7 @@ def _admit_realtime_attempt(
             execution = RealtimeAttemptExecution(outcome="no_proposals")
         else:
             adapter = state.get("model_adapter")
-            if adapter is None or "object_store" not in state:
+            if adapter is None:
                 repository.mark_internal_failure(attempt)
                 execution = RealtimeAttemptExecution(outcome="internal_failure")
             else:
@@ -382,7 +382,6 @@ def _admit_realtime_attempt(
                 def process_search() -> RealtimeSearchResult:
                     return search_realtime_references(
                         repository=ExactCompatibleSearchRepository(database_session),
-                        object_store=state["object_store"],
                         context=context,
                         engine=engine,
                         occurrences=_reference_occurrences(payload),

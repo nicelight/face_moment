@@ -18,6 +18,10 @@ class PhotoPipelineState(Base):
     __tablename__ = "photo_pipeline_states"
     __table_args__ = (
         CheckConstraint(
+            "preview_phash64_v1 ~ '^[0-9a-f]{16}$'",
+            name="ck_photo_pipeline_states_preview_phash64_v1",
+        ),
+        CheckConstraint(
             "status IN ('pending', 'processing', 'ready', 'no_faces', 'failed')",
             name="ck_photo_pipeline_states_status",
         ),
@@ -51,6 +55,7 @@ class PhotoPipelineState(Base):
     )
     last_error: Mapped[str | None] = mapped_column(String(length=512), nullable=True)
     preview_object_key: Mapped[str | None] = mapped_column(String, nullable=True)
+    preview_phash64_v1: Mapped[str | None] = mapped_column(String(16), nullable=True)
     thumbnail_object_key: Mapped[str | None] = mapped_column(String, nullable=True)
 
 

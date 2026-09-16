@@ -92,16 +92,6 @@ class _SelectionEngine:
         )
 
 
-class _RecordingObjectStore:
-    def __init__(self, delegate: PrivateObjectStore) -> None:
-        self.delegate = delegate
-        self.read_calls: list[str] = []
-
-    def read(self, *, key: str) -> bytes:
-        self.read_calls.append(key)
-        return self.delegate.read(key=key)
-
-
 @pytest.fixture
 def disposable_realtime_search(
     monkeypatch: pytest.MonkeyPatch,
@@ -267,6 +257,7 @@ def _add_photo(
     state_status: str = "ready",
     has_preview: bool = True,
     add_second_face: bool = False,
+    phash64: int | None = 2**64 - 1,
 ) -> tuple[uuid.UUID, str]:
     key = f"{prefix}{marker}.jpg"
     photo = Photo(
@@ -291,6 +282,7 @@ def _add_photo(
         status=state_status,
         preview_object_key=key if has_preview else None,
         thumbnail_object_key=key if has_preview else None,
+        preview_phash64_v1=None if phash64 is None else f"{phash64:016x}",
     )
     session.add(state)
     session.add(
@@ -376,8 +368,9 @@ def test_exact_search_filters_scope_groups_faces_and_orders_ties(
     assert all(match.preview_object_key.startswith(fixture.prefix) for match in matches)
 
 
-def test_service_searches_accepted_detections_independently_and_caches_phash(
+def test_service_searches_accepted_detections_with_stored_phash_without_media_reads(
     disposable_realtime_search: _Fixture,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fixture = disposable_realtime_search
     engine = _SelectionEngine(
@@ -389,27 +382,35 @@ def test_service_searches_accepted_detections_independently_and_caches_phash(
             2: _embedding(0.0, 1.0),
         },
     )
+    def fail_read(*args, **kwargs):
+        pytest.fail("search must not read preview bytes")
+
+    monkeypatch.setattr(PrivateObjectStore, "read", fail_read)
     with Session(fixture.engine) as session:
         repository = ExactCompatibleSearchRepository(session)
-        object_store = _RecordingObjectStore(fixture.object_store)
-        result = RealtimeSearchService(repository, object_store).search(
+        result = RealtimeSearchService(repository).search(
             context=_context(fixture),
             engine=engine,
             occurrences=_occurrences(3),
         )
 
-    assert engine.inspect_calls == [0, 1, 2]
-    assert engine.prepare_calls == [0, 1]
+        repeated = RealtimeSearchService(repository).search(
+            context=_context(fixture), engine=engine, occurrences=_occurrences(3),
+        )
+        assert repeated == result
+
+    assert engine.inspect_calls == [0, 1, 2] * 2
+    assert engine.prepare_calls == [0, 1] * 2
     assert [item.occurrence_index for item in result.detections] == [0, 1, 2]
     assert [len(item.matches) for item in result.detections] == [2, 2, 0]
     assert result.detections[2].quality_gate_passed is False
     assert result.detections[2].rejection_reason == "low_quality"
     assert result.detections[0].matches[0].phash64 == result.detections[1].matches[0].phash64
-    assert len(object_store.read_calls) == 2
+    assert result.detections[0].matches[0].phash64 == 2**64 - 1
 
 
 def test_phash_is_deterministic_and_rejects_invalid_preview() -> None:
-    from face_moment.processing.realtime_search import opencv_phash64_v1
+    from face_moment.processing.derivatives import opencv_phash64_v1
 
     payload = _jpeg(120)
     assert opencv_phash64_v1(payload) == opencv_phash64_v1(payload)
@@ -429,15 +430,13 @@ def test_rejected_best_score_is_observed_without_admitting_or_loading_photo(
     )
     with Session(fixture.engine) as session:
         repository = ExactCompatibleSearchRepository(session)
-        object_store = _RecordingObjectStore(fixture.object_store)
-        result = RealtimeSearchService(repository, object_store).search(
+        result = RealtimeSearchService(repository).search(
             context=_context(fixture), engine=engine, occurrences=_occurrences(1),
         )
         observation = result.detections[0]
         assert observation.matches == ()
         assert observation.best_cosine_similarity == pytest.approx(2 ** -0.5)
         assert observation.eligible_photo_count == 2  # Photos, not face rows.
-        assert object_store.read_calls == []
         empty = repository.search_with_diagnostics(
             spa_id=fixture.spa_id, visit_date=date(2000, 1, 1),
             pipeline_revision_id=fixture.revision.id,
@@ -471,3 +470,65 @@ def test_manual_search_range_includes_both_endpoints_and_excludes_other_days(dis
         assert {session.get(Photo, photo_id).visit_date for photo_id in ids} == {
             date(2026, 8, 21), date(2026, 8, 22), date(2026, 8, 23),
         }
+
+
+def test_search_skips_missing_phash_but_accepts_zero(disposable_realtime_search: _Fixture) -> None:
+    fixture = disposable_realtime_search
+    with Session(fixture.engine) as session:
+        missing_id, _ = _add_photo(
+            session, marker="legacy-no-phash", spa_id=fixture.spa_id,
+            revision_id=fixture.revision.id, embedding=_embedding(1.0, 0.0),
+            prefix=fixture.prefix, phash64=None,
+        )
+        zero_id, _ = _add_photo(
+            session, marker="zero-phash", spa_id=fixture.spa_id,
+            revision_id=fixture.revision.id, embedding=_embedding(1.0, 0.0),
+            prefix=fixture.prefix, phash64=0,
+        )
+        result = ExactCompatibleSearchRepository(session).search_with_diagnostics(
+            spa_id=fixture.spa_id, visit_date=date(2026, 8, 22),
+            pipeline_revision_id=fixture.revision.id,
+            query_embedding=_embedding(1.0, 0.0), reference_threshold=0.75,
+        )
+        assert result.eligible_photo_count == 3
+        assert missing_id not in {match.photo_id for match in result.matches}
+        assert next(match for match in result.matches if match.photo_id == zero_id).phash64 == 0
+        assert session.get(PhotoPipelineState, (missing_id, fixture.revision.id)).preview_phash64_v1 is None
+
+
+def test_phash_migration_preserves_legacy_rows_without_backfill(
+    disposable_realtime_search: _Fixture,
+) -> None:
+    from sqlalchemy import text
+    from sqlalchemy.exc import IntegrityError
+
+    fixture = disposable_realtime_search
+    config = Config("alembic.ini")
+    alembic_command.downgrade(config, "0026_advertising_playlists")
+    snapshot = text(
+        "SELECT photo_id, pipeline_revision_id, status, preview_object_key, "
+        "thumbnail_object_key, searchable_at, status_changed_at "
+        "FROM face_moment.photo_pipeline_states ORDER BY photo_id"
+    )
+    with fixture.engine.connect() as connection:
+        before = connection.execute(snapshot).all()
+    alembic_command.upgrade(config, "0027_preview_phash")
+    with fixture.engine.connect() as connection:
+        assert connection.execute(snapshot).all() == before
+        assert connection.execute(text(
+            "SELECT count(*) FROM face_moment.photo_pipeline_states "
+            "WHERE preview_phash64_v1 IS NOT NULL"
+        )).scalar_one() == 0
+    with Session(fixture.engine) as session:
+        result = ExactCompatibleSearchRepository(session).search_with_diagnostics(
+            spa_id=fixture.spa_id, visit_date=date(2026, 8, 22),
+            pipeline_revision_id=fixture.revision.id,
+            query_embedding=_embedding(1.0, 0.0), reference_threshold=0.75,
+        )
+        assert result.matches == ()
+        assert result.eligible_photo_count == 0
+        assert result.best_cosine_similarity is None
+    with pytest.raises(IntegrityError), fixture.engine.begin() as connection:
+        connection.execute(text(
+            "UPDATE face_moment.photo_pipeline_states SET preview_phash64_v1 = 'invalid'"
+        ))

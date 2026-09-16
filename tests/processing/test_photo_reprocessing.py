@@ -32,6 +32,7 @@ def test_reprocessed_ready_photo_search_preserves_admission_revision() -> None:
             new_state = InitialPendingRepository(session).create_initial_pending(
                 photo_id=old_state.photo_id, pipeline_revision_id=new.id)
             new_state.status = 'ready'
+            new_state.preview_phash64_v1 = 'ffffffffffffffff'
             new_state.preview_object_key = 'new/preview.jpg'
             new_state.thumbnail_object_key = 'new/thumbnail.jpg'
             session.add(PhotoFace(photo_id=old_state.photo_id,
