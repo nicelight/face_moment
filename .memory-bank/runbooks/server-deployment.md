@@ -444,6 +444,34 @@ verify upload → completed processing → kiosk match → QR opened on a phone 
 mobile data. Check the selected venue/date and phone media access. Do not count
 an empty-database health check as successful end-to-end acceptance.
 
+## Staff environment and display-card release — 2026-09-16
+
+Application commit `68da753` is deployed on `facecentral`, including the
+`6a53450` backend startup staff-password synchronization and the clickable
+display cards. Running application image:
+`sha256:8404ea90bc5456fd0e7a2e65cb7c7011bf884c60ef629b73bd09f203fc89cbb3`.
+The three operator-supplied `STAFF_*_PASSWORD` values are in the server's
+mode-600 `.env` and are passed only to backend. They replace the initial
+generated operator credential; the obsolete workstation credential file was
+removed. No secret values are recorded in Git or this runbook.
+
+This release changes startup credential application and backend environment,
+so it was reviewed separately from the presentation-only update procedure.
+No schema, migration, model or storage changes were present; the database
+already contained the three explicitly synchronized accounts. The application
+image was rebuilt and application roles recreated with `--no-deps --wait`.
+Migration and venue initialization were not rerun; retention remained active.
+
+Live acceptance passed for `photographer`, `operator` and `developer`: login,
+correct role, session survival across a backend restart, and logout (`204`).
+Staff role/activity/password-change timestamps stayed unchanged across the
+restart. Authenticated display-card HTML contains `/client1`, `target=_blank`
+and `rel="noopener noreferrer"`. Public root serves the updated selfie page,
+`/client1` serves the kiosk, and public health succeeds. Detailed verification:
+[staff environment release evidence](../../.protocols/staff-credential-sync-2026-09-16/release-verification.md).
+Later documentation-only commits may advance the checkout without rebuilding
+this application image.
+
 ## Failed release and rollback limits
 
 Stop at the first failed migration/initializer/health check; preserve volumes
