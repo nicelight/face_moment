@@ -4,6 +4,31 @@ status: active
 ---
 # Changelog
 
+## [2026-09-16] Подготовлено исправление IP и публичного origin в прокси
+
+- [Public proxy contract](contracts/qr-continuation-api.md#public-proxy-identity-operator-decision-2026-09-16):
+  VPS сохраняет публичный Host и задаёт XFF из адреса посетителя; внутренний
+  Caddy принимает `face.natureonzoom.win`, доверяет только заданному FRP peer
+  и передаёт один проверенный IP приложению на всех маршрутах.
+- Старый hostname сохранён для WSS/SSH control channel; Cloudflare остаётся
+  DNS-only. Backend rate limit и Origin-проверка не ослаблялись.
+- Настройка `FACE_MOMENT_FRP_PROXY_IP` отделена от доверенного IP edge для
+  Uvicorn. Перед деплоем нужно заменить placeholder `192.0.2.1` фактическим
+  адресом FRP/Docker ingress, как описано в существующем runbook.
+- Изолированный тест двух Caddy подтвердил публичный origin, отдельные лимиты
+  посетителей, отказ поддельному XFF и сохранение localhost-доступа.
+  Изменения подготовлены локально; на серверах ничего не применялось.
+
+## [2026-09-16] Проверен SSH-доступ пользователя приложения
+
+- [Runbook входа и восстановления](runbooks/display-and-central-restart.md#ssh-access-to-the-central-server):
+  для деплоя использовать `ssh -l facemoment facecentral`, каталог
+  `/opt/face-moment`. SSH-ключ рабочей машины добавлен оператором; вход,
+  группы `docker`/`sudo` и доступ к Docker проверены. Обычный alias продолжает
+  входить под `face`; системные sudo-команды требуют интерактивного пароля.
+- Доступ готов, но актуальное развёртывание приложения ещё предстоит:
+  старый checkout и частично работающие контейнеры не считаются готовым deploy.
+
 ## [2026-09-16] KISS-восстановление клиента после зависшего realtime-запроса
 
 - [Realtime contract](contracts/realtime-attempt-api.md#bounded-client-waiting-and-realtime-io):

@@ -200,11 +200,11 @@ def test_staff_session_root_paths_preserve_https_edge_routing() -> None:
 
     assert (
         "handle /api/staff/* { reverse_proxy backend:8000 { "
-        "header_up X-Forwarded-For {remote_host} } }"
+        "header_up X-Forwarded-For {client_ip} } }"
     ) in normalized_caddyfile
     assert (
         "handle /staff/login { reverse_proxy backend:8000 { "
-        "header_up X-Forwarded-For {remote_host} } }"
+        "header_up X-Forwarded-For {client_ip} } }"
     ) in normalized_caddyfile
     assert "handle_path /api/staff/" not in caddyfile
     assert "handle_path /staff/login" not in caddyfile

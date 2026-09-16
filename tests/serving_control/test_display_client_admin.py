@@ -45,7 +45,7 @@ def test_admin_page_has_exact_same_origin_edge_handler() -> None:
     assert (
         "\t\thandle /staff/display-clients {\n"
         "\t\t\treverse_proxy backend:8000 {\n"
-        "\t\t\t\theader_up X-Forwarded-For {remote_host}\n"
+        "\t\t\t\theader_up X-Forwarded-For {client_ip}\n"
         "\t\t\t}\n"
         "\t\t}"
     ) in caddyfile

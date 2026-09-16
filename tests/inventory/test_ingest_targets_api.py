@@ -153,7 +153,7 @@ def test_authenticated_ingest_targets_are_owner_filtered_and_redacted(
     normalized_caddyfile = " ".join(caddyfile.split())
     assert (
         "handle /api/inventory/* { reverse_proxy backend:8000 { "
-        "header_up X-Forwarded-For {remote_host} } }"
+        "header_up X-Forwarded-For {client_ip} } }"
     ) in normalized_caddyfile
     assert "handle_path /api/inventory/" not in caddyfile
 

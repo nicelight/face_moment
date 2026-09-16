@@ -166,6 +166,10 @@ services:
   edge:
     image: caddy:2.10.0-alpine
     restart: unless-stopped
+    environment:
+      FACE_MOMENT_PUBLIC_HOST: "${FACE_MOMENT_PUBLIC_HOST:-face.natureonzoom.win}"
+      # Fail closed until the actual FRP peer seen inside Caddy is confirmed.
+      FACE_MOMENT_FRP_PROXY_IP: "${FACE_MOMENT_FRP_PROXY_IP:-192.0.2.1}"
     ports:
       - "127.0.0.1:${FACE_MOMENT_EDGE_PORT:-8443}:8443"
     volumes:

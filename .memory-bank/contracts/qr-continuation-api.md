@@ -192,6 +192,37 @@ No expiry scheduler, stored expired status or cleanup job is introduced.
 
 ## Verification Targets
 
+### Public proxy identity (operator decision 2026-09-16)
+
+The public origin is `https://face.natureonzoom.win`, using Cloudflare DNS-only.
+The VPS Caddy overwrites incoming X-Forwarded-For with its direct visitor IP
+and explicitly preserves HTTP Host across the HTTPS/FRP hop. TLS SNI for that
+internal hop remains `localhost`; it is independent of public HTTP Host.
+The legacy `face-time.moment-studio.ru` hostname remains available for FRP's
+existing WSS control channel, so changing the application origin does not
+require changing the management tunnel or SSH access.
+
+The inner Caddy accepts the public hostname and localhost. It trusts only the
+explicitly configured `FACE_MOMENT_FRP_PROXY_IP`, parses the forwarding chain
+right-to-left, and sends one resolved `{client_ip}` to backend/realtime on all
+routes, including legacy prefixed routes. Uvicorn still trusts only the inner
+edge IP (`FACE_MOMENT_TRUSTED_PROXY_IP`). These two settings have different
+owners/hops and must not be confused. The default FRP peer `192.0.2.1` is a
+non-routable placeholder: deployment must identify and configure the real
+Docker ingress peer before public acceptance; never trust all private ranges.
+
+The phone rate limiter and same-origin check are unchanged. Different public
+IPs receive separate budgets; visitors behind one NAT still share a budget.
+Cloudflare orange-cloud proxying is not supported by this configuration: it
+would introduce another trusted hop requiring a separate configuration change.
+
+`tests/infrastructure/test_proxy_forwarding.py` exercises both real Caddy hops
+with isolated TLS and the installed Uvicorn middleware/phone rate limiter:
+public origin preservation, independent 60-request budgets, rejected XFF
+spoofing at both trust boundaries, and retained local access.
+
+### API checks
+
 - Exact-path tests cover ticket exchange, cookie attributes, shell/session/
   activity/media shapes, safe top-level redirects, strict validation, standard
   statuses and all cache/referrer headers.

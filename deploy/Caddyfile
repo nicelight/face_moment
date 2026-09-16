@@ -1,4 +1,12 @@
-https://localhost:8443 {
+{
+	servers {
+		# Set to the observed FRP/Docker peer at deployment; default trusts nobody real.
+		trusted_proxies static {$FACE_MOMENT_FRP_PROXY_IP:192.0.2.1}
+		trusted_proxies_strict
+	}
+}
+
+https://localhost:8443, https://{$FACE_MOMENT_PUBLIC_HOST:face.natureonzoom.win}:8443 {
 	tls internal
 
 	@inventory_photo_upload_without_length {
@@ -24,13 +32,13 @@ https://localhost:8443 {
 		@site_pages path /staff /site /display
 		handle @site_pages {
 			reverse_proxy backend:8000 {
-				header_up X-Forwarded-For {remote_host}
+				header_up X-Forwarded-For {client_ip}
 			}
 		}
 
 		handle /api/staff/* {
 			reverse_proxy backend:8000 {
-				header_up X-Forwarded-For {remote_host}
+				header_up X-Forwarded-For {client_ip}
 			}
 		}
 
@@ -40,7 +48,7 @@ https://localhost:8443 {
 				max_size 2050MiB
 			}
 			reverse_proxy backend:8000 {
-				header_up X-Forwarded-For {remote_host}
+				header_up X-Forwarded-For {client_ip}
 			}
 		}
 
@@ -49,7 +57,7 @@ https://localhost:8443 {
 				max_size 101MiB
 			}
 			reverse_proxy backend:8000 {
-				header_up X-Forwarded-For {remote_host}
+				header_up X-Forwarded-For {client_ip}
 			}
 		}
 
@@ -58,77 +66,85 @@ https://localhost:8443 {
 				max_size 20MiB
 			}
 			reverse_proxy realtime:8002 {
-				header_up X-Forwarded-For {remote_host}
+				header_up X-Forwarded-For {client_ip}
 			}
 		}
 
 		handle @backend_canonical {
 			reverse_proxy backend:8000 {
-				header_up X-Forwarded-For {remote_host}
+				header_up X-Forwarded-For {client_ip}
 			}
 		}
 
 		handle @phone_continuation {
 			reverse_proxy backend:8000 {
-				header_up X-Forwarded-For {remote_host}
+				header_up X-Forwarded-For {client_ip}
 				header_up X-Forwarded-Proto {http.request.scheme}
 			}
 		}
 
 		handle /api/inventory/* {
 			reverse_proxy backend:8000 {
-				header_up X-Forwarded-For {remote_host}
+				header_up X-Forwarded-For {client_ip}
 			}
 		}
 
 		handle /staff/login {
 			reverse_proxy backend:8000 {
-				header_up X-Forwarded-For {remote_host}
+				header_up X-Forwarded-For {client_ip}
 			}
 		}
 
 		@staff_diagnostics path /staff/server-events /staff/attempts /staff/attempts/*
 		handle @staff_diagnostics {
 			reverse_proxy backend:8000 {
-				header_up X-Forwarded-For {remote_host}
+				header_up X-Forwarded-For {client_ip}
 			}
 		}
 
 		handle /staff/photo-upload {
 			reverse_proxy backend:8000 {
-				header_up X-Forwarded-For {remote_host}
+				header_up X-Forwarded-For {client_ip}
 			}
 		}
 
 		handle /staff/processing-health {
 			reverse_proxy backend:8000 {
-				header_up X-Forwarded-For {remote_host}
+				header_up X-Forwarded-For {client_ip}
 			}
 		}
 
 		handle /staff/display-clients {
 			reverse_proxy backend:8000 {
-				header_up X-Forwarded-For {remote_host}
+				header_up X-Forwarded-For {client_ip}
 			}
 		}
 
 		handle /client/* {
-			reverse_proxy backend:8000
+			reverse_proxy backend:8000 {
+				header_up X-Forwarded-For {client_ip}
+			}
 		}
 
 		handle / {
-			reverse_proxy backend:8000
+			reverse_proxy backend:8000 {
+				header_up X-Forwarded-For {client_ip}
+			}
 		}
 
 		handle_path /backend/* {
-			reverse_proxy backend:8000
+			reverse_proxy backend:8000 {
+				header_up X-Forwarded-For {client_ip}
+			}
 		}
 
 		handle_path /realtime/* {
 			request_body {
 				max_size 20MiB
 			}
-			reverse_proxy realtime:8002
+			reverse_proxy realtime:8002 {
+				header_up X-Forwarded-For {client_ip}
+			}
 		}
 
 		respond /healthz 200

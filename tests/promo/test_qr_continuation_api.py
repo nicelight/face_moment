@@ -301,7 +301,7 @@ def test_exact_routes_settings_and_forwarded_client_boundary_are_registered(
     caddy = (ROOT / "deploy" / "Caddyfile").read_text(encoding="utf-8")
     assert "@phone_continuation path /q /phone /api/phone/*" in caddy
     assert "handle @phone_continuation" in caddy
-    assert "header_up X-Forwarded-For {remote_host}" in caddy
+    assert "header_up X-Forwarded-For {client_ip}" in caddy
     assert "header_up X-Forwarded-Proto {http.request.scheme}" in caddy
 
 

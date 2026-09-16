@@ -314,10 +314,10 @@ def live_edge(monkeypatch: pytest.MonkeyPatch) -> Iterator[_LiveEdge]:
             "\tauto_https disable_redirects\n"
             "\tskip_install_trust\n"
             "\tdefault_bind 127.0.0.1\n"
-            "}\n\n"
-            + config
+            + config.removeprefix("{\n")
         )
         config = config.replace("https://localhost:8443", f"https://localhost:{edge_port}")
+        config = config.replace(", https://{$FACE_MOMENT_PUBLIC_HOST:face.natureonzoom.win}:8443", "")
         config = config.replace("backend:8000", f"127.0.0.1:{backend_port}")
         config = config.replace(
             "realtime:8002",

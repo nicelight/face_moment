@@ -51,7 +51,8 @@ def test_edge_has_only_the_existing_backend_as_client_origin() -> None:
     assert "handle /client/*" in caddy
     assert "handle /" in caddy
     assert caddy.count("reverse_proxy backend:8000") >= 8
-    assert caddy.count("https://") == 1
+    assert caddy.count("https://") == 2
+    assert "https://localhost:8443, https://{$FACE_MOMENT_PUBLIC_HOST:face.natureonzoom.win}:8443 {" in caddy
     assert "https://localhost:8443" in caddy
     assert "http://" not in caddy
     assert "websocket" not in caddy.lower()

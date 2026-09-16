@@ -224,7 +224,7 @@ def test_release_edge_routes_server_event_and_existing_ft008_paths() -> None:
     assert (
         "handle @staff_diagnostics {\n"
         "\t\t\treverse_proxy backend:8000 {\n"
-        "\t\t\t\theader_up X-Forwarded-For {remote_host}\n"
+        "\t\t\t\theader_up X-Forwarded-For {client_ip}\n"
         "\t\t\t}\n"
         "\t\t}"
     ) in caddyfile
