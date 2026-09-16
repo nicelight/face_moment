@@ -206,6 +206,18 @@ to the existing detector and reuses the configuration for the resulting Promo.
 
 #### Staff площадка names
 
+Operator addition 2026-09-16: `/staff/spas` includes «Добавить площадку» with
+name and IANA timezone (default Asia/Novosibirsk), submit and cancel. `POST
+/api/serving/spas` accepts exactly `{name, timezone}`, requires operator/developer
+session and CSRF, and returns 201 with spa_id/name/timezone and no-store.
+The server resolves the shared eligible revision; model selection is not an
+input. Invalid fields/name/timezone return 422, unavailable/conflicting shared
+revision 409, missing session 401, wrong role/CSRF 403. Creation and independent
+reference settings commit together: today mode, detector defaults .9/.5,
+similarity .38, min quality .5, quality settings version 1. Existing venues and
+tokens stay unchanged. Screen provisioning is not part of this form.
+The edge must forward the exact `/api/serving/spas` path to backend.
+
 Operator correction 2026-09-11: `GET /staff/spas` is the separate площадка
 list and name-editing page for active operators and developers. Both this
 page and `/api/serving/spas/*/name` must be forwarded unchanged by the HTTPS

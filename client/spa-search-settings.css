@@ -24,4 +24,7 @@
 .fm-detector-value label { flex: 1; min-width: 7rem; }
 .fm-spa-settings > summary { cursor: pointer; padding-block: .5rem; color: var(--fm-accent); }
 .fm-spa-settings > summary:focus-visible { outline: 2px solid var(--fm-accent); outline-offset: 3px; }
+.fm-staff .fm-spa-create { max-width: 32rem; margin-block: 1rem; }
+.fm-staff .fm-spa-create[hidden] { display: none; }
+.fm-staff [data-show-spa-create] { margin-bottom: 1rem; }
 @media (prefers-reduced-motion: reduce) { .fm-search-toggle input::after { transition: none; } }

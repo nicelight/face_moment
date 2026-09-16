@@ -4,7 +4,7 @@ from collections.abc import Callable, Sequence
 from datetime import date, datetime, timezone
 from html import escape
 import uuid
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, available_timezones
 
 from fastapi import Cookie, FastAPI, Header, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field, StrictBool
@@ -25,6 +25,7 @@ from face_moment.serving_control.active_search_date import (
     list_active_search_date_spas,
     read_active_search_date,
     rename_spa,
+    create_spa,
     update_active_search_date,
     SearchDatesRecord,
     read_search_dates,
@@ -40,6 +41,13 @@ from face_moment.serving_control.display_client_access import DisplayClientNotFo
 from face_moment.serving_control.detector_thresholds import DetectorKind, update_detector_threshold
 from face_moment.serving_control.similarity_threshold import read_similarity_threshold, save_similarity_threshold
 from face_moment.serving_control.realtime_context import CalibrationRecommendationConflictError, CalibrationServingSnapshot
+from face_moment.serving_control.ingest_target import CommittedServingTargetUnavailableError, IneligibleIngestTargetError
+
+
+class SpaCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str = Field(strict=True, min_length=1, max_length=255)
+    timezone: str = Field(strict=True, min_length=1, max_length=255)
 
 
 class SimilarityThresholdRequest(BaseModel):
@@ -154,6 +162,30 @@ def register_display_client_admin_routes(
 def register_active_search_date_routes(
     app: FastAPI, *, session_factory: Callable[[], Session]
 ) -> None:
+    @app.post("/api/serving/spas")
+    def create_spa_route(
+        payload: SpaCreateRequest,
+        fm_staff_session: str | None = Cookie(default=None),
+        fm_staff_csrf: str | None = Cookie(default=None),
+        x_csrf_token: str | None = Header(default=None),
+    ) -> JSONResponse:
+        with _database_session(session_factory) as database_session:
+            try:
+                venue = create_spa(database_session, name=payload.name, timezone=payload.timezone,
+                    session_token=fm_staff_session, csrf_cookie_token=fm_staff_csrf,
+                    csrf_header_token=x_csrf_token)
+                database_session.commit()
+            except InvalidSessionError as error:
+                raise HTTPException(status_code=401) from error
+            except (CsrfValidationError, ActiveSearchDateAccessDeniedError) as error:
+                raise HTTPException(status_code=403) from error
+            except (CommittedServingTargetUnavailableError, IneligibleIngestTargetError) as error:
+                raise HTTPException(status_code=409, detail="Общая модель недоступна или настройки площадок противоречат друг другу.") from error
+            except ValueError as error:
+                raise HTTPException(status_code=422, detail="Проверьте название и часовой пояс площадки.") from error
+        return JSONResponse({"spa_id": str(venue.spa_id), "name": venue.name, "timezone": venue.timezone},
+            status_code=201, headers={"Cache-Control": "no-store"})
+
     @app.get("/api/serving/spas/{spa_id}/similarity-threshold")
     def read_similarity_threshold_route(
         spa_id: uuid.UUID, fm_staff_session: str | None = Cookie(default=None),
@@ -463,6 +495,8 @@ def _search_dates_response(record: SearchDatesRecord) -> JSONResponse:
 
 
 def _spa_admin_page_html(spas: Sequence[ActiveSearchDateSpa]) -> str:
+    timezone_options = "".join(f'<option value="{escape(zone, quote=True)}">{escape(zone)}</option>'
+        for zone in sorted(available_timezones()))
     cards = "".join(
         f'''<article class="fm-device-card"><h2 data-spa-title>{escape(spa.name)}</h2>
 <details class="fm-spa-settings"><summary>Настройки площадки</summary>
@@ -476,7 +510,17 @@ def _spa_admin_page_html(spas: Sequence[ActiveSearchDateSpa]) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Площадки</title>
 <link rel="stylesheet" href="/client/spa-search-settings.css">
 <script type="module" src="/client/spa-search-settings.js"></script></head><body>
-<main><h1>Площадки</h1><div class="fm-device-list">{cards}</div></main></body></html>'''
+<main><h1>Площадки</h1>
+<button type="button" data-show-spa-create aria-expanded="false" aria-controls="spa-create">Добавить площадку</button>
+<section id="spa-create" class="fm-device-card fm-spa-create" hidden>
+<h2>Новая площадка</h2><form data-spa-create>
+<label>Название площадки<input name="name" required maxlength="255" autocomplete="off"></label>
+<label>Часовой пояс<input name="timezone" required maxlength="255" value="Asia/Novosibirsk" list="spa-timezones" autocomplete="off"></label>
+<datalist id="spa-timezones">{timezone_options}</datalist>
+<p>Поиск за сегодня, порог сходства 0.38. Настройки можно изменить после создания.</p>
+<div><button type="submit">Создать площадку</button> <button type="button" data-cancel-spa-create>Отмена</button></div>
+<p role="status" aria-live="polite"></p></form></section>
+<div class="fm-device-list">{cards}</div></main></body></html>'''
 
 
 def _spa_similarity_form(spa: ActiveSearchDateSpa) -> str:

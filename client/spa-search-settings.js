@@ -185,6 +185,52 @@ export async function mountSimilarityThreshold(form) {
   });
 }
 
+export function mountSpaCreate(form) {
+  const section = form.closest('section');
+  const opener = document.querySelector('[data-show-spa-create]');
+  const cancel = form.querySelector('[data-cancel-spa-create]');
+  const submit = form.querySelector('button[type="submit"]');
+  const status = form.querySelector('[role="status"]');
+  opener.addEventListener('click', () => {
+    section.hidden = false;
+    opener.setAttribute('aria-expanded', 'true');
+    form.elements.namedItem('name').focus();
+  });
+  cancel.addEventListener('click', () => {
+    section.hidden = true;
+    form.reset();
+    status.textContent = '';
+    opener.setAttribute('aria-expanded', 'false');
+    opener.focus();
+  });
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (submit.disabled) return;
+    submit.disabled = cancel.disabled = true;
+    status.textContent = 'Создание…';
+    try {
+      const response = await fetch('/api/serving/spas', {
+        method: 'POST', credentials: 'same-origin', cache: 'no-store', headers: csrfHeaders(),
+        body: JSON.stringify({ name: form.elements.namedItem('name').value.trim(),
+          timezone: form.elements.namedItem('timezone').value.trim() }),
+      });
+      if (!response.ok) {
+        const messages = { 401: 'Войдите в аккаунт заново.', 403: 'Нет прав на создание площадки. Обновите страницу.',
+          409: 'Общая модель недоступна. Проверьте настройки приложения.',
+          422: 'Проверьте название и часовой пояс.' };
+        status.textContent = messages[response.status] || 'Не удалось создать площадку. Проверьте список перед повторной попыткой.';
+        return;
+      }
+      window.location.reload();
+    } catch {
+      status.textContent = 'Соединение прервано. Обновите список площадок перед повторной попыткой.';
+    } finally {
+      submit.disabled = cancel.disabled = false;
+    }
+  });
+}
+
+for (const form of document.querySelectorAll('[data-spa-create]')) mountSpaCreate(form);
 for (const form of document.querySelectorAll('[data-similarity-threshold]')) void mountSimilarityThreshold(form);
 for (const form of document.querySelectorAll('[data-spa-search]')) mountSearchDates(form);
 for (const form of document.querySelectorAll('[data-detector-threshold]')) mountDetectorThreshold(form);

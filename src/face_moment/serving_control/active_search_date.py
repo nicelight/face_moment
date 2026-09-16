@@ -13,7 +13,7 @@ from face_moment.platform.auth.sessions import (
     authenticate_unsafe_staff_request,
     get_current_principal,
 )
-from face_moment.serving_control.ingest_target import IngestTargetRepository, Spa
+from face_moment.serving_control.ingest_target import IngestTarget, IngestTargetRepository, Spa
 from face_moment.serving_control.realtime_context import RealtimeContextRepository
 
 
@@ -128,6 +128,28 @@ def update_active_search_date(
         active_visit_date=active_visit_date,
     )
     return _record_for_spa(spa)
+
+
+def create_spa(
+    database_session: Session, *, session_token: str | None,
+    csrf_cookie_token: str | None, csrf_header_token: str | None,
+    name: str, timezone: str,
+) -> IngestTarget:
+    principal = authenticate_unsafe_staff_request(
+        database_session, session_token=session_token,
+        csrf_cookie_token=csrf_cookie_token, csrf_header_token=csrf_header_token,
+    )
+    _authorize(principal.role)
+    repository = IngestTargetRepository(database_session)
+    revision = repository.resolve_committed_serving_revision()
+    venue = repository.configure_spa(name=name, timezone=timezone,
+        serving_pipeline_revision_id=revision.id)
+    RealtimeContextRepository(database_session).provision_reference_settings(
+        spa_id=venue.spa_id, pipeline_code=revision.pipeline_code,
+        reference_threshold=0.38, min_query_face_quality=0.5,
+        quality_settings={"version": 1},
+    )
+    return venue
 
 
 def rename_spa(

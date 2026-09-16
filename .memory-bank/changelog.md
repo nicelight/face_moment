@@ -4,6 +4,18 @@ status: active
 ---
 # Changelog
 
+## [2026-09-16] Создание площадки через админку
+
+- По подтверждению оператора добавлены кнопка, форма названия/часового пояса и
+  POST `/api/serving/spas`. Общая revision назначается сервером; свои настройки
+  поиска создаются в той же транзакции. Права operator/developer и CSRF обязательны.
+- [Контракт](contracts/boundary-map.md#staff-площадка-names): defaults и ошибки.
+  Проверки: `tests/serving_control/test_spa_creation.py` (изолированный PostgreSQL)
+  и `tests/client/test_spa_creation.mjs` (форма, CSRF, повторная отправка, ошибки).
+- 3 PostgreSQL/API и 4 JS проверки прошли, mypy — 106 файлов без ошибок.
+  Применено на локальном стенде: backend restart, Caddy reload. HTTPS форма и
+  POST validation проверены; рабочие площадки/данные не создавались и не менялись.
+
 ## [2026-09-16] Functional multi-venue runtime
 
 - Direct operator request, without a new DevRails queue: aligned product,

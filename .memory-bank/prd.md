@@ -282,6 +282,12 @@ pilot actor or blocker.
 - The admin UI for creating a venue is a separate requested change, not a
   prerequisite for verifying multi-venue runtime on isolated test data.
 
+Operator follow-up 2026-09-16 accepts that separate change: the venues page
+provides «Добавить площадку» with name and timezone, automatically using the
+shared model. New venues receive independent editable defaults (search today,
+similarity .38, detector thresholds .9/.5); no existing settings are copied or
+changed. Operator/developer access and CSRF protection apply.
+
 The remaining search requirements apply independently within each venue:
 
 - **FR-SRCH-02** — Every embedding and face record MUST belong to an immutable
