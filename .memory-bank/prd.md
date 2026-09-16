@@ -429,7 +429,7 @@ Operator addition, 2026-09-10: Configuration provides «Поправить ра�
 photo cards, QR and text box. Text has three font-size presets. «Сохранить
 дизайн» persists the composition in the kiosk browser, applies it to subsequent
 Promo displays and returns to Configuration. See the
-[presentation guide](guides/promo-presentation.md#local-composition-editor).
+[application guide](runbooks/app_guide_ru.md#киоск-promo-и-qr).
 
 The operator also adds an explicit replay button on Advertising for the last
 successful four-photo result and a browser-local display-duration setting in

@@ -95,7 +95,7 @@
     ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
     ".memory-bank/architecture/system-architecture.md",
     ".memory-bank/testing/index.md",
-    ".memory-bank/guides/local-development.md"
+    ".memory-bank/runbooks/local-test-deployment.md"
   ],
   "anti_goals": [
     "Do not change authentication internals, allowed credentials, request/response fields, body limit, geometry limit or metadata policy.",

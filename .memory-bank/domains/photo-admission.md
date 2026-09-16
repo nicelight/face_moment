@@ -122,9 +122,8 @@ boundary; later physical cleanup calls the processing boundary explicitly.
 - Operator decision (2026-09-08): default admission limits are 100 MiB
   compressed, 200,000,000 decoded pixels and 20,000 px on either side, to accept
   full-resolution camera JPEGs without manual downsizing. The edge multipart
-  cap is 101 MiB including overhead; see
-  [local-development.md](../guides/local-development.md#full-resolution-jpeg-uploads)
-  for configuration ownership and validation evidence.
+  cap is 101 MiB including overhead; deployed settings are in
+  [compose.yaml](../../compose.yaml) and [deploy/Caddyfile](../../deploy/Caddyfile).
 - A reliable EXIF capture timestamp is a parseable `DateTimeOriginal` (or
   `DateTimeDigitized` when the former is absent) with a valid explicit offset,
   or a value interpreted in the configured СПА IANA timezone. Invalid,

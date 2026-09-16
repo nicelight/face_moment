@@ -117,7 +117,7 @@ adopt its claim.
 
 ## Realtime Admission Maintenance
 
-Source: [consolidated audit findings 1 and 2](../../../PAPERCUTS/TECHDEBTS/ASTRA-consolidated-review-2026-09-06.md),
+Source: operator-authorized consolidated audit findings 1 and 2,
 explicitly authorized by the operator on 2026-09-06. The baseline task records,
 closure evidence and deferred production tasks are preserved. Two new exact
 feature criteria record only the corrective integration delta.

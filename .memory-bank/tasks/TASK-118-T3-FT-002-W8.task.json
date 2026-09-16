@@ -18,7 +18,6 @@
     "scripts/apply-local-photo-preprocessing.py",
     "src/face_moment/processing/initial_pending.py",
     ".protocols/local-testing/compose-source.yaml",
-    ".memory-bank/guides/local-development.md",
     "tests/processing/test_initial_pending.py"
   ],
   "purpose": "Make the measured preprocessing usable in the authorized local testing runtime while preserving existing admitted Photos and their revision history.",
@@ -74,7 +73,7 @@
     ".memory-bank/domains/realtime-search.md",
     ".memory-bank/domains/calibration.md",
     ".memory-bank/testing/index.md",
-    ".memory-bank/guides/local-development.md"
+    ".memory-bank/runbooks/local-test-deployment.md"
   ],
   "constraints": [
     "Primary outcome owner processing (src/face_moment/processing/) supplies revision/pending operations. The operational local script independently calls serving_control switch_serving_revision and processing owner APIs in sequence; processing MUST NOT call the serving switch. This reuses accepted manual-serving-revision-switch and processing-input-projections boundaries without a new module edge. Pending/revision logic stays in processing; serving decisions stay in serving_control.",

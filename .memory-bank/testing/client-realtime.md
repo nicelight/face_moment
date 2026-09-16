@@ -24,7 +24,7 @@ advertising after the full interval and avoid a new realtime Attempt, original
 display ACK or capture cooldown change. Check saved seconds across reload,
 no-result disabled state, media failure/retry and expired-QR explanation.
 Last-result references stay in page memory only. See
-[presentation behavior](../guides/promo-presentation.md#replay-and-display-seconds).
+[presentation behavior](../runbooks/app_guide_ru.md#киоск-promo-и-qr).
 
 ## Contract Inputs
 

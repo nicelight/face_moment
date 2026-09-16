@@ -19,7 +19,7 @@ status: active
 3. Use annotated links: `[.memory-bank/path](rel-path): короткое описание`.
 4. Atomic docs: one cohesive concern per doc; split by boundary, change cadence,
    consumers, or reuse, not by file length alone.
-5. Duo docs remain valid: `architecture/` (WHAT/WHY) + `guides/` (HOW), cross-link both ways for concepts that use the classic pair model.
+5. Keep operational HOW in `runbooks/`; link from relevant architecture and contracts instead of copying procedures.
 6. C4 layering: L1 product → L2 epics → L3 features → L4 plans/tasks.
 7. Docs First: update MB immediately after finishing a task.
 8. Refactor MB every 5–10 updates (split, merge, archive).

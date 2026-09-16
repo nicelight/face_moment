@@ -166,7 +166,7 @@ sequential even where tasks share a wave.
 ## Buffalo Native Readiness Maintenance
 
 [TASK-114](../TASK-114-T3-FT-002-W6.task.json) owns only `FT-002-AC-009`,
-grounded in the operator-requested [audit finding 5](../../../PAPERCUTS/TECHDEBTS/ASTRA-consolidated-review-2026-09-06.md).
+grounded in the operator-requested audit finding 5.
 The twenty-three completed baseline cards and their proof remain unchanged.
 Its T3/W6 route depends on completed TASK-026/W5, which transitively includes
 TASK-020 and the Foundation gate. T3 follows actual runtime-readiness impact.

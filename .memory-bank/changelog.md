@@ -4,6 +4,15 @@ status: active
 ---
 # Changelog
 
+## 2026-09-16 — Руководство приложения и единый набор runbook'ов
+
+Актуальные действия сотрудников, киоска и телефона собраны в
+[русском руководстве](runbooks/app_guide_ru.md); порядок локального запуска
+остаётся в [локальном runbook](runbooks/local-test-deployment.md). Три файла
+из `guides/` с историческими проверками и описаниями удалены вместе с папкой.
+Ссылки активных контрактов, feature, task cards и навигации перенаправлены
+на действующие runbook'и. Приложение и серверы не менялись.
+
 ## 2026-09-16 — Slower Promo paper entrance
 
 Operator requested a twofold slower appearance of the four Promo photos.
@@ -204,7 +213,7 @@ Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
   busy. Mypy passed for 106 source files. Updated the existing rename test to
   match the current Library venue links.
 - [Verification scope](testing/index.md#functional-multi-venue-operation-ac-27)
-  and [local operation](guides/local-development.md): commands and limits.
+  and [local test deployment](runbooks/local-test-deployment.md).
 - Fresh dependency image build failed its downloaded-package SHA-256 check;
   the check was not bypassed. Packaged runtime verification uses current source
   layered on the previously working local image, with a recorded build limit.
@@ -262,7 +271,7 @@ Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
   включая startup interruption; прежние код и данные оставлены.
 - Применено к локальным контейнерам по разрешению оператора: migration 0025,
   исходники, Caddy, существующий retention timer. Ручной cleanup не запускался.
-  [Повторный запуск и проверки](guides/local-development.md#capture-identity-и-порог-сходства--локальное-применение).
+  [Порядок локального запуска](runbooks/local-test-deployment.md).
 
 ## [2026-09-14] Per-площадка YuNet/BlazeFace controls
 
@@ -283,7 +292,7 @@ Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
   populated migration round-trip and worker snapshot. Two Chromium UI checks
   cover desktop/mobile. Caddy config validation passes. The single existing
   inventory-selector assertion failure is recorded in
-  [session findings](../PAPERCUTS/gpt-6%20__%2009-14-2026%2008.56.md).
+  session findings in the existing PAPERCUTS log.
 - The shared running database/application/edge were not migrated or restarted.
   Rollout requires migration to `0024`, updated backend/worker and Caddy config,
   then a browser refresh. No task statuses or planning revision were changed.
@@ -317,8 +326,7 @@ Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
   content for operator/developer and mutation CSRF rejection. A real Chromium
   session rendered the page successfully; 3 routing/live-Caddy regression tests
   passed, including successful renaming in disposable state.
-- [Routing explanation](guides/local-development.md#пустая-страница-площадок-https-routing),
-  [live browser screenshot](../.tasks/spa-edge/spas-live.png).
+- [Live browser screenshot](../.tasks/spa-edge/spas-live.png).
 
 ## [2026-09-11] Compact single-field time controls
 
@@ -326,7 +334,7 @@ Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
   all staff period forms. Supports `HH:mm` shorthand, keyboard segment adjustment
   and strict 24-hour validation, with no added dependency.
 - Verified: 4 Python checks, 11 browser checks, mypy and visual inspection.
-- [Time control behavior](guides/local-development.md#fixed-24-hour-time-selection).
+- [Current controls](runbooks/app_guide_ru.md#фото-библиотека-и-диагностика).
 
 ## [2026-09-11] Separate площадка administration and administrator access
 
@@ -346,7 +354,7 @@ Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
   timestamp precision remain unchanged. The shared footer identifies UTC+7.
 - Verified: 4 Python checks, 8 browser checks and mypy; local backend restarted
   and current HTTPS page checked successfully.
-- [Display and площадка administration](guides/local-development.md#displayed-timestamps).
+- [Staff date and time display](runbooks/app_guide_ru.md#фото-библиотека-и-диагностика).
 
 ## [2026-09-11] Locale-independent 24-hour time selectors
 
@@ -354,7 +362,7 @@ Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
   no locale-dependent AM/PM input remains. Saved intervals and UTC+7-to-UTC
   conversion are preserved.
 - Verified: 3 Python checks, 7 browser tests and mypy for 97 source files.
-- [Time selection](guides/local-development.md#fixed-24-hour-time-selection).
+- [Time selection](runbooks/app_guide_ru.md#фото-библиотека-и-диагностика).
 
 ## [2026-09-11] Fixed dd.mm.yyyy date selectors
 
@@ -363,7 +371,7 @@ Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
   Invalid dates are rejected; ISO API values and UTC+7 conversion are preserved.
 - Verified: 10 Python checks, 6 browser checks (including calendar/text sync,
   leap date validation and mobile layout), mypy for 97 source files.
-- [Usage and implementation](guides/local-development.md#fixed-date-display-format).
+- [Date selection](runbooks/app_guide_ru.md#фото-библиотека-и-диагностика).
 
 ## [2026-09-11] UTC+7 and calendar/time filters
 
@@ -371,7 +379,7 @@ Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
   Shared staff controls show calendar left/time right in UTC+7; event Severity
   and Component selects include `all` and explanations. Date-only upload and
   search-settings fields use calendars and a UTC+7 today default.
-- [Behavior and runtime defaults](guides/local-development.md#server-timezone-and-staff-datetime-controls),
+- [Current date and time controls](runbooks/app_guide_ru.md#фото-библиотека-и-диагностика),
   [event form contract](contracts/server-event-api.md#staff-filter-controls-operator-update-2026-09-11).
 - Verified: 41 Python checks passed, 5 browser tests passed, mypy passed for
   97 source files. One existing Attempt-role test fails because the common
@@ -399,7 +407,7 @@ Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
 ## [2026-09-10] Quiet kiosk menu and editable screen names
 
 - Added hamburger navigation and editable screen names; Configuration shows
-  the name and last five ID characters. [Usage](guides/promo-presentation.md#guest-screen-and-operator-menu).
+  the name and last five ID characters. [Usage](runbooks/app_guide_ru.md#сотрудники-площадки-и-экраны).
 - Verified: 15 backend tests, mypy, 57 client unit checks, 22 browser tests; local HTTPS identity,
   no-op rename and CSRF rejection passed.
 
@@ -421,7 +429,7 @@ Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
   without another search or display acknowledgement. It does not renew the QR;
   an expired QR has an explicit notice. Last-result references remain in page
   memory, while the seconds preference persists in this browser.
-  See [presentation behavior](guides/promo-presentation.md#replay-and-display-seconds).
+  See [current kiosk behavior](runbooks/app_guide_ru.md#киоск-promo-и-qr).
 - Validation: 57 client unit checks and all 19 browser tests passed, including
   the actual-app replay/duration flow, failed-media retry and absence of a new
   search or duplicate display acknowledgement.
@@ -435,7 +443,7 @@ Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
 - Save persists local viewport-relative geometry and returns to Configuration;
   real Promo results reuse the same renderer and saved design. Cancel preserves
   the prior design, and storage failure keeps the unsaved draft visible.
-  See the [editor guide](guides/promo-presentation.md#local-composition-editor).
+  See the [editor controls](runbooks/app_guide_ru.md#киоск-promo-и-qr).
 - Validation: 55 client unit checks, the existing 17 browser tests and
   the new editor regression passed; mouse interactions and slider fallback
   were independently checked in isolated desktop/mobile browser viewports.
@@ -450,7 +458,7 @@ Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
   fills its allocated square. Wide-screen text clearance was corrected;
   six layout cases plus 1450x833 passed after the final CSS change. The local
   server serves the updated stylesheet. See the
-  [presentation guide](guides/promo-presentation.md).
+  [kiosk guide](runbooks/app_guide_ru.md#киоск-promo-и-qr).
 - Per operator request, the previously selected camera now reopens when the
   same deviceId returns. Other identities still require explicit selection.
 - Bounded safe client diagnostics survive reload using sessionStorage, include
@@ -459,33 +467,29 @@ Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
   Chromium also confirmed retained history rendering after reload.
 - Browser evidence identified certificate distrust as the prior transport
   failure; the next actual Attempt reached the server with `no_proposals`.
-  [Local diagnosis](guides/local-development.md#no-server-connection-notice--2026-09-10)
-  distinguishes TLS, USB recovery and no-face outcomes.
 
 ## [2026-09-09] Native Promo fetch binding
 
 - Bound `Window.fetch` in `PromoDisplayController`; native Chromium configuration
   and ACK calls now work. Added a receiver regression; 53 client tests passed.
-- [Investigation](guides/local-development.md#native-browser-fetch-failure-after-preview-repair)
-  records the prior wrapper-smoke limitation.
 
 ## [2026-09-09] Developer manual threshold control
 
 - Added independent manual threshold input/save/current value to Calibration;
   stale forms are rejected and other settings/history are preserved. Nine
-  disposable HTTP tests cover the route. See [details](guides/local-development.md#manual-threshold-in-calibration).
+  disposable HTTP tests cover the route.
 
 ## [2026-09-09] Issued preview revision and display diagnostics
 
 - Display and phone media now use the issuing Attempt's immutable revision;
   bounded browser diagnostics expose safe render-failure codes. Local SFace
-  threshold was set to 0.4. [Investigation](guides/local-development.md#issued-preview-revision-repair-and-sface-threshold-04).
+  threshold was set to 0.4.
 
 ## [2026-09-09] Camera Attempt investigation presentation
 
 - Added developer search summaries with pre-threshold best similarity and
   eligible-Photo count for fresh searches; historical missing values remain
-  explicit. Twelve focused tests passed. [Diagnosis](guides/local-development.md#camera-search-diagnosis--2026-09-09).
+  explicit. Twelve focused tests passed.
 
 ## [2026-09-09] Wave 8 — Preserved local Photo reprocessing
 
@@ -503,7 +507,8 @@ Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
 ## [2026-09-07] Adaptive Promo photo cards
 
 - Implemented the operator-approved paper-card presentation and exact download/domain copy in the existing Chromium client. Landscape, square and portrait layouts replace the fixed display assumption; QR remains stationary.
-- [Presentation guide](guides/promo-presentation.md) records visual behavior and supersedes the earlier IDEA_APP six-cell/cursor animation. PRD, FT-005 and display-contract navigation are aligned. No task lifecycle or session/API behavior changed.
+- [Current kiosk guide](runbooks/app_guide_ru.md#киоск-promo-и-qr) describes
+  the presentation that supersedes the earlier IDEA_APP six-cell/cursor animation.
 - Validation: 52 client unit tests and all 17 browser tests passed; browser layout coverage at six viewport sizes with synthetic landscape/portrait fixtures, reduced motion and stationary QR checks.
 
 ## [2026-09-07] Extended quality Calibration removed from pilot plans
@@ -549,7 +554,7 @@ Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
 - Findings 3–9 and 11–13 are accepted; finding 9 source review and independent client gates confirm 52 unit and 11 browser passes, including 400/400 Blob URL cleanup.
 - Finding 10 remains open: accepted plan and read-only preparation only; no script changes or packaged runtime run. Work stopped at operator request.
 - The out-of-scope default-Compose pytest incident remains recorded; disposable-data clarification removes the preservation blocker without establishing retrospective isolation.
-- [Session handoff](../.tasks/ASTRA-findings/session-handoff.md): accepted work, incident evidence and exact continuation boundary. [Consolidated review](../PAPERCUTS/TECHDEBTS/ASTRA-consolidated-review-2026-09-06.md): one remaining finding.
+- [Session handoff](../.tasks/ASTRA-findings/session-handoff.md): accepted work, incident evidence and exact continuation boundary.
 
 ## [2026-09-06] Wave 5 / Responsive realtime admission
 
@@ -788,8 +793,8 @@ Rebuilt current source and started the persistent local Compose stack using
 existing storage. Migrated to 0022, provisioned local SFace/SPA/display settings
 and separate operator, photographer and developer accounts. Application roles
 are healthy; HTTPS login and role-scoped page checks passed. Access paths,
-restart command, test settings and verification limits are recorded in
-[local-development.md](guides/local-development.md#persistent-local-testing-stand--2026-09-08).
+current restart commands are in
+[local test deployment](runbooks/local-test-deployment.md).
 
 ## 2026-09-08 — Motion Atlas visual integration
 
@@ -797,9 +802,8 @@ Added distinct public and role-aware staff homepages, common staff styling,
 selected motion effects and a phase-driven kiosk loading scene. Existing paper
 Promo and QR continuation retain their behavior. Public camera capture UI is
 presented explicitly as prelaunch: visitor search and payment are not connected;
-gallery upload and Google OAuth remain deferred. See the
-[presentation guide](guides/motion-presentation.md) for ownership, local review
-routes and verification limits.
+gallery upload and Google OAuth remain deferred. Current routes and limits are
+in the [app guide](runbooks/app_guide_ru.md#адреса-и-доступ).
 
 ### Motion Atlas operator visual correction
 
@@ -868,4 +872,4 @@ shared database and updated backend/realtime/background-worker to the newly
 built image; validated/reloaded Caddy. All services healthy. Live HTTPS checks
 as operator and developer passed Library, venue Media, actual thumbnail/original,
 venue settings and search-dates API. Photo/Attempt/session counts preserved
-(6/17/12). See guides/local-development.md and .tasks/staff-media-release/.
+(6/17/12). Evidence: `.tasks/staff-media-release/`.

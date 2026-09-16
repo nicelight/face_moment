@@ -57,6 +57,24 @@ The local infrastructure may contain useful developer data. Do not run
 `docker compose down -v` unless you intentionally want to remove those named
 volumes.
 
+## Existing browser test stand
+
+The workstation also has a persistent Compose stand configured by the ignored
+`.env.testing`. To start its existing containers and open the app locally:
+
+```bash
+docker compose --env-file .env.testing up -d --wait --wait-timeout 120
+```
+
+Its edge is `https://localhost:8443` with an internal Caddy certificate.
+Operator/photographer/developer credentials and the display token live in the
+ignored, mode-600 files under `.protocols/local-testing/`. Do not print or
+copy them to the server. This stand has existing data; do not rerun its old
+`start.sh`/`seed.py` bootstrap. The optional
+`.protocols/local-testing/compose-source.yaml` overlay mounts current source;
+after Python changes recreate only the affected role with that overlay.
+For navigation and app usage see [the Russian app guide](app_guide_ru.md).
+
 ## Packaged smoke
 
 The smoke builds current source, starts a separately named Compose project with
@@ -85,6 +103,11 @@ native model binding, all roles, internal HTTPS, auth and
 restart/persistence behavior. Its fixture credentials and `smoke-local-v1`
 labels must never be copied to the central server.
 
-For a route-only Caddy regression use the focused test named in
-[local development](../guides/local-development.md#local-runtime-boundaries),
-but do not treat it as a substitute for the packaged smoke.
+For a route-only Caddy regression run:
+
+```bash
+uv run --locked --env-file .env.local python -m pytest tests/promo/test_public_edge_routes.py tests/client/test_central_shell.py
+```
+
+This requires the local PostgreSQL from the editable stack and does not
+replace the packaged smoke.

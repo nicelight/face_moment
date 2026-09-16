@@ -79,7 +79,7 @@ active wording, and preserve useful as-is evidence as explicitly current state.
   topology, and accepted `Consumer -> Provider` edges with exact contract
   headings. Do not duplicate that inventory or create feature subgraphs.
 - Subject contracts live under `architecture/`, `contracts/`, `domains/`,
-  `states/`, `testing/`, `runbooks/`, `guides/`, or `adrs/` according to concern.
+  `states/`, `testing/`, `runbooks/`, or `adrs/` according to concern.
 - Feature documents compose behavior, acceptance, and exact applicable
   `spec_design_links`; they are not default technical-spec hubs.
 - `foundation.md` owns the Foundation decision and executable baseline contract.

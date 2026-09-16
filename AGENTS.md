@@ -107,7 +107,7 @@ when they are satisfied.
 - Write every user-facing report in plain language with enough context to explain what was done, what happened, why, and what, if anything, the user should do next. Do not substitute internal terminology or status labels for an explanation. Keep the report concise unless the user asks for details.
 
 ## Preferred context routing
-- Start with `.memory-bank/architecture/*` and `.memory-bank/guides/*` for concept priming.
+- Start with `.memory-bank/architecture/*` and `.memory-bank/runbooks/index.md` for concept and operational priming.
 - If present, prefer explicit normative docs such as `.memory-bank/constitution.md`, `.memory-bank/spec-backbone.md`, `.memory-bank/spec-index.md`, `.memory-bank/invariants.md`, `.memory-bank/glossary.md`, `.memory-bank/contracts/boundary-map.md`, `.memory-bank/contracts/*`, `.memory-bank/states/*`, `.memory-bank/runbooks/*`, and `.memory-bank/testing/*`.
 - Normative docs enrich the Memory Bank; they do not invalidate valid duo docs.
 - Before serious planning/design work, read `.memory-bank/spec-backbone.md`, `.memory-bank/spec-index.md`, and follow linked SDD specs.

@@ -80,12 +80,6 @@ status: active
 - [.memory-bank/architecture/system-architecture.md](architecture/system-architecture.md):
   canonical greenfield system shape, capability ownership and Architecture
   Spine.
-- [.memory-bank/guides/](guides/): Valid HOW docs для использования, запуска и troubleshooting.
-- [.memory-bank/guides/local-development.md](guides/local-development.md):
-  local-first Python loop через `uv`, история локальных решений и
-  troubleshooting.
-- [.memory-bank/runbooks/local-test-deployment.md](runbooks/local-test-deployment.md):
-  единственная процедура локального test stack и disposable packaged smoke.
 - [Multi-venue verification](testing/index.md#functional-multi-venue-operation-ac-27):
   shared revision, native two-venue processing/search, restart and isolation evidence.
 - [.memory-bank/adrs/](adrs/): ADR решения.
@@ -106,6 +100,8 @@ status: active
 - [.memory-bank/states/lifecycle-map.md](states/lifecycle-map.md): Canonical
   Photo, processing, inventory, purge, Promo and diagnostics lifecycles.
 - [.memory-bank/runbooks/](runbooks/): Runbooks и operational procedures.
+- [.memory-bank/runbooks/app_guide_ru.md](runbooks/app_guide_ru.md):
+  краткое руководство пользователя по приложению и средам.
 - [.memory-bank/runbooks/server-deployment.md](runbooks/server-deployment.md):
   canonical non-destructive deploy на facecentral и public acceptance.
 - [.memory-bank/runbooks/vps-caddy.md](runbooks/vps-caddy.md): VPS Caddy,
@@ -135,8 +131,7 @@ status: active
   stable `FT-<NNN>-AC-<NNN>` acceptance closure, failure behavior,
   requirement traceability and SDD gate routing.
 
-- [Promo presentation](guides/promo-presentation.md): adaptive paper cards, approved text and display checks.
-- [Motion Atlas presentation](guides/motion-presentation.md): implemented homepages,
-  staff theme, kiosk phase effects, code ownership and public selfie limitations.
+- [Application guide](runbooks/app_guide_ru.md): staff, kiosk, Promo, QR and
+  current public-site limits.
 - [Motion Atlas design brief](../.design/motion-atlas-integration/DESIGN_BRIEF.md):
   operator presets, original discussion and implementation decisions.

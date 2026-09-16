@@ -33,7 +33,7 @@ Changing Python code runs from the current working tree through `uv`; Docker is
 used daily only for PostgreSQL/pgvector and MinIO. The release topology and its
 final Compose proof remain unchanged.
 
-- Local setup and runbook: [Local development](guides/local-development.md).
+- Local setup and runbook: [Local test deployment](runbooks/local-test-deployment.md).
 - Dependency command: `uv sync --python 3.11`.
 - Local infrastructure command:
   `docker compose -f compose.yaml -f compose.local.yaml up -d postgres minio`.

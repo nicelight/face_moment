@@ -63,7 +63,7 @@
     ".memory-bank/contracts/boundary-map.md#independent-photo-admission",
     ".memory-bank/architecture/system-architecture.md",
     ".memory-bank/testing/index.md#ui-verification",
-    ".memory-bank/guides/local-development.md"
+    ".memory-bank/runbooks/local-test-deployment.md"
   ],
   "anti_goals": [
     "Do not redesign staff pages, create a UI framework, new route/role router, registration/reset/password-recovery flow or new authentication mechanism.",

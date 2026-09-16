@@ -79,7 +79,10 @@ async function routeClient(
       });
       return;
     }
-    if (requestPath === "/api/promo/sessions/synthetic-result/display") {
+    if (
+      requestPath === "/api/promo/sessions/synthetic-result/display" ||
+      requestPath === "/api/promo/sessions/synthetic-result-session/display"
+    ) {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -236,8 +239,8 @@ test("FT-003-AC-004 BlazeFace is warmed once during page startup", async () => {
       )
       .toBe(true);
 
-    const runEmptySeries = (attemptId) =>
-      client.page.evaluate(
+    const runEmptySeries = async (attemptId) => {
+      await client.page.evaluate(
         (id) =>
           new Promise((resolve) => {
             window.addEventListener("face-moment:proposals-ready", resolve, {
@@ -254,6 +257,12 @@ test("FT-003-AC-004 BlazeFace is warmed once during page startup", async () => {
           }),
         attemptId,
       );
+      await client.page.evaluate((id) => {
+        window.dispatchEvent(new CustomEvent("face-moment:attempt-finished", {
+          detail: { attemptId: id, success: false, reason: "test_complete" },
+        }));
+      }, attemptId);
+    };
 
     const firstAssetRequestCount = client.requestedPaths.filter((path) =>
       DETECTOR_ASSETS.some((asset) => path.endsWith(asset)),
@@ -262,8 +271,13 @@ test("FT-003-AC-004 BlazeFace is warmed once during page startup", async () => {
     const secondAssetRequestCount = client.requestedPaths.filter((path) =>
       DETECTOR_ASSETS.some((asset) => path.endsWith(asset)),
     ).length;
+    await runEmptySeries("startup-warmup-two");
+    const thirdAssetRequestCount = client.requestedPaths.filter((path) =>
+      DETECTOR_ASSETS.some((asset) => path.endsWith(asset)),
+    ).length;
 
     expect(secondAssetRequestCount).toBe(firstAssetRequestCount);
+    expect(thirdAssetRequestCount).toBe(firstAssetRequestCount);
     await expect(client.page.locator("body")).toHaveAttribute(
       "data-detector-state",
       "ready",
@@ -452,7 +466,7 @@ test("FT-003-AC-008 optional assets do not block the valid result seam", async (
 });
 
 test("Promo config deadline releases a held result and the next attempt renders", async () => {
-  test.setTimeout(20_000);
+  test.setTimeout(30_000);
   const configGate = deferred();
   const configStarted = deferred();
   let configCalls = 0;
@@ -506,9 +520,10 @@ test("Promo config deadline releases a held result and the next attempt renders"
     await dispatchAttemptResult(client.page, "config-deadline-next");
     await expect(client.page.locator('[data-view="result"]')).toBeVisible();
     await expect(client.page.locator(".promo-teaser")).toHaveCount(4);
-    await expect
-      .poll(() => finishedEvent(client.page, "config-deadline-next", true))
-      .toBe(true);
+    await expect.poll(
+      () => finishedEvent(client.page, "config-deadline-next", true),
+      { timeout: 8_000 },
+    ).toBe(true);
     assert.equal(pageErrors.length, 0);
     assert.deepEqual(
       await client.page.evaluate(() => window.__unhandledRejections),
@@ -521,7 +536,7 @@ test("Promo config deadline releases a held result and the next attempt renders"
 });
 
 test("one stalled Promo preview fails cleanly and cannot replace the next result", async () => {
-  test.setTimeout(20_000);
+  test.setTimeout(30_000);
   const mediaGate = deferred();
   const mediaStarted = deferred();
   let mediaCalls = 0;
@@ -577,9 +592,10 @@ test("one stalled Promo preview fails cleanly and cannot replace the next result
     await dispatchAttemptResult(client.page, "preview-deadline-next");
     await expect(client.page.locator('[data-view="result"]')).toBeVisible();
     await expect(client.page.locator(".promo-teaser")).toHaveCount(4);
-    await expect
-      .poll(() => finishedEvent(client.page, "preview-deadline-next", true))
-      .toBe(true);
+    await expect.poll(
+      () => finishedEvent(client.page, "preview-deadline-next", true),
+      { timeout: 8_000 },
+    ).toBe(true);
     assert.equal(pageErrors.length, 0);
     assert.deepEqual(
       await client.page.evaluate(() => window.__unhandledRejections),

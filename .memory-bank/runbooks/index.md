@@ -5,6 +5,8 @@ last_updated: 2026-09-16
 ---
 # Runbooks
 
+- [Face Moment: работа с приложением](app_guide_ru.md): короткое руководство
+  по интерфейсу, ролям, средам, киоску и телефону.
 - [Server deployment](server-deployment.md): deploy current source to the
   central server and accept the public application.
 - [VPS Caddy and FRP](vps-caddy.md): operate the public VPS edge, ACME
@@ -15,4 +17,3 @@ last_updated: 2026-09-16
   recover a deployed kiosk or central runtime without changing release state.
 - [Diagnostic retention](diagnostic-retention.md): activate and observe the
   pilot-host retention timer.
-

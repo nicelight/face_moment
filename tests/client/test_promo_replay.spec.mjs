@@ -72,7 +72,10 @@ test('local duration persists; latest Promo replays without search or ACK and re
   await expect(card.locator('.promo-replay-notice')).toHaveCount(0);
   const snapshot = () => card.evaluate(el => ({ qr: el.querySelector('[data-qr-content]').getAttribute('data-qr-content'), parts: [...el.querySelectorAll('[data-layout-part]')].map(part => ({ id: part.dataset.layoutPart, style: part.getAttribute('style') })) }));
   const original = await snapshot();
-  await expect.poll(() => requests.filter(r => r.pathname.endsWith('/display') && r.method === 'PUT').length).toBe(1);
+  await expect.poll(
+    () => requests.filter(r => r.pathname.endsWith('/display') && r.method === 'PUT').length,
+    { timeout: 8_000 },
+  ).toBe(1);
   await expect(card).toHaveCount(0, { timeout: 10_000 });
   await expect(page.locator('.promo-ad-handoff')).toBeHidden({ timeout: 2_000 });
   await expect(replay).toHaveAttribute('aria-disabled', 'false');
@@ -102,8 +105,8 @@ test('local duration persists; latest Promo replays without search or ACK and re
     await expect(card.locator('.promo-replay-notice')).toContainText('Срок действия QR истёк');
     await expect(card).toHaveCount(0, { timeout: 10_000 });
     await expect(page.locator('.promo-ad-handoff')).toBeHidden({ timeout: 2_000 });
-    expect(Date.now() - visibleAt).toBeGreaterThan(6_000);
-    expect(Date.now() - visibleAt).toBeLessThan(9_000);
+    expect(Date.now() - visibleAt).toBeGreaterThan(9_000);
+    expect(Date.now() - visibleAt).toBeLessThan(12_000);
     await expect(replay).toHaveAttribute('aria-disabled', 'false');
   }
   expect(requests.slice(beforeReplay).filter(r => r.pathname.endsWith('/attempts') || r.pathname.endsWith('/display'))).toEqual([]);

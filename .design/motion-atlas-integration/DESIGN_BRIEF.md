@@ -30,8 +30,9 @@ supersede its pending-placement and first-slice wording.
   Camera success is unverified in the automated environment. Evidence and
   remaining verification limits live in `.protocols/motion-atlas-qa/REVIEW.md`.
 
-See [implementation guide](../../.memory-bank/guides/motion-presentation.md)
-for code ownership and local review access.
+See [application guide](../../.memory-bank/runbooks/app_guide_ru.md)
+for current routes and [local test deployment](../../.memory-bank/runbooks/local-test-deployment.md)
+for review access.
 
 ## Problem
 

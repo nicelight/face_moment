@@ -69,7 +69,7 @@
     ".memory-bank/domains/realtime-search.md",
     ".memory-bank/domains/calibration.md",
     ".memory-bank/testing/index.md",
-    ".memory-bank/guides/local-development.md"
+    ".memory-bank/runbooks/local-test-deployment.md"
   ],
   "constraints": [
     "Primary owner processing, src/face_moment/processing/. Reuse the two direct adapters and Photo orchestrator; current query methods call process_photo, so separate their single-pass native route before adding Photo scale selection. No new FaceEngine abstraction is needed.",

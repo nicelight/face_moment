@@ -69,7 +69,7 @@
     ".memory-bank/contracts/boundary-map.md#authentication-and-data-specific-delivery",
     ".memory-bank/architecture/system-architecture.md",
     ".memory-bank/testing/index.md",
-    ".memory-bank/guides/local-development.md"
+    ".memory-bank/runbooks/local-test-deployment.md"
   ],
   "anti_goals": [
     "Do not change backend handlers, provider authorization/domain state, API shapes, staff UI, realtime inference/admission or model readiness.",

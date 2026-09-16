@@ -16,7 +16,7 @@
 
 ### 3. P2 — публичный runtime допускает известные development secrets
 
-`compose.yaml:10,13,26,68-70,88-89` подставляет известные значения для PostgreSQL, MinIO и QR key при неполной конфигурации. `src/face_moment/infrastructure/settings.py:9,163-165` независимо принимает известный QR key по умолчанию. QR ticket выводится через HMAC с этим ключом (`src/face_moment/promo/session.py:362-375`); `compose.yaml` является и release topology согласно `.memory-bank/guides/local-development.md:19`.
+`compose.yaml:10,13,26,68-70,88-89` подставляет известные значения для PostgreSQL, MinIO и QR key при неполной конфигурации. `src/face_moment/infrastructure/settings.py:9,163-165` независимо принимает известный QR key по умолчанию. QR ticket выводится через HMAC с этим ключом (`src/face_moment/promo/session.py:362-375`); `compose.yaml` используется для выпуска согласно `.memory-bank/runbooks/server-deployment.md`.
 
 Влияние: публикация edge с неполным env не отклоняется заранее и работает с предсказуемыми секретами. По решению оператора отдельные секреты для публичного запуска теперь рекомендованы в `.memory-bank/runbooks/server-deployment.md`, но не обязательны; этот остаточный риск сохраняется. Фактические значения на внешнем сервере не проверялись; вывод касается допустимого пути запуска, а не доказанной компрометации.
 

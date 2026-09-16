@@ -81,7 +81,7 @@
     ".memory-bank/architecture/system-architecture.md",
     ".memory-bank/testing/photo-processing.md",
     ".memory-bank/testing/index.md",
-    ".memory-bank/guides/local-development.md"
+    ".memory-bank/runbooks/local-test-deployment.md"
   ],
   "anti_goals": [
     "Do not change SFace, EXIF orientation, Photo admission/derivatives, realtime request/concurrency, search semantics or Calibration datasets/calculations.",

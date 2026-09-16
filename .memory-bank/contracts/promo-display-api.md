@@ -65,7 +65,7 @@ response above remains the fallback and the server-owned initial display
 acknowledgement window; its schema and persisted deadline are unchanged.
 Explicit replay reloads the latest successful result's authorized previews
 without sending another display acknowledgement or extending the QR lifetime.
-See [local presentation behavior](../guides/promo-presentation.md#replay-and-display-seconds).
+See [kiosk operation](../runbooks/app_guide_ru.md#киоск-promo-и-qr).
 
 ## Teaser Media
 
@@ -200,4 +200,5 @@ teaser IDs, union or `N`.
 
 ## Presentation
 
-[Promo presentation](../guides/promo-presentation.md) defines the operator-approved adaptive card layout and copy. API and session semantics are unchanged.
+[Kiosk operation](../runbooks/app_guide_ru.md#киоск-promo-и-qr) describes
+the adaptive card layout and replay controls. API and session semantics are unchanged.

@@ -23,7 +23,7 @@ status: active
   результат требует reconcile task/docs state на текущем wave boundary.
 - После changes that materially affect responsibility boundaries or HOW docs,
   reconcile existing `.memory-bank/contracts/boundary-map.md`, related
-  `.memory-bank/contracts/*`, or `.memory-bank/guides/*` as normal Memory Bank
+  `.memory-bank/contracts/*`, or `.memory-bank/runbooks/*` as normal Memory Bank
   docs; do not introduce a new boundary lifecycle.
 - После changes to `.memory-bank/spec-backbone.md`, `.memory-bank/spec-index.md`,
   feature `spec_design_status`, feature `spec_design_links`, or linked SDD specs,
@@ -72,9 +72,11 @@ status: active
 ## Чеклист
 
 ### 1) Concept support consistency
-- [ ] Если используется классическая duo-модель, каждый `architecture/<concept>.md` имеет парный `guides/<concept>.md` (и наоборот).
-- [ ] Взаимные ссылки между duo docs актуальны, если используется классическая пара.
-- [ ] Если используются spec-driven support docs, они явно маршрутизированы через `spec-index.md` и не противоречат `architecture/*`, `guides/*`, `contracts/*`, `states/*`, `runbooks/*`, `testing/*`.
+- [ ] Операционные процедуры живут в `runbooks/*` и ссылаются на применимые
+  архитектуру и контракты без копирования их правил.
+- [ ] Spec-driven support docs маршрутизированы через `spec-index.md` и не
+  противоречат `architecture/*`, `contracts/*`, `states/*`, `runbooks/*`,
+  `testing/*`.
 - [ ] If responsibility/scope boundaries changed, existing
   `contracts/boundary-map.md` or related contracts are updated/recommended;
   accepted links agree with owning artifacts and tasks use existing fields.
@@ -96,7 +98,7 @@ status: active
   or `/spec-redesign` for shared/global repair; no new `stale` lifecycle/status
   value is introduced.
 - [ ] Changed canonical SDD docs under `architecture/`, `contracts/`,
-  `domains/`, `states/`, `adrs/`, `testing/`, `guides/`, and `runbooks/` are
+  `domains/`, `states/`, `adrs/`, `testing/`, and `runbooks/` are
   linked from the relevant feature, backbone, or registry.
 - [ ] Architecture Spine `AD-*` anchors referenced from task records,
   verification targets, constraints, invariants, or protocol notes still exist.
