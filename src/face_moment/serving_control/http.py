@@ -17,6 +17,7 @@ from face_moment.platform.auth.sessions import (
     CsrfValidationError,
     InvalidSessionError,
 )
+from face_moment.processing.model_admission import ModelAdmissionError
 from face_moment.serving_control.active_search_date import (
     ActiveSearchDateAccessDeniedError,
     ActiveSearchDateRecord,
@@ -214,6 +215,8 @@ def register_active_search_date_routes(
                 raise HTTPException(status_code=403) from error
             except (CommittedServingTargetUnavailableError, IneligibleIngestTargetError) as error:
                 raise HTTPException(status_code=409, detail="Общая модель недоступна или настройки площадок противоречат друг другу.") from error
+            except ModelAdmissionError as error:
+                raise HTTPException(status_code=503, detail="Не удалось проверить модель SFace. Проверьте настройки SFACE_* и файлы YuNet/SFace. Площадка не создана.") from error
             except ValueError as error:
                 raise HTTPException(status_code=422, detail="Проверьте название и часовой пояс площадки.") from error
         return JSONResponse({"spa_id": str(venue.spa_id), "name": venue.name, "timezone": venue.timezone},

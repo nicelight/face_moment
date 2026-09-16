@@ -190,7 +190,8 @@ The staff UI uses the range endpoint. No second settings store is introduced.
 
 Operator decision, 2026-09-14: each card also has independent edit switches for
 photographer-photo YuNet and browser capture BlazeFace thresholds. Each numeric
-value is in `(0, 1]`, initially `0.90` and `0.50` respectively. Switching editing
+value is in `(0, 1]`, initially `0.70` and `0.50` respectively for newly created
+venues. Historical values are preserved. Switching editing
 off cancels unsaved input; a successful explicit save locks the field and turns
 the edit switch off. Failed saves retain the editable draft.
 
@@ -220,10 +221,28 @@ session and CSRF, and returns 201 with spa_id/name/timezone and no-store.
 The server resolves the shared eligible revision; model selection is not an
 input. Invalid fields/name/timezone return 422, unavailable/conflicting shared
 revision 409, missing session 401, wrong role/CSRF 403. Creation and independent
-reference settings commit together: today mode, detector defaults .9/.5,
+reference settings commit together: today mode, detector defaults .7/.5,
 similarity .38, min quality .5, quality settings version 1. Existing venues and
 tokens stay unchanged. Screen provisioning is not part of this form.
 The edge must forward the exact `/api/serving/spas` path to backend.
+
+Operator addition 2026-09-16: when no SPA exists (including inactive SPA),
+creation validates configured YuNet/SFace files using native inference and
+the actual embedding dimension, computes the existing combined SHA-256 digest,
+and publishes `opencv_sface` metadata from `SFACE_*`. Revision, SPA and search
+settings commit atomically; missing/invalid assets return 503 without partial
+records. Existing SPA creation keeps the shared eligible revision and does not
+revalidate/select another model or alter existing settings. The existing
+transaction advisory lock serializes initial creation with other creation/switch
+commands. Session, role and CSRF checks precede initialization.
+
+The explicit deployment command `face-moment-initialize-venue` reuses that
+owner flow after migrations to create **СПА Сибирь 1**, `Etc/GMT-7`, with the
+same defaults and no historical date range. If any SPA already exists it is
+a no-op, even if all are inactive. This local deployment command requires
+database/model access; it adds no unauthenticated HTTP route, startup seed,
+migration seed or automatic model download. See the
+[deployment procedure](../runbooks/server-deployment.md).
 
 Operator correction 2026-09-11: `GET /staff/spas` is the separate площадка
 list and name-editing page for active operators and developers. Both this

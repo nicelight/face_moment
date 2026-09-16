@@ -15,6 +15,7 @@ from face_moment.platform.auth.sessions import (
 )
 from face_moment.serving_control.ingest_target import IngestTarget, IngestTargetRepository, Spa
 from face_moment.serving_control.realtime_context import RealtimeContextRepository
+from face_moment.serving_control.spa_creation import create_initialized_spa
 
 
 class ActiveSearchDateAccessDeniedError(PermissionError):
@@ -140,16 +141,7 @@ def create_spa(
         csrf_cookie_token=csrf_cookie_token, csrf_header_token=csrf_header_token,
     )
     _authorize(principal.role)
-    repository = IngestTargetRepository(database_session)
-    revision = repository.resolve_committed_serving_revision()
-    venue = repository.configure_spa(name=name, timezone=timezone,
-        serving_pipeline_revision_id=revision.id)
-    RealtimeContextRepository(database_session).provision_reference_settings(
-        spa_id=venue.spa_id, pipeline_code=revision.pipeline_code,
-        reference_threshold=0.38, min_query_face_quality=0.5,
-        quality_settings={"version": 1},
-    )
-    return venue
+    return create_initialized_spa(database_session, name=name, timezone=timezone)
 
 
 def rename_spa(

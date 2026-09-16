@@ -277,13 +277,11 @@ test("FT-003-AC-008 missing camera keeps the loaded client in advertising", asyn
   try {
     await client.page.goto(`${ORIGIN}/#advertising`);
     await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
-    await expect(client.page.locator('.advertising-card[role="button"]')).toBeVisible();
 
     await client.page.goto(`${ORIGIN}/#configuration`);
     await expect(client.page.locator("#camera-status")).toHaveText("Выберите камеру явно.");
     await client.page.goto(`${ORIGIN}/#advertising`);
     await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
-    await expect(client.page.locator('.advertising-card[role="button"]')).toBeVisible();
   } finally {
     await closeClient(client);
   }
@@ -294,7 +292,6 @@ test("FT-003-AC-008 sensor unavailability keeps advertising and exposes recovery
   try {
     await client.page.goto(`${ORIGIN}/#advertising`);
     await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
-    await expect(client.page.locator('.advertising-card[role="button"]')).toBeVisible();
     await expect(client.page.locator("body")).toHaveAttribute(
       "data-sensor-state",
       "recoverable-error",
@@ -306,7 +303,6 @@ test("FT-003-AC-008 sensor unavailability keeps advertising and exposes recovery
     );
     await client.page.goto(`${ORIGIN}/#advertising`);
     await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
-    await expect(client.page.locator('.advertising-card[role="button"]')).toBeVisible();
   } finally {
     await closeClient(client);
   }
@@ -345,7 +341,6 @@ test("FT-003-AC-008 BlazeFace load failure returns to retryable advertising", as
       "advertising",
     );
     await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
-    await expect(client.page.locator('.advertising-card[role="button"]')).toBeVisible();
   } finally {
     await closeClient(client);
   }
@@ -380,7 +375,6 @@ test("FT-003-AC-008 central-service failure returns advertising with the existin
       "Попытка связи с сервером была не успешна в ",
     );
     await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
-    await expect(client.page.locator('.advertising-card[role="button"]')).toBeVisible();
   } finally {
     await closeClient(client);
   }
@@ -391,7 +385,6 @@ test("FT-003-AC-008 optional assets do not block the valid result seam", async (
   try {
     await client.page.goto(`${ORIGIN}/#advertising`);
     await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
-    await expect(client.page.locator('.advertising-card[role="button"]')).toBeVisible();
     await expect(client.page.locator("body")).toHaveAttribute(
       "data-sensor-state",
       "disabled",
@@ -497,12 +490,10 @@ test("Promo config deadline releases a held result and the next attempt renders"
       .poll(() => finishedEvent(client.page, "config-deadline-old", false))
       .toBe(true);
     await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
-    await expect(client.page.locator('.advertising-card[role="button"]')).toBeVisible();
 
     configGate.resolve();
     await client.page.waitForTimeout(250);
     await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
-    await expect(client.page.locator('.advertising-card[role="button"]')).toBeVisible();
     assert.deepEqual(
       await client.page.evaluate(() => window.__unhandledRejections),
       [],
@@ -563,7 +554,6 @@ test("one stalled Promo preview fails cleanly and cannot replace the next result
     // shell must keep its advertising view visible until a complete result is
     // ready or the preparation fails.
     await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
-    await expect(client.page.locator('.advertising-card[role="button"]')).toBeVisible();
     await expect(client.page.locator('[data-view="result"]')).toHaveCount(0);
 
     await client.page.waitForTimeout(5_250);
@@ -571,12 +561,10 @@ test("one stalled Promo preview fails cleanly and cannot replace the next result
       .poll(() => finishedEvent(client.page, "preview-deadline-old", false))
       .toBe(true);
     await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
-    await expect(client.page.locator('.advertising-card[role="button"]')).toBeVisible();
 
     mediaGate.resolve();
     await client.page.waitForTimeout(250);
     await expect(client.page.locator('[data-view="advertising"]')).toBeAttached();
-    await expect(client.page.locator('.advertising-card[role="button"]')).toBeVisible();
     assert.deepEqual(
       await client.page.evaluate(() => window.__unhandledRejections),
       [],

@@ -4,6 +4,19 @@ status: active
 ---
 # Changelog
 
+## 2026-09-16 — First venue from verified SFace assets
+
+Approved post-migration initialization creates «СПА Сибирь 1» on `opencv_sface`
+only when no venue exists. Native model loading/inference, actual embedding
+dimension and combined asset SHA-256 precede atomic revision/venue/search-settings
+publication. The staff create API reuses the same flow behind existing role/CSRF
+checks. New venue defaults are GMT+7, YuNet .7, BlazeFace .5, similarity .38,
+minimum query quality .5, quality version 1 and today-only search. Existing
+venues, model selection and historical data are not changed. Backend gets a
+read-only model mount; edge no longer waits for realtime readiness. See
+[deployment](runbooks/server-deployment.md), [creation contract](contracts/boundary-map.md#staff-площадка-names)
+and [regression coverage](testing/index.md).
+
 ## 2026-09-16 — Consolidated deployment operations
 
 Deployment instructions now have one entrypoint:

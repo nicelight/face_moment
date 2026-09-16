@@ -40,8 +40,8 @@ def test_thresholds_are_independent_and_new_uploads_snapshot_them(
         spa = session.get(Spa, f.spa_id)
         assert (spa.photo_yunet_threshold, spa.capture_blazeface_threshold) == (0.72, 0.6)
         other = session.get(Spa, f.inaccessible_spa_id)
-        assert (other.photo_yunet_threshold, other.capture_blazeface_threshold) == (0.9, 0.5)
-        assert session.get(Photo, old_id).photo_yunet_threshold == 0.9
+        assert (other.photo_yunet_threshold, other.capture_blazeface_threshold) == (0.7, 0.5)
+        assert session.get(Photo, old_id).photo_yunet_threshold == 0.7
         session.rollback()
         # Admission reloads the venue under its lock, even with an old target.
         new = AtomicPhotoAdmission(session).publish(
@@ -70,7 +70,7 @@ def test_threshold_writes_require_admin_csrf_and_valid_value(active_search_date_
     assert _request(f.app, "PUT", path.replace(str(f.spa_id), str(f.inaccessible_spa_id)),
         cookies=admin, headers={"X-CSRF-Token": admin["fm_staff_csrf"]}, body={"threshold": 0.72})[0] == 403
     with Session(f.engine) as session:
-        assert session.get(Spa, f.spa_id).photo_yunet_threshold == 0.9
+        assert session.get(Spa, f.spa_id).photo_yunet_threshold == 0.7
 
 
 def test_threshold_migration_preserves_existing_photos(active_search_date_fixture: _Fixture) -> None:

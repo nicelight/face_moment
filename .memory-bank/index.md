@@ -30,6 +30,10 @@ status: active
 - [Advertising playlists](contracts/advertising-playlists.md): реклама площадок,
   воспроизведение, Cache Storage и обновления.
 
+- [Первичная площадка](runbooks/server-deployment.md): одноразовое создание
+  «СПА Сибирь 1» после migrations, проверка SFace assets и defaults; существующие
+  площадки не меняются. API использует тот же сценарий создания.
+
 - [.memory-bank/constitution.md](constitution.md): Project Constitution — top governing policy for agents.
 - [.memory-bank/mbb/index.md](mbb/index.md): Правила ведения Memory Bank (MBB).
 - [.memory-bank/roles/index.md](roles/index.md): Router for agent role contracts.

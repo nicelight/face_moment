@@ -25,10 +25,15 @@ uv sync --python 3.11
 docker compose -f compose.yaml -f compose.local.yaml up -d postgres minio
 docker compose -f compose.yaml -f compose.local.yaml exec -T postgres sh -ceu 'psql -U "$POSTGRES_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '\''face_moment_local'\''" | grep -q 1 || createdb -U "$POSTGRES_USER" face_moment_local'
 uv run --locked --env-file .env.local face-moment-migrate
+uv run --locked --env-file .env.local face-moment-initialize-venue
 ```
 
 `.env.local` is ignored by Git. Begin from `.env.example`; do not import a
-central-server `.env` or production credentials. The local host processes use
+central-server `.env` or production credentials. Before initialization, fill
+the `SFACE_*` metadata described in [server deployment](server-deployment.md)
+using the local model artifacts, with host paths to the files. Initialization
+creates **СПА Сибирь 1** only on an empty venue database; existing venues are
+untouched. The local host processes use
 the editable source and connect to Docker on `127.0.0.1`. Run roles separately
 when needed:
 
@@ -75,11 +80,11 @@ bash scripts/smoke-runtime.sh
 The script deliberately ignores the repository `.env`, generates temporary
 credentials and saves redacted evidence below
 `.tasks/ASTRA-findings/10-packaged-smoke/`. It verifies migrations, a disposable
-multi-venue seed, native model binding, all roles, internal HTTPS, auth and
+first-venue initializer and its no-op retry, addition of a second venue,
+native model binding, all roles, internal HTTPS, auth and
 restart/persistence behavior. Its fixture credentials and `smoke-local-v1`
 labels must never be copied to the central server.
 
 For a route-only Caddy regression use the focused test named in
 [local development](../guides/local-development.md#local-runtime-boundaries),
 but do not treat it as a substitute for the packaged smoke.
-

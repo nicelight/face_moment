@@ -115,7 +115,7 @@ for name, service in services.items():
         assert 'docker.sock' not in str(mount)
         if mount['type'] == 'volume':
             assert mount['source'] in config['volumes']
-for name in ('background-worker', 'realtime'):
+for name in ('backend', 'initialize-venue', 'background-worker', 'realtime'):
     mounts = [v for v in services[name]['volumes'] if v['target'] == '/run/face-moment/models']
     assert len(mounts) == 1 and mounts[0]['read_only'] is True
     assert mounts[0]['source'] == os.environ['FACE_MOMENT_MODEL_DIR']
@@ -156,32 +156,28 @@ engine.dispose()
 print(f'migrated_product_schema=ok alembic_head={heads[0]} pgvector=ok')
 PY
 
+# Exercise the production initializer on an empty database and its no-op retry.
+dc run --rm -T --no-deps initialize-venue | tee "${EVIDENCE_DIR}/initial-venue.txt"
+dc run --rm -T --no-deps initialize-venue | tee "${EVIDENCE_DIR}/initial-venue-retry.txt"
+
 # Capture only the generated token; do not log it or pass it in command arguments.
 DISPLAY_TOKEN="$(dc run --rm -T --no-deps background-worker python - <<'PY'
-import os
-from datetime import datetime, timezone
-from pathlib import Path
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from face_moment.infrastructure.settings import Settings
-from face_moment.processing.revisions import PipelineCode, PipelineRevisionRepository
-from face_moment.processing.sface_adapter import SFaceModelAssets
-from face_moment.serving_control.ingest_target import IngestTargetRepository
+from face_moment.processing.revisions import PipelineRevision
+from face_moment.serving_control.ingest_target import Spa
+from face_moment.serving_control.spa_creation import create_initialized_spa
 from face_moment.serving_control.display_client_access import DisplayClientRepository
-assets = SFaceModelAssets(**{
-    key: Path(os.environ['SFACE_' + key.upper()]) if key.endswith('_path') else os.environ['SFACE_' + key.upper()]
-    for key in ('detector_path', 'detector_id', 'detector_version', 'recognizer_path', 'recognizer_id', 'recognizer_version', 'preprocessing_version', 'alignment_version', 'normalization_version')
-})
 engine = create_engine(Settings.from_env().database_url)
 try:
     with Session(engine) as session, session.begin():
-        revision = PipelineRevisionRepository(session).publish_eligible(
-            pipeline_code=PipelineCode.OPENCV_SFACE, validated_at=datetime.now(timezone.utc),
-            weights_sha256=assets.weights_sha256(), embedding_dimension=128,
-            **{k: getattr(assets, k) for k in ('detector_id', 'detector_version', 'recognizer_id', 'recognizer_version', 'preprocessing_version', 'alignment_version', 'normalization_version')})
-        spa = IngestTargetRepository(session).configure_spa(name='packaged-smoke', timezone='UTC', serving_pipeline_revision_id=revision.id)
-        IngestTargetRepository(session).configure_spa(name='packaged-smoke-second', timezone='Asia/Dushanbe', serving_pipeline_revision_id=revision.id)
-        client = DisplayClientRepository(session).provision(spa_id=spa.spa_id, name='smoke-display')
+        spa = session.scalars(select(Spa)).one()
+        revision = session.scalars(select(PipelineRevision)).one()
+        assert spa.name == 'СПА Сибирь 1' and spa.timezone == 'Etc/GMT-7'
+        assert spa.serving_pipeline_revision_id == revision.id and spa.photo_yunet_threshold == .7
+        create_initialized_spa(session, name='packaged-smoke-second', timezone='Asia/Dushanbe')
+        client = DisplayClientRepository(session).provision(spa_id=spa.id, name='smoke-display')
         token = client.token_value
     print(token)
 except Exception as error:

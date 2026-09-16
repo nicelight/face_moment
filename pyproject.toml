@@ -30,6 +30,7 @@ face-moment-backend = "face_moment.entrypoints.backend:main"
 face-moment-background-worker = "face_moment.entrypoints.background_worker:main"
 face-moment-realtime = "face_moment.entrypoints.realtime:main"
 face-moment-migrate = "face_moment.entrypoints.migrate:main"
+face-moment-initialize-venue = "face_moment.entrypoints.initialize_venue:main"
 face-moment-provision-staff = "face_moment.platform.auth.cli:main"
 
 [tool.setuptools.packages.find]

@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 from pathlib import Path
+from datetime import datetime, timezone
+import uuid
 from typing import Protocol, cast
 
+import cv2
 import numpy as np
+from sqlalchemy.orm import Session
 from numpy.typing import NDArray
 from face_moment.infrastructure.settings import Settings
 from face_moment.processing.buffalo_adapter import BuffaloModelAssets, BuffaloPhotoAdapter
-from face_moment.processing.revisions import EligiblePipelineRevision, PipelineCode
+from face_moment.processing.revisions import EligiblePipelineRevision, PipelineCode, PipelineRevisionRepository
 from face_moment.processing.sface_adapter import SFaceModelAssets, SFacePhotoAdapter
 from face_moment.processing.terminal_publication import TerminalFace
 
@@ -86,7 +90,13 @@ def _admit_sface(
     )
     if revision.embedding_dimension != embedding_dimension:
         raise ModelAdmissionError("committed SFace embedding dimension mismatches configuration")
-    assets = SFaceModelAssets(
+    assets = configured_sface_assets(settings)
+    assets.verify_revision(revision)
+    return SFacePhotoAdapter.from_configured_assets(revision=revision, assets=assets)
+
+
+def configured_sface_assets(settings: Settings) -> SFaceModelAssets:
+    return SFaceModelAssets(
         detector_path=Path(_required(settings.sface_detector_path, "SFACE_DETECTOR_PATH")),
         detector_id=_required(settings.sface_detector_id, "SFACE_DETECTOR_ID"),
         detector_version=_required(
@@ -109,8 +119,42 @@ def _admit_sface(
             settings.sface_normalization_version, "SFACE_NORMALIZATION_VERSION"
         ),
     )
-    assets.verify_revision(revision)
-    return SFacePhotoAdapter.from_configured_assets(revision=revision, assets=assets)
+
+
+def publish_initial_sface_revision(
+    session: Session, *, settings: Settings,
+) -> EligiblePipelineRevision:
+    """Check actual native assets before publishing; caller owns the transaction."""
+    try:
+        assets = configured_sface_assets(settings)
+        dimension = _required_int(settings.sface_embedding_dimension, "SFACE_EMBEDDING_DIMENSION")
+        now = datetime.now(timezone.utc)
+        candidate = EligiblePipelineRevision(
+            id=uuid.uuid4(), pipeline_code=PipelineCode.OPENCV_SFACE,
+            detector_id=assets.detector_id, detector_version=assets.detector_version,
+            recognizer_id=assets.recognizer_id, recognizer_version=assets.recognizer_version,
+            weights_sha256=assets.weights_sha256(),
+            preprocessing_version=assets.preprocessing_version,
+            alignment_version=assets.alignment_version,
+            normalization_version=assets.normalization_version,
+            embedding_dimension=dimension, created_at=now, validated_at=now,
+        )
+        adapter = SFacePhotoAdapter.from_configured_assets(revision=candidate, assets=assets)
+        adapter.validate_inference()
+        # Also reject a file change during native loading/probing.
+        adapter.warmup()
+    except (OSError, ValueError, cv2.error) as error:
+        raise ModelAdmissionError("SFace assets failed native validation") from error
+    return PipelineRevisionRepository(session).publish_eligible(
+        pipeline_code=candidate.pipeline_code, validated_at=datetime.now(timezone.utc),
+        detector_id=candidate.detector_id, detector_version=candidate.detector_version,
+        recognizer_id=candidate.recognizer_id, recognizer_version=candidate.recognizer_version,
+        weights_sha256=candidate.weights_sha256,
+        preprocessing_version=candidate.preprocessing_version,
+        alignment_version=candidate.alignment_version,
+        normalization_version=candidate.normalization_version,
+        embedding_dimension=candidate.embedding_dimension,
+    )
 
 
 def _admit_buffalo(
@@ -151,7 +195,7 @@ def _admit_buffalo(
 
 
 def _required(value: str | None, name: str) -> str:
-    if value is None:
+    if value is None or not value.strip():
         raise ModelAdmissionError(f"required selected-model setting is missing: {name}")
     return value
 

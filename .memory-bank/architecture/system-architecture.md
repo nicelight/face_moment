@@ -336,11 +336,16 @@ media, Attempt, session, deletion and retention behavior.
 - The verified Foundation supplies the Compose-based single-server substrate.
   The target pilot deployment uses persistent primary PostgreSQL and MinIO
   volumes. One migrate/init command applies the single Alembic stream and
-  ensures private buckets before backend, worker and realtime start or fail
-  fast; realtime is ready only after exact active-model warmup.
+  ensures private buckets. A separate one-shot `initialize-venue` deployment
+  command then initializes an empty venue database from verified SFace assets
+  before worker/realtime start; existing venues are untouched. Backend/edge do
+  not depend on model readiness, allowing staff creation/recovery. Realtime is
+  ready only after exact active-model warmup.
 - Model files remain outside the shared application image in one
   operator-managed host directory mounted read-only into
-  `BackgroundPhotoWorker` and `RealtimeFaceService`. Each process resolves the
+  `BackgroundPhotoWorker`, `RealtimeFaceService`, backend and the one-shot venue
+  initializer. Backend loads SFace only for first-venue creation. Each serving
+  model consumer resolves the
   committed selected validated revision, loads only that direct pipeline and
   verifies the mounted assets against its immutable identity before becoming
   available or accepting work. Missing or mismatched assets fail closed; no

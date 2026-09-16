@@ -19,7 +19,8 @@ The intended public origin is `https://face-moment.ru`; the VPS public IPv4 is
 WSS control/management path and must remain in place during this migration.
 
 This procedure does not restore lost data, rotate the FRP token, choose model
-identity metadata, or invent the first SPA/serving revision. Do not run
+identity metadata. The approved initializer creates the first SPA from verified
+configured SFace assets; it never imports smoke identities. Do not run
 `docker compose down -v`, remove named volumes, reset display tokens or modify
 PostgreSQL directly while following it.
 
@@ -74,12 +75,31 @@ and containers as unknown release state until the preflight records them.
    fail-closed. How to measure it is in
    [VPS Caddy and FRP](vps-caddy.md#trusted-visitor-ip).
 
-The first use additionally needs an intentional initial SPA, a compatible
-eligible serving pipeline revision, a staff account and a display-client token.
-If preflight shows that those records do not exist, there is no approved
-production seed command for this state: stop after runtime deployment and
-arrange an explicit, reviewed initializer rather than copying smoke fixtures
-or editing tables by hand.
+The first deployment runs the one-shot `initialize-venue` service after
+migrations. It creates **СПА Сибирь 1** only when no SPA exists, using verified
+`opencv_sface` assets and their configured metadata/digest. Defaults: timezone
+`Etc/GMT-7` (GMT+7), photo YuNet `.7`, camera BlazeFace `.5`, similarity `.38`,
+minimum query quality `.5`, quality settings `{"version": 1}`, current-day
+search with no historical date range. Staff accounts and display-client tokens
+are still provisioned separately through their existing authorized procedures.
+
+Required `SFACE_*` inputs: `DETECTOR_PATH`, `DETECTOR_ID`, `DETECTOR_VERSION`,
+`RECOGNIZER_PATH`, `RECOGNIZER_ID`, `RECOGNIZER_VERSION`, `PREPROCESSING_VERSION`,
+`ALIGNMENT_VERSION`, `NORMALIZATION_VERSION`, `EMBEDDING_DIMENSION`. Paths must
+be absolute container paths below `/run/face-moment/models`, not host-relative
+paths from the local example. Set identity/version metadata from the deployed
+model artifacts; do not copy `local-testing-v1` or smoke-fixture labels.
+The initializer computes SHA-256 from both files and runs native inference,
+including actual embedding dimension verification; it does not download models.
+
+Missing/invalid assets fail the initializer without partial revision, SPA or
+search settings. Correct the configuration and rerun
+`docker compose run --rm --no-deps initialize-venue`, then start the roles again.
+Any existing SPA, including inactive ones, makes initialization a no-op. It
+never resets names, dates, thresholds or serving selection. Ordinary role
+restarts do not invoke it. Backend and edge can start independently of model
+readiness, so the authenticated «Добавить площадку» flow also supports an empty
+database; its operator/developer and CSRF requirements remain in force.
 
 ## Preflight
 
@@ -119,7 +139,8 @@ be able to receive public TCP `80` and `443` for ACME validation.
    docker compose config --quiet
    ```
 
-3. Build the selected source, then apply migrations once and start the roles:
+3. Build the selected source, then apply migrations once and start the roles
+   (Compose runs `initialize-venue` before worker/realtime):
 
    ```bash
    docker compose build

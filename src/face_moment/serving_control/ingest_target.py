@@ -113,7 +113,7 @@ class IngestTargetRepository:
         timezone: str,
         serving_pipeline_revision_id: uuid.UUID,
     ) -> IngestTarget:
-        self._lock_revision_configuration()
+        self.lock_revision_configuration()
         if name is None:
             names = set(self._session.scalars(select(Spa.name)))
             number = 1
@@ -132,6 +132,7 @@ class IngestTargetRepository:
             name=normalized_name,
             timezone=normalized_timezone,
             active=True,
+            photo_yunet_threshold=0.7,
             serving_pipeline_revision_id=revision.id,
         )
         self._session.add(spa)
@@ -191,7 +192,7 @@ class IngestTargetRepository:
         target_pipeline_revision_id: uuid.UUID,
     ) -> ServingRevisionSwitchResult:
         """Evaluate and flush one switch inside the command-owned transaction."""
-        self._lock_revision_configuration()
+        self.lock_revision_configuration()
         # Lock every venue in a stable order, also serializing Photo admission.
         spas = list(self._session.scalars(select(Spa).order_by(Spa.id)
             .with_for_update().execution_options(populate_existing=True)))
@@ -298,7 +299,7 @@ class IngestTargetRepository:
             )
         return self.resolve_ingest_target(spa_ids[0])
 
-    def _lock_revision_configuration(self) -> None:
+    def lock_revision_configuration(self) -> None:
         # Serializes supported creation/switch commands, including an empty DB.
         # Transaction-scoped; normal venue reads and inference take no such lock.
         self._session.execute(text("SELECT pg_advisory_xact_lock(17901, 1)"))

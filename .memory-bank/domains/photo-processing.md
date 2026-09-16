@@ -97,6 +97,16 @@ existing `FaceEngine` seam without a shared adapter registry or result format.
 
 ### Model-asset admission
 
+First-venue initialization is an explicit creation command, not role startup or
+an Alembic migration. `processing.model_admission.publish_initial_sface_revision`
+uses configured SFace metadata and the combined digest of the actual detector
+and recognizer bytes, loads both native networks, probes detector inference and
+checks a real recognizer embedding for configured dimension and finite non-zero
+values. It publishes only after validation; serving-control commits that revision
+with the first SPA and its search settings in one transaction. See the
+[venue creation contract](../contracts/boundary-map.md#staff-площадка-names).
+Existing serving selection and model-consuming startup behavior remain unchanged.
+
 Each direct adapter verifies the configured model assets and embedding
 dimension against the immutable revision before accepting work. The worker
 MUST NOT download, silently replace or auto-select models.

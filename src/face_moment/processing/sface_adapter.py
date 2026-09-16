@@ -167,6 +167,19 @@ class SFacePhotoAdapter:
     def warmup(self) -> None:
         self._assets.verify_revision(self._revision)
 
+    def validate_inference(self) -> None:
+        """Probe both networks without needing a face fixture or stored Photo."""
+        self._detect_native(np.zeros((320, 320, 3), dtype=np.uint8))
+        feature = self._recognizer.feature(np.zeros((112, 112, 3), dtype=np.uint8))
+        embedding = np.asarray(feature, dtype=np.float32).reshape(-1)
+        norm = float(np.linalg.norm(embedding))
+        if (embedding.size != self._revision.embedding_dimension
+                or not np.isfinite(embedding).all() or not np.isfinite(norm) or norm == 0):
+            raise EmbeddingDimensionMismatchError(
+                f"expected finite non-zero embedding of dimension {self._revision.embedding_dimension}, "
+                f"got {embedding.size}"
+            )
+
     def process_photo(
         self, photo: NDArray[np.uint8]
     ) -> tuple[SFacePhotoFace, ...]:

@@ -47,3 +47,12 @@ test('pending submit is not duplicated and failure leaves form usable', async ()
   assert.match(f.status.textContent, /Общая модель недоступна/);
   assert.equal(f.submit.disabled, false);
 });
+
+test('invalid initial model gives an actionable error and permits retry', async () => {
+  const f = fixture();
+  globalThis.fetch = async () => ({ ok: false, status: 503 });
+  await f.form.listeners.submit(event);
+  assert.match(f.status.textContent, /SFace.*SFACE_.*Площадка не создана/);
+  assert.equal(f.submit.disabled, false);
+  assert.equal(f.cancel.disabled, false);
+});

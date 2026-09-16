@@ -7,6 +7,11 @@ last_updated: 2026-09-04
 
 ## Subject specifications
 
+- [Initial venue tests](../../tests/serving_control/test_initial_venue.py): real
+  SFace inference and disposable PostgreSQL; deployment/API creation, exact
+  defaults/digest, model-failure rollback, concurrent initialization, auth/CSRF
+  ordering and unchanged existing/inactive venue state.
+
 - Per-площадка detector controls: `tests/serving_control/test_detector_thresholds.py`
   covers authenticated independent settings and immutable admission snapshots;
   `tests/processing/test_sface_adapter.py` covers native threshold application and
@@ -49,9 +54,10 @@ last_updated: 2026-09-04
 - Existing settings/date/search tests retain isolation coverage; the
   [local reprocessing tests](../../tests/processing/test_photo_reprocessing.py)
   verify a global two-venue revision change and idempotent pending publication.
-- [Packaged smoke](../../scripts/smoke-runtime.sh) seeds two active venues before
+- [Packaged smoke](../../scripts/smoke-runtime.sh) exercises first-venue
+  initialization and its no-op retry, then adds a second venue before
   actual native process startup and container/dependency restarts, using its
-  own project/volumes. It does not create production venues.
+  own project/volumes. It does not touch production venues.
 - This verifies functional operation, not 10–15 venue capacity, recognition
   quality on a venue's camera or a physical multi-screen browser session.
 

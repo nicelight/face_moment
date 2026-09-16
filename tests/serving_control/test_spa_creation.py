@@ -25,7 +25,7 @@ def test_create_venue_with_shared_revision_and_independent_settings(active_searc
         assert new.serving_pipeline_revision_id == old.serving_pipeline_revision_id
         assert old.name.startswith('task068-active-')
         assert new.timezone == 'Europe/Moscow' and new.search_today
-        assert (new.photo_yunet_threshold, new.capture_blazeface_threshold) == (.9, .5)
+        assert (new.photo_yunet_threshold, new.capture_blazeface_threshold) == (.7, .5)
         settings = RealtimeContextRepository(session).read_calibration_serving_snapshot(spa_id=new_id)
         assert settings.reference_threshold == .38 and settings.min_query_face_quality == .5
     page = _request(f.app, 'GET', '/staff/spas', cookies=cookies)[2]

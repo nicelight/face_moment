@@ -102,6 +102,16 @@ services:
       minio:
         condition: service_started
 
+  initialize-venue:
+    <<: *application
+    restart: "no"
+    command: ["face-moment-initialize-venue"]
+    volumes:
+      - "${FACE_MOMENT_MODEL_DIR:-./models}:/run/face-moment/models:ro"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
   backend:
     <<: *application
     command: ["face-moment-backend"]
@@ -110,6 +120,7 @@ services:
     volumes:
       - postgres-data:/run/face-moment/postgresql:ro
       - minio-data:/run/face-moment/minio:ro
+      - "${FACE_MOMENT_MODEL_DIR:-./models}:/run/face-moment/models:ro"
     healthcheck:
       test:
         - CMD
@@ -140,7 +151,7 @@ services:
       timeout: 3s
       retries: 30
     depends_on:
-      migrate:
+      initialize-venue:
         condition: service_completed_successfully
 
   realtime:
@@ -160,7 +171,7 @@ services:
       timeout: 3s
       retries: 30
     depends_on:
-      migrate:
+      initialize-venue:
         condition: service_completed_successfully
 
   edge:
@@ -180,8 +191,6 @@ services:
       edge:
     depends_on:
       backend:
-        condition: service_healthy
-      realtime:
         condition: service_healthy
 
 networks:
