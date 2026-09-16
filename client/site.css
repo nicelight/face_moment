@@ -23,24 +23,27 @@
 .fm-focus-corner:nth-of-type(4) { left: auto; right: 0; top: auto; bottom: 0; transform: rotate(180deg); }
 .fm-portrait-caption { position: absolute; left: 0; bottom: -2rem; color: #e5fff099; font: 9px monospace; letter-spacing: .17em; }
 .fm-selfie-section { display: grid; gap: 2rem; border-top: 1px solid var(--fm-line); padding: 3rem 0; scroll-margin-top: 1.5rem; }
-.fm-selfie-copy h2 { margin: 1rem 0; font-weight: 350; font-size: clamp(3rem, 5vw, 4.5rem); line-height: 1.05; letter-spacing: -.06em; }
-.fm-selfie-copy > p:not(.fm-eyebrow) { color: var(--fm-soft); max-width: 39ch; }
-.fm-selfie-copy .fm-preview-note { border-left: 1px solid #709586; padding-left: 1rem; font-size: 13px; color: var(--fm-muted); margin-top: 2rem; }
 .fm-selfie-panel { min-width: 0; padding: 1.25rem; background: #111b1b; border: 1px solid var(--fm-line); border-radius: 20px; }
-.fm-selfie-viewport { position: relative; background: #0b1314; border-radius: 12px; overflow: hidden; aspect-ratio: 4 / 3; }
+.fm-selfie-viewport,
+.fm-page main button.fm-selfie-viewport {
+  position: relative; display: block; width: 100%; padding: 0; border: 0;
+  border-radius: 12px; overflow: hidden; aspect-ratio: 4 / 3;
+  color: inherit; background: #0b1314; font: inherit; text-align: left;
+  cursor: pointer;
+}
+.fm-page main button.fm-selfie-viewport:hover { background: #0b1314; }
+.fm-page main button.fm-selfie-viewport:disabled { opacity: 1; cursor: wait; }
+.fm-selfie-viewport:focus-visible { outline: 2px solid var(--fm-accent); outline-offset: 4px; }
 .fm-selfie-viewport video, .fm-selfie-viewport img { width: 100%; height: 100%; object-fit: contain; }
+.fm-selfie-viewport video, .fm-selfie-viewport img { display: block; }
 .fm-selfie-viewport video { transform: scaleX(-1); }
 .fm-selfie-placeholder { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1rem; text-align: center; color: var(--fm-muted); font-size: 13px; }
 .fm-camera-symbol { font-size: 50px; color: #789d8e; font-weight: 200; }
+.fm-selfie-ready-overlay, .fm-selfie-search-overlay { position: absolute; inset: 0; pointer-events: none; }
+.fm-selfie-ready-overlay { width: 100%; height: 100%; color: #d8f7eb; opacity: .78; }
+.fm-selfie-ready-overlay circle { fill: #0b131455; stroke: currentColor; stroke-width: 1.2; }
+.fm-selfie-ready-overlay text { fill: currentColor; font: 600 6px system-ui, sans-serif; }
+.fm-selfie-search-overlay { display: grid; place-items: center; padding: 1rem; box-sizing: border-box; background: #0b131477; color: #f0fff8; font-size: clamp(1rem, 2.8vw, 1.7rem); font-weight: 600; text-align: center; }
 #selfie-status { color: var(--fm-muted); font-size: 13px; min-height: 3em; margin: 1rem 0; }
 .fm-selfie-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
-@media (min-width: 850px) { .fm-portrait-outline { position: absolute; width: 250px; height: 330px; margin: 0; right: 8%; top: 18%; transform: rotate(8deg); } .fm-portrait-action { transform: rotate(-8deg); } .fm-public-hero { min-height: 670px; } .fm-selfie-section { grid-template-columns: 1fr 1fr; gap: 4rem; padding: 4rem 2rem; } }
-
-.fm-fluid-controls { position: fixed; z-index: 30; right: 1rem; bottom: 1rem; width: min(310px, calc(100vw - 2rem)); background: #101a1af5; border: 1px solid var(--fm-line); border-radius: 12px; box-shadow: 0 8px 30px #0005; }
-.fm-fluid-controls summary { cursor: pointer; padding: .8rem 1rem; color: var(--fm-accent); font-size: 14px; }
-.fm-fluid-controls form { padding: 0 1rem 1rem; max-height: 65dvh; overflow-y: auto; }
-.fm-fluid-controls label { display: flex; justify-content: space-between; gap: 1rem; font-size: 13px; }
-.fm-fluid-controls output { color: var(--fm-accent); font-variant-numeric: tabular-nums; }
-.fm-fluid-controls input[type="range"] { width: 100%; margin: .2rem 0 .65rem; min-height: 28px; accent-color: var(--fm-accent); cursor: pointer; }
-.fm-fluid-controls p { font-size: 12px; color: var(--fm-muted); margin: .5rem 0 1rem; }
-.fm-fluid-controls button { padding: .6rem .8rem; background: transparent; color: var(--fm-text); border: 1px solid var(--fm-line); border-radius: 6px; cursor: pointer; }
+@media (min-width: 850px) { .fm-portrait-outline { position: absolute; width: 250px; height: 330px; margin: 0; right: 8%; top: 18%; transform: rotate(8deg); } .fm-portrait-action { transform: rotate(-8deg); } .fm-public-hero { min-height: 670px; } .fm-selfie-section { grid-template-columns: minmax(0, 1fr); gap: 4rem; padding: 4rem 2rem; } }

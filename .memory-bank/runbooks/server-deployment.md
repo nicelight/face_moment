@@ -214,6 +214,36 @@ be able to receive public TCP `80` and `443` for ACME validation.
 
    Migration changes durable state. If it fails, leave volumes intact, collect
    sanitized logs and stop; do not retry by deleting the database volume.
+
+### Narrow route/static-only update path
+
+The migration and initializer commands above remain mandatory for any release
+that changes migrations, ORM/schema definitions, initialization inputs,
+Compose/env settings, model bindings, storage behavior or other durable state.
+They are not a blanket opt-out. A reviewed follow-up may use the narrower path
+below only when a recorded `git diff BASE..TARGET` proves that the target is
+limited to route/static presentation and its tests/docs, with no migration,
+initializer, Compose, env, model, database or storage changes.
+
+For that proven schema-neutral case, capture the old running image IDs and
+retention state, build the exact target checkout, then replace only the
+application roles and inner edge:
+
+```bash
+docker compose build
+docker compose stop edge backend background-worker realtime
+docker compose up -d --no-deps --wait --wait-timeout 120 backend background-worker realtime edge
+docker compose ps
+```
+
+Do not run `migrate` or `initialize-venue`, restart PostgreSQL/MinIO, alter
+named volumes or change credentials/settings. An already-enabled retention
+timer may remain active because this path does not mutate database schema;
+record its unchanged state and next trigger. Validate the inner Caddy config,
+the local `/healthz`, all role healthchecks and the public route/content matrix
+before acceptance. If the diff classification is uncertain, use the full
+deployment sequence above and its migration safeguards.
+
 4. Check the central edge locally:
 
    ```bash
@@ -308,6 +338,39 @@ purchase target; the purchase mechanism itself remains a product TODO and was
 not implemented. Public full photo-flow acceptance still requires an
 authorized test photo, provisioned display client, and mobile continuation
 check; these photo/kiosk/mobile E2E paths remain unverified.
+
+### Verified route/static-only follow-up — 2026-09-16
+
+The reviewed routing correction was deployed to `facecentral` from exact
+commit `7924321af0cb1989b0084385e5f600b3f11fcff7`, from clean base
+`8c0467fbb6f1db0ae9f51c7021b6579a5e5798ab`. The recorded delta contains only
+the public/kiosk route split, static navigation links, tests and runbook docs;
+it contains no migration, ORM/schema, Compose, env, model, database or storage
+change. This satisfied the narrow route/static-only classification above, so
+no migration or `initialize-venue` command was run.
+
+The old application image was
+`sha256:bb91f3846fe08b51a7726accbefab08e839f8b2a82eaa26efb45f01e27cf36ec`;
+the rebuilt and running application image is
+`sha256:46a67115211150ab1d9308bcb83f6b19eb9fb16b7b2428a9a4da1c82c8d2019a` for
+`backend`, `background-worker` and `realtime`. The inner edge continues to use
+the existing `caddy:2.10.0-alpine` image
+`sha256:ae4458638da8e1a91aafffb231c5f8778e964bca650c8a8cb23a7e8ac557aa3c`.
+The checkout is clean at the target commit and `docker compose config
+--quiet` plus inner Caddy validation succeeded. PostgreSQL and MinIO stayed
+running with named volumes `face-moment_postgres-data` and
+`face-moment_minio-data`; no volume, secret, settings or VPS edge mutation was
+performed. The enabled/active `face-moment-retention-cleanup.timer` remained
+active with its next trigger at `2026-09-17 00:00 +07`.
+
+Public acceptance through `https://face-moment.ru` recorded: `/` and `/site`
+returned `200` with the public-site marker; `/client1` and `/display` returned
+`200` with the `SpaPromoClient` kiosk marker; `/staff/login` returned `200`;
+`/healthz` returned `200`; `/phone` without a ticket returned one `303` to
+`https://face-moment.ru/`; anonymous `/api/phone/session` returned `401`; and
+plain HTTP `/` returned `308` to HTTPS. The deployed scope is routing/static
+correction only and explicitly excludes the separate selfie UI work in the
+workstation tree.
 
 After the VPS configuration has been applied, verify from outside the central
 host:

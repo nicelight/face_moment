@@ -145,6 +145,18 @@ measured visitor IP `109.75.50.79` through peer `172.19.0.1`; see
 Independent visitor rate-limit budgets and full photo/kiosk/phone E2E remain
 unverified.
 
+The edge observations above describe the historical 2026-09-16 public-edge
+preflight and the subsequent central application availability; they do not
+define the application shell split. The current route correction is owned by
+the central checkout's `deploy/Caddyfile` and backend: `/` serves the public
+site, `/client1` serves the kiosk, and `/display` plus `/site` remain aliases.
+The VPS Caddy remains the same public HTTPS/FRP reverse-proxy boundary and
+forwards these paths without selecting their content. The route-only follow-up
+from exact commit `7924321af0cb1989b0084385e5f600b3f11fcff7` therefore required
+no VPS file installation, `sudo`, Caddy reload or FRP mutation; its central
+runtime and public matrix are recorded in
+[the route rollout record](../../.protocols/route-rollout-2026-09-16/route-rollout-report.md).
+
 ## Trusted visitor IP
 
 The VPS Caddy overwrites `X-Forwarded-For` with the direct visitor IP and
