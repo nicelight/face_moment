@@ -139,7 +139,15 @@ docker compose logs --tail=30 edge
 ```
 
 Set that exact address in central `/opt/face-moment/.env`, remove the temporary
-`log` block, and reload the edge once more. Do not make authenticated requests
+`log` block, and recreate the edge so it receives the changed environment:
+
+```bash
+docker compose up -d --no-deps --force-recreate edge
+```
+
+A Caddy reload or container restart does not replace the container environment;
+[Compose up](https://docs.docker.com/reference/cli/docker/compose/up/) does.
+Do not make authenticated requests
 while that temporary access log exists.
 
 The non-routable default `192.0.2.1` intentionally trusts no real peer. Never
@@ -149,6 +157,15 @@ recreation can change the peer address; repeat this controlled measurement
 after such a network change.
 
 ## Acceptance checks
+
+If the public site returns `502`, check the tunnel before changing Caddy:
+on central, `systemctl is-active frpc` and the local `:8443/healthz` probe from
+the server runbook; on VPS, `ss -ltn 'sport = :18443'` and
+`curl -kfsS --max-time 5 https://127.0.0.1:18443/healthz`.
+The FRP application health check can withdraw `:18443` while the central edge
+is down. A working SSH tunnel on `:10022` does not prove the application tunnel
+works. Do not restart/reinstall FRP through the only SSH connection to fix an
+application outage; retain an independent recovery path for FRP maintenance.
 
 After both sides are live, verify the public certificate and routes:
 

@@ -8,7 +8,8 @@ last_updated: 2026-09-16
 - [Face Moment: работа с приложением](app_guide_ru.md): короткое руководство
   по интерфейсу, ролям, средам, киоску и телефону.
 - [Server deployment](server-deployment.md): deploy current source to the
-  central server and accept the public application.
+  central server, bootstrap staff, activate retention and accept the public
+  application; maintenance sequence and rollback limits.
 - [VPS Caddy and FRP](vps-caddy.md): operate the public VPS edge, ACME
   certificate and FRP-facing Caddy configuration.
 - [Local test deployment](local-test-deployment.md): start a local test stack
