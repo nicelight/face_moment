@@ -15,7 +15,7 @@ import pytest
 from alembic import command as alembic_command
 from alembic.config import Config
 from fastapi import FastAPI
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, text
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session
 
@@ -292,6 +292,24 @@ def test_photo_upload_authentication_failure_and_rate_contract(
             cookies=technical_cookies,
             headers={"X-CSRF-Token": technical_cookies["fm_staff_csrf"]},
         )[0] == 500
+
+    with engine.connect() as lock_connection, lock_connection.begin():
+        lock_connection.execute(
+            text("SELECT pg_advisory_xact_lock(:key)"), {"key": 62_401_876_320}
+        )
+        paused_status, _, paused = _request(
+            app,
+            "POST",
+            "/api/inventory/photos",
+            body=body,
+            content_type=content_type,
+            cookies=technical_cookies,
+            headers={"X-CSRF-Token": technical_cookies["fm_staff_csrf"]},
+        )
+        assert paused_status == 503
+        assert paused["detail"]["code"] == "original_cleanup_running"
+    with Session(engine) as database_session:
+        assert set(database_session.scalars(select(Photo.original_object_key))) == stored_keys
 
 
 def _jpeg() -> bytes:

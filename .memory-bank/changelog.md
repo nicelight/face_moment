@@ -4,6 +4,13 @@ status: active
 ---
 # Changelog
 
+## 2026-09-16 — Rename local developer login
+
+The local Docker staff account `tester` was renamed to `developer` without
+changing its UUID, role or password hash. Existing browser sessions were revoked
+and the ignored local credentials file plus local-development guide now use the
+new login. No production account was changed.
+
 ## 2026-09-16 — Manual cleanup of orphan original uploads
 
 «Медиа площадки» now offers operator/developer a confirmation-gated cleanup of
@@ -14,6 +21,8 @@ deleted counts. Uploads return retryable `503` while cleanup holds the lock.
 No schema migration or background job state is added. See
 [Photo Admission](domains/photo-admission.md) and
 [Staff Venue Media](contracts/photo-inventory-api.md#candidate-original-cleanup).
+Validation: 8 focused disposable-DB admission/media tests, 80 client unit tests,
+the operator confirmation browser test and mypy over 107 source files passed.
 
 ## 2026-09-16 — Address Promo media by session and Photo
 

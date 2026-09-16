@@ -193,7 +193,7 @@ Access files are ignored by Git and have mode 600:
   search date, display settings, inventory and processing health.
 - `.protocols/local-testing/photographer-credentials.txt`: photographer account
   for photo upload.
-- `.protocols/local-testing/credentials.txt`: developer account `tester` for
+- `.protocols/local-testing/credentials.txt`: developer account `developer` for
   diagnostics.
 - `.protocols/local-testing/display-token.txt`: token to paste into the kiosk
   configuration at `/#configuration`.

@@ -735,6 +735,8 @@ def _photo_upload_page_html(history_owner: str = "") -> str:
           void pollProcessingStatus(payload.photo.photo_id, row);
         } else if (response.status === 200) {
           setResult(row, "duplicate");
+        } else if (response.status === 503) {
+          setResult(row, "Загрузка временно недоступна", "Идёт очистка файлов. Выберите файл и повторите загрузку позже.");
         } else if (response.status === 413 || response.status === 422) {
           let reason = response.status === 413
             ? "Размер файла или запроса превышает допустимый лимит загрузки."

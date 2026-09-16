@@ -23,6 +23,7 @@ from face_moment.infrastructure.object_store import PrivateObjectStore
 from face_moment.infrastructure.settings import Settings
 from face_moment.inventory import staff_media_http
 from face_moment.inventory.orphan_original_cleanup import (
+    OriginalCleanupRunningError,
     OriginalCleanupResult,
     OriginalCleanupUploadPausedError,
     admission_storage_guard,
@@ -263,7 +264,8 @@ def test_orphan_cleanup_keeps_referenced_originals_and_pauses_uploads(
 
         def list_key_pages(self, *, prefix: str) -> Iterator[list[str]]:
             assert prefix == 'candidates/'
-            yield [existing_key, orphan_key]
+            yield [existing_key]
+            yield [orphan_key]
 
         def delete(self, *, key: str) -> None:
             self.deleted.append(key)
@@ -272,6 +274,13 @@ def test_orphan_cleanup_keeps_referenced_originals_and_pauses_uploads(
     with Session(f.engine) as session:
         result = cleanup_orphan_originals(session, store)  # type: ignore[arg-type]
     assert result == OriginalCleanupResult(scanned=2, deleted=1)
+    assert store.deleted == [orphan_key]
+
+    with f.engine.connect() as connection, connection.begin():
+        connection.execute(text('SELECT pg_advisory_xact_lock(:key)'), {'key': 62_401_876_321})
+        with Session(f.engine) as session:
+            with pytest.raises(OriginalCleanupRunningError):
+                cleanup_orphan_originals(session, store)  # type: ignore[arg-type]
     assert store.deleted == [orphan_key]
 
     # An exclusive cleanup lock makes the next admission fail before MinIO put.
