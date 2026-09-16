@@ -7,6 +7,31 @@ source_of_truth:
 ---
 # Display Client Access
 
+## Создание экрана — дополнение оператора 2026-09-16
+
+В «Экраны» добавлена кнопка «Добавить экран»: название и обязательный выбор
+активной площадки по имени. Можно создавать несколько экранов одной площадки.
+После сохранения список перезагружается и показывает новый экран с отдельным
+токеном; карточка показывает название площадки, таблица сохраняет её UUID.
+
+`POST /api/serving/display-clients` принимает только `name` и `spa_id`.
+Operator/developer и session-bound CSRF обязательны. Owner проверяет площадку
+под row lock и вызывает существующий `DisplayClientRepository.provision`;
+имя trim, 1–255 символов. Commit создаёт только новый экран и его случайный
+token; прежние экраны, tokens и настройки площадок не меняются. Ответ 201
+содержит display_client_id/spa_id, Cache-Control no-store. Token читается уже
+существующим защищённым admin read после reload, не выбирается клиентом.
+Ошибки: 401 без session, 403 роль/CSRF, 404 неизвестная площадка, 409 неактивная,
+422 невалидное имя/UUID/лишние поля. Без активных площадок кнопка отключена
+и показана подсказка сначала создать площадку. Автоматического создания
+экрана вместе с площадкой нет.
+
+Проверки: `tests/serving_control/test_display_client_creation.py` — реальная
+изолированная PostgreSQL, два экрана одной площадки и третий другой, отдельные
+токены и правильная authentication scope, сохранность старых записей/ошибки;
+`tests/client/test_display_client_creation.mjs` — форма, выбор, CSRF,
+double submit, reload и сохранение черновика при ошибке.
+
 ## Operator screen identification update — 2026-09-10
 
 The screen name is editable by operator/developer staff on «Экраны».

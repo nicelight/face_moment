@@ -142,6 +142,7 @@ def display_client_admin_fixture(
                 )
                 cookies[account_name] = {
                     "fm_staff_session": browser_session.session_token,
+                    "fm_staff_csrf": browser_session.csrf_token,
                 }
 
         app = create_app()

@@ -570,6 +570,7 @@ async function submitReadyReferenceSeries(detail, proposals, displayConfig) {
     const clientToken = readDisplayClientToken();
     const submitted = await submitRealtimeAttempt({
       attemptId,
+      signal: attemptOutcomeController.signal,
       triggerSource: detail?.trigger_source,
       jpegQuality: qualitySnapshot?.jpegQuality,
       cameraDeviceId: cameraSnapshot.selectedDeviceId,
@@ -580,6 +581,7 @@ async function submitReadyReferenceSeries(detail, proposals, displayConfig) {
       proposals,
       onRequestReady: () => signalProgress.phase(attemptId, "search"),
     });
+    if (!attemptOutcomeController.isCurrent(attemptId)) return;
     timingRecorder.recordResponseReceived();
     signalProgress.serverIdentity(attemptId, submitted.response.headers?.get?.("X-Face-Moment-Attempt-Id"));
     const responseTiming = timingRecorder.snapshot();
@@ -1313,6 +1315,12 @@ cameraController = createCameraController({
   onError: () => updateCameraConfiguration(),
 });
 attemptOutcomeController = createAttemptOutcomeController({
+  onTimeout: (detail) => {
+    attemptTimingSnapshots.delete(detail.attemptId);
+    discardDisplayConfiguration(detail.attemptId);
+    showCommunicationNotice(detail);
+    restoreAdvertisingAfterFailure(detail);
+  },
   onStateChange: ({ state, outcome }) => {
     document.body.dataset.attemptState = state;
     if (outcome) document.body.dataset.attemptOutcome = outcome;

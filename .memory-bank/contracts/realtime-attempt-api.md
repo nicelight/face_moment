@@ -180,6 +180,33 @@ FT-003.
 
 ## Verification Targets
 
+### Bounded client waiting and realtime I/O
+
+Operator-approved KISS correction (2026-09-16): the browser has one 10-second
+watchdog from request-attempt start through crop encoding, upload and response
+JSON consumption. Expiry aborts transport, finishes the attempt as a client
+communication failure, restores advertising without success cooldown, and
+allows only a fresh capture. Late completion cannot affect a newer attempt.
+This timer excludes preceding local detection and subsequent Promo rendering.
+
+The server processing deadline remains 7000 ms by default; it rejects late
+processing results but does not interrupt native inference or promise a
+7-second HTTP response. Realtime-only database connections use a 3-second
+connect/pool/lock wait, statement timeout equal to the configured processing
+deadline, and TCP user timeout equal to that deadline. Realtime MinIO operations
+use 2-second connect/read timeouts and one total attempt (no SDK retries).
+Other roles retain their existing I/O policy. These are per-operation limits,
+not a cumulative request deadline; slow valid requests may fail earlier.
+
+Native hangs retain the accepted manual realtime restart and startup recovery.
+Client cancellation neither stops server inference nor releases its singleton
+slot. No automatic process restart or inference subprocess is introduced.
+
+Regression checks cover pending transport/body, abort, fresh capture after
+timeout, late success/failure, timer cleanup, and actual DB/MinIO timeout behavior.
+
+### Existing API checks
+
 - Contract tests cover the exact path, part names/order/content types, strict
   manifest allow-list, explicit omissions and all relational validation.
 - Boundary tests at `20,971,520` and `20,971,521` bytes prove admission versus

@@ -9,6 +9,8 @@ const VALID_OUTCOMES = new Set([
   "in_progress",
 ]);
 
+export const REALTIME_REQUEST_TIMEOUT_MS = 10_000;
+
 export const REALTIME_ATTEMPT_OUTCOMES = Object.freeze([
   ...VALID_OUTCOMES,
 ]);
@@ -72,7 +74,8 @@ function typedResponse(payload, attemptId) {
 /**
  * Own the browser-local response branch after the request boundary.
  *
- * The controller deliberately has no timer, notice, Promo, QR or retry queue.
+ * One watchdog covers request preparation, transport and response body reading.
+ * Notice, Promo, QR and capture recovery remain with the caller.
  * A caller supplies a new capture/series identity for every attempt; only the
  * current identity may change the state.
  */
@@ -80,9 +83,13 @@ export class AttemptOutcomeController {
   constructor({
     onStateChange = () => {},
     onOutcome = () => {},
+    onTimeout = () => {},
+    timeoutMs = REALTIME_REQUEST_TIMEOUT_MS,
   } = {}) {
     this.onStateChange = onStateChange;
     this.onOutcome = onOutcome;
+    this.onTimeout = onTimeout;
+    this.timeoutMs = timeoutMs;
     this.state = "advertising";
     this.current = null;
     this.resultAttemptId = null;
@@ -122,6 +129,12 @@ export class AttemptOutcomeController {
     this.current = {
       attemptId: normalizedAttemptId,
       captureId: normalizedCaptureId,
+      controller: new AbortController(),
+      timer: setTimeout(() => {
+        if (!this.isCurrent(normalizedAttemptId)) return;
+        const failure = this.handleTransportFailure(normalizedAttemptId);
+        this.onTimeout({ ...failure, captureId: normalizedCaptureId });
+      }, this.timeoutMs),
     };
     return this.setState("searching", {
       attemptId: normalizedAttemptId,
@@ -133,9 +146,21 @@ export class AttemptOutcomeController {
     return this.current?.attemptId === String(attemptId ?? "");
   }
 
+  get signal() {
+    return this.current?.controller.signal;
+  }
+
+  clearCurrent({ abort = false } = {}) {
+    const current = this.current;
+    this.current = null;
+    if (!current) return;
+    clearTimeout(current.timer);
+    if (abort) current.controller.abort();
+  }
+
   finishFailure(attemptId, failure) {
     if (!this.isCurrent(attemptId)) return staleResult(attemptId, this.current);
-    this.current = null;
+    this.clearCurrent({ abort: true });
     const result = responseFailure({ attemptId, ...failure });
     this.setState("advertising", {
       attemptId,
@@ -173,7 +198,7 @@ export class AttemptOutcomeController {
     // The body may have resolved after a newer lifecycle event. Re-check the
     // identity before allowing a late response to mutate state.
     if (!this.isCurrent(attemptId)) return staleResult(attemptId, this.current);
-    this.current = null;
+    this.clearCurrent();
     if (payload.outcome === "result") {
       this.resultAttemptId = attemptId;
       const result = Object.freeze({

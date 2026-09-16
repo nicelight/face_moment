@@ -207,7 +207,10 @@ to the existing detector and reuses the configuration for the resulting Promo.
 #### Staff площадка names
 
 Operator addition 2026-09-16: `/staff/spas` includes «Добавить площадку» with
-name and IANA timezone (default Asia/Novosibirsk), submit and cancel. `POST
+name and a timezone dropdown GMT+1 through GMT+10 (default GMT+7), submit and cancel.
+Dropdown values use fixed IANA zones `Etc/GMT-1` through `Etc/GMT-10`;
+the reversed identifier sign represents the displayed positive offset, without DST.
+Existing saved venue zones remain unchanged. `POST
 /api/serving/spas` accepts exactly `{name, timezone}`, requires operator/developer
 session and CSRF, and returns 201 with spa_id/name/timezone and no-store.
 The server resolves the shared eligible revision; model selection is not an
@@ -246,6 +249,12 @@ evidence. The immutable context and threshold/quality inputs are defined by
 [Realtime Reference Search](../domains/realtime-search.md).
 
 ### Display client administration
+
+Operator addition: «Добавить экран» provides name and active-venue selection.
+`POST /api/serving/display-clients` is forwarded by the edge and authorizes
+operator/developer + CSRF before owner provisioning. Multiple screens may bind
+one venue; each gets a separate token. [Creation contract](../domains/display-client-access.md):
+payload, errors, persistence, empty-state and verification.
 
 `serving_control` owns the current retrievable token and matching authentication
 digest for every configured kiosk. It uses the existing `staff_access`

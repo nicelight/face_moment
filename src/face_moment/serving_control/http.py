@@ -4,7 +4,7 @@ from collections.abc import Callable, Sequence
 from datetime import date, datetime, timezone
 from html import escape
 import uuid
-from zoneinfo import ZoneInfo, available_timezones
+from zoneinfo import ZoneInfo
 
 from fastapi import Cookie, FastAPI, Header, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field, StrictBool
@@ -36,8 +36,10 @@ from face_moment.serving_control.display_client_admin import (
     DisplayClientAdminRecord,
     read_display_client_admin,
     rename_display_client,
+    create_display_client,
 )
-from face_moment.serving_control.display_client_access import DisplayClientNotFoundError
+from face_moment.serving_control.display_client_access import DisplayClientNotFoundError, UnknownDisplayClientSpaError
+from face_moment.serving_control.ingest_target import InactiveIngestTargetError
 from face_moment.serving_control.detector_thresholds import DetectorKind, update_detector_threshold
 from face_moment.serving_control.similarity_threshold import read_similarity_threshold, save_similarity_threshold
 from face_moment.serving_control.realtime_context import CalibrationRecommendationConflictError, CalibrationServingSnapshot
@@ -81,6 +83,10 @@ class DisplayClientNameRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
 
 
+class DisplayClientCreateRequest(DisplayClientNameRequest):
+    spa_id: uuid.UUID
+
+
 class ActiveSearchDateResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -114,6 +120,32 @@ class SearchDatesResponse(BaseModel):
 def register_display_client_admin_routes(
     app: FastAPI, *, session_factory: Callable[[], Session]
 ) -> None:
+    @app.post("/api/serving/display-clients")
+    def create_display_client_route(
+        payload: DisplayClientCreateRequest,
+        fm_staff_session: str | None = Cookie(default=None),
+        fm_staff_csrf: str | None = Cookie(default=None),
+        x_csrf_token: str | None = Header(default=None),
+    ) -> JSONResponse:
+        with _database_session(session_factory) as database_session:
+            try:
+                client_id = create_display_client(database_session,
+                    session_token=fm_staff_session, csrf_cookie_token=fm_staff_csrf,
+                    csrf_header_token=x_csrf_token, spa_id=payload.spa_id, name=payload.name)
+                database_session.commit()
+            except InvalidSessionError as error:
+                raise HTTPException(status_code=401) from error
+            except (CsrfValidationError, DisplayClientAdminAccessDeniedError) as error:
+                raise HTTPException(status_code=403) from error
+            except UnknownDisplayClientSpaError as error:
+                raise HTTPException(status_code=404, detail="Площадка не найдена.") from error
+            except InactiveIngestTargetError as error:
+                raise HTTPException(status_code=409, detail="Площадка отключена.") from error
+            except ValueError as error:
+                raise HTTPException(status_code=422, detail="Введите название экрана от 1 до 255 символов.") from error
+        return JSONResponse({"display_client_id": str(client_id), "spa_id": str(payload.spa_id)},
+            status_code=201, headers={"Cache-Control": "no-store"})
+
     @app.put("/api/serving/display-clients/{display_client_id}/name")
     def rename_display_client_route(
         display_client_id: uuid.UUID, payload: DisplayClientNameRequest,
@@ -149,12 +181,13 @@ def register_display_client_admin_routes(
                     database_session,
                     session_token=fm_staff_session,
                 )
+                spas = list_active_search_date_spas(database_session, session_token=fm_staff_session)
             except InvalidSessionError as error:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from error
             except DisplayClientAdminAccessDeniedError as error:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN) from error
 
-        response = HTMLResponse(staff_document(_display_client_page_html(clients), "display-clients"))
+        response = HTMLResponse(staff_document(_display_client_page_html(clients, spas), "display-clients"))
         response.headers["Cache-Control"] = "no-store"
         return response
 
@@ -419,13 +452,15 @@ def _database_session(session_factory: Callable[[], Session]) -> Session:
     return session_factory()
 
 
-def _display_client_page_html(clients: Sequence[DisplayClientAdminRecord]) -> str:
+def _display_client_page_html(clients: Sequence[DisplayClientAdminRecord], spas: Sequence[ActiveSearchDateSpa] = ()) -> str:
+    names = {spa.spa_id: spa.name for spa in spas}
+    options = "".join(f'<option value="{spa.spa_id}">{escape(spa.name)}</option>' for spa in spas)
     cards = "".join(
         '<article class="fm-device-card">'
         '<div class="fm-device-face" data-tilt>'
         f'<p class="fm-eyebrow">КИОСК / {"РАЗРЕШЁН" if client.active else "ОТКЛЮЧЁН"}</p>'
         f'<h2>{escape(client.name)}</h2></div>'
-        f'<p class="fm-device-meta">Площадка: {escape(str(client.spa_id))}<br>'
+        f'<p class="fm-device-meta">Площадка: {escape(names.get(client.spa_id, str(client.spa_id)))}<br>'
         f'ID экрана: …{escape(str(client.display_client_id)[-5:])}</p>'
         f'<form class="fm-device-rename" data-client-id="{client.display_client_id}">'
         f'<label>Название экрана<input name="name" value="{escape(client.name, quote=True)}" required maxlength="255"></label>'
@@ -454,10 +489,22 @@ def _display_client_page_html(clients: Sequence[DisplayClientAdminRecord]) -> st
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Display client settings</title>
+  <script type="module" src="/client/display-client-create.js"></script>
+  <style>.fm-display-create[hidden] {{ display: none; }} .fm-display-create {{ max-width: 32rem; margin-block: 1rem; }} [data-show-display-create] {{ margin-bottom: 1rem; }}</style>
 </head>
 <body>
   <main>
     <h1>Display client settings</h1>
+    <button type="button" data-show-display-create aria-expanded="false" aria-controls="display-create"{' disabled' if not spas else ''}>Добавить экран</button>
+    {'' if spas else '<p>Сначала добавьте площадку в разделе «Площадки».</p>'}
+    <section id="display-create" class="fm-device-card fm-display-create" hidden>
+      <h2>Новый экран</h2><form data-display-create>
+        <label>Название экрана<input name="name" required maxlength="255" autocomplete="off"></label>
+        <label>Площадка<select name="spa_id" required><option value="" selected disabled>Выберите площадку</option>{options}</select></label>
+        <div><button type="submit">Создать экран</button> <button type="button" data-cancel-display-create>Отмена</button></div>
+        <p role="status" aria-live="polite"></p>
+      </form>
+    </section>
     <div class="fm-device-list">{cards or '<p>Экраны пока не настроены.</p>'}</div>
     <details class="fm-device-table"><summary>Таблица настроенных экранов</summary><table>
       <caption>Configured kiosks and current tokens</caption>
@@ -495,8 +542,10 @@ def _search_dates_response(record: SearchDatesRecord) -> JSONResponse:
 
 
 def _spa_admin_page_html(spas: Sequence[ActiveSearchDateSpa]) -> str:
-    timezone_options = "".join(f'<option value="{escape(zone, quote=True)}">{escape(zone)}</option>'
-        for zone in sorted(available_timezones()))
+    # IANA Etc/GMT identifiers use the opposite sign to the displayed offset.
+    timezone_options = "".join(
+        f'<option value="Etc/GMT-{offset}"{" selected" if offset == 7 else ""}>GMT+{offset}</option>'
+        for offset in range(1, 11))
     cards = "".join(
         f'''<article class="fm-device-card"><h2 data-spa-title>{escape(spa.name)}</h2>
 <details class="fm-spa-settings"><summary>Настройки площадки</summary>
@@ -515,8 +564,7 @@ def _spa_admin_page_html(spas: Sequence[ActiveSearchDateSpa]) -> str:
 <section id="spa-create" class="fm-device-card fm-spa-create" hidden>
 <h2>Новая площадка</h2><form data-spa-create>
 <label>Название площадки<input name="name" required maxlength="255" autocomplete="off"></label>
-<label>Часовой пояс<input name="timezone" required maxlength="255" value="Asia/Novosibirsk" list="spa-timezones" autocomplete="off"></label>
-<datalist id="spa-timezones">{timezone_options}</datalist>
+<label>Часовой пояс<select name="timezone" required>{timezone_options}</select></label>
 <p>Поиск за сегодня, порог сходства 0.38. Настройки можно изменить после создания.</p>
 <div><button type="submit">Создать площадку</button> <button type="button" data-cancel-spa-create>Отмена</button></div>
 <p role="status" aria-live="polite"></p></form></section>

@@ -4,6 +4,7 @@ import uuid
 from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 
 from face_moment.platform.auth.principals import StaffRole
 from face_moment.platform.auth.sessions import (
@@ -11,7 +12,8 @@ from face_moment.platform.auth.sessions import (
     get_current_principal,
     authenticate_unsafe_staff_request,
 )
-from face_moment.serving_control.display_client_access import DisplayClientRepository
+from face_moment.serving_control.display_client_access import DisplayClientRepository, UnknownDisplayClientSpaError
+from face_moment.serving_control.ingest_target import Spa, InactiveIngestTargetError
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,6 +29,25 @@ class DisplayClientAdminRecord:
 
 class DisplayClientAdminAccessDeniedError(PermissionError):
     """The authenticated staff principal is not an Admin."""
+
+
+def create_display_client(
+    database_session: Session, *, session_token: str | None,
+    csrf_cookie_token: str | None, csrf_header_token: str | None,
+    spa_id: uuid.UUID, name: str,
+) -> uuid.UUID:
+    principal = authenticate_unsafe_staff_request(
+        database_session, session_token=session_token,
+        csrf_cookie_token=csrf_cookie_token, csrf_header_token=csrf_header_token,
+    )
+    if principal.role not in (StaffRole.OPERATOR, StaffRole.DEVELOPER):
+        raise DisplayClientAdminAccessDeniedError
+    venue = database_session.scalar(select(Spa).where(Spa.id == spa_id).with_for_update())
+    if venue is None:
+        raise UnknownDisplayClientSpaError(str(spa_id))
+    if not venue.active:
+        raise InactiveIngestTargetError(str(spa_id))
+    return DisplayClientRepository(database_session).provision(spa_id=spa_id, name=name).id
 
 
 def rename_display_client(
