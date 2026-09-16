@@ -187,9 +187,14 @@ object.
 
 A process crash after object upload but before commit may leave one
 inaccessible orphan and no database admission; ordinary re-upload is the
-accepted recovery. No outbox, distributed transaction, object move/copy or
-orphan lifecycle is introduced. An accepted Photo keeps its original opaque
-key.
+accepted upload recovery. Operator-triggered cleanup on the Staff Venue Media
+page scans only `candidates/` objects and deletes keys absent from
+`Photo.original_object_key`. It holds a PostgreSQL admission lock across the
+scan, so no concurrent upload can publish or stage a candidate during deletion;
+uploads receive `503` and can be retried afterward. A cleanup run is synchronous
+and returns checked/deleted counts. Interrupted runs can be repeated. No outbox,
+distributed transaction, object move/copy or orphan lifecycle is introduced.
+An accepted Photo keeps its original opaque key.
 
 ## Errors And Invariants
 

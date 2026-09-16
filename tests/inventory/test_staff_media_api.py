@@ -16,10 +16,18 @@ from PIL import Image
 import pytest
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from face_moment.entrypoints.backend import create_app
 from face_moment.infrastructure.object_store import PrivateObjectStore
 from face_moment.infrastructure.settings import Settings
+from face_moment.inventory import staff_media_http
+from face_moment.inventory.orphan_original_cleanup import (
+    OriginalCleanupResult,
+    OriginalCleanupUploadPausedError,
+    admission_storage_guard,
+    cleanup_orphan_originals,
+)
 from face_moment.inventory.photo_persistence import Photo
 from face_moment.inventory.validation import CapturedAtSource
 from face_moment.platform.auth.principals import StaffRole, provision_staff_user
@@ -237,3 +245,75 @@ def test_soft_delete_preserves_media_and_requires_csrf(media_state: MediaFixture
     assert request(f.app,f'/api/inventory/venue-media/{photo_id}/original',cookies=cookies).body==f.original
     listed=request(f.app,'/api/inventory/venue-media',params=selection(f),cookies=cookies).json()['photos']
     assert str(photo_id) not in [row['photo_id'] for row in listed]
+
+
+def test_orphan_cleanup_keeps_referenced_originals_and_pauses_uploads(
+    media_state: MediaFixture,
+) -> None:
+    f = media_state
+    with Session(f.engine) as session:
+        referenced = session.get(Photo, f.ids['ready'])
+        assert referenced is not None
+        existing_key = referenced.original_object_key
+    orphan_key = f'candidates/test-orphan-{uuid.uuid4().hex}'
+
+    class Store:
+        def __init__(self) -> None:
+            self.deleted: list[str] = []
+
+        def list_key_pages(self, *, prefix: str) -> Iterator[list[str]]:
+            assert prefix == 'candidates/'
+            yield [existing_key, orphan_key]
+
+        def delete(self, *, key: str) -> None:
+            self.deleted.append(key)
+
+    store = Store()
+    with Session(f.engine) as session:
+        result = cleanup_orphan_originals(session, store)  # type: ignore[arg-type]
+    assert result == OriginalCleanupResult(scanned=2, deleted=1)
+    assert store.deleted == [orphan_key]
+
+    # An exclusive cleanup lock makes the next admission fail before MinIO put.
+    with f.engine.connect() as connection, connection.begin():
+        connection.execute(text('SELECT pg_advisory_xact_lock(:key)'), {'key': 62_401_876_320})
+        with Session(f.engine) as session:
+            with pytest.raises(OriginalCleanupUploadPausedError):
+                with admission_storage_guard(session):
+                    pytest.fail('admission passed through cleanup lock')
+
+
+def test_orphan_cleanup_route_requires_admin_and_csrf(
+    media_state: MediaFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    f = media_state
+    calls: list[bool] = []
+
+    def fake_cleanup(_session: Session, _store: PrivateObjectStore) -> OriginalCleanupResult:
+        calls.append(True)
+        return OriginalCleanupResult(scanned=12, deleted=3)
+
+    monkeypatch.setattr(staff_media_http, 'cleanup_orphan_originals', fake_cleanup)
+    path = '/api/inventory/orphan-originals/cleanup'
+    for role in ('photographer', 'operator', 'developer'):
+        page = request(f.app, '/staff/venue-media', params={'spa_id': str(f.spa_id)}, cookies=f.cookies[role])
+        assert ('Запустить очистку битых файлов'.encode() in page.body) == (role != 'photographer')
+        if role != 'photographer':
+            assert 'Это может занять до 30 минут'.encode() in page.body
+            assert '>ДА!</button>'.encode() in page.body and '>Отмена</button>'.encode() in page.body
+    assert request(f.app, path, method='POST').status == 401
+    for role in ('photographer', 'operator'):
+        cookies = f.cookies[role]
+        assert request(f.app, path, method='POST', cookies=cookies).status == 403
+        assert request(f.app, path, method='POST', cookies=cookies, csrf='wrong').status == 403
+    assert request(f.app, path, method='POST', cookies=f.cookies['photographer'],
+                   csrf=f.cookies['photographer']['fm_staff_csrf']).status == 403
+    assert calls == []
+    for role in ('operator', 'developer'):
+        cookies = f.cookies[role]
+        reply = request(f.app, path, method='POST', cookies=cookies,
+                        csrf=cookies['fm_staff_csrf'])
+        assert reply.status == 200 and reply.headers['cache-control'] == 'no-store'
+        assert reply.json() == {'schema_version': 1, 'scanned': 12, 'deleted': 3}
+    assert len(calls) == 2

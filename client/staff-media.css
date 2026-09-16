@@ -23,4 +23,8 @@
 .fm-staff #recent-statistics-spa-name { font-size: 18px; overflow-wrap: anywhere; }
 .fm-media-venue-link button[aria-pressed="true"] { outline: 2px solid var(--fm-accent); outline-offset: 3px; }
 .fm-media-venue-link a { color: var(--fm-accent); white-space: nowrap; }
+.fm-media-cleanup { margin-top: 2rem; padding: 1.25rem; border: 1px solid var(--fm-line); border-radius: 12px; background: var(--fm-panel); }
+.fm-media-cleanup dialog { max-width: 440px; padding: 1.5rem; border: 1px solid var(--fm-line); border-radius: 12px; background: var(--fm-panel); color: var(--fm-text); }
+.fm-media-cleanup dialog::backdrop { background: #0009; }
+.fm-media-cleanup-actions { display: flex; gap: .75rem; flex-wrap: wrap; }
 @media (max-width: 600px) { .fm-staff .fm-media-filter > label { flex: 1 1 140px; min-width: 120px; } .fm-media-preview { width: 112px; height: 84px; } }

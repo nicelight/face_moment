@@ -31,6 +31,7 @@ from face_moment.inventory.photo_upload import (
     PhotographerAccessDeniedError as UploadPhotographerAccessDeniedError,
     upload_photo,
 )
+from face_moment.inventory.orphan_original_cleanup import OriginalCleanupUploadPausedError
 from face_moment.inventory.photo_processing_status import (
     PhotoProcessingStatusAccessDeniedError,
     PhotoProcessingStatusNotFoundError,
@@ -446,6 +447,8 @@ def register_ingest_target_routes(
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN) from error
             except PhotoUploadRateLimitError as error:
                 raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS) from error
+            except OriginalCleanupUploadPausedError as error:
+                raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail={"code": "original_cleanup_running", "message": "Идёт очистка файлов. Повторите загрузку позже."}) from error
             except InvalidPhotoUploadError as error:
                 raise HTTPException(status_code=422, detail={"code": "invalid_target", "message": "Выбранный СПА недоступен для загрузки. Обновите страницу и выберите СПА снова."}) from error
             except InvalidJpegCandidateError as error:

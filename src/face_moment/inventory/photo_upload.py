@@ -14,6 +14,7 @@ from face_moment.infrastructure.object_store import PrivateObjectStore
 from face_moment.infrastructure.settings import Settings
 from face_moment.inventory.admission import AdmissionCandidate, AdmissionResult, AtomicPhotoAdmission
 from face_moment.inventory.candidate_staging import CandidateStager
+from face_moment.inventory.orphan_original_cleanup import admission_storage_guard
 from face_moment.inventory.validation import JpegValidationLimits, ValidatedJpegCandidate, validate_jpeg_candidate
 from face_moment.platform.auth.principals import StaffRole
 from face_moment.platform.auth.sessions import authenticate_unsafe_staff_request
@@ -119,17 +120,18 @@ def upload_photo(
     # Authentication and target reads begin SQLAlchemy's implicit read transaction.
     # The existing admission boundary owns the subsequent short write transaction.
     database_session.rollback()
-    stager = CandidateStager(PrivateObjectStore(settings))
-    staged_candidate = stager.stage(validated.original_bytes)
-    admission = AtomicPhotoAdmission(database_session).admit(
-        ingest_target=target,
-        uploader_id=principal.staff_user_id,
-        candidate=AdmissionCandidate(
-            staged_candidate=staged_candidate,
-            validated_jpeg=validated,
-        ),
-        cleanup_losing_candidate=stager.cleanup,
-    )
+    with admission_storage_guard(database_session):
+        stager = CandidateStager(PrivateObjectStore(settings))
+        staged_candidate = stager.stage(validated.original_bytes)
+        admission = AtomicPhotoAdmission(database_session).admit(
+            ingest_target=target,
+            uploader_id=principal.staff_user_id,
+            candidate=AdmissionCandidate(
+                staged_candidate=staged_candidate,
+                validated_jpeg=validated,
+            ),
+            cleanup_losing_candidate=stager.cleanup,
+        )
     return PhotoUploadResult(admission=admission, warnings=_warnings(validated))
 
 

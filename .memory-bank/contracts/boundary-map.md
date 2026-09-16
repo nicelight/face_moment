@@ -437,15 +437,18 @@ derivative deletion is the exact
 
 ### PostgreSQL and MinIO convergence
 
-- The backend writes each upload candidate under a unique opaque private MinIO
-  key before JPEG validation and SHA-256 arbitration. The browser never gets
-  direct MinIO access.
+- After JPEG validation, the backend writes each upload candidate under a
+  unique opaque private MinIO key before database arbitration. The browser
+  never gets direct MinIO access.
 - PostgreSQL uniqueness on `(spa_id, visit_date, checksum_sha256)` arbitrates
   concurrent admission. A duplicate creates no Photo/processing state and
   deletes only its candidate object; an accepted Photo keeps its initial key.
 - The per-Photo PostgreSQL commit publishes
   `Photo + accepted_at + pending`. A pre-commit crash may leave a private orphan
-  and lose that admission; ordinary re-upload is sufficient recovery.
+  and lose that admission; ordinary re-upload is sufficient admission recovery.
+  Operator-triggered candidate cleanup checks MinIO keys against committed
+  Photo references while a PostgreSQL lock excludes concurrent candidate
+  staging and admission. It never deletes a referenced original.
 - Derived keys are deterministic by
   `(photo_id, pipeline_revision_id, artifact_kind)`, allowing idempotent
   replacement before terminal processing publication.

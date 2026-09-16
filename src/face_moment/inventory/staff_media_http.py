@@ -6,15 +6,16 @@ from datetime import date
 from html import escape
 from uuid import UUID
 
-from fastapi import Cookie, FastAPI, HTTPException, Response
+from fastapi import Cookie, FastAPI, Header, HTTPException, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 
 from face_moment.infrastructure.object_store import PrivateObjectStore
 from face_moment.infrastructure.settings import Settings
 from face_moment.inventory.photo_inventory import PhotoInventoryAccessDeniedError, PhotoInventoryNotFoundError, InvalidPhotoInventorySelectionError
+from face_moment.inventory.orphan_original_cleanup import OriginalCleanupRunningError, cleanup_orphan_originals
 from face_moment.inventory.staff_media import read_staff_media_venue_name, read_staff_venue_media, read_staff_photo_bytes
-from face_moment.platform.auth.sessions import InvalidSessionError
+from face_moment.platform.auth.sessions import CsrfValidationError, InvalidSessionError, authenticate_unsafe_staff_request
 from face_moment.platform.auth.sessions import get_current_principal
 from face_moment.platform.auth.principals import StaffRole
 from face_moment.platform.staff_datetime import date_picker, staff_today
@@ -54,6 +55,37 @@ def register_staff_media_routes(app: FastAPI, *, session_factory: Callable[[], S
         return respond(lambda session: JSONResponse(read_staff_venue_media(session,
             session_token=fm_staff_session, spa_id=_uuid(spa_id), date_from=_date(date_from),
             date_to=_date(date_to)), headers=_HEADERS))
+
+    @app.post('/api/inventory/orphan-originals/cleanup')
+    def clean_orphan_originals(
+        fm_staff_session: str | None = Cookie(default=None),
+        fm_staff_csrf: str | None = Cookie(default=None),
+        x_csrf_token: str | None = Header(default=None),
+    ) -> Response:
+        try:
+            with session_factory() as session:
+                principal = authenticate_unsafe_staff_request(
+                    session,
+                    session_token=fm_staff_session,
+                    csrf_cookie_token=fm_staff_csrf,
+                    csrf_header_token=x_csrf_token,
+                )
+                if principal.role not in {StaffRole.OPERATOR, StaffRole.DEVELOPER}:
+                    raise PhotoInventoryAccessDeniedError
+            with session_factory() as session:
+                result = cleanup_orphan_originals(session, PrivateObjectStore(Settings.from_env()))
+            return JSONResponse(
+                {'schema_version': 1, 'scanned': result.scanned, 'deleted': result.deleted},
+                headers=_HEADERS,
+            )
+        except InvalidSessionError as error:
+            raise HTTPException(401, headers=_HEADERS) from error
+        except (CsrfValidationError, PhotoInventoryAccessDeniedError) as error:
+            raise HTTPException(403, headers=_HEADERS) from error
+        except OriginalCleanupRunningError as error:
+            raise HTTPException(409, headers=_HEADERS) from error
+        except Exception as error:
+            raise HTTPException(500, headers=_HEADERS) from error
 
     @app.get('/api/inventory/venue-media/{photo_id}/thumbnail')
     def thumbnail(photo_id: str, fm_staff_session: str | None = Cookie(default=None)) -> Response:
@@ -102,6 +134,16 @@ def staff_media_page_html(spa_id: UUID, name: str, *, can_diagnose: bool = False
 <p>Оценки «верно/неверно» и «Кого не нашли» временные: сбрасываются при перезагрузке страницы и не меняют распознавание.</p>
 <p id="captures-status" role="status"></p><div id="capture-attempts"></div>
 </section>''' if can_diagnose else ''
+    cleanup = '''<section class="fm-media-cleanup" aria-label="Очистка файлов">
+<h2>Очистка файлов</h2>
+<p>Проверяет оригиналы без записи о фотографии во всех площадках. Во время проверки новые загрузки будут временно недоступны.</p>
+<button id="orphan-cleanup-open" type="button">Запустить очистку битых файлов</button>
+<p id="orphan-cleanup-status" role="status" aria-live="polite"></p>
+<dialog id="orphan-cleanup-dialog" aria-labelledby="orphan-cleanup-warning">
+<p id="orphan-cleanup-warning">Это может занять до 30 минут, сервер в это время будет практически неработоспособен</p>
+<div class="fm-media-cleanup-actions"><button id="orphan-cleanup-confirm" type="button">ДА!</button>
+<button id="orphan-cleanup-cancel" type="button">Отмена</button></div>
+</dialog></section>''' if can_diagnose else ''
     return f'''<!doctype html><html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Медиа площадки</title>
 <link rel="stylesheet" href="/client/staff-media.css">
@@ -123,4 +165,5 @@ def staff_media_page_html(spa_id: UUID, name: str, *, can_diagnose: bool = False
 <tbody id="media-rows"></tbody></table>
 <p class="fm-media-hint">Удалённые фотографии скрываются из поиска. Их можно восстановить в библиотеке.</p>
 {diagnostics}
+{cleanup}
 </section></main></body></html>'''

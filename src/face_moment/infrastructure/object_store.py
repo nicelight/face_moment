@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any, Iterator, cast
 
 import boto3
 from botocore.config import Config
@@ -81,3 +81,14 @@ class PrivateObjectStore:
             for item in response.get("Contents", [])
             if isinstance(item.get("Key"), str)
         }
+
+    def list_key_pages(self, *, prefix: str) -> Iterator[list[str]]:
+        client = s3_client(self._settings, realtime_io=self._realtime_io)
+        for page in client.get_paginator("list_objects_v2").paginate(
+            Bucket=self._settings.s3_bucket, Prefix=prefix
+        ):
+            yield [
+                item["Key"]
+                for item in page.get("Contents", [])
+                if isinstance(item.get("Key"), str)
+            ]

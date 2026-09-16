@@ -270,3 +270,23 @@ routing. Use disposable fixtures for delete proof; retain live uploaded photos.
   Empty result, loading and failed list states are explicit.
 - The checked-in HTTPS edge MUST route `/staff/venue-media` to the backend;
   existing `/api/inventory/*` delivery remains the media transport.
+
+### Candidate original cleanup
+
+At the bottom of «Медиа площадки», operator/developer may launch project-wide
+cleanup of MinIO `candidates/` originals with no `Photo` reference. The button
+shows a confirmation dialog with the operator's 30-minute warning and exact
+`ДА!` / `Отмена` choices. Photographer has no control. Confirmation calls
+`POST /api/inventory/orphan-originals/cleanup` with the active staff session and
+CSRF header/cookie. Success returns `schema_version: 1`, `scanned` and `deleted`
+counts. The page shows the result or failure without claiming success early.
+
+The server waits for active admissions, excludes new candidate staging during
+the scan, pages through the private bucket and checks each page against
+committed `Photo.original_object_key` values before deleting unmatched keys.
+Only `candidates/` is in scope; accepted Photos and other MinIO namespaces are
+untouched. New uploads during cleanup return retryable `503`; duplicate cleanup
+requests return `409`. Missing/invalid staff session returns `401`, invalid CSRF
+or role returns `403`, and storage/database failures return `500`. No database
+migration or persistent job state is added. A dropped browser connection may
+leave the outcome unknown to that browser; another run is safe.

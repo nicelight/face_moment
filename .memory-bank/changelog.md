@@ -4,6 +4,17 @@ status: active
 ---
 # Changelog
 
+## 2026-09-16 — Manual cleanup of orphan original uploads
+
+«Медиа площадки» now offers operator/developer a confirmation-gated cleanup of
+unreferenced `candidates/` originals across all venues. The backend excludes
+new staging with a PostgreSQL advisory lock, waits for in-flight admissions,
+compares paged MinIO keys with committed Photo references and reports checked/
+deleted counts. Uploads return retryable `503` while cleanup holds the lock.
+No schema migration or background job state is added. See
+[Photo Admission](domains/photo-admission.md) and
+[Staff Venue Media](contracts/photo-inventory-api.md#candidate-original-cleanup).
+
 ## 2026-09-16 — Address Promo media by session and Photo
 
 Display media now loads one session by `session_id` and checks its СПА plus

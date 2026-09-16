@@ -121,5 +121,31 @@ if (root) {
     }
   }
   form.addEventListener('submit', event => { event.preventDefault(); load(); });
+  const cleanupOpen = root.querySelector('#orphan-cleanup-open');
+  if (cleanupOpen) {
+    const dialog = root.querySelector('#orphan-cleanup-dialog');
+    const cleanupStatus = root.querySelector('#orphan-cleanup-status');
+    cleanupOpen.addEventListener('click', () => dialog.showModal());
+    root.querySelector('#orphan-cleanup-cancel').addEventListener('click', () => dialog.close());
+    root.querySelector('#orphan-cleanup-confirm').addEventListener('click', async () => {
+      dialog.close();
+      cleanupOpen.disabled = true;
+      cleanupStatus.textContent = 'Очистка выполняется. Дождитесь результата.';
+      const csrf = document.cookie.split(';').map(part => part.trim()).find(part => part.startsWith('fm_staff_csrf='))?.slice('fm_staff_csrf='.length) || '';
+      try {
+        const response = await fetch('/api/inventory/orphan-originals/cleanup', {
+          method: 'POST', credentials: 'same-origin', cache: 'no-store',
+          headers: { 'X-CSRF-Token': decodeURIComponent(csrf) },
+        });
+        if (!response.ok) throw new Error(response.status === 409
+          ? 'Очистка уже запущена.' : response.status === 401
+            ? 'Сессия завершилась. Войдите заново.' : 'Очистка не завершилась. Повторите позже.');
+        const result = await response.json();
+        cleanupStatus.textContent = `Очистка завершена: проверено ${result.scanned}, удалено ${result.deleted} файлов.`;
+      } catch (reason) {
+        cleanupStatus.textContent = reason.message || 'Не удалось выполнить очистку.';
+      } finally { cleanupOpen.disabled = false; }
+    });
+  }
   load();
 }
