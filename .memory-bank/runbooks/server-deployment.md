@@ -256,6 +256,59 @@ existing retention policy, so it belongs to the approved deployment window.
 
 ## Public acceptance
 
+### Verified central rollout — 2026-09-16
+
+The central application was deployed from reviewed commit
+`8c0467fbb6f1db0ae9f51c7021b6579a5e5798ab`. The built application image was
+`sha256:bb91f3846fe08b51a7726accbefab08e839f8b2a82eaa26efb45f01e27cf36ec`.
+The existing PostgreSQL and MinIO volumes were retained; no `down -v`, volume
+removal, credential reset, or VPS mutation was performed.
+
+The local packaged proof remained the authoritative precondition:
+`scripts/smoke-runtime.sh` passed in evidence directory
+`.tasks/ASTRA-findings/10-packaged-smoke/runtime-20260916T095642Z-2952493/`.
+Central models matched the workstation assets (YuNet SHA-256
+`ebafce4e3c118d6554634be5c27ab333b4c047a9a8c3faf1d7cf93101c22f0f0`, SFace
+SHA-256 `0ba9fbfa01b5270c96627c4ef784da859931e02f04419c829e83484087c34e79`),
+were made traversable by runtime UID `10001`, and passed native YuNet/SFace
+validation with a 128-dimensional embedding. The configured production
+metadata is `yunet/2023mar`, `sface/2021dec`, `opencv-photo-640-v2`,
+`opencv-aligncrop-v1`, `l2-v1`.
+
+Migration reached `0027_preview_phash`; initialization created the default
+`СПА Сибирь 1` venue. The final database counts are one SPA, one pipeline
+revision, one reference-settings row, and one active `operator` staff account.
+The generated initial password was delivered separately in a local mode-600
+credential file and is not recorded here. Backend,
+background-worker, realtime, PostgreSQL and MinIO are running healthy; public
+`GET /` and `/healthz` return successfully through `https://face-moment.ru`.
+The measured immediate FRP/Docker peer is `172.19.0.1`, and this exact value
+is set as `FACE_MOMENT_FRP_PROXY_IP`; the temporary measurement access log was
+removed and the central Caddyfile matches the reviewed source.
+The forged-XFF controlled probe and post-cleanup health check are recorded in
+`.protocols/central-deployment-2026-09-16/xff-probe.md`.
+
+The product timing decision is deployed as
+`REALTIME_RESULT_DISPLAY_MS=12000` and `REALTIME_SUCCESS_COOLDOWN_MS=1`.
+The success cooldown starts at `promo-rendered` while the display timer runs,
+so the positive minimum leaves no additional pause after the 12-second result
+display. Recognition is still blocked during that interval by the separate
+`promoDisplayController.isVisible` guard in the trigger-request handler; the
+short cooldown cannot bypass the display lock. The central `.env` remains mode
+`600`; existing secret values were preserved and are not recorded here.
+
+Remaining operational setup is intentional: the initial operator was
+provisioned through the canonical CLI and its login was verified against the
+public session endpoint. The host retention timer was installed by the
+operator's root command and user-confirmed as `enabled` and `active`, with
+next trigger `2026-09-17 00:00:00` in the server timezone. Its first cleanup
+execution has not yet been observed. The authoritative product choice sets
+`PHONE_PURCHASE_URL=https://face-moment.ru/` as the temporary self-owned
+purchase target; the purchase mechanism itself remains a product TODO and was
+not implemented. Public full photo-flow acceptance still requires an
+authorized test photo, provisioned display client, and mobile continuation
+check; these photo/kiosk/mobile E2E paths remain unverified.
+
 After the VPS configuration has been applied, verify from outside the central
 host:
 

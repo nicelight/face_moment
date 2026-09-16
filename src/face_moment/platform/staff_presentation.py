@@ -52,9 +52,9 @@ def _header(page: str) -> str:
         + (' aria-current="page"' if page == key else '') + f'>{label}</a>'
         for key, label, roles, _ in NAVIGATION
     )
-    navigation = '<a class="fm-eyebrow" href="/site">На сайт ↗</a>' if page == "login" else f'''<nav class="fm-staff-navigation" aria-label="Рабочее пространство">
+    navigation = '<a class="fm-eyebrow" href="/">На сайт ↗</a>' if page == "login" else f'''<nav class="fm-staff-navigation" aria-label="Рабочее пространство">
       <a href="/staff"{' aria-current="page"' if page == 'home' else ''}>Главная</a>{links}
-      <a href="/display">Открыть экран ↗</a><a href="/site">На сайт ↗</a>
+      <a href="/client1">Открыть экран ↗</a><a href="/">На сайт ↗</a>
       <details class="fm-nav fm-account-dropdown">
       <summary aria-label="Меню аккаунта"><span class="fm-account-name" id="staff-account-name" hidden></span></summary>
       <div class="fm-nav-links"><div class="fm-identity" id="staff-identity">Рабочее пространство</div>
@@ -80,7 +80,7 @@ def staff_document(document: str, page: str) -> str:
         document = document.replace('</main>', '</div></main>', 1)
     elif page != "home":
         document = document.replace('<main>', '<main id="staff-content">' + heading, 1)
-    footer = '<footer class="fm-footer"><span>© Face Moment · Моменты, которые остаются</span><span>Время: UTC+7</span><a href="/site">Перейти на сайт ↗</a></footer>'
+    footer = '<footer class="fm-footer"><span>© Face Moment · Моменты, которые остаются</span><span>Время: UTC+7</span><a href="/">Перейти на сайт ↗</a></footer>'
     return document.replace('</body>', footer + '</body>', 1)
 
 def staff_home_document(principal: StaffPrincipal) -> str:

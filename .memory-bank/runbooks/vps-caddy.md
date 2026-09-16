@@ -111,6 +111,40 @@ ordinary public-origin change.
 If Caddy cannot obtain a certificate, inspect `journalctl -u caddy` and first
 correct DNS or ports. Do not fall back to a self-signed public certificate.
 
+## Verified rollout record — 2026-09-16
+
+The edge portion of the `face-moment.ru` rollout was applied and validated:
+public DNS points to `46.8.200.99`, Caddy obtained the public ACME certificate,
+both configured hostnames redirect HTTP to HTTPS, and the legacy
+`face-time.moment-studio.ru` FRP/SSH management path remained usable. This is
+an edge preflight record, not full public acceptance: at the observation time
+the central application tunnel had no VPS `:18443` listener and public HTTPS
+returned `502`. Detailed sanitized evidence is in
+[the 2026-09-16 edge rollout record](../../.protocols/EDGE-DEPLOY-20260916/edge-report.md).
+
+After the central runtime became available, the VPS application listener
+returned on loopback `:18443`; public `/healthz`, `/staff/login`, `/`, and
+referenced client assets returned `200`, and the preserved legacy SSH path
+continued to work. The unauthenticated QR routes returned empty `503` because
+central `/opt/face-moment/.env` lacks `PHONE_PURCHASE_URL`; this is an
+application configuration gap, not a Caddy/FRP route failure. Central then
+applied the approved temporary target and recreated the application role;
+anonymous QR redirects were rechecked below. Independent visitor rate-limit
+budgets and photo/kiosk/phone E2E remain outside this edge verification.
+
+The temporary target `https://face-moment.ru/` is loop-safe in source: backend
+GET `/` serves `client/index.html` with `200`; anonymous `/q` and `/phone`
+redirect once to `/`, while anonymous `/api/phone/session` returns `401`.
+
+The final public QR/status check matched that behavior: `/q` and `/phone`
+returned one `303` followed by `200`, and anonymous `/api/phone/session`
+returned `401`. Coordinated inner-Caddy evidence confirms `Host:
+face-moment.ru` and replacement of forged XFF (`198.51.100.99`) with the
+measured visitor IP `109.75.50.79` through peer `172.19.0.1`; see
+[central XFF probe evidence](../../.protocols/central-deployment-2026-09-16/xff-probe.md).
+Independent visitor rate-limit budgets and full photo/kiosk/phone E2E remain
+unverified.
+
 ## Trusted visitor IP
 
 The VPS Caddy overwrites `X-Forwarded-For` with the direct visitor IP and

@@ -39,7 +39,11 @@ def test_backend_serves_shell_and_static_module() -> None:
     app = create_app()
     assert CLIENT_ROOT == Path("client").resolve()
     assert _get(app, "/")[0] == 200
-    assert "SpaPromoClient" in _get(app, "/")[1]
+    assert "Face Moment — ваши моменты, ваши фотографии" in _get(app, "/")[1]
+    assert _get(app, "/site")[0] == 200
+    assert "Face Moment — ваши моменты, ваши фотографии" in _get(app, "/site")[1]
+    assert _get(app, "/client1")[0] == 200
+    assert "SpaPromoClient" in _get(app, "/client1")[1]
     module_status, module = _get(app, "/client/app.js")
     assert module_status == 200
     assert "hashchange" in module
@@ -49,6 +53,7 @@ def test_edge_has_only_the_existing_backend_as_client_origin() -> None:
     caddy = Path("deploy/Caddyfile").read_text()
 
     assert "handle /client/*" in caddy
+    assert "@site_pages path /staff /site /display /client1" in caddy
     assert "handle /" in caddy
     assert caddy.count("reverse_proxy backend:8000") >= 8
     assert caddy.count("https://") == 2

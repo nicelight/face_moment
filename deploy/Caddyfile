@@ -29,7 +29,7 @@ https://localhost:8443, https://{$FACE_MOMENT_PUBLIC_HOST:face-moment.ru}:8443 {
 		respond @inventory_photo_upload_without_length 413
 		respond @inventory_photo_upload_over_cap 413
 
-		@site_pages path /staff /site /display
+		@site_pages path /staff /site /display /client1
 		handle @site_pages {
 			reverse_proxy backend:8000 {
 				header_up X-Forwarded-For {client_ip}
