@@ -1,4 +1,7 @@
 /** One-shot paper-card entrance, preserving the operator's saved geometry. */
+const PHOTO_STAGGER_MS = 540;
+const PHOTO_TRAVEL_MS = 2700;
+
 export function animatePromoEntrance(card) {
   if (globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
   const photos = [...card.querySelectorAll('.promo-photo-card')];
@@ -29,8 +32,14 @@ export function animatePromoEntrance(card) {
 
   const directions = ['left', 'top', 'left bottom', 'bottom'];
   const rotations = [-14, 12, 10, -9];
-  photos.forEach((photo, index) => place(photo, directions[index], index * 270, rotations[index], 1350));
-  const photosSettled = Math.max(0, photos.length - 1) * 270 + 1350;
+  photos.forEach((photo, index) => place(
+    photo,
+    directions[index],
+    index * PHOTO_STAGGER_MS,
+    rotations[index],
+    PHOTO_TRAVEL_MS,
+  ));
+  const photosSettled = Math.max(0, photos.length - 1) * PHOTO_STAGGER_MS + PHOTO_TRAVEL_MS;
   const qrAnimation = place(qr, 'right', photosSettled, 11);
   const qrSettled = photosSettled + 900;
 

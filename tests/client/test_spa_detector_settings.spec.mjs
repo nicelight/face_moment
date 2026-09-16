@@ -21,13 +21,14 @@ for (const width of [1100, 390]) {
     await page.route('**/*', async route => {
       const url = new URL(route.request().url());
       if (url.pathname === '/staff/spas') return route.fulfill({ contentType: 'text/html', body: html });
-      if (url.pathname.startsWith('/api/serving/spas/')) {
+      if (url.pathname.startsWith('/api/serving/spas/') && route.request().method() === 'PUT') {
         const payload = route.request().postDataJSON(); saved.push({ path: url.pathname, payload });
         const body = url.pathname.endsWith('/search-dates')
           ? { ...payload, date_from: '2026-09-08', date_to: '2026-09-20', today: '2026-09-14' }
           : payload;
         return route.fulfill({ json: body });
       }
+      if (url.pathname.endsWith('/similarity-threshold')) return route.fulfill({ status: 503 });
       if (url.pathname.startsWith('/client/')) {
         try {
           const body = await readFile(path.join(process.cwd(), url.pathname.slice(1)));

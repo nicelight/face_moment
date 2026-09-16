@@ -39,8 +39,10 @@ test('independent площадка switches, calendar range, validation and save
   });
   await page.goto('https://staff.test/staff/spas');
   await page.locator('.fm-spa-settings > summary').first().click();
+  await page.locator('.fm-spa-settings > summary').nth(1).click();
   const first = page.locator(`[data-spa-search][data-spa-id="${spaA}"]`);
   const second = page.locator(`[data-spa-search][data-spa-id="${spaB}"]`);
+  const initialDate = await first.locator('[data-calendar]').first().inputValue();
   await expect(first.getByRole('switch')).toBeChecked();
   await expect(first.locator('[name="date_from"]')).toBeDisabled();
   await expect(second.getByRole('switch')).not.toBeChecked();
@@ -48,23 +50,26 @@ test('independent площадка switches, calendar range, validation and save
   await expect(second.locator('[name="date_from"]')).toHaveValue('08.09.2026');
   await expect(page.getByRole('link', { name: 'Настройки поиска', exact: true })).toHaveCount(0);
   await first.getByRole('switch').uncheck();
+  await expect(first.getByRole('status')).toHaveText('Настройки поиска сохранены.');
+  expect(writes[0]).toEqual({ path: `/api/serving/spas/${spaA}/search-dates`, csrf: 'test-csrf',
+    payload: { search_today: false, date_from: initialDate, date_to: initialDate } });
   await first.locator('[name="date_from"]').fill('11.09.2026');
   await first.locator('[name="date_to"]').fill('09.09.2026');
   await first.getByRole('button', { name: 'Сохранить поиск' }).click();
   await expect(first.getByRole('status')).toContainText('не должна быть позже');
-  expect(writes).toHaveLength(0);
+  expect(writes).toHaveLength(1);
   await first.locator('[data-calendar]').first().fill('2026-09-09');
   await first.locator('[data-calendar]').last().fill('2026-09-11');
   await first.getByRole('button', { name: 'Сохранить поиск' }).click();
   await expect(first.getByRole('status')).toHaveText('Настройки поиска сохранены.');
-  expect(writes[0]).toEqual({ path: `/api/serving/spas/${spaA}/search-dates`, csrf: 'test-csrf',
+  expect(writes[1]).toEqual({ path: `/api/serving/spas/${spaA}/search-dates`, csrf: 'test-csrf',
     payload: { search_today: false, date_from: '2026-09-09', date_to: '2026-09-11' } });
   await expect(second.locator('[name="date_from"]')).toHaveValue('08.09.2026');
   await first.getByRole('switch').check();
-  await first.getByRole('button', { name: 'Сохранить поиск' }).click();
   await expect(first.getByRole('status')).toHaveText('Настройки поиска сохранены.');
-  expect(writes[1].payload).toEqual({ search_today: true });
+  expect(writes[2].payload).toEqual({ search_today: true });
   await first.getByRole('switch').uncheck();
+  await expect(first.getByRole('status')).toHaveText('Настройки поиска сохранены.');
   await expect(first.locator('[name="date_from"]')).toHaveValue('09.09.2026');
   await expect(first.locator('[name="date_to"]')).toHaveValue('11.09.2026');
   failSave = true;

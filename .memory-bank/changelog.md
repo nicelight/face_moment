@@ -4,6 +4,14 @@ status: active
 ---
 # Changelog
 
+## 2026-09-16 — Slower Promo paper entrance
+
+Operator requested a twofold slower appearance of the four Promo photos.
+Photo stagger and travel now use 540 ms and 2700 ms respectively; the fallback
+CSS animation follows the same rate. QR remains sequenced after photo four, so
+scan-ready confirmation now occurs after about 5.22 seconds rather than 3.06.
+The client unit suite (82 tests) passed.
+
 ## 2026-09-16 — First venue from verified SFace assets
 
 Approved post-migration initialization creates «СПА Сибирь 1» on `opencv_sface`

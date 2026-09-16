@@ -169,6 +169,7 @@ for (const role of ['operator', 'developer']) {
     await page.goto('https://staff.test/staff/spas');
     await expect(page.getByRole('link', { name: 'Площадки', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Настройки поиска', exact: true })).toHaveCount(0);
+    await page.locator('.fm-spa-settings > summary').click();
     await page.locator('[data-spa-rename] input').fill('Термы');
     await page.getByRole('button', { name: 'Сохранить название', exact: true }).click();
     await expect(page.locator('[data-spa-title]')).toHaveText('Термы');

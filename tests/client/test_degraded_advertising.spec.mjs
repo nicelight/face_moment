@@ -243,6 +243,9 @@ test("FT-003-AC-004 BlazeFace is warmed once during page startup", async () => {
             window.addEventListener("face-moment:proposals-ready", resolve, {
               once: true,
             });
+            window.dispatchEvent(new CustomEvent("face-moment:attempt-start", {
+              detail: { attemptId: id },
+            }));
             window.dispatchEvent(
               new CustomEvent("face-moment:reference-series-ready", {
                 detail: { attemptId: id, trigger_source: "test", frames: [] },
@@ -252,12 +255,10 @@ test("FT-003-AC-004 BlazeFace is warmed once during page startup", async () => {
         attemptId,
       );
 
-    await runEmptySeries("startup-warmup-one");
     const firstAssetRequestCount = client.requestedPaths.filter((path) =>
       DETECTOR_ASSETS.some((asset) => path.endsWith(asset)),
     ).length;
-
-    await runEmptySeries("startup-warmup-two");
+    await runEmptySeries("startup-warmup-one");
     const secondAssetRequestCount = client.requestedPaths.filter((path) =>
       DETECTOR_ASSETS.some((asset) => path.endsWith(asset)),
     ).length;
@@ -324,7 +325,9 @@ test("FT-003-AC-008 BlazeFace load failure returns to retryable advertising", as
       "recoverable-error",
     );
     await client.page.evaluate(() => {
-      document.body.dataset.triggerState = "searching";
+      window.dispatchEvent(new CustomEvent("face-moment:attempt-start", {
+        detail: { attemptId: "capture-model-failure" },
+      }));
       window.dispatchEvent(
         new CustomEvent("face-moment:reference-series-ready", {
           detail: {
