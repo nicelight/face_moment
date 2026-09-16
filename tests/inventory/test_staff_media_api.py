@@ -16,8 +16,9 @@ from PIL import Image
 import pytest
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy import select, text
 
+from face_moment.diagnostics.evidence import DiagnosticEvidence
 from face_moment.entrypoints.backend import create_app
 from face_moment.infrastructure.object_store import PrivateObjectStore
 from face_moment.infrastructure.settings import Settings
@@ -35,6 +36,9 @@ from face_moment.platform.auth.principals import StaffRole, provision_staff_user
 from face_moment.platform.auth.sessions import LoginRateLimiter, create_browser_session
 from face_moment.processing import PipelineCode, PipelineRevisionRepository
 from face_moment.processing.initial_pending import PhotoPipelineState
+from face_moment.processing.derivatives import derivative_object_key
+from face_moment.promo import advertising_http
+from face_moment.promo.advertising import AdvertisingMedia
 from face_moment.serving_control.ingest_target import IngestTargetRepository, Spa
 from tests.disposable_postgresql import disposable_postgresql_engine
 from tests.pipeline_compatibility import PIPELINE_COMPATIBILITY
@@ -66,13 +70,14 @@ class Reply:
 
 def request(app: FastAPI, path: str, *, cookies: dict[str, str] | None = None,
             params: dict[str, str] | None = None, method: str = 'GET',
-            payload: dict[str, object] | None = None, csrf: str | None = None) -> Reply:
-    body = json.dumps(payload).encode() if payload is not None else b''
+            payload: dict[str, object] | None = None, csrf: str | None = None,
+            raw_body: bytes | None = None, content_type: str | None = None) -> Reply:
+    body = raw_body if raw_body is not None else json.dumps(payload).encode() if payload is not None else b''
     headers = [(b'host', b'testserver')]
     if cookies:
         headers.append((b'cookie', '; '.join(f'{k}={v}' for k,v in cookies.items()).encode()))
-    if payload is not None:
-        headers.append((b'content-type', b'application/json'))
+    if payload is not None or content_type is not None:
+        headers.append((b'content-type', (content_type or 'application/json').encode()))
     if csrf is not None:
         headers.append((b'x-csrf-token', csrf.encode()))
     messages: list[dict[str, Any]] = []
@@ -263,9 +268,7 @@ def test_orphan_cleanup_keeps_referenced_originals_and_pauses_uploads(
             self.deleted: list[str] = []
 
         def list_key_pages(self, *, prefix: str) -> Iterator[list[str]]:
-            assert prefix == 'candidates/'
-            yield [existing_key]
-            yield [orphan_key]
+            yield [existing_key, orphan_key] if prefix == 'candidates/' else []
 
         def delete(self, *, key: str) -> None:
             self.deleted.append(key)
@@ -290,6 +293,80 @@ def test_orphan_cleanup_keeps_referenced_originals_and_pauses_uploads(
             with pytest.raises(OriginalCleanupUploadPausedError):
                 with admission_storage_guard(session):
                     pytest.fail('admission passed through cleanup lock')
+
+
+def test_orphan_cleanup_scans_known_namespaces_without_deleting_owned_files(
+    media_state: MediaFixture,
+) -> None:
+    f = media_state
+    ad = AdvertisingMedia(id=uuid.uuid4(), spa_id=f.spa_id, filename='ad.jpg',
+        content_type='image/jpeg', byte_size=1)
+    ad_key = ad.object_key
+    capture_id = uuid.uuid4()
+    capture_key = f'diagnostics/captures/{capture_id}/0.jpg'
+    promoted_key = f'diagnostics/captures/{capture_id}/1.jpg'
+    legacy_key = f'diagnostics/captures/{capture_id}/2.jpg'
+    with Session(f.engine) as session:
+        state = session.scalar(select(PhotoPipelineState).where(
+            PhotoPipelineState.photo_id == f.ids['ready']))
+        assert state is not None
+        derivative_key = derivative_object_key(photo_id=state.photo_id,
+            pipeline_revision_id=state.pipeline_revision_id, artifact_kind='preview')
+        session.add(ad)
+        session.add(DiagnosticEvidence(attempt_id=capture_id, completeness='incomplete',
+            gap_reason='test', ordinary_manifest={'artifacts': [
+                {'object_key': capture_key}, {'key': legacy_key}]},
+            promoted_subset={'media_refs': [promoted_key]}, promoted_at=datetime.now(UTC)))
+        session.commit()
+
+    orphan_ad = f'advertising/{f.spa_id}/{uuid.uuid4()}'
+    orphan_derivative = derivative_object_key(photo_id=uuid.uuid4(),
+        pipeline_revision_id=uuid.uuid4(), artifact_kind='thumbnail')
+    orphan_capture = f'diagnostics/captures/{uuid.uuid4()}/0.jpg'
+    pages = {
+        'candidates/': [],
+        'advertising/': [ad_key, orphan_ad, 'advertising/unknown'],
+        'private/derivatives/': [derivative_key, orphan_derivative,
+            'private/derivatives/unknown'],
+        'diagnostics/captures/': [capture_key, promoted_key, legacy_key,
+            orphan_capture, 'diagnostics/captures/unknown'],
+    }
+
+    class Store:
+        def __init__(self) -> None:
+            self.deleted: list[str] = []
+
+        def list_key_pages(self, *, prefix: str) -> Iterator[list[str]]:
+            yield pages[prefix]
+
+        def delete(self, *, key: str) -> None:
+            self.deleted.append(key)
+
+    store = Store()
+    with Session(f.engine) as session:
+        result = cleanup_orphan_originals(session, store)  # type: ignore[arg-type]
+    assert result == OriginalCleanupResult(scanned=11, deleted=3)
+    assert store.deleted == [orphan_ad, orphan_derivative, orphan_capture]
+
+
+def test_advertising_upload_pauses_before_object_write_during_cleanup(
+    media_state: MediaFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    f = media_state
+    monkeypatch.setattr(advertising_http, 's3_client', lambda _settings: pytest.fail(
+        'MinIO upload happened while cleanup held the storage lock'))
+    boundary = 'cleanup-guard-test'
+    body = (f'--{boundary}\r\nContent-Disposition: form-data; name="file"; '
+            'filename="ad.jpg"\r\nContent-Type: image/jpeg\r\n\r\nx\r\n'
+            f'--{boundary}--\r\n').encode()
+    cookies = f.cookies['operator']
+    with f.engine.connect() as connection, connection.begin():
+        connection.execute(text('SELECT pg_advisory_xact_lock(:key)'), {'key': 62_401_876_320})
+        reply = request(f.app, f'/api/advertising/{f.spa_id}/media', method='POST',
+            cookies=cookies, csrf=cookies['fm_staff_csrf'], raw_body=body,
+            content_type=f'multipart/form-data; boundary={boundary}')
+    assert reply.status == 503
 
 
 def test_orphan_cleanup_route_requires_admin_and_csrf(

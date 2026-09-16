@@ -35,6 +35,11 @@ session-backed CSRF authentication.
 - `DELETE /api/advertising/{spa_id}/media/{media_id}`: removes only that venue's
   advertising item and binary object immediately. Staff unsaved order/settings
   remain a local draft. Video preview is black/orange Play.
+- The operator's [private object cleanup](photo-inventory-api.md#private-object-cleanup)
+  can remove `advertising/` objects left without an `AdvertisingMedia` row after
+  a failed deletion. It excludes concurrent advertising uploads while scanning;
+  those uploads receive retryable `503`. Existing media rows and their objects
+  remain untouched.
 - `GET /api/advertising/media/{media_id}`: staff media including byte ranges
   for native video playback; standard 401/403/404/416 failures.
 

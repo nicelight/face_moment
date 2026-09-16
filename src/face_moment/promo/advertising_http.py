@@ -17,6 +17,10 @@ from sqlalchemy.orm import Session
 
 from face_moment.infrastructure.object_store import PrivateObjectStore, s3_client
 from face_moment.infrastructure.settings import Settings
+from face_moment.inventory.orphan_original_cleanup import (
+    OriginalCleanupUploadPausedError,
+    admission_storage_guard,
+)
 from face_moment.platform.auth.principals import StaffRole
 from face_moment.platform.auth.sessions import (InvalidSessionError, CsrfValidationError,
     get_current_principal, authenticate_unsafe_staff_request)
@@ -144,16 +148,20 @@ def register_advertising_routes(app: FastAPI, *, session_factory: Callable[[], S
                 content_type=content_type, byte_size=size,
                 duration_seconds=duration_seconds if content_type == "video/webm" else None)
             settings = Settings.from_env()
-            s3_client(settings).upload_fileobj(file.file, settings.s3_bucket, item.object_key)
             try:
-                playlist = locked_playlist(session, spa_id)
-                session.add(item)
-                playlist.item_ids = [*playlist.item_ids, str(item.id)]
-                playlist.revision += 1
-                session.commit()
-            except Exception:
-                PrivateObjectStore(settings).delete(key=item.object_key)
-                raise
+                with admission_storage_guard(session):
+                    s3_client(settings).upload_fileobj(file.file, settings.s3_bucket, item.object_key)
+                    try:
+                        playlist = locked_playlist(session, spa_id)
+                        session.add(item)
+                        playlist.item_ids = [*playlist.item_ids, str(item.id)]
+                        playlist.revision += 1
+                        session.commit()
+                    except Exception:
+                        PrivateObjectStore(settings).delete(key=item.object_key)
+                        raise
+            except OriginalCleanupUploadPausedError as error:
+                raise HTTPException(503, "Идёт очистка файлов. Повторите загрузку позже.", headers=HEADERS) from error
             return JSONResponse(playlist_projection(session, spa_id), status_code=201, headers=HEADERS)
 
     @app.delete("/api/advertising/{spa_id}/media/{media_id}")

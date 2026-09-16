@@ -5,7 +5,7 @@ import hmac
 import secrets
 import threading
 import uuid
-from collections import deque
+from collections import OrderedDict, deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
@@ -80,22 +80,35 @@ class CsrfValidationError(Exception):
 class LoginRateLimiter:
     """Single-backend deterministic login limiter keyed by normalized name/IP."""
 
+    _MAX_TRACKED_KEYS = 10_000
+
     def __init__(self, *, limit: int, window_seconds: int) -> None:
         self._limit = limit
         self._window = timedelta(seconds=window_seconds)
-        self._attempts: dict[tuple[str, str], deque[datetime]] = {}
+        self._attempts: OrderedDict[tuple[str, str], deque[datetime]] = OrderedDict()
         self._lock = threading.Lock()
 
     def allow(self, *, username: str, ip_address: str, now: datetime) -> bool:
         key = (username, ip_address)
         cutoff = now - self._window
         with self._lock:
-            attempts = self._attempts.setdefault(key, deque())
+            while self._attempts:
+                _, oldest = next(iter(self._attempts.items()))
+                if oldest[-1] > cutoff:
+                    break
+                self._attempts.popitem(last=False)
+            attempts = self._attempts.get(key)
+            if attempts is None:
+                if self._limit <= 0 or len(self._attempts) >= self._MAX_TRACKED_KEYS:
+                    return False
+                attempts = deque()
+                self._attempts[key] = attempts
             while attempts and attempts[0] <= cutoff:
                 attempts.popleft()
             if len(attempts) >= self._limit:
                 return False
             attempts.append(now)
+            self._attempts.move_to_end(key)
             return True
 
 

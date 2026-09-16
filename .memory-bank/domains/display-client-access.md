@@ -143,6 +143,10 @@ credential as an operator-recoverable configuration failure.
 - Simple per-token and IP rate limits are deployment-configured positive
   values and return `429`. Tests use explicit deterministic limits; no rate
   limiter queue or distributed store is introduced.
+- The in-process limiter retains at most 10,000 active token digests and
+  10,000 client IPs per instance. It removes expired identities on the next
+  request. When either active-key cap is full, a request with a new identity
+  returns `429`; already tracked identities keep their configured budgets.
 
 ## Lifecycle And Recovery
 

@@ -4,6 +4,7 @@ import { test, expect } from '@playwright/test';
 const origin = 'https://promo-replay.test';
 
 test('local duration persists; latest Promo replays without search or ACK and recovers from missing media', async ({ page }) => {
+  test.setTimeout(45_000);
   let media;
   let mediaUnavailable = false;
   const requests = [];
@@ -12,6 +13,10 @@ test('local duration persists; latest Promo replays without search or ACK and re
     requests.push({ pathname, method: route.request().method() });
     if (pathname === '/client/blazeface.js') return route.fulfill({ contentType: 'text/javascript', body: 'export async function createBlazeFaceDetector(){return {detect:async()=>[],close(){}}} export async function detectReferenceSeries(){return []}' });
     if (pathname === '/api/promo/display/config') return route.fulfill({ json: { schema_version: 1, result_display_ms: 60_000, success_cooldown_ms: 1000 } });
+    if (pathname === '/api/promo/advertising/playlist') return route.fulfill({ json: {
+      schema_version: 1, revision: 1, spa_id: 'synthetic-spa', crossfade_seconds: 0,
+      image_seconds: 1, random_start: false, items: [],
+    } });
     if (pathname.startsWith('/api/promo/sessions/synthetic-session/media/')) return mediaUnavailable
       ? route.fulfill({ status: 503 })
       : route.fulfill({ contentType: 'image/jpeg', body: media });
@@ -29,7 +34,7 @@ test('local duration persists; latest Promo replays without search or ACK and re
     } });
   });
   await page.goto(`${origin}/#advertising`);
-  const replay = page.locator('.advertising-card');
+  const replay = page.locator('.advertising-card[role="button"]');
   await expect(page.getByText('Фотки вновь', { exact: true })).toHaveCount(0);
   await expect(replay).toHaveAttribute('aria-disabled', 'true');
   await page.mouse.click(1, page.viewportSize().height - 2);
@@ -68,7 +73,8 @@ test('local duration persists; latest Promo replays without search or ACK and re
   const snapshot = () => card.evaluate(el => ({ qr: el.querySelector('[data-qr-content]').getAttribute('data-qr-content'), parts: [...el.querySelectorAll('[data-layout-part]')].map(part => ({ id: part.dataset.layoutPart, style: part.getAttribute('style') })) }));
   const original = await snapshot();
   await expect.poll(() => requests.filter(r => r.pathname.endsWith('/display') && r.method === 'PUT').length).toBe(1);
-  await expect(card).toHaveCount(0, { timeout: 3000 });
+  await expect(card).toHaveCount(0, { timeout: 10_000 });
+  await expect(page.locator('.promo-ad-handoff')).toBeHidden({ timeout: 2_000 });
   await expect(replay).toHaveAttribute('aria-disabled', 'false');
   await expect(page.getByRole('button', { name: 'Фотки вновь', exact: true })).toHaveCount(0);
   const beforeMenu = requests.filter(r => r.pathname.startsWith('/api/promo/sessions/synthetic-session/media/')).length;
@@ -94,9 +100,10 @@ test('local duration persists; latest Promo replays without search or ACK and re
     expect(requests.slice(beforeThisReplay).filter(r => r.pathname.startsWith('/api/promo/sessions/synthetic-session/media/')).map(r => r.pathname).sort())
       .toEqual([1, 2, 3, 4].map(i => `/api/promo/sessions/synthetic-session/media/${i}`));
     await expect(card.locator('.promo-replay-notice')).toContainText('Срок действия QR истёк');
-    await expect(card).toHaveCount(0, { timeout: 3000 });
-    expect(Date.now() - visibleAt).toBeGreaterThan(600);
-    expect(Date.now() - visibleAt).toBeLessThan(2200);
+    await expect(card).toHaveCount(0, { timeout: 10_000 });
+    await expect(page.locator('.promo-ad-handoff')).toBeHidden({ timeout: 2_000 });
+    expect(Date.now() - visibleAt).toBeGreaterThan(6_000);
+    expect(Date.now() - visibleAt).toBeLessThan(9_000);
     await expect(replay).toHaveAttribute('aria-disabled', 'false');
   }
   expect(requests.slice(beforeReplay).filter(r => r.pathname.endsWith('/attempts') || r.pathname.endsWith('/display'))).toEqual([]);
@@ -109,7 +116,8 @@ test('local duration persists; latest Promo replays without search or ACK and re
   await page.mouse.click(1, page.viewportSize().height - 2);
   await expect(card).toBeVisible();
   await expect(card.locator('.promo-teaser')).toHaveCount(4);
-  await expect(card).toHaveCount(0, { timeout: 3000 });
+  await expect(card).toHaveCount(0, { timeout: 10_000 });
+  await expect(page.locator('.promo-ad-handoff')).toBeHidden({ timeout: 2_000 });
   await expect(replay).toHaveAttribute('aria-disabled', 'false');
   expect(requests.filter(r => r.pathname.endsWith('/display') && r.method === 'PUT')).toHaveLength(1);
   expect(requests.filter(r => r.pathname.endsWith('/attempts'))).toHaveLength(0);

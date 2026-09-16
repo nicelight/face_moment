@@ -125,10 +125,35 @@ if (root) {
   if (cleanupOpen) {
     const dialog = root.querySelector('#orphan-cleanup-dialog');
     const cleanupStatus = root.querySelector('#orphan-cleanup-status');
-    cleanupOpen.addEventListener('click', () => dialog.showModal());
-    root.querySelector('#orphan-cleanup-cancel').addEventListener('click', () => dialog.close());
-    root.querySelector('#orphan-cleanup-confirm').addEventListener('click', async () => {
+    const warning = root.querySelector('#orphan-cleanup-warning');
+    const confirm = root.querySelector('#orphan-cleanup-confirm');
+    const cancel = root.querySelector('#orphan-cleanup-cancel');
+    const okay = root.querySelector('#orphan-cleanup-ok');
+    let cleanupPhase = 'confirm';
+    cleanupOpen.addEventListener('click', () => {
+      cleanupPhase = 'confirm';
+      warning.hidden = false;
+      cleanupStatus.hidden = true;
+      confirm.hidden = false;
+      cancel.hidden = false;
+      okay.hidden = true;
+      dialog.showModal();
+    });
+    dialog.addEventListener('cancel', event => {
+      if (cleanupPhase !== 'confirm') event.preventDefault();
+    });
+    cancel.addEventListener('click', () => dialog.close());
+    okay.addEventListener('click', () => {
       dialog.close();
+      cleanupOpen.disabled = false;
+    });
+    confirm.addEventListener('click', async () => {
+      cleanupPhase = 'running';
+      warning.hidden = true;
+      confirm.hidden = true;
+      cancel.hidden = true;
+      cleanupStatus.hidden = false;
+      dialog.setAttribute('aria-busy', 'true');
       cleanupOpen.disabled = true;
       cleanupStatus.textContent = 'Очистка выполняется. Дождитесь результата.';
       const csrf = document.cookie.split(';').map(part => part.trim()).find(part => part.startsWith('fm_staff_csrf='))?.slice('fm_staff_csrf='.length) || '';
@@ -144,7 +169,12 @@ if (root) {
         cleanupStatus.textContent = `Очистка завершена: проверено ${result.scanned}, удалено ${result.deleted} файлов.`;
       } catch (reason) {
         cleanupStatus.textContent = reason.message || 'Не удалось выполнить очистку.';
-      } finally { cleanupOpen.disabled = false; }
+      } finally {
+        dialog.removeAttribute('aria-busy');
+        cleanupPhase = 'result';
+        okay.hidden = false;
+        okay.focus();
+      }
     });
   }
   load();

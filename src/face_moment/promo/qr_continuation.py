@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections import deque
+from collections import OrderedDict, deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import threading
@@ -93,6 +93,8 @@ class PhoneActivityView:
 class PhonePublicRateLimiter:
     """One in-process Promo phone budget keyed by the resolved client IP."""
 
+    _MAX_TRACKED_KEYS = 10_000
+
     def __init__(self, *, limit: int, window_seconds: int) -> None:
         if limit <= 0:
             raise ValueError("phone public rate limit must be positive")
@@ -100,19 +102,30 @@ class PhonePublicRateLimiter:
             raise ValueError("phone public rate window must be positive")
         self._limit = limit
         self._window = timedelta(seconds=window_seconds)
-        self._attempts: dict[str, deque[datetime]] = {}
+        self._attempts: OrderedDict[str, deque[datetime]] = OrderedDict()
         self._lock = threading.Lock()
 
     def allow(self, *, ip_address: str, now: datetime | None = None) -> bool:
         timestamp = _utc(now)
         cutoff = timestamp - self._window
         with self._lock:
-            attempts = self._attempts.setdefault(ip_address, deque())
+            while self._attempts:
+                _, oldest = next(iter(self._attempts.items()))
+                if oldest[-1] > cutoff:
+                    break
+                self._attempts.popitem(last=False)
+            attempts = self._attempts.get(ip_address)
+            if attempts is None:
+                if len(self._attempts) >= self._MAX_TRACKED_KEYS:
+                    return False
+                attempts = deque()
+                self._attempts[ip_address] = attempts
             while attempts and attempts[0] <= cutoff:
                 attempts.popleft()
             if len(attempts) >= self._limit:
                 return False
             attempts.append(timestamp)
+            self._attempts.move_to_end(ip_address)
             return True
 
 

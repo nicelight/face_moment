@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from dataclasses import dataclass, fields
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import hashlib
 import logging
 import uuid
@@ -315,6 +315,79 @@ def test_token_and_ip_limits_are_positive_and_deterministic(
             ip_address="198.18.0.10",
             now=first.replace(second=3),
         )
+
+
+def test_limited_ip_does_not_retain_new_token_digests() -> None:
+    limiter = DisplayClientRateLimiter(limit=2, window_seconds=60)
+    now = datetime(2026, 9, 16, tzinfo=timezone.utc)
+
+    results = [
+        limiter.allow(
+            token_digest=str(index).encode(), ip_address="198.18.0.1", now=now
+        )
+        for index in range(1_000)
+    ]
+
+    assert sum(results) == 2
+    assert len(limiter._token_attempts) == len(limiter._token_expirations) == 2
+    assert len(limiter._ip_attempts) == len(limiter._ip_expirations) == 1
+
+    assert limiter.allow(
+        token_digest=b"fresh",
+        ip_address="198.18.0.1",
+        now=now + timedelta(seconds=60),
+    )
+    assert set(limiter._token_attempts) == {b"fresh"}
+    assert len(limiter._token_expirations) == len(limiter._ip_expirations) == 1
+
+
+def test_limiter_caps_distinct_ips_and_tokens_without_growing_expiry_heaps(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(DisplayClientRateLimiter, "_MAX_TRACKED_KEYS", 3)
+    limiter = DisplayClientRateLimiter(limit=1_000, window_seconds=60)
+    now = datetime(2026, 9, 16, tzinfo=timezone.utc)
+
+    for index in range(3):
+        assert limiter.allow(
+            token_digest=f"token-{index}".encode(),
+            ip_address=f"198.18.0.{index}",
+            now=now,
+        )
+    assert not limiter.allow(
+        token_digest=b"fourth", ip_address="198.18.0.0", now=now
+    )
+    assert not limiter.allow(
+        token_digest=b"fourth", ip_address="198.18.0.3", now=now
+    )
+
+    for _ in range(500):
+        assert limiter.allow(
+            token_digest=b"token-0",
+            ip_address="198.18.0.0",
+            now=now + timedelta(seconds=1),
+        )
+    assert len(limiter._token_attempts) == len(limiter._token_expirations) == 3
+    assert len(limiter._ip_attempts) == len(limiter._ip_expirations) == 3
+
+    assert limiter.allow(
+        token_digest=b"fourth",
+        ip_address="198.18.0.3",
+        now=now + timedelta(seconds=60),
+    )
+    assert set(limiter._token_attempts) == {b"token-0", b"fourth"}
+    assert set(limiter._ip_attempts) == {"198.18.0.0", "198.18.0.3"}
+    assert len(limiter._token_attempts) == len(limiter._token_expirations) == 2
+    assert len(limiter._ip_attempts) == len(limiter._ip_expirations) == 2
+
+    for cycle in range(2, 102):
+        assert limiter.allow(
+            token_digest=b"token-0",
+            ip_address="198.18.0.0",
+            now=now + timedelta(seconds=60 * cycle),
+        )
+        assert len(limiter._token_attempts) == len(limiter._token_expirations) == 1
+        assert len(limiter._ip_attempts) == len(limiter._ip_expirations) == 1
 
 
 def test_authentication_does_not_log_credential_material(

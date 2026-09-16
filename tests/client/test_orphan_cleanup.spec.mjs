@@ -12,6 +12,9 @@ print(staff_document(staff_media_page_html(uuid.UUID('${venue}'), 'Тестов�
 
 test('operator confirms orphan cleanup; cancel does not send a request', async ({ page }) => {
   let cleanupRequests = 0;
+  let finishCleanup;
+  let failCleanup = false;
+  const cleanupGate = new Promise(resolve => { finishCleanup = resolve; });
   await page.route('https://staff.test/**', async route => {
     const path = new URL(route.request().url()).pathname;
     if (path === '/staff/venue-media') return route.fulfill({ contentType: 'text/html', body: html });
@@ -25,6 +28,8 @@ test('operator confirms orphan cleanup; cancel does not send a request', async (
     if (path === '/api/inventory/orphan-originals/cleanup') {
       cleanupRequests += 1;
       expect(route.request().method()).toBe('POST');
+      await cleanupGate;
+      if (failCleanup) return route.fulfill({ status: 503 });
       return route.fulfill({ json: { schema_version: 1, scanned: 12, deleted: 3 } });
     }
     return route.fulfill({ status: 404 });
@@ -41,6 +46,25 @@ test('operator confirms orphan cleanup; cancel does not send a request', async (
 
   await open.click();
   await dialog.getByRole('button', { name: 'ДА!' }).click();
-  await expect(page.locator('#orphan-cleanup-status')).toHaveText('Очистка завершена: проверено 12, удалено 3 файлов.');
+  await expect(dialog.getByRole('status')).toHaveText('Очистка выполняется. Дождитесь результата.');
+  await expect(open).toBeDisabled();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'ОК' })).toBeHidden();
+  finishCleanup();
+  await expect(dialog.getByRole('status')).toHaveText('Очистка завершена: проверено 12, удалено 3 файлов.');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'ОК' }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(open).toBeEnabled();
   expect(cleanupRequests).toBe(1);
+
+  failCleanup = true;
+  await open.click();
+  await dialog.getByRole('button', { name: 'ДА!' }).click();
+  await expect(dialog.getByRole('status')).toHaveText('Очистка не завершилась. Повторите позже.');
+  await dialog.getByRole('button', { name: 'ОК' }).click();
+  await expect(dialog).not.toBeVisible();
+  expect(cleanupRequests).toBe(2);
 });

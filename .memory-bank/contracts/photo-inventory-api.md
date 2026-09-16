@@ -271,22 +271,30 @@ routing. Use disposable fixtures for delete proof; retain live uploaded photos.
 - The checked-in HTTPS edge MUST route `/staff/venue-media` to the backend;
   existing `/api/inventory/*` delivery remains the media transport.
 
-### Candidate original cleanup
+### Private object cleanup
 
 At the bottom of «Медиа площадки», operator/developer may launch project-wide
-cleanup of MinIO `candidates/` originals with no `Photo` reference. The button
+cleanup of orphaned files in the application's known MinIO namespaces. The button
 shows a confirmation dialog with the operator's 30-minute warning and exact
 `ДА!` / `Отмена` choices. Photographer has no control. Confirmation calls
 `POST /api/inventory/orphan-originals/cleanup` with the active staff session and
 CSRF header/cookie. Success returns `schema_version: 1`, `scanned` and `deleted`
-counts. The page shows the result or failure without claiming success early.
+counts. After confirmation, the dialog stays modal and cannot be dismissed
+while the request runs. It shows progress text, then the deleted-file count or
+an explicit failure and an `ОК` button. Only `ОК` restores interaction with
+the rest of the admin page; the page never claims success early.
 
-The server waits for active admissions, excludes new candidate staging during
-the scan, pages through the private bucket and checks each page against
-committed `Photo.original_object_key` values before deleting unmatched keys.
-Only `candidates/` is in scope; accepted Photos and other MinIO namespaces are
-untouched. New uploads during cleanup return retryable `503`; duplicate cleanup
-requests return `409`. Missing/invalid staff session returns `401`, invalid CSRF
-or role returns `403`, and storage/database failures return `500`. No database
-migration or persistent job state is added. A dropped browser connection may
-leave the outcome unknown to that browser; another run is safe.
+The server waits for active Photo and advertising uploads, excludes new uploads
+during the scan, and pages through only `candidates/`, `advertising/`,
+`private/derivatives/` and `diagnostics/captures/`. Before deleting a key it
+checks its committed owner: `Photo.original_object_key`, `AdvertisingMedia`,
+the Photo/pipeline state owning a deterministic derivative path, or the
+diagnostic evidence artifact manifest/promoted media references. An existing
+Photo/pipeline state protects its derivative paths even before publication;
+diagnostic artifact references are committed before their bytes are written.
+Unknown key shapes and namespaces are untouched. Uploads excluded by cleanup
+return retryable `503`; duplicate cleanup requests return `409`. Missing/invalid
+staff session returns `401`, invalid CSRF or role returns `403`, and storage/
+database failures return `500`. No database migration or persistent job state
+is added. A dropped browser connection may leave the outcome unknown to that
+browser; another run is safe.

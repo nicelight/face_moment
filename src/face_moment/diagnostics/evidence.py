@@ -180,6 +180,30 @@ class DiagnosticEvidence(Base):
     )
 
 
+def referenced_capture_object_keys(
+    session: Session, attempt_ids: list[uuid.UUID]
+) -> set[str]:
+    """Expose committed ordinary/promoted artifact ownership to operator cleanup."""
+    keys: set[str] = set()
+    for ordinary_manifest, promoted_subset in session.execute(
+        select(DiagnosticEvidence.ordinary_manifest, DiagnosticEvidence.promoted_subset)
+        .where(DiagnosticEvidence.attempt_id.in_(attempt_ids))
+    ):
+        if isinstance(ordinary_manifest, Mapping):
+            artifacts = ordinary_manifest.get("artifacts")
+            if isinstance(artifacts, Sequence) and not isinstance(artifacts, (str, bytes)):
+                for artifact in artifacts:
+                    if isinstance(artifact, Mapping):
+                        candidate = artifact.get("object_key", artifact.get("key"))
+                        if isinstance(candidate, str):
+                            keys.add(candidate)
+        if isinstance(promoted_subset, Mapping):
+            references = promoted_subset.get("media_refs")
+            if isinstance(references, Sequence) and not isinstance(references, (str, bytes)):
+                keys.update(reference for reference in references if isinstance(reference, str))
+    return keys
+
+
 @dataclass(frozen=True, slots=True)
 class EvidenceWriteOutcome:
     """Non-throwing result returned across the diagnostics application boundary."""

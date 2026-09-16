@@ -4,6 +4,28 @@ status: active
 ---
 # Changelog
 
+## 2026-09-16 — Consolidated deployment operations
+
+Deployment instructions now have one entrypoint:
+[Server deployment](runbooks/server-deployment.md), with linked boundary
+runbooks for [VPS Caddy/FRP](runbooks/vps-caddy.md) and
+[local test deployment](runbooks/local-test-deployment.md). The obsolete
+SERVER installation journal and parameter snapshot were removed; recovery and
+local-development docs now link to the canonical procedures instead of copying
+them. Default public-origin configuration and its regression expectations now
+use face-moment.ru; no server configuration was changed in this documentation
+update.
+
+## 2026-09-16 — Bound display-client authentication limiter state
+
+The public display-client limiter now checks an exhausted IP budget before
+tracking another token digest, removes expired token/IP identities, and caps
+each active-key set at 10,000 per process. New identities at capacity receive
+`429`; known identities keep their normal per-token/IP limits. See
+[Display Client Access](domains/display-client-access.md#authentication-contract).
+Focused no-database limiter tests and mypy passed; the DB-backed auth suite
+could not run because local PostgreSQL on port 55432 was stopped.
+
 ## 2026-09-16 — Rename local developer login
 
 The local Docker staff account `tester` was renamed to `developer` without
@@ -68,20 +90,20 @@ Evidence: [.tasks/preview-phash/pytest.log](../.tasks/preview-phash/pytest.log).
 
 - [Public proxy contract](contracts/qr-continuation-api.md#public-proxy-identity-operator-decision-2026-09-16):
   VPS сохраняет публичный Host и задаёт XFF из адреса посетителя; внутренний
-  Caddy принимает `face.natureonzoom.win`, доверяет только заданному FRP peer
+  Caddy принимает `face-moment.ru`, доверяет только заданному FRP peer
   и передаёт один проверенный IP приложению на всех маршрутах.
-- Старый hostname сохранён для WSS/SSH control channel; Cloudflare остаётся
-  DNS-only. Backend rate limit и Origin-проверка не ослаблялись.
+- Старый hostname сохранён для WSS/SSH control channel; публичный DNS обслуживает
+  REG.RU. Backend rate limit и Origin-проверка не ослаблялись.
 - Настройка `FACE_MOMENT_FRP_PROXY_IP` отделена от доверенного IP edge для
   Uvicorn. Перед деплоем нужно заменить placeholder `192.0.2.1` фактическим
-  адресом FRP/Docker ingress, как описано в существующем runbook.
+  адресом FRP/Docker ingress, как описано в [VPS Caddy runbook](runbooks/vps-caddy.md).
 - Изолированный тест двух Caddy подтвердил публичный origin, отдельные лимиты
   посетителей, отказ поддельному XFF и сохранение localhost-доступа.
   Изменения подготовлены локально; на серверах ничего не применялось.
 
 ## [2026-09-16] Проверен SSH-доступ пользователя приложения
 
-- [Runbook входа и восстановления](runbooks/display-and-central-restart.md#ssh-access-to-the-central-server):
+- [Server deployment runbook](runbooks/server-deployment.md#topology-and-access):
   для деплоя использовать `ssh -l facemoment facecentral`, каталог
   `/opt/face-moment`. SSH-ключ рабочей машины добавлен оператором; вход,
   группы `docker`/`sudo` и доступ к Docker проверены. Обычный alias продолжает

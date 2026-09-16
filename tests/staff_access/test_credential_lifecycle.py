@@ -7,6 +7,7 @@ import subprocess
 import threading
 import uuid
 from collections.abc import Generator
+from datetime import datetime, timedelta, timezone
 from http.cookies import SimpleCookie
 from typing import Any
 
@@ -29,6 +30,45 @@ from face_moment.platform.auth.sessions import (
     get_current_principal,
     reset_staff_password_and_revoke_sessions,
 )
+
+
+def test_login_limiter_bounds_distinct_username_ip_keys(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(LoginRateLimiter, "_MAX_TRACKED_KEYS", 3)
+    limiter = LoginRateLimiter(limit=2, window_seconds=60)
+    now = datetime(2026, 9, 16, tzinfo=timezone.utc)
+    ip_address = "198.18.0.1"
+
+    for index in range(3):
+        assert limiter.allow(username=f"user-{index}", ip_address=ip_address, now=now)
+    for index in range(1_000):
+        assert not limiter.allow(
+            username=f"new-user-{index}", ip_address=ip_address, now=now
+        )
+    assert len(limiter._attempts) == 3
+
+    assert limiter.allow(
+        username="user-0", ip_address=ip_address, now=now + timedelta(seconds=1)
+    )
+    assert not limiter.allow(
+        username="user-0", ip_address=ip_address, now=now + timedelta(seconds=2)
+    )
+    assert limiter.allow(
+        username="new-user", ip_address=ip_address, now=now + timedelta(seconds=60)
+    )
+    assert set(limiter._attempts) == {
+        ("user-0", ip_address),
+        ("new-user", ip_address),
+    }
+
+    for cycle in range(2, 102):
+        assert limiter.allow(
+            username="user-0",
+            ip_address=ip_address,
+            now=now + timedelta(seconds=60 * cycle),
+        )
+        assert len(limiter._attempts) == 1
 
 
 @pytest.fixture

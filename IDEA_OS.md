@@ -1,6 +1,6 @@
 # Face Moment: сервер, ОС и display/kiosk
 
-Обновлено: 2026-08-26
+Обновлено: 2026-09-16
 
 ## 0. Статус документа
 
@@ -8,8 +8,8 @@
 серверную ОС, базовую настройку, Docker, рекомендации по CPU isolation, storage,
 hardware и display/kiosk с рекламой.
 
-Работающего server-side приложения или backend пока нет. Описанные компоненты и
-deployment topology являются target design.
+Это historical target design. В нём могут остаться pre-deployment утверждения;
+он не является инструкцией для работающих серверов или текущего release.
 
 Актуальные продуктовые требования определяет `.memory-bank/prd.md`.
 Каноническую runtime/deployment архитектуру определяют
@@ -18,11 +18,12 @@ deployment topology являются target design.
 `.memory-bank/states/lifecycle-map.md`; этот файл остаётся subordinate
 overview/discovery evidence по precedence из `.memory-bank/spec-backbone.md`.
 
-Точную целевую конфигурацию центрального сервера, VPS, публичной сетевой
-границы и server-to-VPS backhaul определяет
-[`SERVER/serverparams.md`](SERVER/serverparams.md). При расхождении описаний
-инфраструктуры этот файл следует привести к `SERVER/serverparams.md`, а не
-сохранять параллельный вариант topology.
+Операционный порядок для центрального сервера, VPS, публичной сетевой границы
+и server-to-VPS backhaul определяют
+[Server deployment](.memory-bank/runbooks/server-deployment.md) и
+[VPS Caddy and FRP](.memory-bank/runbooks/vps-caddy.md). При расхождении
+инфраструктурных описаний эти runbook'и имеют приоритет над данным historical
+overview.
 
 Первый pilot — one-СПА smoke test с тестировщиками. Топология на 10–15 СПА
 является target capacity после pilot, а

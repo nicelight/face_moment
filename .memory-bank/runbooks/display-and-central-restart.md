@@ -40,74 +40,14 @@ and the [manual serving-revision contract](../contracts/boundary-map.md#manual-s
 
 ## Preconditions
 
-### SSH access to the central server
+### Server access and deployment boundary
 
-Verified on 2026-09-16: use the application OS user from the operator workstation:
-
-```bash
-ssh -l facemoment facecentral
-cd /opt/face-moment
-id
-docker compose ps -a
-```
-
-The existing `facecentral` SSH alias preserves the FRP route through
-`ProxyJump igornskprod` and the VPS loopback endpoint `127.0.0.1:10022`.
-The `-l facemoment` option overrides its default user `face`; plain
-`ssh facecentral` still enters the bootstrap/KDE account `face`.
-
-`facemoment` owns `/opt/face-moment` and belongs to `docker` and `sudo`.
-Docker and application deployment files are accessible without sudo.
-System service administration, including FRP, still requires interactive sudo
-authentication; passwordless sudo has not been configured.
-
-The existing workstation key is authorized for both users. Its public key was
-added to `/home/facemoment/.ssh/authorized_keys` (owner `facemoment:facemoment`,
-directory mode `700`, file mode `600`). No private key was copied to the server;
-the separate phone key was not added to the application account.
-
-This access check does not prove deployment readiness. On verification the
-server contained an older checkout and partial runtime; deployment of current
-sources and application initialization is a separate operation, not an ordinary
-restart covered by this runbook.
+Central SSH access, environment requirements, source release and public-proxy
+configuration are owned by [Server deployment](server-deployment.md). Use its
+central access section when entering the host; this recovery runbook does not
+authorize a source update, migration, Caddy change or serving-revision switch.
 
 ### Recovery prerequisites
-
-Public proxy preparation (not a deployment performed by this runbook):
-
-- Application hostname: `FACE_MOMENT_PUBLIC_HOST=face-moment.ru` in the
-  central deployment `.env` and VPS `/etc/caddy/face-moment.env`.
-- VPS also sets `FACE_MOMENT_FRP_HOST=face-time.moment-studio.ru`; retain the
-  existing central `/etc/frp/face-moment.env` and FRP client hostname. The two
-  environment files serve different purposes; do not copy the VPS file over FRP.
-- The public origin is `https://face-moment.ru` (operator decision 2026-09-16,
-  replacing `https://face.natureonzoom.win`). REG.RU DNS servers are
-  `ns1.reg.ru` / `ns2.reg.ru`; the apex A record must resolve to `46.8.200.99`.
-  Confirm public DNS propagation before requesting the certificate.
-- The external Caddy on the VPS obtains and automatically renews the public
-  HTTPS certificate through ACME (for example, Let's Encrypt). No purchased
-  REG.RU certificate, manual certificate upload, Certbot or DNS API integration
-  is required. Configure the public hostname in the VPS Caddy site and keep
-  inbound TCP ports `80` and `443` reachable. Preserve Caddy's persistent data
-  directory, including certificate/account state, across deployments.
-- Wrong DNS records (including a stale AAAA record) or blocked validation ports
-  can prevent certificate issuance or renewal. At deployment, check Caddy logs
-  and verify `https://face-moment.ru` with normal browser/certificate validation.
-  The public certificate terminates at the VPS; the internal Caddy's separate
-  `tls internal` configuration remains unchanged. See
-  [Caddy Automatic HTTPS](https://caddyserver.com/docs/automatic-https).
-- Before deployment acceptance, observe the immediate remote IP inside central
-  Caddy for a controlled request through VPS/FRP and set that exact single IP as
-  `FACE_MOMENT_FRP_PROXY_IP` in the central deployment `.env`. A host-loopback
-  connection may appear as a Docker gateway inside the container. Do not infer
-  this value from the VPS public IP or the backend's trusted-edge IP.
-- `192.0.2.1` is deliberately an inactive default, not a deploy-ready value.
-  If the actual peer cannot be established, stop public acceptance rather than
-  broadening trust. Validate/reload both Caddy configurations when deployment
-  is authorized, then verify public Host/Origin, independent visitor IP budgets,
-  forged XFF rejection and continued FRP/SSH access. No schema change is needed.
-
-Contract: [Public proxy identity](../contracts/qr-continuation-api.md#public-proxy-identity-operator-decision-2026-09-16).
 
 - The operator has administrative SSH access as the `facemoment` OS user. The
   autologin `display` user has no `sudo`, Docker group or deployment-secret

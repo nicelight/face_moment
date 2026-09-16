@@ -78,15 +78,15 @@ status: active
   Spine.
 - [.memory-bank/guides/](guides/): Valid HOW docs для использования, запуска и troubleshooting.
 - [.memory-bank/guides/local-development.md](guides/local-development.md):
-  local-first Python loop через `uv` с PostgreSQL/MinIO в Docker и отдельным
-  packaged Compose smoke; versioned Photo reprocessing и сохранение истории.
+  local-first Python loop через `uv`, история локальных решений и
+  troubleshooting.
+- [.memory-bank/runbooks/local-test-deployment.md](runbooks/local-test-deployment.md):
+  единственная процедура локального test stack и disposable packaged smoke.
 - [Multi-venue verification](testing/index.md#functional-multi-venue-operation-ac-27):
   shared revision, native two-venue processing/search, restart and isolation evidence.
 - [.memory-bank/adrs/](adrs/): ADR решения.
 - [opencv5_Migration.md](../opencv5_Migration.md): операторский стратегический
   план перехода runtime на OpenCV 5.
-- [SERVER/serverparams.md](../SERVER/serverparams.md): фактические параметры
-  центрального Kubuntu-сервера и VPS, публичный HTTPS и FRP WSS backhaul.
 
 - [.memory-bank/domains/index.md](domains/index.md): subject-based domain
   models, storage, schemas, migrations and persistence rules.
@@ -102,6 +102,12 @@ status: active
 - [.memory-bank/states/lifecycle-map.md](states/lifecycle-map.md): Canonical
   Photo, processing, inventory, purge, Promo and diagnostics lifecycles.
 - [.memory-bank/runbooks/](runbooks/): Runbooks и operational procedures.
+- [.memory-bank/runbooks/server-deployment.md](runbooks/server-deployment.md):
+  canonical non-destructive deploy на facecentral и public acceptance.
+- [.memory-bank/runbooks/vps-caddy.md](runbooks/vps-caddy.md): VPS Caddy,
+  FRP-backhaul, ACME certificate и доверенный visitor IP.
+- [.memory-bank/runbooks/local-test-deployment.md](runbooks/local-test-deployment.md):
+  локальный stack и packaged smoke.
 - [.memory-bank/runbooks/diagnostic-retention.md](runbooks/diagnostic-retention.md):
   pilot-host daily retention timer activation, observation and recovery.
 - [.memory-bank/runbooks/display-and-central-restart.md](runbooks/display-and-central-restart.md):

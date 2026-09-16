@@ -35,6 +35,18 @@ class AdvertisingMedia(Base):
         return f"advertising/{self.spa_id}/{self.id}"
 
 
+def owned_advertising_object_keys(session: Session, media_ids: list[uuid.UUID]) -> set[str]:
+    """Expose committed advertising object ownership to operator cleanup."""
+    return {
+        f"advertising/{spa_id}/{media_id}"
+        for spa_id, media_id in session.execute(
+            select(AdvertisingMedia.spa_id, AdvertisingMedia.id).where(
+                AdvertisingMedia.id.in_(media_ids)
+            )
+        )
+    }
+
+
 def locked_playlist(session: Session, spa_id: uuid.UUID) -> AdvertisingPlaylist:
     # Lock the always-existing venue row, including the first playlist creation.
     if session.scalar(select(Spa).where(Spa.id == spa_id).with_for_update()) is None:

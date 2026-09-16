@@ -45,6 +45,30 @@ EXPECTED_ROUTES = {
 }
 
 
+def test_phone_limiter_bounds_distinct_ip_keys(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(PhonePublicRateLimiter, "_MAX_TRACKED_KEYS", 3)
+    limiter = PhonePublicRateLimiter(limit=2, window_seconds=60)
+
+    for index in range(3):
+        assert limiter.allow(ip_address=f"198.18.0.{index}", now=START)
+    for index in range(1_000):
+        assert not limiter.allow(ip_address=f"198.19.{index // 256}.{index % 256}", now=START)
+    assert len(limiter._attempts) == 3
+
+    assert limiter.allow(ip_address="198.18.0.0", now=START + timedelta(seconds=1))
+    assert not limiter.allow(ip_address="198.18.0.0", now=START + timedelta(seconds=2))
+    assert limiter.allow(ip_address="198.18.0.3", now=START + timedelta(seconds=60))
+    assert set(limiter._attempts) == {"198.18.0.0", "198.18.0.3"}
+
+    for cycle in range(2, 102):
+        assert limiter.allow(
+            ip_address="198.18.0.0", now=START + timedelta(seconds=60 * cycle)
+        )
+        assert len(limiter._attempts) == 1
+
+
 class FakeDatabaseSession:
     def __init__(self) -> None:
         self.entries = 0

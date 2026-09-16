@@ -61,6 +61,10 @@ contract.
 | `serving_control` | `processing` | [Manual serving-revision switch](#manual-serving-revision-switch) |
 | `promo` | `diagnostics` | [Retention cleanup](#retention-cleanup) |
 | `inventory` | `processing` | [Photo Inventory Operations](#photo-inventory-operations) |
+| `inventory` | `promo` | [Private object cleanup](#private-object-cleanup) |
+| `inventory` | `processing` | [Private object cleanup](#private-object-cleanup) |
+| `inventory` | `diagnostics` | [Private object cleanup](#private-object-cleanup) |
+| `promo` | `inventory` | [Private object cleanup](#private-object-cleanup) |
 
 ## Inline Contracts
 
@@ -446,9 +450,9 @@ derivative deletion is the exact
 - The per-Photo PostgreSQL commit publishes
   `Photo + accepted_at + pending`. A pre-commit crash may leave a private orphan
   and lose that admission; ordinary re-upload is sufficient admission recovery.
-  Operator-triggered candidate cleanup checks MinIO keys against committed
-  Photo references while a PostgreSQL lock excludes concurrent candidate
-  staging and admission. It never deletes a referenced original.
+  Operator-triggered cleanup checks candidates against committed Photo
+  references while a PostgreSQL lock excludes concurrent staging and admission.
+  It never deletes a referenced original.
 - Derived keys are deterministic by
   `(photo_id, pipeline_revision_id, artifact_kind)`, allowing idempotent
   replacement before terminal processing publication.
@@ -457,6 +461,17 @@ derivative deletion is the exact
   No distributed transaction or per-object recovery lifecycle is required.
 - MinIO versioning and external volume snapshots remain disabled while the
   accepted no-backup pilot decision is active.
+
+### Private object cleanup
+
+`inventory` orchestrates the authorized scan of known private MinIO namespaces.
+It owns candidate-original checks and calls read-only `promo`, `processing` and
+`diagnostics` projections for advertising, derivative and capture ownership;
+it does not write their database rows. Photo and advertising uploads use the
+same storage guard from before object write through database commit, so the
+cleanup scan cannot mistake an in-flight object for an orphan. The exact
+prefixes, conservative owner rules, modal UI and retry behavior are in the
+[Photo Inventory API](photo-inventory-api.md#private-object-cleanup).
 
 ### External and runtime boundaries
 

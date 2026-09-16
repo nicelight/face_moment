@@ -7,6 +7,8 @@ import uuid
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from heapq import heappop, heappush
+from typing import TypeVar
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -39,6 +41,8 @@ class DisplayClientPrincipal:
 class DisplayClientRateLimiter:
     """Single-backend deterministic limiter keyed by token digest and IP."""
 
+    _MAX_TRACKED_KEYS = 10_000
+
     def __init__(self, *, limit: int, window_seconds: int) -> None:
         if limit <= 0:
             raise ValueError("display-client rate limit must be positive")
@@ -48,6 +52,9 @@ class DisplayClientRateLimiter:
         self._window = timedelta(seconds=window_seconds)
         self._token_attempts: dict[bytes, deque[datetime]] = {}
         self._ip_attempts: dict[str, deque[datetime]] = {}
+        # One expiry event per live key; repeat requests never grow these heaps.
+        self._token_expirations: list[tuple[datetime, bytes]] = []
+        self._ip_expirations: list[tuple[datetime, str]] = []
         self._lock = threading.Lock()
 
     def allow(
@@ -61,21 +68,42 @@ class DisplayClientRateLimiter:
         current_time = _utc(now)
         cutoff = current_time - self._window
         with self._lock:
-            ip_attempts = self._ip_attempts.setdefault(ip_address, deque())
-            _discard_before(ip_attempts, cutoff)
-            token_attempts = (
-                None
-                if token_digest is None
-                else self._token_attempts.setdefault(token_digest, deque())
+            _expire_attempts(
+                self._ip_attempts, self._ip_expirations, current_time, cutoff, self._window
             )
-            if token_attempts is not None:
-                _discard_before(token_attempts, cutoff)
-            if len(ip_attempts) >= self._limit or (
+            _expire_attempts(
+                self._token_attempts, self._token_expirations, current_time, cutoff, self._window
+            )
+            ip_attempts = self._ip_attempts.get(ip_address)
+            token_attempts = (
+                self._token_attempts.get(token_digest) if token_digest is not None else None
+            )
+            if (ip_attempts is not None and len(ip_attempts) >= self._limit) or (
                 token_attempts is not None and len(token_attempts) >= self._limit
             ):
                 return False
+            if (
+                ip_attempts is None and len(self._ip_attempts) >= self._MAX_TRACKED_KEYS
+            ) or (
+                token_digest is not None
+                and token_attempts is None
+                and len(self._token_attempts) >= self._MAX_TRACKED_KEYS
+            ):
+                return False
+            if ip_attempts is None:
+                ip_attempts = deque()
+                self._ip_attempts[ip_address] = ip_attempts
+                heappush(
+                    self._ip_expirations, (current_time + self._window, ip_address)
+                )
             ip_attempts.append(current_time)
-            if token_attempts is not None:
+            if token_digest is not None:
+                if token_attempts is None:
+                    token_attempts = deque()
+                    self._token_attempts[token_digest] = token_attempts
+                    heappush(
+                        self._token_expirations, (current_time + self._window, token_digest)
+                    )
                 token_attempts.append(current_time)
             return True
 
@@ -144,6 +172,26 @@ def _parse_bearer_token(authorization: str | None) -> str | None:
 def _discard_before(attempts: deque[datetime], cutoff: datetime) -> None:
     while attempts and attempts[0] <= cutoff:
         attempts.popleft()
+
+
+_Key = TypeVar("_Key", bytes, str)
+
+
+def _expire_attempts(
+    attempts_by_key: dict[_Key, deque[datetime]],
+    expirations: list[tuple[datetime, _Key]],
+    now: datetime,
+    cutoff: datetime,
+    window: timedelta,
+) -> None:
+    while expirations and expirations[0][0] <= now:
+        _, key = heappop(expirations)
+        attempts = attempts_by_key[key]
+        _discard_before(attempts, cutoff)
+        if attempts:
+            heappush(expirations, (attempts[0] + window, key))
+        else:
+            del attempts_by_key[key]
 
 
 def _utc(value: datetime | None) -> datetime:

@@ -6,7 +6,7 @@
 	}
 }
 
-https://localhost:8443, https://{$FACE_MOMENT_PUBLIC_HOST:face.natureonzoom.win}:8443 {
+https://localhost:8443, https://{$FACE_MOMENT_PUBLIC_HOST:face-moment.ru}:8443 {
 	tls internal
 
 	@inventory_photo_upload_without_length {

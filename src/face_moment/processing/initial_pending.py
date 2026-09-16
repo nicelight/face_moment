@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, Uuid
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, Uuid, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 from sqlalchemy.sql import func
 
@@ -57,6 +57,19 @@ class PhotoPipelineState(Base):
     preview_object_key: Mapped[str | None] = mapped_column(String, nullable=True)
     preview_phash64_v1: Mapped[str | None] = mapped_column(String(16), nullable=True)
     thumbnail_object_key: Mapped[str | None] = mapped_column(String, nullable=True)
+
+
+def owned_derivative_identities(
+    session: Session, photo_ids: list[uuid.UUID]
+) -> set[tuple[uuid.UUID, uuid.UUID]]:
+    """Expose Photo/revision pairs whose deterministic derivative keys remain owned."""
+    return {
+        (photo_id, revision_id)
+        for photo_id, revision_id in session.execute(
+            select(PhotoPipelineState.photo_id, PhotoPipelineState.pipeline_revision_id)
+            .where(PhotoPipelineState.photo_id.in_(photo_ids))
+        )
+    }
 
 
 class InitialPendingRepository:

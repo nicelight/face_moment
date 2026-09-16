@@ -21,7 +21,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from face_moment.promo.qr_continuation import PhonePublicRateLimiter
 
 ROOT = Path(__file__).resolve().parents[2]
-PUBLIC_HOST = "face.natureonzoom.win"
+PUBLIC_HOST = "face-moment.ru"
 
 
 def _port() -> int:

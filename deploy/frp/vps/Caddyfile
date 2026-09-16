@@ -1,4 +1,4 @@
-{$FACE_MOMENT_PUBLIC_HOST:face.natureonzoom.win}, {$FACE_MOMENT_FRP_HOST:face-time.moment-studio.ru} {
+{$FACE_MOMENT_PUBLIC_HOST:face-moment.ru}, {$FACE_MOMENT_FRP_HOST:face-time.moment-studio.ru} {
 	@frp path /~!frp
 
 	handle @frp {
@@ -9,7 +9,7 @@
 		reverse_proxy https://127.0.0.1:18443 {
 			# Preserve public origin; internal TLS SNI is independent of HTTP Host.
 			header_up Host {hostport}
-			# This is the first public proxy (Cloudflare DNS-only).
+			# This is the first public proxy (direct REG.RU DNS).
 			header_up X-Forwarded-For {remote_host}
 
 			transport http {

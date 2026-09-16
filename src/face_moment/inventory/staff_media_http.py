@@ -136,13 +136,15 @@ def staff_media_page_html(spa_id: UUID, name: str, *, can_diagnose: bool = False
 </section>''' if can_diagnose else ''
     cleanup = '''<section class="fm-media-cleanup" aria-label="Очистка файлов">
 <h2>Очистка файлов</h2>
-<p>Проверяет оригиналы без записи о фотографии во всех площадках. Во время проверки новые загрузки будут временно недоступны.</p>
+<p>Ищет бесхозные файлы фото, рекламы и диагностики во всех площадках. Во время проверки новые загрузки фото и рекламы будут временно недоступны.</p>
 <button id="orphan-cleanup-open" type="button">Запустить очистку битых файлов</button>
-<p id="orphan-cleanup-status" role="status" aria-live="polite"></p>
-<dialog id="orphan-cleanup-dialog" aria-labelledby="orphan-cleanup-warning">
+<dialog id="orphan-cleanup-dialog" aria-labelledby="orphan-cleanup-heading">
+<h3 id="orphan-cleanup-heading">Очистка файлов</h3>
 <p id="orphan-cleanup-warning">Это может занять до 30 минут, сервер в это время будет практически неработоспособен</p>
+<p id="orphan-cleanup-status" role="status" aria-live="polite" hidden></p>
 <div class="fm-media-cleanup-actions"><button id="orphan-cleanup-confirm" type="button">ДА!</button>
-<button id="orphan-cleanup-cancel" type="button">Отмена</button></div>
+<button id="orphan-cleanup-cancel" type="button">Отмена</button>
+<button id="orphan-cleanup-ok" type="button" hidden>ОК</button></div>
 </dialog></section>''' if can_diagnose else ''
     return f'''<!doctype html><html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Медиа площадки</title>
