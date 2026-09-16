@@ -26,6 +26,7 @@ from face_moment.inventory.http import register_ingest_target_routes
 from face_moment.inventory.staff_media_http import register_staff_media_routes
 from face_moment.promo.advertising_http import register_advertising_routes
 from face_moment.platform.auth.http import register_staff_session_routes
+from face_moment.platform.auth.environment import sync_staff_users_from_environment
 from face_moment.promo.http import (
     register_diagnostic_retention_routes,
     register_phone_continuation_routes,
@@ -61,6 +62,8 @@ async def _backend_lifecycle(
     database_engine = create_engine(settings.database_url, pool_pre_ping=True)
     state["session_factory"] = lambda: Session(database_engine)
     try:
+        with Session(database_engine) as database_session:
+            sync_staff_users_from_environment(database_session)
         async with server_event_lifecycle(settings, state):
             yield
     finally:

@@ -1,7 +1,7 @@
 ---
 description: Canonical staff identity, role, password, session and CSRF data contract.
 status: active
-last_updated: 2026-08-08
+last_updated: 2026-09-16
 source_of_truth:
   - .memory-bank/domains/staff-access.md
 ---
@@ -71,6 +71,19 @@ database rows, URLs or application logs.
 An owner-backed CLI/application command provisions a staff principal. It
 accepts the password without echoing or logging it, persists only its Argon2id
 hash and never exposes the stored hash.
+
+For the single-backend pilot, an owner may also provide fixed account passwords
+through `STAFF_PHOTOGRAPHER_PASSWORD`, `STAFF_OPERATOR_PASSWORD` and
+`STAFF_DEVELOPER_PASSWORD` in the mode-600 server `.env`. The backend applies
+each non-empty value after dependency/migration readiness to the matching
+lowercase username and role. A missing account is created active; a changed
+password uses the existing reset path and revokes that account's sessions. An
+unchanged password causes no hash, timestamp or session mutation. Existing
+inactive status and role are preserved; a role mismatch stops backend startup
+with a generic configuration error. Empty or unset variables do nothing, so
+manual CLI provisioning and reset remain available. These values are passed to
+the backend only, never logged, and never stored in plaintext in the database;
+the server `.env` remains mode `600`.
 
 ### Password Reset And Deactivation
 

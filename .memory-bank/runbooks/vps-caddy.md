@@ -152,10 +152,12 @@ the central checkout's `deploy/Caddyfile` and backend: `/` serves the public
 site, `/client1` serves the kiosk, and `/display` plus `/site` remain aliases.
 The VPS Caddy remains the same public HTTPS/FRP reverse-proxy boundary and
 forwards these paths without selecting their content. The route-only follow-up
-from exact commit `7924321af0cb1989b0084385e5f600b3f11fcff7` therefore required
-no VPS file installation, `sudo`, Caddy reload or FRP mutation; its central
-runtime and public matrix are recorded in
-[the route rollout record](../../.protocols/route-rollout-2026-09-16/route-rollout-report.md).
+from exact commit `7924321af0cb1989b0084385e5f600b3f11fcff7` and the public
+selfie UI follow-up from exact commit
+`08d2467b7d090164001bfbbb131d31318b7ccbda` therefore required no VPS file
+installation, `sudo`, Caddy reload or FRP mutation. Their central runtime and
+public matrices are recorded in [the route rollout record](../../.protocols/route-rollout-2026-09-16/route-rollout-report.md)
+and [the public selfie UI rollout record](../../.protocols/route-rollout-2026-09-16/selfie-rollout-report.md).
 
 ## Trusted visitor IP
 

@@ -114,6 +114,11 @@ services:
 
   backend:
     <<: *application
+    environment:
+      <<: *application-environment
+      STAFF_PHOTOGRAPHER_PASSWORD: "${STAFF_PHOTOGRAPHER_PASSWORD:-}"
+      STAFF_OPERATOR_PASSWORD: "${STAFF_OPERATOR_PASSWORD:-}"
+      STAFF_DEVELOPER_PASSWORD: "${STAFF_DEVELOPER_PASSWORD:-}"
     command: ["face-moment-backend"]
     expose:
       - "8000"

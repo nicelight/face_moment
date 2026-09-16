@@ -116,8 +116,9 @@ migrations. It creates **СПА Сибирь 1** only when no SPA exists, using 
 `opencv_sface` assets and their configured metadata/digest. Defaults: timezone
 `Etc/GMT-7` (GMT+7), photo YuNet `.7`, camera BlazeFace `.5`, similarity `.38`,
 minimum query quality `.5`, quality settings `{"version": 1}`, current-day
-search with no historical date range. Staff accounts and display-client tokens
-are still provisioned separately through their existing authorized procedures.
+search with no historical date range. Staff accounts may be bootstrapped by the
+backend-only `.env` override described in [Staff Access](../domains/staff-access.md)
+or provisioned separately through the existing authorized CLI procedure.
 
 Required `SFACE_*` inputs: `DETECTOR_PATH`, `DETECTOR_ID`, `DETECTOR_VERSION`,
 `RECOGNIZER_PATH`, `RECOGNIZER_ID`, `RECOGNIZER_VERSION`, `PREPROCESSING_VERSION`,
@@ -222,7 +223,7 @@ that changes migrations, ORM/schema definitions, initialization inputs,
 Compose/env settings, model bindings, storage behavior or other durable state.
 They are not a blanket opt-out. A reviewed follow-up may use the narrower path
 below only when a recorded `git diff BASE..TARGET` proves that the target is
-limited to route/static presentation and its tests/docs, with no migration,
+limited to route/static/UX presentation and its tests/docs, with no migration,
 initializer, Compose, env, model, database or storage changes.
 
 For that proven schema-neutral case, capture the old running image IDs and
@@ -259,8 +260,17 @@ deployment sequence above and its migration safeguards.
 
 ## First staff login and operational setup
 
-After backend is healthy, create the first application operator from an
-interactive SSH terminal. This is an application account, not the Linux user:
+Before the first backend start, the owner may put the desired passwords in the
+mode-600 server `.env` under `STAFF_PHOTOGRAPHER_PASSWORD`,
+`STAFF_OPERATOR_PASSWORD` and `STAFF_DEVELOPER_PASSWORD`. Backend startup then
+creates only the configured fixed accounts (`photographer`, `operator`,
+`developer`) with their corresponding roles. A blank or unset value does not
+create or change an account, so this override is optional and does not remove
+manual provisioning.
+
+If the operator was not supplied through the env override (or manual CLI
+provisioning is preferred), create the application account from an interactive
+SSH terminal. This is an application account, not the Linux user:
 
 ```bash
 docker compose exec backend face-moment-provision-staff --username operator --role operator
@@ -269,8 +279,17 @@ docker compose exec backend face-moment-provision-staff --username operator --ro
 The CLI prompts for a hidden password; do not pass it on the command line.
 Existing usernames are rejected rather than overwritten. An intentional reset
 uses the same CLI with `--username operator --reset-password` and revokes that
-account's sessions. Create a separate `developer` only if its diagnostic access
-is needed. No default staff login is created by migrations or venue initialization.
+account's sessions. To apply a changed env password, edit the mode-600 server
+`.env`, then recreate only the backend so it loads the new environment:
+
+```bash
+docker compose up -d --no-deps --force-recreate backend
+```
+
+The startup override preserves an existing inactive account and role; a role
+mismatch fails backend startup with a generic configuration error. Same-value
+restarts leave the password hash, `password_changed_at` and existing sessions
+unchanged. Empty/unset keys leave existing accounts untouched.
 
 Open `https://face-moment.ru/staff/login`, check the initialized venue, then
 create an entry/token per kiosk in «Экраны». Configure the kiosk at the new
@@ -371,6 +390,41 @@ returned `200` with the public-site marker; `/client1` and `/display` returned
 plain HTTP `/` returned `308` to HTTPS. The deployed scope is routing/static
 correction only and explicitly excludes the separate selfie UI work in the
 workstation tree.
+
+### Verified public selfie UI follow-up — 2026-09-16
+
+The reviewed public selfie interaction was deployed to `facecentral` from exact
+commit `08d2467b7d090164001bfbbb131d31318b7ccbda`, from the already deployed
+clean base `7924321af0cb1989b0084385e5f600b3f11fcff7`. The delta contains only
+client HTML/CSS/JS, its focused Playwright test and runbook documentation; it
+contains no migration, ORM/schema, Compose, env, model, database or storage
+change. The narrow route/static-only path therefore applied again: no
+migration or `initialize-venue` command was run, and credentials, data,
+settings, volumes and the retention timer were preserved.
+
+The old running application image was
+`sha256:46a67115211150ab1d9308bcb83f6b19eb9fb16b7b2428a9a4da1c82c8d2019a`;
+the rebuilt and running application image is
+`sha256:97f22e9ed2aea5743ca0401ec00a0d58a7a26a58dcddfb1b6d198e1491e6b84c` for
+`backend`, `background-worker` and `realtime`. The inner edge remains
+`caddy:2.10.0-alpine`, image
+`sha256:ae4458638da8e1a91aafffb231c5f8778e964bca650c8a8cb23a7e8ac557aa3c`.
+All application roles are healthy; PostgreSQL and MinIO are healthy/running,
+the named volumes remain intact, and the enabled/active retention timer was
+left running. The exact remote checkout is clean at `08d2467` and Compose plus
+inner Caddy validation succeeded.
+
+Public content acceptance through `https://face-moment.ru` confirmed `GET /`
+returns `200` with the public marker, without the old `Настроить Fluid`,
+`.fm-selfie-copy` or `Всего один шаг навстречу воспоминаниям` content. The new
+`Жмак меня` and `подбираем Ваши фото..` overlay strings and selfie
+`toggleAttribute`/`captureSelfie` logic are present; `/client/site-selfie.js`
+returns `200`. `/client1` and `/display` remain kiosk shells with `200` and
+`SpaPromoClient`; `/site` remains the public alias with `200`; `/staff/login`
+and `/healthz` return `200`; `/phone` without a ticket returns one `303` to
+`https://face-moment.ru/`; anonymous `/api/phone/session` returns `401`.
+The deployed scope is the public selfie UI follow-up only and excludes any
+future uncommitted workstation changes.
 
 After the VPS configuration has been applied, verify from outside the central
 host:
