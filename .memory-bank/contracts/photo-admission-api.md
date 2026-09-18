@@ -1,7 +1,7 @@
 ---
 description: Exact authenticated staff-browser API and UI contract for independent Photo admission.
 status: active
-last_updated: 2026-08-08
+last_updated: 2026-09-18
 source_of_truth:
   - .memory-bank/contracts/photo-admission-api.md
 ---
@@ -56,7 +56,21 @@ envelope is part of FT-001.
 - The page lets the photographer select one returned СПА, one `visit_date` and
   multiple local files. It sends one independent request per file, keeps one
   visible row per file and never adds Batch, manifest or confirmation state.
-  Completion order MUST NOT change another file's result.
+- Completion order MUST NOT change another file's result.
+
+### Photographer transfer feedback
+
+Operator update (2026-09-18): the uploader keeps transfer feedback transient in
+the browser and does not add a server-side batch state. While any selected
+file's HTTP request is in flight, only the file chooser and upload submit
+button are disabled; СПА and date controls remain usable. A small progress bar
+reports settled HTTP requests as `Завершено N из M`, resets when the next set of
+files is submitted, and reaches 100% before background processing completes.
+Each current row shows a spinner during its upload request. An accepted Photo
+then uses a slow pulsing rectangular indicator while processing is pending or
+active; terminal processing, rejection, duplicate and transport failure rows
+stop and hide the indicator. Reduced-motion preferences disable both row
+animations.
 
 ## Photo Upload Endpoint
 

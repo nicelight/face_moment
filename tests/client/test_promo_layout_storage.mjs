@@ -2,9 +2,12 @@ import assert from 'node:assert/strict';
 import { PROMO_LAYOUT_KEY, PROMO_PARTS, readPromoLayout, validPromoLayout } from '../../client/promo-layout.js';
 const layout = { version: 1, textScale: 1, parts: Object.fromEntries(PROMO_PARTS.map(key => [key, { x: 50, y: 50, w: 30, h: 30, angle: -12 }])) };
 assert.equal(validPromoLayout(layout), true);
+assert.equal(validPromoLayout({ ...layout, text: 'Текст киоска' }), true);
+assert.equal(validPromoLayout({ ...layout, text: '<strong>Без HTML</strong>' }), true);
 for (const bad of [null, {}, { ...layout, version: 2 }, { ...layout, textScale: 100 }, { ...layout, parts: {} }]) {
   assert.ok(!validPromoLayout(bad));
 }
+assert.equal(validPromoLayout({ ...layout, text: 42 }), false);
 for (const value of [NaN, Infinity, -10, 201]) {
   assert.ok(!validPromoLayout({ ...layout, parts: { ...layout.parts, qr: { ...layout.parts.qr, w: value } } }));
 }

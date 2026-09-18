@@ -4,7 +4,7 @@ status: draft
 type: prd
 clarification_status: complete
 constitution_checked: true
-last_updated: 2026-09-16
+last_updated: 2026-09-18
 ---
 # PRD
 
@@ -501,7 +501,7 @@ implementation-ready.
   resolved search-date range, an available low-quality teaser when one remains, the issued
   `N`, and an active `Перейти к покупке` button. Media hard-purged after
   issuance is skipped without invalidating or rebuilding the session.
-- **FR-UX-05** — The Promo display MUST use the operator-approved copy `Ваши фото можно скачать по QR коду или на сайте face-momet.ru`. On the valid phone landing, `Перейти к
+- **FR-UX-05** — The Promo display MUST use the operator-approved copy `Ваши фото можно скачать по QR коду или на сайте face-momet.ru` by default. The kiosk operator MAY edit the result text in Configuration; a saved override applies to subsequent Promo results and replays in that kiosk browser. On the valid phone landing, `Перейти к
   покупке` MUST navigate to the separately delivered main Face
   Moment selfie-search/purchase page. This pilot owns the navigation link but
   does not implement or accept the target purchase flow.
@@ -1146,7 +1146,7 @@ payment/fiscal providers, external observability stores and message brokers.
   redirects to the main selfie-based search/purchase page without leaking
   expired-session data. The pilot verifies the redirect contract, not the
   target page's implementation.
-- **AC-16** — The Promo display says `Ваши фото можно скачать по QR коду или на сайте face-momet.ru`. This is operator-approved display copy; implementing download remains outside this change.
+- **AC-16** — Without a local text override, the Promo display says `Ваши фото можно скачать по QR коду или на сайте face-momet.ru`. After the kiosk operator saves edited result text, subsequent results and replays in that browser show the saved text; cancelling the edit preserves the previous text. Implementing download remains outside this change.
 - **AC-17** — Re-uploading a JPEG with the same SHA-256 for the same СПА and
   `visit_date` deletes the new copy, reports it as a duplicate and leaves the
   accepted-photo population, `photo_id` set, processing states, search results,

@@ -143,6 +143,8 @@ body:has(.promo-card) { overflow: hidden; }
   letter-spacing: -0.045em; line-height: 1.08; text-wrap: balance; color: #fdfbf7;
 }
 .promo-domain { display: block; font-weight: 600; color: #e7c99b; }
+.promo-copy h2 [hidden] { display: none; }
+.promo-copy-override { display: block; white-space: pre-wrap; overflow-wrap: anywhere; }
 .promo-qr-slot {
   min-width: 0; min-height: 0; container-type: size;
   display: grid; place-items: center;
@@ -493,6 +495,8 @@ body:has(.promo-card) { overflow: hidden; }
 }
 .promo-editor-tools { top: 12px; left: 12px; max-width: min(520px, calc(100vw - 24px)); box-sizing: border-box; }
 .promo-editor-tools label { display: flex; align-items: center; gap: 8px; }
+.promo-editor-tools .promo-editor-copy { flex-basis: 100%; display: grid; align-items: stretch; gap: 4px; }
+.promo-editor-tools textarea { width: 100%; box-sizing: border-box; min-height: 56px; resize: vertical; font: inherit; }
 .promo-editor-tools p { flex-basis: 100%; margin: 0; font-size: 12px; }
 .promo-editor-tools details { width: 100%; }
 .promo-editor-tools summary { cursor: pointer; padding: 6px 0; color: #cbff63; }

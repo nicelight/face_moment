@@ -985,6 +985,10 @@ export function createPromoCard(documentImpl, images, qrUrl) {
     span.textContent = text;
     heading.append(span);
   }
+  const override = documentImpl.createElement("span");
+  override.className = "promo-copy-override";
+  override.hidden = true;
+  heading.append(override);
   copyPanel.append(heading);
   const teaserGrid = documentImpl.createElement("div");
   teaserGrid.className = "promo-teaser-grid";

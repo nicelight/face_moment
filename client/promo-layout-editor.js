@@ -1,4 +1,4 @@
-import { createPromoCard } from "./promo-display.js";
+import { createPromoCard, PROMO_COPY_TEXT } from "./promo-display.js";
 import { PROMO_LAYOUT_KEY, PROMO_PARTS, readPromoLayout, promoElements, applyPromoLayout } from "./promo-layout.js";
 
 const labels = ["Фото 1", "Фото 2", "Фото 3", "Фото 4", "Текст", "QR-код"];
@@ -29,13 +29,14 @@ export function openPromoLayoutEditor({ onClose = () => {} } = {}) {
   root.className = "promo-editor";
   root.setAttribute("role", "dialog");
   root.setAttribute("aria-modal", "true");
-  root.setAttribute("aria-label", "Расположение фотографий");
+  root.setAttribute("aria-label", "Настройка экрана Promo");
   const { card } = createPromoCard(document, [0, 1, 2, 3].map(sampleImage), "https://face-momet.ru");
   root.append(card);
   const tools = document.createElement("div");
   tools.className = "promo-editor-tools";
   tools.innerHTML = `<label>Объект <select aria-label="Объект">${labels.map((label, i) => `<option value="${i}">${label}</option>`).join("")}</select></label>
     <label>Размер текста <select aria-label="Размер текста"><option value="0.75">Мелкий</option><option value="1" selected>Средний</option><option value="1.4">Огромный</option></select></label>
+    <label class="promo-editor-copy">Текст Promo <textarea aria-label="Текст Promo" rows="2"></textarea></label>
     <details><summary>Размер и поворот выбранного объекта</summary>
       <label>Ширина <input aria-label="Ширина объекта" data-property="w" type="range" min="2" max="200" step="0.1"><output></output></label>
       <label>Высота <input aria-label="Высота объекта" data-property="h" type="range" min="2" max="200" step="0.1"><output></output></label>
@@ -67,6 +68,9 @@ export function openPromoLayoutEditor({ onClose = () => {} } = {}) {
   }
   applyPromoLayout(card, layout);
   const [objectSelect, textSelect] = tools.querySelectorAll("select");
+  const copyInput = tools.querySelector("textarea[aria-label='Текст Promo']");
+  copyInput.value = typeof layout.text === "string" && layout.text.trim()
+    ? layout.text : PROMO_COPY_TEXT;
   textSelect.value = String(layout.textScale);
   let selected = 0;
   function syncControls() {
@@ -99,6 +103,12 @@ export function openPromoLayoutEditor({ onClose = () => {} } = {}) {
   objectSelect.addEventListener("change", () => select(Number(objectSelect.value)));
   textSelect.addEventListener("change", () => {
     layout.textScale = Number(textSelect.value);
+    applyPromoLayout(card, layout);
+  });
+  copyInput.addEventListener("input", () => {
+    const text = copyInput.value;
+    if (!text.trim() || text === PROMO_COPY_TEXT) delete layout.text;
+    else layout.text = text;
     applyPromoLayout(card, layout);
   });
   elements.forEach((element, index) => {

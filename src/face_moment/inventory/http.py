@@ -578,7 +578,13 @@ def _photo_upload_page_html(history_owner: str = "") -> str:
       __VISIT_DATE_PICKER__
       <label for="photos">Фотографии в формате JPEG</label>
       <input id="photos" name="photos" type="file" accept="image/jpeg" multiple required>
-      <button type="submit">Загрузить фотографии <span aria-hidden="true">↗</span></button>
+      <div class="fm-upload-actions">
+        <button type="submit" id="upload-submit">Загрузить фотографии <span aria-hidden="true">↗</span></button>
+        <div class="fm-upload-progress-wrap">
+          <progress id="upload-progress" class="fm-upload-progress" max="1" value="0" aria-label="Прогресс передачи" aria-valuetext="Завершено 0 из 0"></progress>
+          <span id="upload-progress-label" aria-live="polite">Завершено 0 из 0</span>
+        </div>
+      </div>
     </form>
     <p class="fm-upload-state" id="upload-transfer-state" role="status">Готово к загрузке</p>
     </div>
@@ -600,6 +606,9 @@ def _photo_upload_page_html(history_owner: str = "") -> str:
     }
     visitDateInput.addEventListener("input", () => visitDateInput.setCustomValidity(""));
     const filesInput = document.querySelector("#photos");
+    const submitButton = document.querySelector("#upload-submit");
+    const uploadProgress = document.querySelector("#upload-progress");
+    const uploadProgressLabel = document.querySelector("#upload-progress-label");
     const results = document.querySelector("#upload-results");
     const formMessage = document.querySelector("#form-message");
     const terminalProcessingStatuses = new Set(["ready", "no_faces", "failed"]);
@@ -647,23 +656,38 @@ def _photo_upload_page_html(history_owner: str = "") -> str:
       return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : "";
     }
 
+    function setUploadIndicator(row, state) {
+      row.indicator.className = "fm-upload-indicator";
+      row.indicator.hidden = state === "settled";
+      if (state === "uploading") row.indicator.classList.add("is-uploading");
+      if (state === "processing") row.indicator.classList.add("is-processing");
+    }
+
     function appendResultRow(file, visitDate, savedEntry = null) {
       const entry = savedEntry || { id: crypto.randomUUID(), name: file.name,
         visitDate, spaId: spaSelect.value, createdAt: Date.now(), outcome: "uploading", detail: "" };
       visibleHistory.add(entry.id);
       saveHistory(entry);
       const row = document.createElement("li");
+      const indicator = document.createElement("span");
       const name = document.createElement("span");
       const date = document.createElement("span");
       const outcome = document.createElement("strong");
       const detail = document.createElement("span");
+      indicator.className = "fm-upload-indicator";
+      indicator.setAttribute("aria-hidden", "true");
       name.textContent = file.name;
       date.textContent = ` — ${visitDate.split("-").reverse().join(".")} — `;
       outcome.textContent = "uploading";
       outcome.setAttribute("aria-live", "polite");
-      row.append(name, date, outcome, detail);
+      row.append(indicator, name, date, outcome, detail);
       results.append(row);
-      return { outcome, detail, entry };
+      const rowData = { indicator, outcome, detail, entry };
+      setUploadIndicator(
+        rowData,
+        savedEntry ? (typeof entry.photoId === "string" ? "processing" : "settled") : "uploading",
+      );
+      return rowData;
     }
 
     function setResult(row, outcome, detail = "") {
@@ -675,6 +699,10 @@ def _photo_upload_page_html(history_owner: str = "") -> str:
     }
 
     function renderProcessingStatus(payload, row) {
+      setUploadIndicator(
+        row,
+        terminalProcessingStatuses.has(payload.processing_status) ? "settled" : "processing",
+      );
       if (payload.processing_status === "ready") {
         setResult(
           row,
@@ -698,6 +726,7 @@ def _photo_upload_page_html(history_owner: str = "") -> str:
           });
           if (!response.ok) {
             setResult(row, "status unavailable");
+            setUploadIndicator(row, "settled");
             return;
           }
           const payload = await response.json();
@@ -707,6 +736,7 @@ def _photo_upload_page_html(history_owner: str = "") -> str:
           }
         } catch (_) {
           setResult(row, "status unavailable");
+          setUploadIndicator(row, "settled");
           return;
         }
         await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -732,11 +762,14 @@ def _photo_upload_page_html(history_owner: str = "") -> str:
             ? "EXIF date differs; selected date retained"
             : "";
           setResult(row, "pending", warning);
+          setUploadIndicator(row, "processing");
           void pollProcessingStatus(payload.photo.photo_id, row);
         } else if (response.status === 200) {
           setResult(row, "duplicate");
+          setUploadIndicator(row, "settled");
         } else if (response.status === 503) {
           setResult(row, "Загрузка временно недоступна", "Идёт очистка файлов. Выберите файл и повторите загрузку позже.");
+          setUploadIndicator(row, "settled");
         } else if (response.status === 413 || response.status === 422) {
           let reason = response.status === 413
             ? "Размер файла или запроса превышает допустимый лимит загрузки."
@@ -746,11 +779,14 @@ def _photo_upload_page_html(history_owner: str = "") -> str:
             if (typeof payload.detail?.message === "string") reason = payload.detail.message;
           } catch (_) { /* The proxy may return an empty or non-JSON rejection. */ }
           setResult(row, "Отклонено", reason);
+          setUploadIndicator(row, "settled");
         } else {
           setResult(row, "upload unavailable");
+          setUploadIndicator(row, "settled");
         }
       } catch (_) {
         setResult(row, "upload unavailable");
+        setUploadIndicator(row, "settled");
       }
     }
 
@@ -772,21 +808,35 @@ def _photo_upload_page_html(history_owner: str = "") -> str:
     }
 
     let activeUploads = 0;
+    let transferTotal = 0;
+    let transferSettled = 0;
     let selectedTotal = 0;
     let settledTotal = 0;
     const perspective = document.querySelector("#upload-perspective");
     const transferState = document.querySelector("#upload-transfer-state");
+    function updateTransferProgress() {
+      const progressText = `Завершено ${transferSettled} из ${transferTotal}`;
+      uploadProgress.max = Math.max(transferTotal, 1);
+      uploadProgress.value = Math.min(transferSettled, transferTotal);
+      uploadProgress.setAttribute("aria-valuetext", progressText);
+      uploadProgressLabel.textContent = progressText;
+    }
     function updateTransferState() {
+      const uploading = activeUploads > 0;
       perspective.classList.toggle("is-uploading", activeUploads > 0);
-      form.setAttribute("aria-busy", String(activeUploads > 0));
-      transferState.textContent = activeUploads > 0
-        ? "Загружаем фотографии — можно добавить ещё файлы"
+      form.setAttribute("aria-busy", String(uploading));
+      filesInput.disabled = uploading;
+      submitButton.disabled = uploading;
+      transferState.textContent = uploading
+        ? "Загружаем фотографии…"
         : "Передача завершена. Результат каждого файла — ниже";
       document.querySelector("#upload-settled").textContent = String(settledTotal);
       document.querySelector("#upload-selected-total").textContent = `из ${selectedTotal}`;
+      updateTransferProgress();
     }
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
+      if (activeUploads > 0) return;
       const spaId = spaSelect.value;
       const visitDate = uploadVisitDate();
       if (!visitDate) {
@@ -805,12 +855,19 @@ def _photo_upload_page_html(history_owner: str = "") -> str:
         row: appendResultRow(file, visitDate),
       }));
       filesInput.value = "";
+      transferTotal = uploads.length;
+      transferSettled = 0;
       selectedTotal += uploads.length;
       activeUploads += uploads.length;
       updateTransferState();
       await Promise.all(uploads.map(async ({ file, row }) => {
         try { await uploadFile(file, spaId, visitDate, row); }
-        finally { activeUploads -= 1; settledTotal += 1; updateTransferState(); }
+        finally {
+          activeUploads -= 1;
+          transferSettled += 1;
+          settledTotal += 1;
+          updateTransferState();
+        }
       }));
     });
 

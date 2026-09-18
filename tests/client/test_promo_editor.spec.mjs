@@ -25,6 +25,16 @@ test('configuration editor saves, restores and applies local layout to a real re
   const open = () => page.getByRole('button', { name: 'Поправить расположение фоток' }).click();
   await open();
   await expect(page.locator('.promo-editable')).toHaveCount(6);
+  await expect(page.getByLabel('Текст Promo', { exact: true })).toHaveValue('Ваши фото можно скачать по QR коду или на сайте face-momet.ru');
+  const customText = '<strong>Сканируйте QR</strong>\nна face-momet.ru';
+  await page.getByLabel('Текст Promo', { exact: true }).fill(customText);
+  await expect.poll(() => page.locator('.promo-copy h2').evaluate(el => ({
+    innerText: el.innerText,
+    textContent: el.textContent,
+    strongCount: el.querySelectorAll('strong').length,
+  }))).toEqual({ innerText: customText, textContent: expect.any(String), strongCount: 0 });
+  expect(await page.locator('.promo-copy h2').textContent()).toContain(customText);
+  await expect(page.locator('.promo-copy h2 .promo-editor-handle')).toHaveCount(2);
   await page.getByText('Размер и поворот выбранного объекта', { exact: true }).click();
   await page.getByLabel('Поворот объекта', { exact: true }).fill('15');
   await page.getByLabel('Объект', { exact: true }).selectOption('3');
@@ -45,10 +55,13 @@ test('configuration editor saves, restores and applies local layout to a real re
   await expect(page).toHaveURL(/#configuration$/);
   const saved = await page.evaluate(key => localStorage.getItem(key), storageKey);
   expect(JSON.parse(saved).parts['photo-1'].angle).toBe(15);
+  expect(JSON.parse(saved).text).toBe(customText);
   await page.reload();
   await open();
   await expect(page.getByLabel('Размер текста', { exact: true })).toHaveValue('1.4');
+  await expect(page.getByLabel('Текст Promo', { exact: true })).toHaveValue(customText);
   expect(await page.evaluate(key => localStorage.getItem(key), storageKey)).toBe(saved);
+  await page.getByLabel('Текст Promo', { exact: true }).fill('Отмена не должна сохранять этот текст');
   await page.getByLabel('Размер текста', { exact: true }).selectOption('0.75');
   await page.getByRole('button', { name: 'Отмена', exact: true }).click();
   expect(await page.evaluate(key => localStorage.getItem(key), storageKey)).toBe(saved);
@@ -63,10 +76,14 @@ test('configuration editor saves, restores and applies local layout to a real re
       teasers: [0, 1, 2, 3].map(i => ({ photo_id: `synthetic-${i}`, media_url: `${location.origin}/api/promo/sessions/synthetic-session/media/${i}` })),
       qr_url: `${location.origin}/q?ticket=synthetic-layout`, qr_first_open_expires_at: '2099-01-01T00:00:00Z' } });
     const elements = [...container.querySelectorAll('[data-layout-part]')].map(el => ({ part: el.dataset.layoutPart, left: el.style.left, top: el.style.top, transform: el.style.transform }));
+    const heading = container.querySelector('.promo-copy h2');
+    const rendered = { state: result.state, elements, text: heading.innerText, hasInjectedElement: Boolean(heading.querySelector('strong')) };
     container.remove();
-    return { state: result.state, elements };
+    return rendered;
   });
   expect(applied.state).toBe('result');
+  expect(applied.text).toBe(customText);
+  expect(applied.hasInjectedElement).toBe(false);
   expect(applied.elements).toHaveLength(6);
   for (const element of applied.elements) {
     const part = JSON.parse(saved).parts[element.part];
@@ -74,6 +91,19 @@ test('configuration editor saves, restores and applies local layout to a real re
     expect(parseFloat(element.top)).toBeCloseTo(part.y, 3);
     expect(element.transform).toContain(`rotate(${part.angle}deg)`);
   }
+
+  await page.evaluate(key => {
+    const savedLayout = JSON.parse(localStorage.getItem(key));
+    delete savedLayout.text;
+    localStorage.setItem(key, JSON.stringify(savedLayout));
+  }, storageKey);
+  await page.reload();
+  await open();
+  await expect(page.getByLabel('Текст Promo', { exact: true })).toHaveValue('Ваши фото можно скачать по QR коду или на сайте face-momet.ru');
+  await expect(page.locator('.promo-copy .promo-title')).toHaveText('Ваши фото можно скачать');
+  await expect(page.locator('.promo-copy .promo-domain')).toHaveText('face-momet.ru');
+  await expect(page.locator('.promo-copy-override')).toBeHidden();
+  await page.getByRole('button', { name: 'Отмена', exact: true }).click();
 
   await open();
   await page.evaluate(() => { Storage.prototype.setItem = () => { throw new DOMException('QA storage denied', 'SecurityError'); }; });
