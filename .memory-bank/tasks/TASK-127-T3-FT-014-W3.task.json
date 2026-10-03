@@ -1,0 +1,85 @@
+{
+  "id": "TASK-127-T3-FT-014-W3",
+  "title": "Persistent global tariff и authorized staff API",
+  "status": "ready",
+  "wave": "W3",
+  "feature": "FT-014",
+  "reqs": [
+    "REQ-PUB-004",
+    "REQ-PUB-008"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-004-T3-FT-001-W2"
+  ],
+  "touched_files": [
+    "src/face_moment/serving_control/photo_tariff.py",
+    "src/face_moment/serving_control/http.py",
+    "migrations/versions/<revision>_global_photo_tariff.py",
+    "tests/serving_control/test_photo_tariff.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Relevant server tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/serving_control/test_photo_tariff.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-014.md",
+    ".memory-bank/tasks/plans/IMPL-FT-014.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-014.md#FT-014-AC-004: RED: Tariff provider отсутствует/не сохраняется или unauthorized/invalid write меняет состояние. GREEN: Две разрешённые роли сохраняют валидный singleton, новая session видит его; все отказы сохраняют row и unrelated state; comparison и отдельные результаты всех owned probes в .tasks/TASK-127-T3-FT-014-W3/claim-evidence.md. Existing GREEN сохранить; setup/artificial failure не RED."
+  ],
+  "purpose": "Persistent global tariff и authorized staff API",
+  "success_outcome": "Две разрешённые роли сохраняют валидный singleton, новая session видит его; все отказы сохраняют row и unrelated state",
+  "anti_goals": [
+    "Backend quote/paid-order orchestration, staff tariff UI, is_free migration, provider/deploy вне задачи."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy actions, shared operator DB destructive tests, unrelated AUDIT_09_2026.md",
+      "Foreign owner direct writes; Promo/QR acceptance changes; new providers/queues"
+    ],
+    "stop_conditions": [
+      "New product/shared contract, missing required provider or canonical ambiguity → owning clarification; do not choose default or expand scope."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-014.md#FT-014-AC-004",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-014.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/photo-purchase-api.md",
+    ".memory-bank/domains/photo-orders.md",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/contracts/public-photo-search-api.md#защита-и-проверка"
+  ],
+  "constraints": [
+    "Constitution KISS, concise canonical reuse, Planning Revision 4; touched_files advisory; sequential execution."
+  ],
+  "invariants": [
+    "Business decisions у accepted owner, HTTP/composition только adaptation; public no original leakage.",
+    "Dependency claims/proof остаются supplier; current task owns only named AC/integration delta."
+  ],
+  "verification_targets": [
+    "FT-014-AC-004: serving_control owner src/face_moment/serving_control/; PostgreSQL face_moment.photo_tariff singleton. Owner repository write/read-after-new-session/restart; GET/PUT both operator/developer, missing/invalid sessions, other roles and missing/mismatched CSRF denied without mutation. Invalid finite/order/base/rounded-unit settings preserve previous row and unrelated settings; missing tariff cannot yield fabricated paid quote.",
+    "FT-014-AC-004: Disposable PostgreSQL through tests.disposable_postgresql; own Alembic revision/direct down_revision, up/down/schema transition and unrelated data preservation. Shared PostgreSQL contract owns dynamic linear head/ancestry; no historical exact-head test. Unique fixture DB per rerun, cleanup finally, never downgrade shared/operator database.",
+    "Existing staff_access session/CSRF is dependency; only serving_control writes tariff and exports immutable snapshot to promo. Inspect existing owner boundaries rather than require nonexistent architecture command."
+  ]
+}

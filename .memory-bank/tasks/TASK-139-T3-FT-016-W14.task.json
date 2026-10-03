@@ -1,0 +1,98 @@
+{
+  "id": "TASK-139-T3-FT-016-W14",
+  "title": "Browser paid order и provider continuation",
+  "status": "planned",
+  "wave": "W14",
+  "feature": "FT-016",
+  "reqs": [
+    "REQ-PUB-001",
+    "REQ-PUB-004",
+    "REQ-PUB-005",
+    "REQ-PUB-006",
+    "REQ-PUB-007"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-138-T3-FT-016-W13",
+    "TASK-136-T2-FT-015-W12",
+    "TASK-129-T2-FT-014-W9"
+  ],
+  "touched_files": [
+    "client/public-photo-payment.js",
+    "client/public-photo-download.js",
+    "client/site.html",
+    "client/site.css",
+    "tests/client/test_public_photo_payment.mjs",
+    "tests/client/public_photo_payment.spec.mjs"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Client unit tests",
+      "command": "npm run test:unit",
+      "required": true
+    },
+    {
+      "name": "Focused browser flow",
+      "command": "npm run test:browser -- tests/client/public_photo_payment.spec.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-016.md",
+    ".memory-bank/tasks/plans/IMPL-FT-016.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-016.md#FT-016-AC-001: RED: Owned integration outcome absent or accepted assertion fails before implementation. GREEN: Claim-equivalent actual runtime probe passes with each assertion/result and decisive comparison separately recorded in .tasks/TASK-139-T3-FT-016-W14/claim-evidence.md. Preserve pre-existing GREEN; setup/artificial failure is not RED.",
+    ".memory-bank/features/FT-016.md#FT-016-AC-005: RED: Owned integration outcome absent or accepted assertion fails before implementation. GREEN: Claim-equivalent actual runtime probe passes with each assertion/result and decisive comparison separately recorded in .tasks/TASK-139-T3-FT-016-W14/claim-evidence.md. Preserve pre-existing GREEN; setup/artificial failure is not RED."
+  ],
+  "purpose": "Browser paid order и provider continuation",
+  "success_outcome": "Served paid browser freezes one mixed selection and continues through preparation and confirmed delivery",
+  "anti_goals": [
+    "No new quote/profile/order schema/ZIP/provider platform/refund API; supplier acceptance remains owned upstream."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy, real email/payment, shared operator DB destructive probes, unrelated AUDIT_09_2026.md",
+      "Foreign owner direct writes, Promo/QR changes, new queues/providers/retention guarantee"
+    ],
+    "stop_conditions": [
+      "Material new product/shared contract, absent accepted provider or ambiguous authority → owning clarification; routine filename/technical names remain executor discretion."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-016.md#FT-016-AC-001",
+    ".memory-bank/features/FT-016.md#FT-016-AC-005",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-016.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/domains/photo-orders.md",
+    ".memory-bank/contracts/photo-purchase-api.md",
+    ".memory-bank/states/lifecycle-map.md#public-visitor-flow",
+    ".memory-bank/contracts/public-photo-search-api.md#защита-и-проверка",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/domains/browser-search-profile.md",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries"
+  ],
+  "constraints": [
+    "Constitution KISS, Planning Revision 4, touched_files advisory, sequential execution."
+  ],
+  "invariants": [
+    "Business decisions у promo; transport/composition only adapters; no foreign writes.",
+    "Supplier acceptance/evidence stays owner; task proves exact AC and consumer integration delta."
+  ],
+  "verification_targets": [
+    "FT-016-AC-001: Actual served site attaches paid flow to TASK-129 selection/quote and TASK-136 download interaction, collects valid email and bank_card|sbp without signup, POSTs canonical selected current result/photo_ids/client_request_id/email/method to TASK-135. Same attempt reuses client_request_id for click/retry/return. Actual backend integration observes one mixed multi-venue order, zero free lines, saved profile.email/last_visit_at and frozen order.email after independent DB session; settings changes leave existing order used by provider unchanged. Core formula/atomicity/concurrent idempotence proof stays TASK-132, browser integration only.",
+    "FT-016-AC-005: Served browser goes download→email/method→order/preparation→ready→payment endpoint→confirmation_url; no provider navigation while requested/preparing/failed. Preparing shows повторите через 30 секунд and retry checks same order; failure explains safe error/manual support without payment navigation, actual fake-mail supplier records notification attempt. Both card and QR/SBP choices map canonical methods. No extra queue/UI state machine/service.",
+    "FT-016-AC-005: Provider return navigates to server-owned served URL and refreshes retained owner order through actual status endpoint; browser return/query cannot enable download. Pending/canceled/failed verification keeps link closed; confirmed yields existing bearer download. Cookie loss does not recover purchase, already-issued bearer works independently. Unavailable/expired paid delivery shows clear manual support/refund message. Free-only supplier path continues without mandatory email/payment.",
+    "FT-016-AC-001 / FT-016-AC-005: Focused native Playwright served shell/script→actual isolated backend with synthetic mixed venues/profile/orders/private store and HTTP fake provider/mail; no mock-only end-to-end claim. Trace network/order/receipt/redirect/return/download plus per-claim comparison; unit tests for local rendering. Unique disposable prefixes and cleanup finally. External YooKassa test-mode card/SBP/receipt join is owned TASK-137 and consumed, not re-proved here."
+  ]
+}

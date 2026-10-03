@@ -1,0 +1,91 @@
+{
+  "id": "TASK-132-T3-FT-014-W8",
+  "title": "Frozen order core и atomic profile update",
+  "status": "planned",
+  "wave": "W8",
+  "feature": "FT-014",
+  "reqs": [
+    "REQ-PUB-001",
+    "REQ-PUB-004",
+    "REQ-PUB-006"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-128-T3-FT-014-W7"
+  ],
+  "touched_files": [
+    "src/face_moment/promo/photo_orders.py",
+    "src/face_moment/promo/photo_quote.py",
+    "src/face_moment/promo/browser_search_profile.py",
+    "migrations/versions/<revision>_photo_orders.py",
+    "tests/promo/test_photo_orders.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Relevant server tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_photo_orders.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-014.md",
+    ".memory-bank/tasks/plans/IMPL-FT-014.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-014.md#FT-014-AC-006: RED: Frozen core отсутствует/изменяет old order, duplicate/conflict создаёт второй или profile/order commit не атомарен. GREEN: Полный canonical snapshot сохраняется независимо от новых settings, replay один, conflict/rollback безопасны, paid profile delta атомарна; comparison и отдельные результаты всех owned probes в .tasks/TASK-132-T3-FT-014-W8/claim-evidence.md. Existing GREEN сохранить; setup/artificial failure не RED."
+  ],
+  "purpose": "Frozen order core и atomic profile update",
+  "success_outcome": "Полный canonical snapshot сохраняется независимо от новых settings, replay один, conflict/rollback безопасны, paid profile delta атомарна",
+  "anti_goals": [
+    "Order HTTP/free/paid UX, ZIP executor, provider/payment confirmation, receipt/mail/entitlement routes вне задачи."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy actions, shared operator DB destructive tests, unrelated AUDIT_09_2026.md",
+      "Foreign owner direct writes; Promo/QR acceptance changes; new providers/queues"
+    ],
+    "stop_conditions": [
+      "New product/shared contract, missing required provider or canonical ambiguity → owning clarification; do not choose default or expand scope."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-014.md#FT-014-AC-006",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-014.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/photo-purchase-api.md",
+    ".memory-bank/domains/photo-orders.md",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/contracts/public-photo-search-api.md#защита-и-проверка",
+    ".memory-bank/domains/browser-search-profile.md",
+    ".memory-bank/states/lifecycle-map.md#public-visitor-flow"
+  ],
+  "constraints": [
+    "Constitution KISS, concise canonical reuse, Planning Revision 4; touched_files advisory; sequential execution."
+  ],
+  "invariants": [
+    "Business decisions у accepted owner, HTTP/composition только adaptation; public no original leakage.",
+    "Dependency claims/proof остаются supplier; current task owns only named AC/integration delta."
+  ],
+  "verification_targets": [
+    "FT-014-AC-006: promo command/repository under src/face_moment/promo/ accepts owner profile, current result/photo_ids, client_request_id and canonical paid email/method bank_card|sbp. It revalidates quote membership/active/original availability via accepted providers, freezes authoritative items including photo_id/venue_id/visit_date/is_free/unit_kopecks and total; no browser-price/free authority. No new endpoint needed to prove this core.",
+    "FT-014-AC-006: PostgreSQL face_moment.photo_orders actual owner write/read-after-new-session, unique(profile_id,client_request_id), canonical complete archive/payment fields, requested ZIP, zero not_required / paid pending without provider initiation. Paid email stored in frozen order and profile.email + last_visit_at same transaction; invalid/conflicting request rollback leaves both unchanged; free no mandatory email and no profile email replacement.",
+    "FT-014-AC-006: Old/new order compare after tariff and venue is_free changes; old snapshot unchanged, new order uses new values. Identical concurrent replay returns one identity/composition; conflicting payload→409, including no duplicate profile/order side effects. Store re-read after process/session reopen proves snapshot persistence.",
+    "FT-014-AC-006: Own migration upgrade/downgrade/direct predecessor/schema transition and unrelated profile/Photo/venue preservation in tests.disposable_postgresql; unique disposable DB/rerun and cleanup finally. Shared linear Alembic rule is reused, not exact current head. Harm proof uses only synthetic profiles/photos/private store; no real email/payment/production.",
+    "FT-015 will consume frozen free order core for POST/read/archive flow; FT-016 will consume paid core for email form, order HTTP/profile integration and provider/receipt. Core snapshot/atomicity/idempotence proof stays here; later tasks prove only consumer integration delta and their owned delivery/payment claims. No dependency from this supplier to future features."
+  ]
+}

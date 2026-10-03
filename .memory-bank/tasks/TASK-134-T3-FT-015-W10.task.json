@@ -1,0 +1,89 @@
+{
+  "id": "TASK-134-T3-FT-015-W10",
+  "title": "Private bearer ZIP streaming и expiry",
+  "status": "planned",
+  "wave": "W10",
+  "feature": "FT-015",
+  "reqs": [
+    "REQ-PUB-007",
+    "REQ-PUB-008"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-133-T3-FT-015-W9"
+  ],
+  "touched_files": [
+    "src/face_moment/promo/photo_archive_delivery.py",
+    "src/face_moment/promo/photo_archive_http.py",
+    "src/face_moment/infrastructure/object_store.py",
+    "src/face_moment/infrastructure/settings.py",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/promo/test_photo_archive_delivery.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Relevant server tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_photo_archive_delivery.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-015.md",
+    ".memory-bank/tasks/plans/IMPL-FT-015.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-015.md#FT-015-AC-003: RED: Route/signer отсутствует либо forged/expired/unentitled token delivers bytes. GREEN: Тот же route/clock/private-store probe доказывает AC-003; отдельные результаты всех owned assertions/comparison и trace в .tasks/TASK-134-T3-FT-015-W10/claim-evidence.md. Preserve existing GREEN; setup/artificial failure не RED."
+  ],
+  "purpose": "Private bearer ZIP streaming и expiry",
+  "success_outcome": "Signed private ZIP is available only within permitted entitlement and ready+3-day lifetime",
+  "anti_goals": [
+    "ZIP assembly/core profile/payment confirmation/browser UX вне задачи."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy, real email/payment, shared operator DB destructive probes, unrelated AUDIT_09_2026.md",
+      "Foreign owner direct writes, Promo/QR changes, new queues/providers/retention guarantee"
+    ],
+    "stop_conditions": [
+      "Material new product/shared contract, absent accepted provider or ambiguous authority → owning clarification; routine filename/technical names remain executor discretion."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-015.md#FT-015-AC-003",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-015.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/domains/photo-orders.md",
+    ".memory-bank/contracts/photo-purchase-api.md",
+    ".memory-bank/states/lifecycle-map.md#public-visitor-flow",
+    ".memory-bank/contracts/public-photo-search-api.md#защита-и-проверка",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract"
+  ],
+  "constraints": [
+    "Constitution KISS, Planning Revision 4, touched_files advisory, sequential execution."
+  ],
+  "invariants": [
+    "Business decisions у promo; transport/composition only adapters; no foreign writes.",
+    "Supplier acceptance/evidence stays owner; task proves exact AC and consumer integration delta."
+  ],
+  "verification_targets": [
+    "FT-015-AC-003: Actual GET /api/public/archives/{id}?token= HMAC-SHA256 binds immutable order_id/ready_at with separate configured server secret and constant-time check. Stream application/zip attachment from private store, no cookie/client identity required. Read stored free or succeeded paid entitlement; pending/canceled/nonready invalid/unavailable→404, exact ready+3days→410.",
+    "FT-015-AC-003: Task-owned URL signer available to order-status consumer. Second no-cookie client downloads same ZIP at expiry-minus-epsilon; at/after boundary denied. Forged/other-order/changed-ready token rejected; JSON/log headers never expose private key, query/token not logged; HTTPS/no-store/no-referrer retained.",
+    "FT-015-AC-003: Real route and private-store roundtrip with anonymous direct original/store read denial; deleted ZIP safe unavailable/manual-support error, no preservation or purge change. Fixed synthetic paid statuses exercise stored authorization only; provider transition proof remains FT-016.",
+    "FT-015-AC-003: Disposable DB/unique object prefix and isolated configurable clock, safe repeat and cleanup finally. Read PostgreSQL face_moment.photo_orders via promo repository, no foreign writes; ZIP-member/generation proof remains dependency."
+  ]
+}

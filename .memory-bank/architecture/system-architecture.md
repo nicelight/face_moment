@@ -1,7 +1,7 @@
 ---
 description: Canonical greenfield system shape, capability ownership and Architecture Spine for the Face Moment pilot.
 status: active
-last_updated: 2026-09-01
+last_updated: 2026-10-03
 source_of_truth:
   - .memory-bank/architecture/system-architecture.md
 ---
@@ -141,7 +141,7 @@ speculative distributed infrastructure.
 - Prevents: diagnostic evidence blocking participant flow, a reliable-delivery
   outbox and cross-owner purge/retention cascades.
 - Rule: `promo` persists the core Attempt before processing an admitted
-  request; `diagnostics` owns optional detailed evidence. Evidence failure does
+  automatic Promo/display request; `diagnostics` owns optional detailed evidence. Evidence failure does
   not change the participant outcome, and each owner controls its own cleanup.
 - Verification: FT-007/FT-012 independence and ownership proof.
 - Source: [.memory-bank/prd.md](../prd.md) `FR-DIAG-01..05`,
@@ -283,6 +283,17 @@ not a microservice boundary. Realtime loads only the active model; worker and
 realtime reuse the same revisioned FaceEngine implementations. One realtime
 slot, one sequential background operation and conservative native thread caps
 are the initial CPU policy.
+
+## Public Search And Selected Delivery
+
+Принятое расширение [PRD](../prd.md) использует те же пять slices/processes.
+`promo` владеет public profile/results/orders/ZIP/payment entitlement;
+`serving_control` — free venue/global tariff/profile threshold, `processing` —
+query/search/gallery rendering, `inventory` — Photo/original projections.
+[Public Search](../contracts/public-photo-search-api.md) и
+[Purchase API](../contracts/photo-purchase-api.md) задают отдельные границы.
+Gallery/ZIP IO ограничены backend исполнителями, inference использует warmed
+realtime slot. Existing Promo/QR и shared Photo worker не меняются.
 
 ## Capability Ownership
 

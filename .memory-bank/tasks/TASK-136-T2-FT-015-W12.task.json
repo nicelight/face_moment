@@ -1,0 +1,88 @@
+{
+  "id": "TASK-136-T2-FT-015-W12",
+  "title": "Browser free download, preparation и failure",
+  "status": "planned",
+  "wave": "W12",
+  "feature": "FT-015",
+  "reqs": [
+    "REQ-PUB-005",
+    "REQ-PUB-007"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-135-T3-FT-015-W11",
+    "TASK-129-T2-FT-014-W9"
+  ],
+  "touched_files": [
+    "client/public-photo-download.js",
+    "client/site.html",
+    "client/site.css",
+    "tests/client/test_public_photo_download.mjs",
+    "tests/client/public_photo_download.spec.mjs"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Client unit tests",
+      "command": "npm run test:unit",
+      "required": true
+    },
+    {
+      "name": "Focused browser flow",
+      "command": "npm run test:browser -- tests/client/public_photo_download.spec.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-015.md",
+    ".memory-bank/tasks/plans/IMPL-FT-015.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-015.md#FT-015-AC-002: RED: Browser click absent/opens payment or preparing/failure/ready states render incorrectly. GREEN: Тот же served browser/API probe доказывает AC-002; отдельные результаты всех owned assertions/comparison и trace в .tasks/TASK-136-T2-FT-015-W12/claim-evidence.md. Preserve existing GREEN; setup/artificial failure не RED."
+  ],
+  "purpose": "Browser free download, preparation и failure",
+  "success_outcome": "Served browser downloads free selection and explains preparing/failure without payment/email form",
+  "anti_goals": [
+    "Paid email/method/provider UI, upstream quote/gallery/core/ZIP/TTL acceptance вне задачи."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy, real email/payment, shared operator DB destructive probes, unrelated AUDIT_09_2026.md",
+      "Foreign owner direct writes, Promo/QR changes, new queues/providers/retention guarantee"
+    ],
+    "stop_conditions": [
+      "Material new product/shared contract, absent accepted provider or ambiguous authority → owning clarification; routine filename/technical names remain executor discretion."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-015.md#FT-015-AC-002",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-015.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/domains/photo-orders.md",
+    ".memory-bank/contracts/photo-purchase-api.md",
+    ".memory-bank/states/lifecycle-map.md#public-visitor-flow",
+    ".memory-bank/contracts/public-photo-search-api.md#защита-и-проверка"
+  ],
+  "constraints": [
+    "Constitution KISS, Planning Revision 4, touched_files advisory, sequential execution."
+  ],
+  "invariants": [
+    "Business decisions у promo; transport/composition only adapters; no foreign writes.",
+    "Supplier acceptance/evidence stays owner; task proves exact AC and consumer integration delta."
+  ],
+  "verification_targets": [
+    "FT-015-AC-002: Actual served public site attaches download action to existing FT-014 free-only selection/authoritative quote. Stable client_request_id persists for repeated click/retry of same attempt; no mandatory email/method/provider navigation. New selection is a new attempt; browser price never authority.",
+    "FT-015-AC-002: Actual browser POST/GET joins TASK-135, displays preparation instruction повторите через 30 секунд, status failure/safe manual-support message and ready link download. User retry/status refresh works without creating another order. Failed generation never navigates provider; no future local-selfie support retrieval.",
+    "FT-015-AC-002: Focused native browser test runs served shell/script against actual isolated backend/provider suppliers and selected synthetic free venue/common-at-paid venue; unit fixtures may cover rendering but are not sole end-to-end proof. Capture browser/network/download/error trace; dependency gallery/core/ZIP/TTL proof remains supplier.",
+    "FT-015-AC-002: Existing npm scripts test:unit/test:browser reused, scoped browser spec; unique disposable profile/order/object setup and cleanup finally; fake mail capture only. Inspect primary promo/client boundary, no business writes in transport/composition."
+  ]
+}

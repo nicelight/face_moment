@@ -4,6 +4,41 @@ status: active
 ---
 # Changelog
 
+## 2026-10-03 — Публичный поиск и покупка: задачи спланированы
+
+FT-013–016 разложены в 20 indexed задач TASK-120–139: 7/6/4/3 самостоятельных
+результата. [Планы](tasks/plans/index.md) переиспользуют profile/search,
+quote/frozen-order и ZIP/bearer suppliers без повторного владения доказательствами.
+Все четыре task-plan review — APPROVE, Planning Revision 4 сохранена.
+Уточнён staff free-mode API; исправлены supplier `is_free` и native compression proof.
+Только planning/docs; implementation, deploy, реальные email/payment и commit
+не выполнялись.
+
+## 2026-10-03 — Public extension: bounded SDD design
+
+Приняты четыре коротких [subject contracts](index.md#public-extension-contracts):
+profile А/Б, public search/gallery, frozen orders/ZIP и purchase/provider.
+Gallery JPEG формируется по запросу без изменения no_faces/исторического backfill;
+ZIP готовится до оплаты, ошибки вызывают automatic admin mail.
+[Impact](spec-backbone.md#new-scope-design-routing) bounded: FT-013..016, Revision4
+и Foundation сохранены; прежние tasks/evidence/approvals не менялись.
+Следующий шаг — свежий `/feature-to-tasks FT-013`.
+
+## 2026-10-03 — Публичный поиск и покупка: требования перед design
+
+[PAYMENS_TS.md](../PAYMENS_TS.md) фиксирует принятый сценарий камеры сайта,
+скрытого профиля А/Б, выбора 1–3 площадок, галереи, ЮKassa и архива. Общие
+`no_faces` ограничены датами личных совпадений своей площадки и бесплатны;
+защита архивов/исходников от удаления не добавляется. [PRD](prd.md) фиксирует
+единый marginal тариф для operator/developer, cross-venue заказ, бесплатную
+выдачу, email, ручной возврат, frozen quote и сохранение профиля/last visit.
+Приняты IndexedDB JPEG Blob/960 px/quality 0.85 с проверкой качества,
+quota warning с продолжением без удаления истории, снимаемый frontend watermark,
+private originals и preview шириной не менее 320 px, оплата после готовности ZIP.
+[Backbone](spec-backbone.md) отмечает готовность к `/prd-to-features` после
+проверки clarified PRD/vocabulary; новый design ещё предстоит. Baseline/Revision 4 и Foundation
+сохранены; impact не классифицирован, task lifecycle/approvals/evidence не менялись.
+
 ## 2026-09-16 — Уточнение серверного развёртывания
 
 [Серверный runbook](runbooks/server-deployment.md) дополнен первым checkout,

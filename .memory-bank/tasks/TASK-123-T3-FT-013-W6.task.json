@@ -1,0 +1,105 @@
+{
+  "id": "TASK-123-T3-FT-013-W6",
+  "title": "Публичный API поиска и текущего результата",
+  "status": "planned",
+  "wave": "W6",
+  "feature": "FT-013",
+  "reqs": [
+    "REQ-PUB-002",
+    "REQ-PUB-003",
+    "REQ-PUB-008"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-121-T3-FT-013-W3",
+    "TASK-122-T2-FT-013-W3",
+    "TASK-073-T3-FT-004-W3",
+    "TASK-075-T3-FT-004-W5"
+  ],
+  "touched_files": [
+    "src/face_moment/promo/public_photo_search.py",
+    "src/face_moment/promo/public_search_http.py",
+    "src/face_moment/inventory/public_photo_projection.py",
+    "src/face_moment/serving_control/public_search_context.py",
+    "src/face_moment/entrypoints/backend.py",
+    "src/face_moment/entrypoints/realtime.py",
+    "deploy/Caddyfile",
+    "tests/promo/test_public_search_api.py",
+    "src/face_moment/serving_control/ingest_target.py",
+    "migrations/versions/<revision>_venue_free_mode.py",
+    "tests/serving_control/test_venue_free_mode.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Relevant server tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_public_search_api.py tests/serving_control/test_venue_free_mode.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-013.md",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-002: RED: Public route отсутствует либо scope validation допускает 0/4/чужие площадки/исключает eligible даты. GREEN: тот же task-owned probe выполняет observable criterion; comparison и trace/output в .tasks/TASK-123-T3-FT-013-W6/claim-evidence.md. Существующий GREEN сохранить; искусственные/setup failures не RED.",
+    ".memory-bank/features/FT-013.md#FT-013-AC-006: RED: Public routes/limits отсутствуют или over-limit вызывает inference/JSON раскрывает original. GREEN: тот же task-owned probe выполняет observable criterion; comparison и trace/output в .tasks/TASK-123-T3-FT-013-W6/claim-evidence.md. Существующий GREEN сохранить; искусственные/setup failures не RED.",
+    ".memory-bank/features/FT-013.md#FT-013-AC-008: RED: Current profile result отсутствует либо failure/foreign read публикует/раскрывает успешную галерею. GREEN: тот же task-owned probe выполняет observable criterion; comparison и trace/output в .tasks/TASK-123-T3-FT-013-W6/claim-evidence.md. Существующий GREEN сохранить; искусственные/setup failures не RED.",
+    ".memory-bank/features/FT-013.md#FT-013-AC-008 (REQ-PUB-003 supplier): RED: persistent is_free/provider отсутствует либо result неверно маркирует paid/free personal/common. GREEN: owner repository read/write, existing-venue migration default false и public paid/free result fixtures; migration upgrade/downgrade сохраняет unrelated data в disposable DB. Comparison/output в .tasks/TASK-123-T3-FT-013-W6/claim-evidence.md; setup failure не RED."
+  ],
+  "purpose": "Публичный API поиска и текущего результата",
+  "success_outcome": "Явный public запрос получает только собственный разрешённый current result или точный отказ.",
+  "anti_goals": [
+    "Покупка/quote/ZIP/оплата и реальные deploy/email вне задачи.",
+    "Staff create/settings free-mode UX/confirmation остаются FT-014; tariff/orders вне задачи."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy actions, shared operator database destructive tests, unrelated AUDIT_09_2026.md",
+      "Чужие owner state writes, baseline Promo/QR acceptance changes"
+    ],
+    "stop_conditions": [
+      "Новый public/shared contract или изменение accepted outcome требует owning clarification, не молчаливого scope growth."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-002",
+    ".memory-bank/features/FT-013.md#FT-013-AC-006",
+    ".memory-bank/features/FT-013.md#FT-013-AC-008",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/public-photo-search-api.md",
+    ".memory-bank/domains/browser-search-profile.md",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/domains/photo-orders.md#владельцы-и-данные",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract"
+  ],
+  "constraints": [
+    "Constitution KISS; accepted seven outcomes; Planning Revision 4; touched_files advisory."
+  ],
+  "invariants": [
+    "Business logic остаётся у accepted owner; transport/composition только адаптация.",
+    "Не менять Promo/QR contract, shared Photo worker и original privacy."
+  ],
+  "verification_targets": [
+    "FT-013-AC-002, FT-013-AC-006: GET venues; multipart strict fields/bool/JPEG bounds и 0/4 venues до inference; profile/IP rate limits до search, Origin/no-store/no-referrer и cookie; slot/deadline/failure не публикуют success; read current/foreign result; personal/common matched dates и no-match; конкурирующий Promo запрос сохраняет QR/latency baseline без нового target.",
+    "promo организует admission/profile/search/result, processing/serving_control/inventory предоставляют accepted calls; edge направляет только search в realtime.",
+    "Persistence: PostgreSQL face_moment.public_search_results; profile persistence — dependency, только result/last-visit integration delta; migration up/down на tests.disposable_postgresql disposable DB, promo result tables и serving_control-owned Spa.is_free; shared PostgreSQL contract задаёт linear Alembic integrity, feature proof только своей revision/direct down_revision/schema transition и сохранение unrelated данных. Уникальная DB на rerun, cleanup helper; shared/operator DB не downgrade.",
+    "Adversarial proof только synthetic profiles/photos/private object prefix в disposable DB/MinIO; rerun создаёт уникальные IDs/prefix и удаляет их в finally. Реальный public host/production/storage не используется.",
+    "FT-013-AC-008 / REQ-PUB-003 supplier: serving_control владеет Spa.is_free в PostgreSQL face_moment.spas и immutable public read projection; promo читает только accepted provider. Alembic bool existing venues default false сохраняет venue identities/settings/photos. Owner repository paid=false/free=true write/read-after-new-session и public result fixtures доказывают personal.is_free по площадке, common.is_free=true в обоих случаях. Создание требует explicit bool по Photo Orders; staff UX остаётся FT-014."
+  ]
+}

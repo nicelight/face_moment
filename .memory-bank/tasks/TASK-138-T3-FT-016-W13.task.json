@@ -1,0 +1,95 @@
+{
+  "id": "TASK-138-T3-FT-016-W13",
+  "title": "Server-confirmed payment и paid bearer integration",
+  "status": "planned",
+  "wave": "W13",
+  "feature": "FT-016",
+  "reqs": [
+    "REQ-PUB-006",
+    "REQ-PUB-007",
+    "REQ-PUB-008"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-137-T3-FT-016-W12",
+    "TASK-134-T3-FT-015-W10"
+  ],
+  "touched_files": [
+    "src/face_moment/promo/photo_payment.py",
+    "src/face_moment/promo/photo_payment_http.py",
+    "src/face_moment/promo/photo_order_http.py",
+    "src/face_moment/infrastructure/yookassa_payments.py",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/promo/test_photo_payment_confirmation.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Relevant server tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_photo_payment_confirmation.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-016.md",
+    ".memory-bank/tasks/plans/IMPL-FT-016.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-016.md#FT-016-AC-003: RED: Owned integration outcome absent or accepted assertion fails before implementation. GREEN: Claim-equivalent actual runtime probe passes with each assertion/result and decisive comparison separately recorded in .tasks/TASK-138-T3-FT-016-W13/claim-evidence.md. Preserve pre-existing GREEN; setup/artificial failure is not RED.",
+    ".memory-bank/features/FT-016.md#FT-016-AC-004: RED: Owned integration outcome absent or accepted assertion fails before implementation. GREEN: Claim-equivalent actual runtime probe passes with each assertion/result and decisive comparison separately recorded in .tasks/TASK-138-T3-FT-016-W13/claim-evidence.md. Preserve pre-existing GREEN; setup/artificial failure is not RED."
+  ],
+  "purpose": "Server-confirmed payment и paid bearer integration",
+  "success_outcome": "Authenticated provider truth changes stored entitlement once and enables existing selected archive delivery",
+  "anti_goals": [
+    "No provider initiation receipt changes except necessary shared adapter join; supplier snapshot/ZIP/HMAC/TTL claims remain prerequisite owners."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy, real email/payment, shared operator DB destructive probes, unrelated AUDIT_09_2026.md",
+      "Foreign owner direct writes, Promo/QR changes, new queues/providers/retention guarantee"
+    ],
+    "stop_conditions": [
+      "Material new product/shared contract, absent accepted provider or ambiguous authority → owning clarification; routine filename/technical names remain executor discretion."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-016.md#FT-016-AC-003",
+    ".memory-bank/features/FT-016.md#FT-016-AC-004",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-016.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/domains/photo-orders.md",
+    ".memory-bank/contracts/photo-purchase-api.md",
+    ".memory-bank/states/lifecycle-map.md#public-visitor-flow",
+    ".memory-bank/contracts/public-photo-search-api.md#защита-и-проверка",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/domains/browser-search-profile.md",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries"
+  ],
+  "constraints": [
+    "Constitution KISS, Planning Revision 4, touched_files advisory, sequential execution."
+  ],
+  "invariants": [
+    "Business decisions у promo; transport/composition only adapters; no foreign writes.",
+    "Supplier acceptance/evidence stays owner; task proves exact AC and consumer integration delta."
+  ],
+  "verification_targets": [
+    "FT-016-AC-003: Actual registered POST /api/public/payments/yookassa accepts canonical notification/event/object.id without cookie/Origin requirement; always authenticated server GET /v3/payments/{id} before paid transition. Match stored unique provider id, metadata.order_id, amount/RUB, succeeded and paid=true. Forged event/foreign id/amount/currency/metadata mismatch, pending/canceled/unpaid cannot grant access; event label/browser return never authority. Processed notification200, transient technical failure5xx for redelivery.",
+    "FT-016-AC-003: promo exclusively writes payment state/paid_at in PostgreSQL face_moment.photo_orders. Concurrent/repeated webhook/status refresh yields one succeeded purchase without new order/payment, does not regress succeeded on stale notification; repository reread after new session/restart. Owner order GET/status refresh consumes server verification for stored pending payment on return; same authenticated verification command, no new public route. Existing public auth/no-store rules preserved; no automatic refund API.",
+    "FT-016-AC-004: Actual provider-confirmation→TASK-135 owner status→TASK-134 bearer stream proves pending/canceled denial and confirmed mixed selected ZIP access without cookie. Delayed confirmation preserves original ready_at and its ready+3days deadline; expired or missing archive remains unavailable despite paid status, invalid/foreign/private original bypass still denied. Compare before/after confirmation against supplier stored entitlement and only selected members; no duplicate ZIP/TTL/signature supplier proof. Clear safe error/manual support/refund, no restoration/shielding promise.",
+    "FT-016-AC-003 / FT-016-AC-004: Isolated real backend routes and real provider adapter against fake HTTP provider with disposable PostgreSQL/private object fixtures; unique profile/orders/keys, independent-session reads, deterministic clock for delayed confirmation and cleanup finally. Failure/duplicate/concurrency probes use synthetic inputs; no live money/email. mypy/relevant pytest plus inspection of promo ownership/adapter-only transport/composition; no fabricated architecture check."
+  ]
+}

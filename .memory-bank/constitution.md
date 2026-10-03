@@ -1,10 +1,10 @@
 ---
 description: Project Constitution — governing principles for AI-first development.
 status: active
-version: 4
+version: 5
 project_principles: ratified
 ratified: 2026-07-17
-last_updated: 2026-08-04
+last_updated: 2026-10-03
 ---
 # Project Constitution
 
@@ -24,6 +24,10 @@ preserves required correctness. They MUST NOT add enterprise architecture,
 speculative scale, abstraction, distribution, redundancy, recovery machinery,
 or process unless a current requirement, constraint, measured bottleneck,
 demonstrated duplication, or evidenced material risk justifies its total cost.
+
+Specifications MUST be concise: keep each rule in one canonical place, include
+only actionable requirements/contracts, and link shared rules instead of
+repeating them. Omit boilerplate that adds no decision or verification value.
 
 ### II. Performance and Promo/QR Continuity Lead the Current Phase
 

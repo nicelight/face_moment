@@ -1,7 +1,7 @@
 ---
 description: Stable product requirements and traceability for Face Moment, including functional multi-venue operation.
 status: draft
-last_updated: 2026-09-18
+last_updated: 2026-10-03
 ---
 # Requirements
 
@@ -56,6 +56,22 @@ last_updated: 2026-09-18
 | `REQ-DATA-001` | Structured server events MUST expire after 30 days and ordinary Attempts/evidence, including persisted capture-derived diagnostic media, after 90 days. Only the curated promoted subset may survive until explicit deletion; participant names remain annotation-only, and the latest cleanup outcome MUST be visible. | NFR-REL-05, NFR-DATA-01..04 |
 | `REQ-ARCH-001` | Multiple venues MUST work on one central CPU-only server with the existing backend, one sequential worker, one realtime slot with busy, PostgreSQL and object storage. Settings/data stay venue-scoped; 10–15 venue capacity is not promised. | NFR-ARCH-01..04, AC-27 |
 
+## Public extension requirements — 2026-10-03
+
+These planned requirements derive from the clarified PRD and accepted delta,
+not from a completed design. Historical RTM lifecycle/evidence remains unchanged.
+
+| ID | Requirement | PRD basis |
+|---|---|---|
+| `REQ-PUB-001` | All camera-only captures MUST remain locally as IndexedDB JPEG Blob through retake, A/B denial and failed/successful search (starter long edge <=960 px, q0.85, no upscale, face >=30% image, empirical quality verification without accuracy promise); quota/unavailable storage MUST warn and allow current search without retaining the new image or evicting old ones. A hidden protected-cookie profile MUST retain fixed A/B with one confirmed reset preceded by a foreign-face warning; Developer MUST configure the A/B threshold independently of professional-photo search threshold without automatically changing it, non-consuming unusable captures, server-authoritative limits, no signup/recovery, retained email/last visit and no automatic profile deletion. | FR-PUB-01/04/05/10; AC-PUB-02 |
+| `REQ-PUB-002` | Search MUST submit only the current selfie after explicit 1–3 venue selection and «Найти меня», validate that scope on the server, use all available undeleted compatible dates inside selection regardless of Promo date settings, reveal no outside-venue results, and show animation/progress without presenting simulation as measured percentage absent server measurements, plus personal count, venue names and visit dates. | FR-PUB-02/03; AC-PUB-01/02 |
+| `REQ-PUB-003` | One public feed MUST group venue heading -> personal photos -> common -> next venue; personal previews use accepted removable frontend watermark; all public gallery preview images have actual width >=320 px, without changing Promo/QR. Common processed no_faces photos MUST be limited to personal-match dates of that venue and free everywhere. Selection uses green for free and blue for paid personal, select-all is venue-local, combined count includes all selected photos. | FR-PUB-06/07; AC-PUB-03 |
+| `REQ-PUB-004` | Operator/developer MUST manage free/paid venue mode at create/settings, confirm enabling free mode by popup, and configure one global RUB Base/d1/d2/d3 tariff. For n selected paid personal photos across paid venues total MUST be Base*(min(n,1)+d1*min(max(n-1,0),4)+d2*min(max(n-5,0),15)+d3*max(n-20,0)); all free media is excluded. Sticky top MUST show all-selected count, authoritative total and «Скачать». One cross-venue order freezes selected composition, price and free mode; later setting changes apply to new orders. | FR-PUB-07/08; AC-PUB-04 |
+| `REQ-PUB-005` | A free-only selected set MUST deliver an archive bearer link without payment initiation or mandatory receipt email; both free-venue personal and allowed common photos qualify. Mixed selection keeps free photos free inside one paid order. | FR-PUB-08/10; AC-PUB-04/05 |
+| `REQ-PUB-006` | One cross-venue paid selection MUST use only YooKassa, collect/store profile email for receipt, choose card/QR method, prepare archive BEFORE opening the provider form and permit paid-original access only after server-confirmed payment. Duplicate confirmations MUST not duplicate purchases; refunds are manual. No charge may start before archive ready. | FR-PUB-09; AC-PUB-04/05 |
+| `REQ-PUB-007` | Allowed selected originals MUST form one archive with bearer access expiring at ready+3 days, usable independently of browser cookie. While preparing, user sees retry-in-30-seconds instruction. Generation failure MUST show user error, initiate no payment and send admin email to sergiosandroid2@gmail.com. Preservation against deletion is NOT promised; unavailable paid delivery routes to manual support/refund rather than silently claiming successful access. | FR-PUB-09/10; AC-PUB-05 |
+| `REQ-PUB-008` | Public extension MUST use HTTPS, protected profile cookie and server-authoritative profile/IP rate limiting (IP is not identity); originals/private stores MUST stay private and media access MUST enforce free entitlement or server-confirmed payment. Browser receives reduced previews only; removable frontend watermark does not protect originals. | FR-PUB-04/06/09/10; NFR-SEC-01/03; AC-PUB-01/03/04 |
+
 ## Material NFR Ownership
 
 This reverse router maps each material PRD NFR to the `REQ-*` rows above,
@@ -68,7 +84,7 @@ which retain the full observable target and pass/fail conditions.
 | `NFR-REL-01`, `NFR-REL-02`, `NFR-REL-03` | `REQ-REL-001` |
 | `NFR-REL-04`, `NFR-REL-05` | `REQ-REL-002`, `REQ-REL-003`, `REQ-DATA-001` |
 | `NFR-REL-06` | `REQ-INV-003` |
-| `NFR-SEC-01`, `NFR-SEC-02`, `NFR-SEC-03` | `REQ-SEC-001` |
+| `NFR-SEC-01`, `NFR-SEC-02`, `NFR-SEC-03` | `REQ-SEC-001`; public HTTPS/rate-limit application: `REQ-PUB-008` (NFR-SEC-01/03) |
 | `NFR-SEC-04` | `REQ-DIAG-003` |
 | `NFR-SEC-05` | `REQ-INV-002`, `REQ-INV-003` |
 | `NFR-SEC-06` | `REQ-DIAG-002`, `REQ-DIAG-003`, `REQ-LOG-001` |
@@ -123,3 +139,16 @@ product scope; feature and task anti-goals only narrow their assigned work.
 | `REQ-SEC-002` | [EP-002](epics/EP-002.md) | [FT-003](features/FT-003.md) | `FT-003-AC-003`, `FT-003-AC-017`; PRD AC-25 | planned |
 | `REQ-DATA-001` | [EP-003](epics/EP-003.md) | [FT-007](features/FT-007.md), [FT-008](features/FT-008.md), [FT-009](features/FT-009.md), [FT-010](features/FT-010.md), [FT-011](features/FT-011.md) | `FT-007-AC-004`, `FT-007-AC-006..007`, `FT-008-AC-005`, `FT-009-AC-003`, `FT-010-AC-002`, `FT-010-AC-004..005`, `FT-011-AC-007..008`; PRD NFR-REL-05 and AC-13 | planned |
 | `REQ-ARCH-001` | [EP-001](epics/EP-001.md), [EP-002](epics/EP-002.md), [EP-003](epics/EP-003.md) | [FT-001](features/FT-001.md)–[FT-012](features/FT-012.md) | `FT-001-AC-004..005`, `FT-001-AC-009..010`, plus other feature SDD gates and cross-cutting `REQ-ARCH-001` AC lines; `FT-003-AC-022`; `FT-002-AC-009`, `FT-002-AC-011`; `FT-005-AC-006`; PRD controlled setup and NFR-ARCH-01..06 | planned |
+
+## Public extension RTM
+
+| REQ | Epic | Feature | Test / evidence target | Lifecycle |
+|---|---|---|---|---|
+| `REQ-PUB-001` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md) (order-core supplier), [FT-016](features/FT-016.md) | `FT-013-AC-001..004`, `FT-013-AC-007`, `FT-014-AC-006`, `FT-016-AC-001`; PRD AC-PUB | planned |
+| `REQ-PUB-002` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md) | `FT-013-AC-002..003`, `FT-013-AC-007..008`; PRD AC-PUB | planned |
+| `REQ-PUB-003` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md) | `FT-013-AC-005`, `FT-013-AC-008`, `FT-013-AC-009`, `FT-014-AC-001`; PRD AC-PUB | planned |
+| `REQ-PUB-004` | [EP-004](epics/EP-004.md) | [FT-014](features/FT-014.md), [FT-016](features/FT-016.md) | `FT-014-AC-001..006`, `FT-016-AC-001`; PRD AC-PUB | planned |
+| `REQ-PUB-005` | [EP-004](epics/EP-004.md) | [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-015-AC-001..002`, `FT-016-AC-001`; PRD AC-PUB | planned |
+| `REQ-PUB-006` | [EP-004](epics/EP-004.md) | [FT-014](features/FT-014.md) (order-core supplier), [FT-016](features/FT-016.md) | `FT-014-AC-006`, `FT-016-AC-001..003`, `FT-016-AC-005`; PRD AC-PUB | planned |
+| `REQ-PUB-007` | [EP-004](epics/EP-004.md) | [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-015-AC-002..004`, `FT-016-AC-002..005`; PRD AC-PUB | planned |
+| `REQ-PUB-008` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md), [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-013-AC-006`, `FT-013-AC-008..009`, `FT-014-AC-003..004`, `FT-015-AC-001`, `FT-015-AC-003`, `FT-016-AC-003..004`; PRD AC-PUB | planned |

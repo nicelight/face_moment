@@ -6,6 +6,10 @@ status: active
 
 ## Pre-PRD discovery inputs
 
+- [PAYMENS_TS.md](../PAYMENS_TS.md): принятые требования публичного поиска и
+  покупки; согласованный [PRD](prd.md) декомпозирован в [EP-004](epics/EP-004.md),
+  readiness/design route — [spec-backbone](spec-backbone.md).
+
 - [IDEA_APP.md](../IDEA_APP.md): Концепция приложения, обязательные MVP-границы
   и явно отмеченные рекомендации.
 - [IDEA_OS.md](../IDEA_OS.md): Инфраструктурная концепция, topology display
@@ -16,6 +20,13 @@ status: active
   investigation attempts и KISS-подбор face threshold/quality gates.
 - [IDEA_CLIENT.md](../IDEA_CLIENT.md): принятые client behavior, timing и
   capture-derived media-policy decisions с явно отложенными technical choices.
+
+## Public extension contracts
+
+- [Public Search](contracts/public-photo-search-api.md): endpoints, scope и gallery bytes.
+- [Browser profile](domains/browser-search-profile.md): А/Б и серверные результаты.
+- [Purchase API](contracts/photo-purchase-api.md): tariff/admin, ЮKassa и download.
+- [Photo Orders](domains/photo-orders.md): frozen quote, ZIP и entitlement.
 
 ## Architecture decision authority
 
@@ -56,9 +67,9 @@ status: active
 - [.memory-bank/bugs/task-101-calibration-missing-original-terminalization.md](bugs/task-101-calibration-missing-original-terminalization.md):
   immutable TASK-101 failure evidence and verified TASK-111 successor
   resolution.
-- [.memory-bank/epics/index.md](epics/index.md): router for the three product
+- [.memory-bank/epics/index.md](epics/index.md): router for the four product
   epics (C4 L2).
-- [.memory-bank/features/index.md](features/index.md): router for the twelve product
+- [.memory-bank/features/index.md](features/index.md): router for the sixteen product
   features (C4 L3).
 - [.memory-bank/behavior-specs/](behavior-specs/): Optional JSON behavior examples linked from feature docs and task `source_artifacts`.
 - [.memory-bank/tasks/index.json](tasks/index.json): Authoritative JSON task record index.
@@ -67,7 +78,8 @@ status: active
 
 - [.memory-bank/spec-index.md](spec-index.md): Pure SDD spec registry and planned-spec index.
 - [.memory-bank/spec-backbone.md](spec-backbone.md): accepted complete global
-  SDD backbone at Planning Revision 4 and explicit Foundation decision.
+  SDD baseline at Planning Revision 4, Foundation decision and pending
+  design route for public selfie search and purchases after feature-plan review.
 - [.memory-bank/foundation.md](foundation.md): Accepted Foundation Dev Path,
   minimum substrate path, feature pressure map and exit criteria.
 - [.memory-bank/features/FT-000-foundation.md](features/FT-000-foundation.md):
@@ -119,6 +131,11 @@ status: active
   allocation contracts.
 
 ## Product Decomposition
+
+- [EP-004](epics/EP-004.md): accepted public camera discovery, combined quote
+  and independently deliverable free/paid originals; [FT-013](features/FT-013.md),
+  [FT-014](features/FT-014.md), [FT-015](features/FT-015.md),
+  [FT-016](features/FT-016.md) are planned and await design.
 
 - [.memory-bank/epics/EP-001.md](epics/EP-001.md): fresh searchable
   commercial-photo inventory, role-scoped inventory operations and recent

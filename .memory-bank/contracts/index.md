@@ -33,3 +33,6 @@ status: active
   server-event filters, HTML projection, FT-008 navigation and failures.
 - [Sensor Passage API](sensor-passage-api.md): browser-to-ESP32 long-poll,
   authentication, CORS and event response.
+
+- [public-photo-search-api](public-photo-search-api.md): canonical public visitor contract.
+- [photo-purchase-api](photo-purchase-api.md): canonical public visitor contract.

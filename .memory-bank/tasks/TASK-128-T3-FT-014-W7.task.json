@@ -1,0 +1,88 @@
+{
+  "id": "TASK-128-T3-FT-014-W7",
+  "title": "Authoritative combined public quote",
+  "status": "planned",
+  "wave": "W7",
+  "feature": "FT-014",
+  "reqs": [
+    "REQ-PUB-004",
+    "REQ-PUB-008"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-127-T3-FT-014-W3",
+    "TASK-123-T3-FT-013-W6"
+  ],
+  "touched_files": [
+    "src/face_moment/promo/photo_quote.py",
+    "src/face_moment/promo/photo_purchase_http.py",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/promo/test_photo_quote.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Relevant server tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_photo_quote.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-014.md",
+    ".memory-bank/tasks/plans/IMPL-FT-014.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-014.md#FT-014-AC-002: RED: Quote отсутствует/неверно тарифицирует или разрешает чужой/недоступный выбор. GREEN: Те же band/scope probes возвращают точную authoritative цену либо безопасный отказ; comparison и отдельные результаты всех owned probes в .tasks/TASK-128-T3-FT-014-W7/claim-evidence.md. Existing GREEN сохранить; setup/artificial failure не RED."
+  ],
+  "purpose": "Authoritative combined public quote",
+  "success_outcome": "Те же band/scope probes возвращают точную authoritative цену либо безопасный отказ",
+  "anti_goals": [
+    "Orders/ZIP/payment, gallery rendering, tariff persistence повторно не реализуются."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy actions, shared operator DB destructive tests, unrelated AUDIT_09_2026.md",
+      "Foreign owner direct writes; Promo/QR acceptance changes; new providers/queues"
+    ],
+    "stop_conditions": [
+      "New product/shared contract, missing required provider or canonical ambiguity → owning clarification; do not choose default or expand scope."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-014.md#FT-014-AC-002",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-014.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/photo-purchase-api.md",
+    ".memory-bank/domains/photo-orders.md",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/contracts/public-photo-search-api.md#защита-и-проверка",
+    ".memory-bank/domains/browser-search-profile.md",
+    ".memory-bank/states/lifecycle-map.md#public-visitor-flow"
+  ],
+  "constraints": [
+    "Constitution KISS, concise canonical reuse, Planning Revision 4; touched_files advisory; sequential execution."
+  ],
+  "invariants": [
+    "Business decisions у accepted owner, HTTP/composition только adaptation; public no original leakage.",
+    "Dependency claims/proof остаются supplier; current task owns only named AC/integration delta."
+  ],
+  "verification_targets": [
+    "FT-014-AC-002: POST /api/public/quote profile cookie + result_id/photo_ids returns canonical items/selected_count/paid_count/total_kopecks/RUB. n=0,1,2,5,6,20,21; mixed paid venues + free personal/common, half-up per-unit rounding and stable photo_id assignment, items sum equals total; no old all/bundle bands.",
+    "FT-014-AC-002: promo owns src/face_moment/promo/ orchestration, reads serving_control immutable tariff/free snapshot and inventory active Photo/original projection via Public search and delivery edge. Current own result membership only; foreign/stale IDs, deleted/missing originals, duplicate IDs, forged client amounts/free flags cannot yield authorized quote. Missing profile→401, foreign result→404, duplicate/invalid shape→422; matching Origin/profile-IP limits/no-store/no-referrer use accepted public admission policy.",
+    "FT-014-AC-002: Synthetic profile/result/photos and isolated disposable PostgreSQL/private MinIO prefix, unique IDs per rerun, cleanup finally. Prove only quote integration delta; profile/search/is_free supplier proof stays TASK-123. No original bytes/object keys in quote JSON; quote creates no order and writes no foreign state."
+  ]
+}

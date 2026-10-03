@@ -1,11 +1,20 @@
 ---
 description: Product definition (C4 L1) for Face Moment with functional multi-venue operation.
 status: draft
-last_updated: 2026-08-31
+last_updated: 2026-10-03
 ---
 # Face Moment Product
 
 ## Product Identity
+
+Accepted public extension: a visitor takes a camera selfie, selects 1–3 venues,
+finds personal photographs across their available dates, selects from one feed,
+sees one marginal RUB quote and downloads free originals or buys paid originals
+through YooKassa. An invisible browser profile replaces signup. Detailed product
+source: [PAYMENS_TS.md](../PAYMENS_TS.md) and [PRD](prd.md#h-public-selfie-search-and-purchase--accepted-extension-2026-10-03).
+
+The paragraphs below preserve the existing Promo/QR and staff product baseline;
+public extension acceptance does not replace controlled pilot acceptance.
 
 Face Moment is a controlled multi-venue application that turns fresh professional
 JPEG photographs into an automatic personalized Promo at the participant's
@@ -19,10 +28,15 @@ contour for preparing manual face-match and input-quality setting changes.
 
 The repository is no longer documentation-only: the verified Foundation
 supplies runnable backend, background-worker and realtime entrypoints plus the
-non-production Compose/storage substrate. Product behavior and a deployed pilot
-runtime do not exist yet; the capabilities below remain the product to be built.
+non-production Compose/storage substrate. The lifecycle/evidence of individual delivered capabilities remains in the
+feature/task records; this product map does not claim deployment completion.
 
 ## Core Value
+
+- A visitor finds and obtains their photos without signup; common photos and
+  free venues need no payment, while selected paid personal photos have one
+  clear combined price.
+- Operator/developer can set the global tariff and venue free/paid access.
 
 - A participant discovers relevant photographs at the moment of leaving and
   continues the result with one QR scan.
@@ -39,6 +53,8 @@ runtime do not exist yet; the capabilities below remain the product to be built.
 
 ## Audience
 
+- Public visitor/buyer using an anonymous browser profile.
+
 - Pilot participant.
 - Authenticated photographer.
 - Face Moment / СПА operator.
@@ -48,6 +64,15 @@ The economic buyer of a future commercial product remains a post-pilot
 hypothesis and is not a current actor.
 
 ## Primary Flow
+
+Public extension: camera → locally retained JPEG in IndexedDB → choose 1–3
+venues → explicit search → A/B profile admissibility → animated scoped result
+→ venue-heading/personal-watermarked/common feed → cross-venue selection and
+quote → «Скачать» → ready archive → free bearer link or YooKassa card/QR →
+server-confirmed paid archive access. Link TTL: 3 days from archive readiness.
+Email of paid flow is retained for receipt; refunds are manual. Archive failure
+shows an error and sends an administrator email without initiating payment.
+
 
 ```text
 authenticated independent JPEG upload for selected СПА/date
@@ -78,6 +103,20 @@ over the existing PostgreSQL; its correlated records link back to the Attempt
 surface.
 
 ## Success Contract
+
+- Public search submits a selfie only after explicit 1–3-venue choice and
+  never reveals other venues; available undeleted dates inside choice are used.
+- Local selfie history survives successful search; storage failure warns and
+  allows the current search without silently evicting old images. Starter JPEG
+  resize/quality is verified without promising an accuracy target.
+- Gallery preview images have actual width >=320 px; removable frontend
+  watermark does not substitute for private-original access. Common no_faces
+  photos use matched visit dates and are free everywhere.
+- Global marginal RUB quote counts only paid personal photos across all
+  selected venues, while UI count includes all selections. Free/paid outcomes
+  and archive-failure email are observable at their feature AC below.
+
+Historical pilot success contract:
 
 - At least 19 of 20 controlled attempts show four correct unique teasers and a
   fully visible, scannable QR in less than 10 seconds from
@@ -146,6 +185,15 @@ surface.
 
 ## Non-goals
 
+- Public signup/OAuth, profile recovery after cookie loss, liveness,
+  fingerprinting, advanced anti-abuse, additional payment providers and future
+  support-button retrieval of the local selfie history.
+- Guaranteed archive/source preservation against original deletion.
+- Per-venue prices, retroactive whole-order discount and the old special
+  “all photos” package price are superseded by the accepted global marginal tariff.
+
+Historical pilot-only exclusions (payment and public search are now extension scope):
+
 - Public rollout, 10-15-СПА deployment or production-readiness claims.
 - Payment, receipt/refund, original delivery or implementation of the main
   selfie-search/purchase page.
@@ -171,6 +219,9 @@ surface.
   disk/server; the controlled pilot accepts that data-loss risk.
 
 ## Canonical Inputs
+
+- [EP-004](epics/EP-004.md): public discovery, configured quote and free/paid
+  selected-original delivery; FT-013..016 are planned outcomes awaiting design.
 
 - [.memory-bank/prd.md](prd.md): clarified product contract and acceptance.
 - [.memory-bank/constitution.md](constitution.md): governing priorities and

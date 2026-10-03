@@ -1,0 +1,84 @@
+{
+  "id": "TASK-124-T3-FT-013-W7",
+  "title": "Защищённые уменьшенные preview",
+  "status": "planned",
+  "wave": "W7",
+  "feature": "FT-013",
+  "reqs": [
+    "REQ-PUB-003",
+    "REQ-PUB-008"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-123-T3-FT-013-W6"
+  ],
+  "touched_files": [
+    "src/face_moment/promo/public_search_http.py",
+    "src/face_moment/processing/public_gallery_preview.py",
+    "src/face_moment/inventory/public_photo_projection.py",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/promo/test_public_gallery_preview.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Relevant server tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_public_gallery_preview.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-013.md",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-009: RED: Protected preview route отсутствует либо отдаёт original/чужие bytes/неправильные dimensions. GREEN: тот же task-owned probe выполняет observable criterion; comparison и trace/output в .tasks/TASK-124-T3-FT-013-W7/claim-evidence.md. Существующий GREEN сохранить; искусственные/setup failures не RED."
+  ],
+  "purpose": "Защищённые уменьшенные preview",
+  "success_outcome": "Preview endpoint отдаёт только разрешённый уменьшенный JPEG из private original.",
+  "anti_goals": [
+    "Покупка/quote/ZIP/оплата и реальные deploy/email вне задачи."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy actions, shared operator database destructive tests, unrelated AUDIT_09_2026.md",
+      "Чужие owner state writes, baseline Promo/QR acceptance changes"
+    ],
+    "stop_conditions": [
+      "Новый public/shared contract или изменение accepted outcome требует owning clarification, не молчаливого scope growth."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-009",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/public-photo-search-api.md",
+    ".memory-bank/domains/photo-processing.md#public-gallery-rendering",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries"
+  ],
+  "constraints": [
+    "Constitution KISS; accepted seven outcomes; Planning Revision 4; touched_files advisory."
+  ],
+  "invariants": [
+    "Business logic остаётся у accepted owner; transport/composition только адаптация.",
+    "Не менять Promo/QR contract, shared Photo worker и original privacy."
+  ],
+  "verification_targets": [
+    "FT-013-AC-009: Own/foreign/missing/deleted membership HTTP fixtures, historical no_faces private original, decoded JPEG width640 и отсутствие original/key/presigned URL; busy429/retry и event-loop responsiveness; existing Promo/QR media regression.",
+    "promo проверяет cookie/result membership; inventory даёт scoped active original projection; processing ориентирует/кодирует JPEG в одном bounded backend executor.",
+    "Adversarial proof только synthetic profiles/photos/private object prefix в disposable DB/MinIO; rerun создаёт уникальные IDs/prefix и удаляет их в finally. Реальный public host/production/storage не используется."
+  ]
+}

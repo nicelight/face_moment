@@ -1,7 +1,7 @@
 ---
 description: Canonical accepted module/change-unit dependency graph and boundary contracts for the Face Moment pilot.
 status: active
-last_updated: 2026-09-03
+last_updated: 2026-10-03
 source_of_truth:
   - .memory-bank/contracts/boundary-map.md
 ---
@@ -22,14 +22,14 @@ source_of_truth:
 
 | Module / Change Unit | Parent Architecture Unit | Code Root | Responsibility |
 |---|---|---|---|
-| `serving_control` | [Capability-sliced server application](../architecture/system-architecture.md#capability-ownership) | `src/face_moment/serving_control/` | Supply immutable serving context and audited setting/revision changes. |
+| `serving_control` | [Capability-sliced server application](../architecture/system-architecture.md#capability-ownership) | `src/face_moment/serving_control/` | Supply immutable serving context, venue/pricing/profile settings and revision changes. |
 | `inventory` | [Capability-sliced server application](../architecture/system-architecture.md#capability-ownership) | `src/face_moment/inventory/` | Admit and manage commercial Photo inventory. |
 | `processing` | [Capability-sliced server application](../architecture/system-architecture.md#capability-ownership) | `src/face_moment/processing/` | Produce compatible searchable Photo and query results. |
-| `promo` | [Capability-sliced server application](../architecture/system-architecture.md#capability-ownership) | `src/face_moment/promo/` | Run participant Attempts, Promo results and QR continuation. |
+| `promo` | [Capability-sliced server application](../architecture/system-architecture.md#capability-ownership) | `src/face_moment/promo/` | Run participant Attempts, Promo/QR and public profile/results/orders/delivery. |
 | `diagnostics` | [Capability-sliced server application](../architecture/system-architecture.md#capability-ownership) | `src/face_moment/diagnostics/` | Explain and calibrate Attempts from protected evidence. |
 | `staff_access` | [Capability-sliced server application](../architecture/system-architecture.md#capability-ownership) | `src/face_moment/platform/auth/` | Authenticate staff and maintain browser-session security state. |
 
-`SpaPromoClient`, ESP32, PostgreSQL and MinIO are external/runtime boundary
+`SpaPromoClient`, public browser, ESP32, YooKassa, mail, PostgreSQL and MinIO are external/runtime boundary
 parties, not registered project change units in this graph. Their accepted
 interfaces are linked below. No finer product-module identity or code root is
 added until an owning canonical specification makes it explicit.
@@ -54,6 +54,9 @@ contract.
 | `promo` | `inventory` | [Participant Promo](#participant-promo) |
 | `promo` | `processing` | [Participant Promo](#participant-promo) |
 | `promo` | `diagnostics` | [Participant Promo](#participant-promo) |
+| `promo` | `serving_control` | [Public search and delivery](#public-search-and-delivery) |
+| `promo` | `inventory` | [Public search and delivery](#public-search-and-delivery) |
+| `promo` | `processing` | [Public search and delivery](#public-search-and-delivery) |
 | `diagnostics` | `promo` | [Diagnostic evidence and access](#diagnostic-evidence-and-access) |
 | `diagnostics` | `staff_access` | [Diagnostic evidence and access](#diagnostic-evidence-and-access) |
 | `diagnostics` | `processing` | [Calibration and serving change](#calibration-and-serving-change) |
@@ -317,7 +320,25 @@ and result-session persistence are owned by
 timing uses the [Client Diagnostic API](client-diagnostic-api.md), while the
 detailed write target is [Diagnostic Evidence](../domains/diagnostic-evidence.md).
 
+### Public search and delivery
+
+[Public Search API](public-photo-search-api.md) и
+[Purchase API](photo-purchase-api.md) — exact contracts нового visitor flow.
+`promo` командует только profile/result/order state; соседние capability
+предоставляют read projections/processing calls. `inventory` возвращает active
+Photo id/venue/visit_date/original reference после проверенного owner scope;
+`processing` возвращает compatible query/matches или reduced JPEG, не пишет
+profile/order. `serving_control` публикует active venues, immutable serving
+revision и тариф/free/settings snapshot; mutation staff session/CSRF-owned.
+YooKassa и mail — внешние adapters composition root, решения принимает `promo`.
+Нет новых module nodes, чужих прямых writes или cross-owner delete cascades.
+
 ### Diagnostic evidence and access
+
+Core Attempt/evidence правила ниже относятся к automatic Promo/display flow.
+Public selfie search не создаёт фиктивный display Attempt и не расширяет
+существующие Attempts/Calibration UI; его outcome/profile/result принадлежат
+[Public Search API](public-photo-search-api.md).
 
 `diagnostics` may read the `promo` Attempt/correlation projection and attach
 detailed evidence best-effort. It MUST NOT create an empty replacement anchor,
@@ -495,6 +516,9 @@ prefixes, conservative owner rules, modal UI and retry behavior are in the
 ### External and runtime boundaries
 
 These are external/runtime interfaces, not project-module graph edges:
+
+- Public visitor browser, YooKassa и mail adapter используют
+  [Public Search](public-photo-search-api.md) и [Purchase API](photo-purchase-api.md).
 
 - Staff browser traffic crosses the HTTPS application boundary. Exact login,
   CSRF, uploader and response behavior is in the

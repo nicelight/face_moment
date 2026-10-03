@@ -29,3 +29,6 @@ status: active
   server sessions and CSRF.
 - [Structured Server Events](structured-server-events.md): fixed event shape,
   catalog, non-blocking diagnostics persistence, redaction and 30-day expiry.
+
+- [browser-search-profile](browser-search-profile.md): canonical public visitor contract.
+- [photo-orders](photo-orders.md): canonical public visitor contract.

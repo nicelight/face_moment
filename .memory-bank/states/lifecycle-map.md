@@ -1,7 +1,7 @@
 ---
 description: Canonical pilot lifecycles for Photo admission, processing, inventory visibility, purge, Promo and diagnostics.
 status: active
-last_updated: 2026-09-04
+last_updated: 2026-10-03
 source_of_truth:
   - .memory-bank/states/lifecycle-map.md
 ---
@@ -329,3 +329,9 @@ Source: [.memory-bank/prd.md](../prd.md) `FR-DEV-11` and `NFR-PERF-03`.
 - No separate sensor transport/configuration lifecycle.
 - No admitted proposal-request rejection lifecycle; transport rejection occurs
   before domain admission.
+
+## Public Visitor Flow
+
+[Browser Search Profile](../domains/browser-search-profile.md#аб) владеет А/Б/reset;
+[Photo Orders](../domains/photo-orders.md#исполнение-и-выдача) — ZIP/payment/entitlement.
+Эти состояния отдельны от Promo/display/QR и Photo processing/purge lifecycle.

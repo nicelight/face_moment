@@ -1,0 +1,86 @@
+{
+  "id": "TASK-129-T2-FT-014-W9",
+  "title": "Общий browser selection и sticky quote",
+  "status": "planned",
+  "wave": "W9",
+  "feature": "FT-014",
+  "reqs": [
+    "REQ-PUB-003",
+    "REQ-PUB-004"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-128-T3-FT-014-W7",
+    "TASK-126-T2-FT-013-W8"
+  ],
+  "touched_files": [
+    "client/public-photo-selection.js",
+    "client/public-photo-gallery.js",
+    "client/site.html",
+    "client/site.css",
+    "tests/client/test_public_photo_selection.mjs",
+    "tests/client/public_photo_selection.spec.mjs"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Client unit tests",
+      "command": "npm run test:unit",
+      "required": true
+    },
+    {
+      "name": "Browser journey",
+      "command": "npm run test:browser -- tests/client/public_photo_selection.spec.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-014.md",
+    ".memory-bank/tasks/plans/IMPL-FT-014.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-014.md#FT-014-AC-001: RED: Combined selection/sticky absent или selection/quote UI расходятся. GREEN: Тот же browser journey показывает сохранившийся выбор, правильные цвета/count и последнюю server total; comparison и отдельные результаты всех owned probes в .tasks/TASK-129-T2-FT-014-W9/claim-evidence.md. Existing GREEN сохранить; setup/artificial failure не RED."
+  ],
+  "purpose": "Общий browser selection и sticky quote",
+  "success_outcome": "Тот же browser journey показывает сохранившийся выбор, правильные цвета/count и последнюю server total",
+  "anti_goals": [
+    "Payment/free-download flow, local price authority, gallery backend work вне задачи."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy actions, shared operator DB destructive tests, unrelated AUDIT_09_2026.md",
+      "Foreign owner direct writes; Promo/QR acceptance changes; new providers/queues"
+    ],
+    "stop_conditions": [
+      "New product/shared contract, missing required provider or canonical ambiguity → owning clarification; do not choose default or expand scope."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-014.md#FT-014-AC-001",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-014.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/photo-purchase-api.md",
+    ".memory-bank/domains/photo-orders.md"
+  ],
+  "constraints": [
+    "Constitution KISS, concise canonical reuse, Planning Revision 4; touched_files advisory; sequential execution."
+  ],
+  "invariants": [
+    "Business decisions у accepted owner, HTTP/composition только adaptation; public no original leakage.",
+    "Dependency claims/proof остаются supplier; current task owns only named AC/integration delta."
+  ],
+  "verification_targets": [
+    "FT-014-AC-001: promo browser flow client/: individual select/deselect, venue-local select-all only available rows, mixed paid/free venues and common retain combined selection; green free/blue paid checks; sticky count includes all, total from server quote, Скачать visible.",
+    "FT-014-AC-001: Real application bundle/browser quote join; select/deselect across venues produces correct request IDs and matching server total. Rapid selection updates cannot display old response for current selection. Failed/pending quote cannot present stale price as current actionable total. Screenshot/trace assess legible sticky controls at mobile and desktop; no new aesthetic system.",
+    "Quote formula/auth and gallery privacy are dependencies, not duplicated claims. Скачать presentation hands current result_id/photo_ids to later free/paid flows; this task does not build those flows or invent an endpoint."
+  ]
+}

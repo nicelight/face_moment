@@ -1,0 +1,88 @@
+{
+  "id": "TASK-130-T2-FT-014-W4",
+  "title": "Admin editor единого тарифа",
+  "status": "planned",
+  "wave": "W4",
+  "feature": "FT-014",
+  "reqs": [
+    "REQ-PUB-004"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-127-T3-FT-014-W3"
+  ],
+  "touched_files": [
+    "client/photo-tariff-settings.js",
+    "src/face_moment/serving_control/http.py",
+    "tests/client/test_photo_tariff_settings.mjs",
+    "tests/client/photo_tariff_settings.spec.mjs"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Client unit tests",
+      "command": "npm run test:unit",
+      "required": true
+    },
+    {
+      "name": "Browser journey",
+      "command": "npm run test:browser -- tests/client/photo_tariff_settings.spec.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-014.md",
+    ".memory-bank/tasks/plans/IMPL-FT-014.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-014.md#FT-014-AC-005: RED: Staff global editor отсутствует или valid/rejected save не отображает server state. GREEN: Тот же staff journey обеих ролей сохраняет/перезагружает тариф и объясняет rejection; comparison и отдельные результаты всех owned probes в .tasks/TASK-130-T2-FT-014-W4/claim-evidence.md. Existing GREEN сохранить; setup/artificial failure не RED."
+  ],
+  "purpose": "Admin editor единого тарифа",
+  "success_outcome": "Тот же staff journey обеих ролей сохраняет/перезагружает тариф и объясняет rejection",
+  "anti_goals": [
+    "Backend tariff domain/migration/security provider and venue free administration вне задачи."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy actions, shared operator DB destructive tests, unrelated AUDIT_09_2026.md",
+      "Foreign owner direct writes; Promo/QR acceptance changes; new providers/queues"
+    ],
+    "stop_conditions": [
+      "New product/shared contract, missing required provider or canonical ambiguity → owning clarification; do not choose default or expand scope."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-014.md#FT-014-AC-005",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-014.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/photo-purchase-api.md",
+    ".memory-bank/domains/photo-orders.md",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/contracts/public-photo-search-api.md#защита-и-проверка"
+  ],
+  "constraints": [
+    "Constitution KISS, concise canonical reuse, Planning Revision 4; touched_files advisory; sequential execution."
+  ],
+  "invariants": [
+    "Business decisions у accepted owner, HTTP/composition только adaptation; public no original leakage.",
+    "Dependency claims/proof остаются supplier; current task owns only named AC/integration delta."
+  ],
+  "verification_targets": [
+    "FT-014-AC-005: serving_control staff browser surface uses existing admin shell at client/ and serving_control/http.py; both operator/developer read/edit Base/d1/d2/d3 via accepted API. Valid save + reload shows canonical values, invalid input/API rejection visible and saved values remain; no invented default prices.",
+    "FT-014-AC-005: Browser role fixtures and actual staff shell/API join, no additional session/CSRF provider or local tariff authority. API authorization/persistence proof stays TASK-127. Unit test controls and focused browser journey."
+  ]
+}

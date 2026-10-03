@@ -1,0 +1,91 @@
+{
+  "id": "TASK-137-T3-FT-016-W12",
+  "title": "YooKassa ready-order initiation и frozen receipt",
+  "status": "planned",
+  "wave": "W12",
+  "feature": "FT-016",
+  "reqs": [
+    "REQ-PUB-006",
+    "REQ-PUB-007"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-135-T3-FT-015-W11"
+  ],
+  "touched_files": [
+    "src/face_moment/promo/photo_payment.py",
+    "src/face_moment/promo/photo_payment_http.py",
+    "src/face_moment/infrastructure/yookassa_payments.py",
+    "src/face_moment/infrastructure/settings.py",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/promo/test_photo_payment_initiation.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Relevant server tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_photo_payment_initiation.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-016.md",
+    ".memory-bank/tasks/plans/IMPL-FT-016.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-016.md#FT-016-AC-002: RED: Owned integration outcome absent or accepted assertion fails before implementation. GREEN: Claim-equivalent actual runtime probe passes with each assertion/result and decisive comparison separately recorded in .tasks/TASK-137-T3-FT-016-W12/claim-evidence.md. Preserve pre-existing GREEN; setup/artificial failure is not RED."
+  ],
+  "purpose": "YooKassa ready-order initiation и frozen receipt",
+  "success_outcome": "Owner payment command starts one YooKassa payment only for ready paid archive with frozen receipt",
+  "anti_goals": [
+    "No frozen-order/ZIP/bearer reimplementation or supplier proof; confirmation/webhook and paid browser belong later tasks."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy, real email/payment, shared operator DB destructive probes, unrelated AUDIT_09_2026.md",
+      "Foreign owner direct writes, Promo/QR changes, new queues/providers/retention guarantee"
+    ],
+    "stop_conditions": [
+      "Material new product/shared contract, absent accepted provider or ambiguous authority → owning clarification; routine filename/technical names remain executor discretion."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-016.md#FT-016-AC-002",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-016.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/domains/photo-orders.md",
+    ".memory-bank/contracts/photo-purchase-api.md",
+    ".memory-bank/states/lifecycle-map.md#public-visitor-flow",
+    ".memory-bank/contracts/public-photo-search-api.md#защита-и-проверка",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/domains/browser-search-profile.md",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries"
+  ],
+  "constraints": [
+    "Constitution KISS, Planning Revision 4, touched_files advisory, sequential execution."
+  ],
+  "invariants": [
+    "Business decisions у promo; transport/composition only adapters; no foreign writes.",
+    "Supplier acceptance/evidence stays owner; task proves exact AC and consumer integration delta."
+  ],
+  "verification_targets": [
+    "FT-016-AC-002: Actual registered POST /api/public/orders/{id}/payment checks owner profile/matching Origin/configured limits via existing public boundary; requested/preparing/failed/free/expired/missing ZIP cannot initiate provider. Ready archive validated before any provider call; foreign/missing profile cannot obtain confirmation_url. Consume TASK-133 status/mail, no ZIP failure/mail proof adoption.",
+    "FT-016-AC-002: Implement real authenticated YooKassa HTTP adapter bound in backend composition, with network IO outside event loop; POST /v3/payments HTTP Basic shop_id/key, stable Idempotence-Key, capture:true, frozen amount/RUB/method bank_card|sbp, metadata.order_id and server-owned return_url. Only confirmation_url exposed, secrets/private keys absent from JSON/logs. Missing credentials/fiscal configuration returns503 before provider.",
+    "FT-016-AC-002: Receipt uses frozen order.email and paid lines grouped by unit price (<=4 groups), free lines excluded, quantities/amount sum equals payment; explicit merchant fiscal deployment fields never invented. Changed current profile email/tariff/free settings cannot alter payload. Repeated/concurrent create or uncertain response uses same durable key/order/provider id; PostgreSQL face_moment.photo_orders read after new session/restart proves persisted correlation and safe retry. Past provider idempotency window requires manual reconciliation, no blind new charge.",
+    "FT-016-AC-002: Real adapter against isolated fake HTTP provider records auth/idempotence/payload and timeout/replay; synthetic disposable PostgreSQL/private store with unique namespace and cleanup finally, fake mail only. Native mypy/pytest and module ownership inspection. Required external configured YooKassa test-mode join: both card/SBP confirmation redirects and receipt payload; retain request/redirect evidence redacted, no real money/email. Execution must obtain required test merchant/fiscal config and authorization for external test-mode calls; absence is an honest execution stop, never substitute fake evidence or silently waive this join."
+  ]
+}

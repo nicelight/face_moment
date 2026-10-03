@@ -1,0 +1,81 @@
+{
+  "id": "TASK-120-T2-FT-013-W1",
+  "title": "Камера и локальная история селфи",
+  "status": "ready",
+  "wave": "W1",
+  "feature": "FT-013",
+  "reqs": [
+    "REQ-PUB-001"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0"
+  ],
+  "touched_files": [
+    "client/site-selfie.js",
+    "client/site.html",
+    "client/site.css",
+    "tests/client/test_site_selfie_history.mjs",
+    "tests/client/site_selfie_history.spec.mjs"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Client unit tests",
+      "command": "npm run test:unit",
+      "required": true
+    },
+    {
+      "name": "Browser journey",
+      "command": "npm run test:browser -- tests/client/site_selfie_history.spec.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-013.md",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-001: RED: Capture остаётся только objectURL/полным q.9 JPEG, IndexedDB история отсутствует; quota сценарий не предупреждает. GREEN: тот же task-owned probe выполняет observable criterion; comparison и trace/output в .tasks/TASK-120-T2-FT-013-W1/claim-evidence.md. Существующий GREEN сохранить; искусственные/setup failures не RED."
+  ],
+  "purpose": "Камера и локальная история селфи",
+  "success_outcome": "Browser capture выдаёт текущий JPEG и сохраняет каждый снимок без преждевременной отправки.",
+  "anti_goals": [
+    "Покупка/quote/ZIP/оплата и реальные deploy/email вне задачи."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy actions, shared operator database destructive tests, unrelated AUDIT_09_2026.md",
+      "Чужие owner state writes, baseline Promo/QR acceptance changes"
+    ],
+    "stop_conditions": [
+      "Новый public/shared contract или изменение accepted outcome требует owning clarification, не молчаливого scope growth."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-001",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/public-photo-search-api.md",
+    ".memory-bank/contracts/public-photo-search-api.md#browser-и-media",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries"
+  ],
+  "constraints": [
+    "Constitution KISS; accepted seven outcomes; Planning Revision 4; touched_files advisory."
+  ],
+  "invariants": [
+    "Business logic остаётся у accepted owner; transport/composition только адаптация.",
+    "Не менять Promo/QR contract, shared Photo worker и original privacy."
+  ],
+  "verification_targets": [
+    "FT-013-AC-001: Resize/no-upscale/quality fixtures с representative лицом >=30%; IndexedDB read/write после reload, retake и failed/success outcome; quota warning без удаления прежних снимков.",
+    "promo организует browser capture; существующая камера расширяется локальным JPEG/IndexedDB поведением."
+  ]
+}

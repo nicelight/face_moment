@@ -1,7 +1,7 @@
 ---
 description: Pure SDD spec registry and planned-spec index.
 status: active
-last_updated: 2026-09-04
+last_updated: 2026-10-03
 source_of_truth:
   - .memory-bank/spec-index.md
 ---
@@ -19,6 +19,10 @@ operator-authorized registry, face labels, private ordinary-retention crops and 
 
 | Type | Path | Status | Scope | Change route |
 |---|---|---|---|---|
+| data | [Browser Search Profile](domains/browser-search-profile.md) | active | Hidden profile, fixed A/B and public results. | /spec-redesign or /feature-to-tasks |
+| contract | [Public Photo Search API](contracts/public-photo-search-api.md) | active | Selected-venue selfie search and private reduced gallery previews. | /spec-redesign or /feature-to-tasks |
+| data | [Photo Orders](domains/photo-orders.md) | active | Frozen marginal quote, ZIP and payment entitlement. | /spec-redesign or /feature-to-tasks |
+| contract | [Photo Purchase API](contracts/photo-purchase-api.md) | active | Staff pricing, public orders, YooKassa and archive delivery. | /spec-redesign or /feature-to-tasks |
 | contract | [Advertising Playlists](contracts/advertising-playlists.md) | active | Venue playlists, browser cache and display cycle. | Explicit operator delta |
 | governance | [.memory-bank/constitution.md](constitution.md) | active | Top governing policy. | /constitution |
 | invariants | [.memory-bank/invariants.md](invariants.md) | active | Global MUST/NEVER rules grounded in ratified governance decisions. | /constitution, /spec-init, or /spec-design |

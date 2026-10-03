@@ -35,3 +35,10 @@ status: active
 - [FT-010](FT-010.md): Verified protected ground-truth annotation, promoted
   snapshots and ordinary retention.
 - [FT-011](FT-011.md): Explainable Calibration.
+
+## EP-004 — Public Discovery and Selected Originals
+
+- [FT-013](FT-013.md): camera/profile search and personal/common gallery.
+- [FT-014](FT-014.md): combined selection, global marginal tariff and venue access.
+- [FT-015](FT-015.md): selected free-original download.
+- [FT-016](FT-016.md): selected paid-photo purchase and confirmed delivery.

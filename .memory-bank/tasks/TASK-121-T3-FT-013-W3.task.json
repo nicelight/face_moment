@@ -1,0 +1,86 @@
+{
+  "id": "TASK-121-T3-FT-013-W3",
+  "title": "Скрытый профиль и допуск А/Б",
+  "status": "ready",
+  "wave": "W3",
+  "feature": "FT-013",
+  "reqs": [
+    "REQ-PUB-001",
+    "REQ-PUB-008"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-004-T3-FT-001-W2"
+  ],
+  "touched_files": [
+    "src/face_moment/promo/browser_search_profile.py",
+    "src/face_moment/serving_control/public_search_settings.py",
+    "src/face_moment/infrastructure/migrations/versions/",
+    "src/face_moment/serving_control/http.py",
+    "tests/promo/test_browser_search_profile.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Relevant server tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_browser_search_profile.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-013.md",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-004: RED: Profile/settings boundary отсутствует или переходы А/Б/reset/authority не выполняются. GREEN: тот же task-owned probe выполняет observable criterion; comparison и trace/output в .tasks/TASK-121-T3-FT-013-W3/claim-evidence.md. Существующий GREEN сохранить; искусственные/setup failures не RED."
+  ],
+  "purpose": "Скрытый профиль и допуск А/Б",
+  "success_outcome": "Cookie profile атомарно допускает одну личность с фиксированными А/Б и одним reset.",
+  "anti_goals": [
+    "Покупка/quote/ZIP/оплата и реальные deploy/email вне задачи."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy actions, shared operator database destructive tests, unrelated AUDIT_09_2026.md",
+      "Чужие owner state writes, baseline Promo/QR acceptance changes"
+    ],
+    "stop_conditions": [
+      "Новый public/shared contract или изменение accepted outcome требует owning clarification, не молчаливого scope growth."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-004",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/public-photo-search-api.md",
+    ".memory-bank/domains/browser-search-profile.md",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries"
+  ],
+  "constraints": [
+    "Constitution KISS; accepted seven outcomes; Planning Revision 4; touched_files advisory."
+  ],
+  "invariants": [
+    "Business logic остаётся у accepted owner; transport/composition только адаптация.",
+    "Не менять Promo/QR contract, shared Photo worker и original privacy."
+  ],
+  "verification_targets": [
+    "FT-013-AC-004: Все переходы А/Б, unusable capture, concurrent/replayed reset, incompatible revision; PostgreSQL profile read/write и last visit; Developer-only threshold endpoint с CSRF и независимостью professional threshold.",
+    "promo пишет profile/A/B; serving_control пишет отдельный profile threshold через staff session/CSRF; processing query передаётся test double.",
+    "Persistence: PostgreSQL face_moment.browser_search_profiles (А/Б embedding/revision), serving_control public-search threshold; migration up/down на tests.disposable_postgresql disposable DB, только свои tables/settings и сохранение unrelated данных. Уникальная DB на rerun, cleanup helper; shared/operator DB не downgrade.",
+    "Adversarial proof только synthetic profiles/photos/private object prefix в disposable DB/MinIO; rerun создаёт уникальные IDs/prefix и удаляет их в finally. Реальный public host/production/storage не используется."
+  ]
+}

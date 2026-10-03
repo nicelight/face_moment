@@ -1,0 +1,87 @@
+{
+  "id": "TASK-135-T3-FT-015-W11",
+  "title": "Public order HTTP и free integration",
+  "status": "planned",
+  "wave": "W11",
+  "feature": "FT-015",
+  "reqs": [
+    "REQ-PUB-005",
+    "REQ-PUB-008"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-132-T3-FT-014-W8",
+    "TASK-134-T3-FT-015-W10"
+  ],
+  "touched_files": [
+    "src/face_moment/promo/photo_order_http.py",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/promo/test_photo_order_http.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Relevant server tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_photo_order_http.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-015.md",
+    ".memory-bank/tasks/plans/IMPL-FT-015.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-015.md#FT-015-AC-001: RED: POST/read route absent or bypass exposes paid/foreign/private originals. GREEN: Тот же actual backend HTTP/repository probe доказывает AC-001; отдельные результаты всех owned assertions/comparison и trace в .tasks/TASK-135-T3-FT-015-W11/claim-evidence.md. Preserve existing GREEN; setup/artificial failure не RED."
+  ],
+  "purpose": "Public order HTTP и free integration",
+  "success_outcome": "Free order route preserves owner scope and yields status/ready link without email/payment",
+  "anti_goals": [
+    "No duplicated frozen core, ZIP worker, paid browser/provider/receipt или TTL proof."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy, real email/payment, shared operator DB destructive probes, unrelated AUDIT_09_2026.md",
+      "Foreign owner direct writes, Promo/QR changes, new queues/providers/retention guarantee"
+    ],
+    "stop_conditions": [
+      "Material new product/shared contract, absent accepted provider or ambiguous authority → owning clarification; routine filename/technical names remain executor discretion."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-015.md#FT-015-AC-001",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-015.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/domains/photo-orders.md",
+    ".memory-bank/contracts/photo-purchase-api.md",
+    ".memory-bank/states/lifecycle-map.md#public-visitor-flow",
+    ".memory-bank/contracts/public-photo-search-api.md#защита-и-проверка",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract"
+  ],
+  "constraints": [
+    "Constitution KISS, Planning Revision 4, touched_files advisory, sequential execution."
+  ],
+  "invariants": [
+    "Business decisions у promo; transport/composition only adapters; no foreign writes.",
+    "Supplier acceptance/evidence stays owner; task proves exact AC and consumer integration delta."
+  ],
+  "verification_targets": [
+    "FT-015-AC-001: Actual registered POST /api/public/orders matching Origin/profile limits consumes TASK-132 command, strict canonical result/photo_ids/client_request_id plus optional canonical paid inputs; browser price/free flags never authority. Free venue personal/common at paid venue produces zero requested order without email requirement/provider call. Keep canonical paid request shape for FT-016 consumer.",
+    "FT-015-AC-001: Actual owner GET /api/public/orders/{id} returns archive/payment status/safe error; preparing retry_after_seconds=30, ready entitled download_url from TASK-134 signer. Foreign/missing profile/forged result/paid-ID free bypass denied; no private key/token logs or unentitled ready link. Shared provider-paid shape preserved; no payment endpoint here.",
+    "FT-015-AC-001: Backend route→core→PostgreSQL face_moment.photo_orders integration read after independent session, replay same HTTP request reuses core identity/conflict maps409; no duplicate transport side effects. Core idempotence/frozen snapshot/paid profile atomicity remain TASK-132 proof, no redeclaration.",
+    "FT-015-AC-001: Synthetic two profiles/free-paid venues/current results in disposable PostgreSQL/private store, real configured executor/signing suppliers; unique setup/retry cleanup finally. No real email/provider; request error probes inspect no archive bytes/foreign data and zero provider calls."
+  ]
+}

@@ -30,7 +30,7 @@ source_of_truth:
   только из-за image content; credentials, private infrastructure, commercial
   Photo media, personalized data, names/annotations и admin actions сохраняют
   собственные protection boundaries.
-- Сохранять core Attempt для каждого server-admitted request; delivery
+- Сохранять core Attempt для каждого server-admitted automatic Promo/display request; delivery
   client-only offline attempt и detailed evidence остаются best-effort и не
   требуют durable-until-ack outbox.
 - Исключать soft-deleted Photo из новых search/result formation и recent

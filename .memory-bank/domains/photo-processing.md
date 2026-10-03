@@ -1,11 +1,18 @@
 ---
 description: Canonical compatible Photo-processing data, worker, derivative and recovery specification.
 status: active
-last_updated: 2026-09-07
+last_updated: 2026-10-03
 source_of_truth:
   - .memory-bank/domains/photo-processing.md
 ---
 # Photo Processing
+
+## Public Gallery Rendering
+
+[Public Search API](../contracts/public-photo-search-api.md#browser-и-media)
+задаёт processing-owned on-demand resized JPEG из private original, включая
+исторические `no_faces`. Это отдельное rendering operation: existing terminal
+states/derivative keys, model revisions и Photo worker не изменяются.
 
 ## Scope And Ownership
 

@@ -1,0 +1,82 @@
+{
+  "id": "TASK-126-T2-FT-013-W8",
+  "title": "Лента площадок и личный watermark",
+  "status": "planned",
+  "wave": "W8",
+  "feature": "FT-013",
+  "reqs": [
+    "REQ-PUB-003"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-124-T3-FT-013-W7",
+    "TASK-125-T2-FT-013-W7"
+  ],
+  "touched_files": [
+    "client/public-photo-gallery.js",
+    "client/site.html",
+    "client/site.css",
+    "tests/client/test_public_photo_gallery.mjs",
+    "tests/client/public_photo_gallery.spec.mjs"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Client unit tests",
+      "command": "npm run test:unit",
+      "required": true
+    },
+    {
+      "name": "Browser journey",
+      "command": "npm run test:browser -- tests/client/public_photo_gallery.spec.mjs",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-013.md",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-005: RED: Result gallery отсутствует или venue/personal/common ordering/watermark/free presentation нарушены. GREEN: тот же task-owned probe выполняет observable criterion; comparison и trace/output в .tasks/TASK-126-T2-FT-013-W8/claim-evidence.md. Существующий GREEN сохранить; искусственные/setup failures не RED."
+  ],
+  "purpose": "Лента площадок и личный watermark",
+  "success_outcome": "Разрешённый result показан venue->personal watermarked->common->next.",
+  "anti_goals": [
+    "Покупка/quote/ZIP/оплата и реальные deploy/email вне задачи."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy actions, shared operator database destructive tests, unrelated AUDIT_09_2026.md",
+      "Чужие owner state writes, baseline Promo/QR acceptance changes"
+    ],
+    "stop_conditions": [
+      "Новый public/shared contract или изменение accepted outcome требует owning clarification, не молчаливого scope growth."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-005",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/public-photo-search-api.md",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries"
+  ],
+  "constraints": [
+    "Constitution KISS; accepted seven outcomes; Planning Revision 4; touched_files advisory."
+  ],
+  "invariants": [
+    "Business logic остаётся у accepted owner; transport/composition только адаптация.",
+    "Не менять Promo/QR contract, shared Photo worker и original privacy."
+  ],
+  "verification_targets": [
+    "FT-013-AC-005: Browser fixtures: several venues/dates, personal first, only granted matched-date common, free common paid/free venue, no-personal venue без arbitrary common, removable personal watermark; Promo/QR regression.",
+    "promo visitor gallery использует только result IDs и protected preview endpoint; pricing selection/purchase принадлежат последующим features."
+  ]
+}

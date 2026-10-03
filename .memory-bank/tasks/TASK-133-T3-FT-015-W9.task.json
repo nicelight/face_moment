@@ -1,0 +1,87 @@
+{
+  "id": "TASK-133-T3-FT-015-W9",
+  "title": "Bounded ZIP executor, recovery и admin mail",
+  "status": "planned",
+  "wave": "W9",
+  "feature": "FT-015",
+  "reqs": [
+    "REQ-PUB-007"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-132-T3-FT-014-W8"
+  ],
+  "touched_files": [
+    "src/face_moment/promo/photo_archive_executor.py",
+    "src/face_moment/infrastructure/archive_failure_mail.py",
+    "src/face_moment/infrastructure/settings.py",
+    "src/face_moment/entrypoints/backend.py",
+    "tests/promo/test_photo_archive_executor.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Relevant server tests",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_photo_archive_executor.py",
+      "required": true
+    }
+  ],
+  "verify": [],
+  "docs": [
+    ".memory-bank/features/FT-015.md",
+    ".memory-bank/tasks/plans/IMPL-FT-015.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-015.md#FT-015-AC-004: RED: ZIP lifecycle отсутствует/не запускается startup, publishes partial/extra ZIP или mail failure hides failed. GREEN: Тот же startup/store/restart/mail probe доказывает полный AC-004; отдельные результаты всех owned assertions/comparison и trace в .tasks/TASK-133-T3-FT-015-W9/claim-evidence.md. Preserve existing GREEN; setup/artificial failure не RED."
+  ],
+  "purpose": "Bounded ZIP executor, recovery и admin mail",
+  "success_outcome": "Real runtime rebuilds selected private ZIP, preserves ready timestamp and exposes failure/admin-mail attempt",
+  "anti_goals": [
+    "Order HTTP/browser/bearer signing/provider переходы вне задачи."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy, real email/payment, shared operator DB destructive probes, unrelated AUDIT_09_2026.md",
+      "Foreign owner direct writes, Promo/QR changes, new queues/providers/retention guarantee"
+    ],
+    "stop_conditions": [
+      "Material new product/shared contract, absent accepted provider or ambiguous authority → owning clarification; routine filename/technical names remain executor discretion."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-015.md#FT-015-AC-004",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-015.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/domains/photo-orders.md",
+    ".memory-bank/contracts/photo-purchase-api.md",
+    ".memory-bank/states/lifecycle-map.md#public-visitor-flow",
+    ".memory-bank/contracts/public-photo-search-api.md#защита-и-проверка",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract"
+  ],
+  "constraints": [
+    "Constitution KISS, Planning Revision 4, touched_files advisory, sequential execution."
+  ],
+  "invariants": [
+    "Business decisions у promo; transport/composition only adapters; no foreign writes.",
+    "Supplier acceptance/evidence stays owner; task proves exact AC and consumer integration delta."
+  ],
+  "verification_targets": [
+    "FT-015-AC-004: Actual backend startup/shutdown binds one bounded oldest-requested executor and configured mail/private-store adapters; no model/Photo worker/job table. Blocked source IO/compression outside event loop keeps unrelated backend request responsive; no new latency target.",
+    "FT-015-AC-004: PostgreSQL face_moment.photo_orders read/write after independent session; requested→preparing→ready only after final private ZIP success. Real ZIP reopened contains exactly frozen {photo_id}.jpg originals, both free/paid fixtures, no extra source/preview. Temporary write never publishes ready or readable partial ZIP.",
+    "FT-015-AC-004: Restart actual backend lifecycle with interrupted preparing restores requested/rebuilds deterministic order key; completed rerun preserves ready_at. Missing/deleted source/build failure persists failed/safe error and invokes configured mail adapter to accepted admin address via fake transport; mail failure bounded operational error preserves failed; no provider call.",
+    "FT-015-AC-004: Disposable PostgreSQL and private MinIO unique IDs/prefix; initial synthetic requested/preparing/ready states, isolated restart, readback and cleanup finally. Secrets through runtime configuration, fixture-only fake mail capture; no real SMTP/admin email/production."
+  ]
+}

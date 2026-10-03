@@ -10,6 +10,7 @@ type: product-brief
 - Status: draft
 - Decision: proceed
 - Source artifacts:
+  - [PAYMENS_TS.md](../../PAYMENS_TS.md): accepted public extension and remaining choices, 2026-10-03
   - `.memory-bank/analysis/brainstorming/BR-001.md`
   - `.memory-bank/analysis/brainstorming/BR-002.md`
   - `.memory-bank/analysis/brainstorming/BR-003.md`
@@ -92,8 +93,7 @@ authenticated independent JPEG upload for selected СПА/date
 `photo_id`, прошедших calibrated threshold для обработанных detections; четыре
 Promo-фотографии являются только teaser.
 
-Post-pilot paid product продаёт весь найденный пакет за одну фиксированную сумму
-и выдаёт originals после оплаты.
+Принятое расширение заменяет прежнюю идею фиксированного пакета: camera selfie, выбор 1–3 площадок до отправки, скрытый профиль браузера без регистрации, выбор отдельных фото, единый маржинальный RUB тариф, ЮKassa и архивная ссылка на 3 дня. Бесплатные площадки и общие no_faces фото выдаются без оплаты; общие ограничены датами найденных личных снимков.
 
 Photo Inventory Operations используют тот же Photo inventory: role-scoped soft
 delete/restore, два глобальных admin actions и прямые recent-statistics queries.
@@ -150,7 +150,15 @@ server по-прежнему authoritative для validation, ranking и выб�
   неблокирующим сообщением при неудачной связи с сервером;
 - controlled acceptance run из 20 попыток.
 
-## 8. Non-goals
+## Public extension — 2026-10-03
+
+Цель — найти и скачать свои фото без регистрации. Все снятые селфи остаются в IndexedDB; на сервер передаётся только текущее после явного выбора площадок. Поиск ограничен выбранными площадками, но охватывает все доступные даты. А/Б защищают от смены личности с одним подтверждённым сбросом и без расходования попыток на непригодные снимки. Галереи показывают личные фото, затем бесплатные no_faces за даты личных совпадений. Тариф единый: Base для первого платного личного фото, Base×d1 для 2–5, Base×d2 для 6–20, Base×d3 для 21+ по всему выбору. Одна лента/покупка объединяет площадки, watermark личных preview, зелёный/синий выбор бесплатных/платных снимков. Тариф настраивают operator/developer; заказ фиксирует цену. Email хранится для чека, возвраты ручные. Профили сохраняются с last visit. Бесплатный выбор не запускает оплату. Принятый QR/card flow открывает провайдера после готовности архива; сбой архива — ошибка пользователю без запуска оплаты и автоматическое email-уведомление администратору sergiosandroid2@gmail.com. Ссылка архива bearer, 3 дня от готовности, без гарантии сохранности вопреки удалению оригиналов.
+
+Success: выбранная область не расширяется; пользователь видит процесс и результат, выбирает фото, получает серверную цену и разрешённую выдачу. Verification: browser flow, domain state transitions and payment/archive fixtures from PRD AC-PUB.
+
+Constraints/non-goals: KISS на текущем runtime; нет OAuth, fingerprinting, liveness, восстановления профиля, второго провайдера и кнопки диагностики. Точные цены/пороги настраиваются. Все продуктовые решения согласованы в [PRD](../prd.md). Селфи — JPEG Blob в IndexedDB, старт до 960 px/quality 0.85 без upscale; quota предупреждает и не мешает текущему поиску. Фактическая ширина public preview >=320 px; frontend watermark снимаем, originals private. Компрессия проверяется downstream без гарантий точности. Это не меняет исторические pilot-only проверки и ограничения ниже.
+
+## 8. Historical pilot Non-goals
 
 - публичный rollout на обычных посетителях;
 - payment, receipt, refund и фактическая выдача originals;
@@ -292,8 +300,6 @@ Representative benchmark не является prerequisite или design/taskin
 точный request schema и crop mechanics остаются в BR-004 как downstream
 spec-layer input.
 
-## 15. Decision
+## Decision
 
-### Decision
-
-proceed
+proceed — публичное расширение согласовано; следующий шаг — spec framing/reconciliation существующего PRD. Исторический pilot сохраняет принятые границы.

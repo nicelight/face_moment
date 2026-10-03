@@ -4,11 +4,13 @@ status: draft
 type: prd
 clarification_status: complete
 constitution_checked: true
-last_updated: 2026-09-18
+last_updated: 2026-10-03
 ---
 # PRD
 
 ## Source Inputs
+
+- [PAYMENS_TS.md](../PAYMENS_TS.md): согласованные изменения публичного поиска и покупки, 2026-10-03; более поздние решения отменяют противоречащие post-pilot предположения.
 
 The [Project Constitution](constitution.md), accepted operator decisions and
 [.memory-bank/analysis/product-brief.md](analysis/product-brief.md) govern this
@@ -18,8 +20,13 @@ beyond the resolved behavior, constraints and acceptance criteria below.
 
 ## Clarifications
 
-Clarification is complete. Resolved operator decisions are incorporated into
-the FR, NFR and acceptance criteria below.
+### 2026-10-03 — Public selfie search and selective delivery
+
+Operator decisions in [PAYMENS_TS.md](../PAYMENS_TS.md) replace earlier fixed-whole-package and signup assumptions. All selfies remain locally; submission follows explicit selection of 1–3 venues. Common no_faces photos are limited to matched personal-photo visit dates and are free everywhere. Separate guaranteed archive preservation against original deletion was rejected as overengineering. Later accepted answers: global marginal RUB tariff, one cross-venue selection/order, free-green/paid-blue checks, watermarked personal previews, email receipts and manual refunds, frozen order quote and persistent profiles with last visit. Numeric prices/face thresholds remain configuration.
+
+
+Historical pilot clarification is complete. Accepted public-extension decisions
+are incorporated into FR-PUB and AC-PUB below; extension clarification is complete after the accepted continuation and preview-width decisions.
 
 ### 2026-08-29 — Independent production performance gates
 
@@ -50,9 +57,11 @@ display must find four personal low-quality teaser photographs, show a fully
 visible and scannable QR code, and continue the same search session on the
 participant's phone without a new selfie.
 
-The pilot ends at a verified phone continuation page. Payment, actual original
-download and public use by ordinary СПА visitors are post-pilot context, not
-current delivery or acceptance scope.
+The historical pilot ends at a verified phone continuation page. The accepted
+2026-10-03 product extension adds public camera-selfie search, anonymous browser
+profiles, selective purchase through YooKassa and free/paid original delivery.
+Existing pilot acceptance remains scoped to Promo/QR; the extension is a new
+specification-first delivery scope, with accepted requirements recorded below.
 
 The same pilot includes FT-008, a simple role-scoped Attempt investigation
 surface with a sanitized operator view and authorized developer detail. FT-009
@@ -97,14 +106,12 @@ separate features.
   option. A capacity/concurrency guarantee for a particular number of venues
   is also outside current acceptance; functional multi-venue support does not
   imply a scale-out implementation.
-- Payment provider integration, receipt, refund, actual original delivery or
-  repeated paid download.
-- Sale of individual photographs; the post-pilot direction is one fixed price
-  for the whole found package.
-- Standalone selfie/live-selfie search or a repeated selfie after scanning QR.
-- Implementation or acceptance of the main selfie-search/purchase page used as
-  the expired-session redirect target; this pilot owns only the redirect and
-  expired-session data-isolation contract.
+- The historical pilot acceptance does not implement payment or standalone
+  selfie search. These are now accepted extension scope under FR-PUB below.
+- Public registration/OAuth, profile recovery after cookie loss, liveness
+  verification, device fingerprinting and a second payment provider.
+- The future “У меня не работает поиск” button and retrieval of stored local
+  selfies are outside this delivery.
 - Yandex Disk or any other external ingest channel, RAW processing, OAuth to a
   photographer's cloud account, Telegram ingest or EXIF-based automatic
   grouping.
@@ -397,7 +404,7 @@ The remaining search requirements apply independently within each venue:
 - **FR-CAP-16** — The configuration/debug page MUST expose JPEG quality as one
   dropdown containing exactly `0.7`, `0.75`, `0.8`, `0.85`, `0.9` and `0.95`,
   with default `0.85`. The selected value MUST be stored in kiosk-profile
-  `localStorage`, apply from the next Attempt and be included in its manifest;
+  `IndexedDB`, apply from the next Attempt and be included in its manifest;
   it is not a server-side setting.
 - **FR-CAP-17** — One ready reference series MUST produce one synchronous
   `multipart/form-data` request containing a versioned JSON manifest and one
@@ -537,8 +544,8 @@ implementation-ready.
 
 ### E. Attempts and diagnostic evidence
 
-- **FR-DIAG-01** — Every server-admitted capture/search request, including an
-  unsuccessful outcome, MUST persist one core Attempt with `attempt_id` and
+- **FR-DIAG-01** — Every server-admitted automatic Promo capture/search request,
+  including an unsuccessful outcome, MUST persist one core Attempt with `attempt_id` and
   associated `correlation_id` before inference. A client-only offline trigger MAY
   remain best-effort and need not create a durable Attempt.
 - **FR-DIAG-02** — Attempt detail MUST show available client markers
@@ -668,6 +675,19 @@ implementation-ready.
 - **FR-INV-11** — Queue statistics MUST refresh by polling every five seconds.
   WebSocket and SSE delivery are not required.
 
+### H. Public selfie search and purchase — accepted extension 2026-10-03
+
+- **FR-PUB-01** — Селфи снимается только камерой сайта. Все сделанные снимки сохраняются в IndexedDB как JPEG Blob и не удаляются после поиска; начальные параметры длинная сторона до 960 px, quality 0.85, без upscale исходника, лицо не менее 30% изображения. При quota/недоступности показываем предупреждение, продолжаем текущий поиск без сохранения нового снимка и не удаляем прежние; параметры требуют downstream-проверки качества, не гарантируют точность; загрузки из галереи/аватарки нет. Кнопка диагностики и отправка локальной истории отложены.
+- **FR-PUB-02** — После съёмки пользователь выбирает 1–3 площадки и нажимает «Найти меня». Только тогда текущее селфи отправляется серверу. Сервер проверяет выбор и ищет только внутри него по всем доступным датам неудалённых пригодных фото; Promo date settings не ограничивают этот поиск.
+- **FR-PUB-03** — Во время поиска показываются анимация/progress bar; имитация не выдаётся за измеренный процент, если сервер не предоставляет измеренных данных; результат содержит число личных фото, площадки и даты. Вне выбранных площадок результаты не раскрываются. Регистрации или авторизации посетителя нет.
+- **FR-PUB-04** — Случайный секретный токен в защищённой HttpOnly cookie связывает браузер со скрытым серверным профилем. Embedding’и и ограничения авторитетны на сервере. Потеря cookie создаёт новый профиль без восстановления покупок; fingerprinting и liveness не требуются. Простой rate limit использует профиль и IP, не идентифицируя человека по IP.
+- **FR-PUB-05** — Профиль хранит два фиксированных embedding-образца А/Б для вариаций одной личности. Первый пригодный снимок занимает А; первое несовпадение занимает Б. Совпадение с любым разрешает поиск без автоматической замены образцов. При несовпадении с обоими показывается предупреждение о запрете сканирования чужого лица и предлагается «Это я»/«Переснять»: единственный подтверждённый сброс делает текущий снимок новым А, удаляет прежние А/Б и вновь допускает Б. После использованного сброса последующее несовпадение с обоими отклоняется, но пересъёмка/поиск подходящего лица остаются. Непригодные снимки (нет/несколько лиц, недостаточное качество) не расходуют образцы/сброс. Developer настраивает порог А/Б независимо от порога поиска по профессиональным фотографиям; изменение одного автоматически не меняет другой; поиск использует текущее селфи, а не union А/Б.
+- **FR-PUB-06** — Галерея — единая лента: заголовок площадки, личные фото с watermark, общие, следующая площадка. no_faces — только за даты личных совпадений и бесплатно везде. Watermark личных preview обязателен; frontend watermark принимается как снимаемый; защиту originals обеспечивает private serving. Прежние Promo/QR teaser сохраняют no-watermark scope. Фактическая ширина preview image публичной галереи не менее 320 px (не только CSS); верхняя граница/высота не заданы. Браузер получает уменьшенные preview, originals остаются private и выдаются только разрешённым архивным доступом после бесплатного entitlement или server-confirmed оплаты; removable frontend watermark не заменяет эту защиту.
+- **FR-PUB-07** — Выбор фото общий между площадками; одна покупка включает все выбранные снимки. Бесплатные выбранные имеют зелёную галочку, платные личные — синюю. Sticky top показывает количество всех выбранных фото (включая бесплатные), серверную общую сумму и «Скачать». Select-all текущей площадки выбирает её доступные фото без отдельной пакетной цены.
+- **FR-PUB-08** — Площадка платная/бесплатная при создании и в настройках; включение бесплатности подтверждается popup. Бесплатные площадки и общие фото не дают платную сумму. Глобальный тариф RUB настраивают operator/developer: первое платное личное фото Base; каждое 2–5 Base×d1; каждое 6–20 Base×d2; каждое 21+ Base×d3. Количество n суммируется по всем выбранным площадкам; маржинальная формула не пересчитывает более ранние фото по следующей ступени. Старые ступени и «все» как тариф отменены. Созданный заказ фиксирует состав/цену/режим; изменения настроек действуют на новые заказы (разрешённый KISS выбор).
+- **FR-PUB-09** — Единственный провайдер — ЮKassa. Email платного сценария сохраняется в скрытом профиле для чека; обязательный email бесплатной выдачи не вводим, возвраты ручные. «Скачать» → выбор способа → запуск процесса: сначала готовится архив, затем открывается выбранная card/QR форма ЮKassa; этот порядок исключает списание до готовности. Пока архив готовится, предлагаем повторить через 30 секунд; при ошибке формирования пользователь видит ошибку, оплата не запускается, приложение автоматически отправляет admin email на sergiosandroid2@gmail.com. Платная выдача только после серверного подтверждения; повторные уведомления идемпотентны.
+- **FR-PUB-10** — Бесплатный выбор выдаёт архивную ссылку без оплаты. Архив содержит выбранные оригиналы; bearer-ссылка на 3 дня от готовности действует независимо от cookie. Гарантированную сохранность вопреки удалению оригиналов не добавляем; ошибки выдачи направляют в ручную поддержку/возврат. Скрытые профили автоматически не удаляются, учитывается последнее посещение; отдельная автоматическая очистка заказов на запуске не задана.
+
 ## Non-functional Requirements
 
 ### Performance and acceptance priority
@@ -795,6 +815,8 @@ implementation-ready.
 
 ## Data / Domain Model
 
+Extension concepts: hidden browser profile with A/B and one-reset marker; selected venues; local-only selfie history; public personal/no_faces gallery; configurable venue access mode and tariff; order/payment; archive and 3-day bearer access. Their lifecycle follows FR-PUB and the downstream canonical contracts.
+
 ### Core concepts
 
 - **СПА** — pilot venue with a name, timezone, independent automatic-today
@@ -883,6 +905,8 @@ implementation-ready.
   stored in this scope.
 
 ## UX / Interaction Flow
+
+Public extension: camera selfie → local storage → choose 1–3 venues → «Найти меня» → A/B admissibility check → animated scoped search → single venue-grouped feed with personal watermarked/free common photos → combined selection → frozen server quote → payment-method/archive-preparation flow → YooKassa if needed → archive link. No signup step.
 
 Staff timestamp display uses `dd.mm.yyyy HH:mm:ss` in UTC+7, without fractional
 seconds or a trailing `Z`; transport/persistence precision is unchanged
@@ -975,6 +999,8 @@ existing explicit names remain unchanged.
 
 ## Integrations / Dependencies
 
+- ЮKassa is the single accepted payment integration for the extension. No additional payment provider is in scope.
+
 - One ESP32 passage sensor, browser-visible camera and a display of the selected site; exact
   camera, lens, lighting and maximum input dimensions remain site choices.
 - Managed Chromium, Local Network Access and the BlazeFace model asset are
@@ -989,8 +1015,9 @@ existing explicit names remain unchanged.
 - Separately delivered main Face Moment selfie-search/purchase page as the
   expired-session redirect target; this pilot does not implement it.
 
-Explicitly absent from the pilot are Yandex Disk, external face-recognition APIs,
-payment/fiscal providers, external observability stores and message brokers.
+Yandex Disk, external face-recognition APIs, external observability stores and
+message brokers remain absent. Payment/fiscal integration is outside historical
+pilot acceptance; YooKassa is accepted for the public extension, with email receipts and manual refunds; archive readiness precedes opening the provider payment form.
 
 ## Edge Cases / Failure Handling
 
@@ -1057,6 +1084,15 @@ payment/fiscal providers, external observability stores and message brokers.
   require observable degraded advertising behavior and documented recovery.
 
 ## Acceptance Criteria
+
+### Public extension acceptance
+
+- **AC-PUB-01** — Network inspection confirms no selfie submission before «Найти меня»; server tests reject 0/>3 venues and demonstrate no cross-selection result leakage while including eligible dates.
+- **AC-PUB-02** — Browser flow preserves all captured selfies including retake, A/B denial and failed search except warned quota fallback, and provides progress/results without signup; simulated progress is never presented as measured percentage without server measurements. A/B state-transition fixtures cover both matches, B admission, one reset, later denial and non-consuming unusable captures, foreign-face warning before reset, Developer threshold configuration and its independence from professional-photo search threshold.
+- **AC-PUB-03** — Gallery fixtures show personal first, then only matched-date no_faces photos; common photos cost zero on both paid/free venues and select-all stays within the current venue. Inspect the decoded public-gallery preview image dimensions: actual width >=320 px, independently of CSS. Verify private-original access remains gated by server free/payment authorization; this does not alter Promo/QR preview acceptance.
+- **AC-PUB-04** — Server quote/free-download/payment fixtures verify the global marginal RUB formula across selected venues, no payment for free media and no paid-original delivery before server payment confirmation; duplicate confirmations are idempotent.
+- **AC-PUB-05** — Archive-generation failure fixtures verify an error shown to the user, no provider/payment initiation and an admin-email delivery attempt to sergiosandroid2@gmail.com using a fake mail adapter. Ready archive contains allowed selected originals; bearer access is usable without browser profile and expires at ready+3 days, without claiming preservation against deletion.
+
 
 ### Controlled pilot setup
 
@@ -1179,7 +1215,7 @@ payment/fiscal providers, external observability stores and message brokers.
   input is downscaled before ring-buffer/detector work.
 - **AC-24** — The configuration/debug page exposes only the six accepted JPEG
   quality values, defaults to `0.85`, persists the selection in kiosk-profile
-  `localStorage`, applies it from the next Attempt and records it in the
+  `IndexedDB`, applies it from the next Attempt and records it in the
   manifest.
 - **AC-25** — The central-origin Chromium client, managed Local Network Access,
   exact-origin ESP32 CORS/OPTIONS/Bearer handling and continuous one-request
@@ -1209,8 +1245,7 @@ the accepted FR, NFR or acceptance criteria without a new product decision.
 
 ## Unresolved Blockers
 
-None at product level.
-
+None at product level. Operator continuation accepts IndexedDB JPEG Blob (960-pixel long-edge/quality 0.85 starting settings, no upscale, warning/continue on quota), removable frontend watermark with private originals, and archive-ready-before-provider-payment flow. Public-gallery previews require actual width >=320 px. Numeric tariffs/thresholds/rate limits remain configuration, and empirical compression verification remains downstream validation rather than an invented accuracy guarantee. Constitution checked: accepted extension retains KISS/spec-first, existing pilot priorities and their independent acceptance; no production/deploy action is authorized by these document changes.
 
 Operator access correction 2026-09-11: the administrator (`developer`) has
 access to all operator sections and their operations. «Площадки» is a separate

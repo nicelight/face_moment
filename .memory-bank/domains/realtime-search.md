@@ -1,7 +1,7 @@
 ---
 description: Server-authoritative reference-query selection and compatible exact realtime search contract.
 status: active
-last_updated: 2026-08-22
+last_updated: 2026-10-03
 source_of_truth:
   - .memory-bank/domains/realtime-search.md
 ---
@@ -20,6 +20,15 @@ candidate union, teaser selection, `N`, core Attempt and result session.
 boundary and writes none of those foreign states. HTTP handlers, generic
 helpers, infrastructure and the composition root MUST NOT implement selection,
 query preparation or search rules.
+
+## Public Selfie Search
+
+[Public Search API](../contracts/public-photo-search-api.md) добавляет отдельный
+`processing` application call: native query с проверкой exactly-one face,
+exact active compatible Photo search по проверенным venue IDs без date narrowing.
+Сохраняются per-venue reference similarity/quality settings. Public gallery
+не ранжирует тизеры, поэтому pHash не нужен для её eligibility; текущий
+reference/PROMO API и его pHash/date filters остаются без изменений.
 
 ## Active-Search Context Persistence
 
