@@ -21,9 +21,11 @@ https://localhost:8443, https://{$FACE_MOMENT_PUBLIC_HOST:face-moment.ru}:8443 {
 		expression `{http.request.header.Content-Length} != "" && int({http.request.header.Content-Length}) > 105906176`
 	}
 
+	@public_search path /api/public/search
+	@public_backend path /api/public/*
 	@realtime_attempts path /api/realtime/attempts /api/realtime/attempts/*/client-timing
 	@phone_continuation path /q /phone /api/phone/*
-	@backend_canonical path /api/promo/* /api/serving/display-clients /api/serving/display-clients/*/name /api/serving/spas /api/serving/spas/*/active-visit-date /api/serving/spas/*/search-dates /api/serving/spas/*/similarity-threshold /api/serving/spas/*/detector-thresholds/* /api/serving/spas/*/name /api/diagnostics/retention /api/diagnostics/people /api/diagnostics/people/* /api/diagnostics/photo-faces/* /api/diagnostics/captures /api/diagnostics/captures/* /staff/search-settings /staff/spas /staff/photo-inventory /staff/venue-media /staff/calibrations /staff/calibrations/* /staff/diagnostics-retention
+	@backend_canonical path /api/serving/public-search-settings /api/serving/photo-tariff /api/promo/* /api/serving/display-clients /api/serving/display-clients/*/name /api/serving/spas /api/serving/spas/*/is-free /api/serving/spas/*/active-visit-date /api/serving/spas/*/search-dates /api/serving/spas/*/similarity-threshold /api/serving/spas/*/detector-thresholds/* /api/serving/spas/*/name /api/diagnostics/retention /api/diagnostics/people /api/diagnostics/people/* /api/diagnostics/photo-faces/* /api/diagnostics/captures /api/diagnostics/captures/* /staff/search-settings /staff/spas /staff/photo-inventory /staff/venue-media /staff/calibrations /staff/calibrations/* /staff/diagnostics-retention
 
 	route {
 		respond @inventory_photo_upload_without_length 413
@@ -56,6 +58,21 @@ https://localhost:8443, https://{$FACE_MOMENT_PUBLIC_HOST:face-moment.ru}:8443 {
 			request_body {
 				max_size 101MiB
 			}
+			reverse_proxy backend:8000 {
+				header_up X-Forwarded-For {client_ip}
+			}
+		}
+
+		handle @public_search {
+			request_body {
+				max_size 2162688
+			}
+			reverse_proxy realtime:8002 {
+				header_up X-Forwarded-For {client_ip}
+			}
+		}
+
+		handle @public_backend {
 			reverse_proxy backend:8000 {
 				header_up X-Forwarded-For {client_ip}
 			}

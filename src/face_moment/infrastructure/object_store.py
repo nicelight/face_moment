@@ -53,6 +53,18 @@ class PrivateObjectStore:
             Body=body,
         )
 
+    def exists(self, *, key: str) -> bool:
+        """Check private-object availability without downloading original bytes."""
+        try:
+            s3_client(self._settings, realtime_io=self._realtime_io).head_object(
+                Bucket=self._settings.s3_bucket, Key=key,
+            )
+        except ClientError as error:
+            if error.response.get("Error", {}).get("Code") in {"NoSuchKey", "NotFound", "404"}:
+                return False
+            raise
+        return True
+
     def read(self, *, key: str) -> bytes:
         response = s3_client(self._settings, realtime_io=self._realtime_io).get_object(
             Bucket=self._settings.s3_bucket,
@@ -63,6 +75,20 @@ class PrivateObjectStore:
             return cast(bytes, body.read())
         finally:
             body.close()
+
+    def stream(self, *, key: str) -> Iterator[bytes]:
+        """Open privately before HTTP headers; consume bounded chunks off event loop."""
+        response = s3_client(self._settings, realtime_io=self._realtime_io).get_object(
+            Bucket=self._settings.s3_bucket, Key=key,
+        )
+        body = response["Body"]
+        def chunks() -> Iterator[bytes]:
+            try:
+                while chunk := body.read(65536):
+                    yield cast(bytes, chunk)
+            finally:
+                body.close()
+        return chunks()
 
     def delete(self, *, key: str) -> None:
         s3_client(self._settings, realtime_io=self._realtime_io).delete_object(

@@ -1,7 +1,7 @@
 {
   "id": "TASK-138-T3-FT-016-W13",
   "title": "Server-confirmed payment и paid bearer integration",
-  "status": "planned",
+  "status": "blocked",
   "wave": "W13",
   "feature": "FT-016",
   "reqs": [
@@ -35,7 +35,17 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "scheduler-task-blocking",
+      "verdict": "blocked",
+      "summary": "Dependency blocked by TASK-137; same YooKassa TEST input/authorization root blocker. No execution attempt; scheduler may unblock only after dependency and readiness gates permit.",
+      "evidence": [
+        ".tasks/TASK-137-T3-FT-016-W12/TASK-137-T3-FT-016-W12-S-EXECUTE-final-report-docs-01.md",
+        ".tasks/TASK-137-T3-FT-016-W12/provider-input-presence.json"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-016.md",
     ".memory-bank/tasks/plans/IMPL-FT-016.md"

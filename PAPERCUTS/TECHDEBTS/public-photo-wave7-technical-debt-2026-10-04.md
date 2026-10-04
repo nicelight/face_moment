@@ -1,0 +1,26 @@
+# Технический долг публичных фото — Wave 7
+
+Дата: 2026-10-04. Advisory-проверка: существенный технический долг в проверенных изменениях **не подтверждён**. Отчёт не меняет очередь задач, статусы, gates или checkpoint и не блокирует продолжение.
+
+## Проверенный scope
+
+Только новые результаты TASK-124-T3-FT-013-W7, TASK-125-T2-FT-013-W7, TASK-128-T3-FT-014-W7 и TASK-131-T3-FT-014-W7: private preview, явный браузерный поиск и его состояния, authoritative combined quote, staff paid/free create/settings. Другие и исторические задачи Wave 7 не проверялись. Незавершённые gallery UI, orders, ZIP и payments относятся к отдельным принятым задачам и не считаются долгом этой волны.
+
+Фактический состав изменений установлен по `Actual changed files` / `Boundaries and actual change surface` / `Changed files / boundaries` в [.protocols/TASK-124](../../.protocols/TASK-124-T3-FT-013-W7/progress.md), [.protocols/TASK-125](../../.protocols/TASK-125-T2-FT-013-W7/progress.md), [.protocols/TASK-128](../../.protocols/TASK-128-T3-FT-014-W7/progress.md), [.protocols/TASK-131](../../.protocols/TASK-131-T3-FT-014-W7/progress.md), затем сопоставлен с текущим кодом и diff. Общий dirty diff содержит предыдущие public-photo изменения; они использованы только как необходимый контекст, без расширения аудита.
+
+## Код и evidence
+
+| Результат | Проверенные места реализации | Текущие подтверждения |
+|---|---|---|
+| Private preview | `promo/public_search_http.py::preview`, `promo/public_photo_search.py::read_public_gallery_preview`, `processing/public_gallery_preview.py::render_public_gallery_preview`, `inventory/public_photo_projection.py::read_public_active_original`, `entrypoints/backend.py::_backend_lifecycle` внутри `src/face_moment/` | [Independent verification](../../.protocols/TASK-124-T3-FT-013-W7/verification.md), [semantic report](../../.tasks/TASK-124-T3-FT-013-W7/TASK-124-T3-FT-013-W7-S-RED-VERIFY-final-report-docs-01.md), `tests/promo/test_public_gallery_preview.py:68,93,121,136,167`: membership до private IO, JPEG640/EXIF, historical no_faces без изменения, busy/cancellation/recovery и local Caddy HTTPS. |
+| Browser search | `client/public-photo-search.js::mountPublicPhotoSearch/searchCurrentSelfie`, интеграция `client/site-selfie.js`, `client/site.html`, `client/site.css` | [Independent verification](../../.protocols/TASK-125-T2-FT-013-W7/verification.md), [.tasks outcome](../../.tasks/TASK-125-T2-FT-013-W7/verifier-outcome.json), `tests/client/test_public_photo_search.mjs:5,19,26` и `public_photo_search.spec.mjs`: только current JPEG после Submit, 1–3 venues, server A/B outcomes, progress и очистка success при отказе. |
+| Combined quote | `promo/photo_quote.py::quote_selected_photos`, `promo/photo_purchase_http.py::register_public_quote_route`, `infrastructure/object_store.py::PrivateObjectStore.exists`, wiring в `entrypoints/backend.py` внутри `src/face_moment/` | [Independent verification](../../.protocols/TASK-128-T3-FT-014-W7/verification.md), [semantic report](../../.tasks/TASK-128-T3-FT-014-W7/TASK-128-T3-FT-014-W7-S-RED-VERIFY-final-report-docs-01.md), `tests/promo/test_photo_quote.py:70,94,120,139,148,172,183`: exact marginal rounding, current membership/free/tariff, private HEAD, rejection/state preservation; независимый Fraction oracle — 328 сочетаний. |
+| Staff paid/free | `serving_control/http.py::SpaCreateRequest/SpaFreeModeRequest/write_spa_free_mode_route/_spa_free_mode_form`, `serving_control/active_search_date.py::create_spa/update_spa_free_mode`, `serving_control/spa_creation.py::create_initialized_spa` внутри `src/face_moment/`; `client/spa-free-settings.js`, `client/spa-search-settings.js::mountSpaCreate`, маршрут is-free в `deploy/Caddyfile` | [Independent verification](../../.protocols/TASK-131-T3-FT-014-W7/verification.md), [semantic report](../../.tasks/TASK-131-T3-FT-014-W7/TASK-131-T3-FT-014-W7-S-RED-VERIFY-final-report-docs-01.md), `tests/serving_control/test_venue_free_administration.py:48,75`, `tests/client/test_venue_free_settings.mjs:11,22`, browser/edge/preservation evidence: strict bool, обе роли/CSRF, confirmation cancel без mutation, SSR и сохранение остальных полей. |
+
+Сопоставление выполнено с принятыми [Public Search API](../../.memory-bank/contracts/public-photo-search-api.md), [Purchase API](../../.memory-bank/contracts/photo-purchase-api.md), [Photo Orders](../../.memory-bank/domains/photo-orders.md), [Public Gallery Rendering](../../.memory-bank/domains/photo-processing.md#public-gallery-rendering) и owner boundaries. В проверенных изменениях нет подтверждённого механизма, который materially увеличивает повторную стоимость изменений, coupling, риск regression или эксплуатационную нагрузку. Обязательное разделение owner orchestration, transport и private adapters сохранено.
+
+## Подтверждённые findings
+
+## Пределы проверки
+
+Read-only анализ кода, diff и существующего текущего evidence; новые tests, native inference и deploy не запускались. Local HTTPS/disposable fixtures не доказывают поведение production под реальной нагрузкой; измеренного production bottleneck в проверенном evidence нет. Возможные будущие оптимизации и дополнительный hardening без подтверждённого материального механизма не включены. Отсутствие findings относится только к указанным четырём изменениям, а не ко всему репозиторию.

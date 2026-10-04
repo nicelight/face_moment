@@ -40,6 +40,7 @@ class ActiveSearchDateSpa:
     name: str
     timezone: str = "Asia/Novosibirsk"
     search_today: bool = True
+    is_free: bool = False
     date_from: date | None = None
     date_to: date | None = None
     photo_yunet_threshold: float = 0.9
@@ -134,14 +135,28 @@ def update_active_search_date(
 def create_spa(
     database_session: Session, *, session_token: str | None,
     csrf_cookie_token: str | None, csrf_header_token: str | None,
-    name: str, timezone: str,
+    name: str, timezone: str, is_free: bool,
 ) -> IngestTarget:
     principal = authenticate_unsafe_staff_request(
         database_session, session_token=session_token,
         csrf_cookie_token=csrf_cookie_token, csrf_header_token=csrf_header_token,
     )
     _authorize(principal.role)
-    return create_initialized_spa(database_session, name=name, timezone=timezone)
+    return create_initialized_spa(database_session, name=name, timezone=timezone, is_free=is_free)
+
+
+def update_spa_free_mode(
+    database_session: Session, *, session_token: str | None,
+    csrf_cookie_token: str | None, csrf_header_token: str | None,
+    spa_id: uuid.UUID, is_free: bool,
+) -> bool:
+    principal = authenticate_unsafe_staff_request(
+        database_session, session_token=session_token,
+        csrf_cookie_token=csrf_cookie_token, csrf_header_token=csrf_header_token,
+    )
+    _authorize(principal.role)
+    _load_accessible_spa(database_session, spa_id)
+    return IngestTargetRepository(database_session).set_spa_free_mode(spa_id, is_free=is_free)
 
 
 def rename_spa(
@@ -177,7 +192,7 @@ def list_active_search_date_spas(
     )
     return tuple(ActiveSearchDateSpa(
         spa_id=spa.id, name=spa.name, timezone=spa.timezone,
-        search_today=spa.search_today, date_from=spa.active_visit_date,
+        is_free=spa.is_free, search_today=spa.search_today, date_from=spa.active_visit_date,
         date_to=spa.active_visit_date_to,
         photo_yunet_threshold=spa.photo_yunet_threshold,
         capture_blazeface_threshold=spa.capture_blazeface_threshold,

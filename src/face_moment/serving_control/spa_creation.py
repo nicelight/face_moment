@@ -17,7 +17,7 @@ def initialize_default_spa(session: Session) -> IngestTarget | None:
     return create_initialized_spa(session, name="СПА Сибирь 1", timezone="Etc/GMT-7")
 
 
-def create_initialized_spa(session: Session, *, name: str, timezone: str) -> IngestTarget:
+def create_initialized_spa(session: Session, *, name: str, timezone: str, is_free: bool = False) -> IngestTarget:
     """Caller authorizes and commits; all three records share its transaction."""
     repository = IngestTargetRepository(session)
     repository.lock_revision_configuration()
@@ -30,7 +30,7 @@ def create_initialized_spa(session: Session, *, name: str, timezone: str) -> Ing
     else:
         revision = repository.resolve_committed_serving_revision()
     venue = repository.configure_spa(
-        name=name, timezone=timezone, serving_pipeline_revision_id=revision.id,
+        name=name, timezone=timezone, serving_pipeline_revision_id=revision.id, is_free=is_free,
     )
     RealtimeContextRepository(session).provision_reference_settings(
         spa_id=venue.spa_id, pipeline_code=revision.pipeline_code,

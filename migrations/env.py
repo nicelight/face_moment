@@ -23,6 +23,8 @@ from face_moment.diagnostics import capture_identity
 from face_moment.promo import attempt as promo_attempt
 from face_moment.promo import retention as promo_retention
 from face_moment.promo import advertising
+from face_moment.promo import browser_search_profile, public_photo_search, photo_orders
+from face_moment.serving_control import public_search_settings, photo_tariff
 
 _ = staff_principals
 _ = hard_purge
@@ -40,6 +42,11 @@ _ = capture_identity
 _ = promo_attempt
 _ = promo_retention
 _ = advertising
+_ = browser_search_profile
+_ = public_photo_search
+_ = photo_orders
+_ = public_search_settings
+_ = photo_tariff
 
 config = context.config
 if config.config_file_name is not None:

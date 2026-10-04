@@ -87,11 +87,14 @@ private; платёжная форма открывается после гот�
   QR/evidence и Photo worker/purge не меняются. Gallery renderer не меняет
   no_faces/derivatives и не требует backfill. ZIP executor не занимает shared
   worker. Поэтому product-wide impact отсутствует.
-- FT-013..016 пока не task-linked; bounded repair markers для старых features
-  не нужны. Task statuses/completed evidence/unaffected approvals сохранены.
-- Foundation decision/executable baseline не изменены. Следующий шаг — свежий
-  `/feature-to-tasks FT-013`, затем отдельный `/review-tasks-plan FT-013`;
-  FT-014..016 tasking/review идут последовательно в собственных свежих contexts.
+- FT-013..016 task-linked: [планы](tasks/plans/index.md) содержат 20 indexed
+  задач TASK-120–139 (7/6/4/3); все четыре независимых task-plan review —
+  APPROVE при Planning Revision 4, см. [planning evidence](../.protocols/public-photo-task-planning/plan.md).
+  Bounded repair markers для старых features не нужны; их statuses,
+  completed evidence и unaffected approvals сохранены.
+- Foundation decision/executable baseline не изменены. Выполнение идёт через
+  последовательную reviewed queue и применимые tier gates; task-plan approval
+  не означает завершения или verification features.
 
 ## Global Backbone Status
 - Status: complete

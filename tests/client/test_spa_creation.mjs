@@ -10,17 +10,18 @@ function element(value = '') {
 }
 function fixture() {
   const opener = element(), cancel = element(), submit = element(), status = {};
+  const is_free = { checked: false };
   const name = element('  Новая  '), timezone = element('Europe/Moscow'), section = { hidden: true };
   globalThis.document.querySelector = () => opener;
   const form = { listeners: {}, closest: () => section, reset() { name.value = ''; },
-    elements: { namedItem: key => ({ name, timezone })[key] },
+    elements: { namedItem: key => ({ name, timezone, is_free })[key] },
     querySelector: key => ({ '[data-cancel-spa-create]': cancel, 'button[type="submit"]': submit, '[role="status"]': status })[key],
     addEventListener(type, fn) { this.listeners[type] = fn; } };
   mountSpaCreate(form);
-  return { form, opener, cancel, submit, status, section };
+  return { form, opener, cancel, submit, status, section, is_free };
 }
 
-test('creation opens, cancels and sends only name/timezone with CSRF', async () => {
+test('creation opens, cancels and sends explicit paid mode/name/timezone with CSRF', async () => {
   const f = fixture();
   f.opener.listeners.click(); assert.equal(f.section.hidden, false);
   f.cancel.listeners.click(); assert.equal(f.section.hidden, true);
@@ -30,7 +31,7 @@ test('creation opens, cancels and sends only name/timezone with CSRF', async () 
   globalThis.fetch = async (url, options) => {
     assert.equal(url, '/api/serving/spas'); assert.equal(options.method, 'POST');
     assert.equal(options.headers['X-CSRF-Token'], 'test');
-    assert.deepEqual(JSON.parse(options.body), { name: 'Новая', timezone: 'Europe/Moscow' });
+    assert.deepEqual(JSON.parse(options.body), { name: 'Новая', timezone: 'Europe/Moscow', is_free: false });
     return { ok: true };
   };
   await g.form.listeners.submit(event);
@@ -55,4 +56,12 @@ test('invalid initial model gives an actionable error and permits retry', async 
   assert.match(f.status.textContent, /SFace.*SFACE_.*Площадка не создана/);
   assert.equal(f.submit.disabled, false);
   assert.equal(f.cancel.disabled, false);
+});
+
+test('free creation cancel/close emits no mutation; confirm sends strict true', async () => {
+ const f=fixture(); f.is_free.checked=true; let calls=0, reload=false;
+ globalThis.window={confirm:()=>false,location:{reload(){reload=true;}}};
+ globalThis.fetch=async(url,options)=>{calls++;assert.equal(JSON.parse(options.body).is_free,true);return {ok:true};};
+ await f.form.listeners.submit(event);assert.equal(calls,0);assert.equal(f.submit.disabled,false);
+ window.confirm=()=>true;await f.form.listeners.submit(event);assert.equal(calls,1);assert.equal(reload,true);
 });

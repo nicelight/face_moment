@@ -1,7 +1,7 @@
 ---
 description: Stable product requirements and traceability for Face Moment, including functional multi-venue operation.
 status: draft
-last_updated: 2026-10-03
+last_updated: 2026-10-04
 ---
 # Requirements
 
@@ -58,15 +58,15 @@ last_updated: 2026-10-03
 
 ## Public extension requirements — 2026-10-03
 
-These planned requirements derive from the clarified PRD and accepted delta,
+These requirements derive from the clarified PRD and accepted delta,
 not from a completed design. Historical RTM lifecycle/evidence remains unchanged.
 
 | ID | Requirement | PRD basis |
 |---|---|---|
 | `REQ-PUB-001` | All camera-only captures MUST remain locally as IndexedDB JPEG Blob through retake, A/B denial and failed/successful search (starter long edge <=960 px, q0.85, no upscale, face >=30% image, empirical quality verification without accuracy promise); quota/unavailable storage MUST warn and allow current search without retaining the new image or evicting old ones. A hidden protected-cookie profile MUST retain fixed A/B with one confirmed reset preceded by a foreign-face warning; Developer MUST configure the A/B threshold independently of professional-photo search threshold without automatically changing it, non-consuming unusable captures, server-authoritative limits, no signup/recovery, retained email/last visit and no automatic profile deletion. | FR-PUB-01/04/05/10; AC-PUB-02 |
 | `REQ-PUB-002` | Search MUST submit only the current selfie after explicit 1–3 venue selection and «Найти меня», validate that scope on the server, use all available undeleted compatible dates inside selection regardless of Promo date settings, reveal no outside-venue results, and show animation/progress without presenting simulation as measured percentage absent server measurements, plus personal count, venue names and visit dates. | FR-PUB-02/03; AC-PUB-01/02 |
-| `REQ-PUB-003` | One public feed MUST group venue heading -> personal photos -> common -> next venue; personal previews use accepted removable frontend watermark; all public gallery preview images have actual width >=320 px, without changing Promo/QR. Common processed no_faces photos MUST be limited to personal-match dates of that venue and free everywhere. Selection uses green for free and blue for paid personal, select-all is venue-local, combined count includes all selected photos. | FR-PUB-06/07; AC-PUB-03 |
-| `REQ-PUB-004` | Operator/developer MUST manage free/paid venue mode at create/settings, confirm enabling free mode by popup, and configure one global RUB Base/d1/d2/d3 tariff. For n selected paid personal photos across paid venues total MUST be Base*(min(n,1)+d1*min(max(n-1,0),4)+d2*min(max(n-5,0),15)+d3*max(n-20,0)); all free media is excluded. Sticky top MUST show all-selected count, authoritative total and «Скачать». One cross-venue order freezes selected composition, price and free mode; later setting changes apply to new orders. | FR-PUB-07/08; AC-PUB-04 |
+| `REQ-PUB-003` | One public feed MUST group venue heading -> personal photos -> common -> next venue; personal previews use accepted removable frontend watermark; all public gallery preview images have actual width >=320 px, without changing Promo/QR. Common processed no_faces photos MUST be limited to personal-match dates of that venue and free everywhere. Selection uses green for free and blue for paid personal, select-all is venue-local, combined count includes all selected photos. | FR-PUB-06/07; ACverified |
+| `REQ-PUB-004` | Operator/developer MUST manage free/paid venue mode at create/settings, confirm enabling free mode by popup, and configure one global RUB Base/d1/d2/d3 tariff. For n selected paid personal photos across paid venues total MUST be Base*(min(n,1)+d1*min(max(n-1,0),4)+d2*min(max(n-5,0),15)+d3*max(n-20,0)); all free media is excluded. Sticky top MUST show all-selected count, authoritative total and «Скачать». One cross-venue order freezes selected composition, price and free mode; later setting changes apply to new orders. | FR-PUB-07/08; ACverified |
 | `REQ-PUB-005` | A free-only selected set MUST deliver an archive bearer link without payment initiation or mandatory receipt email; both free-venue personal and allowed common photos qualify. Mixed selection keeps free photos free inside one paid order. | FR-PUB-08/10; AC-PUB-04/05 |
 | `REQ-PUB-006` | One cross-venue paid selection MUST use only YooKassa, collect/store profile email for receipt, choose card/QR method, prepare archive BEFORE opening the provider form and permit paid-original access only after server-confirmed payment. Duplicate confirmations MUST not duplicate purchases; refunds are manual. No charge may start before archive ready. | FR-PUB-09; AC-PUB-04/05 |
 | `REQ-PUB-007` | Allowed selected originals MUST form one archive with bearer access expiring at ready+3 days, usable independently of browser cookie. While preparing, user sees retry-in-30-seconds instruction. Generation failure MUST show user error, initiate no payment and send admin email to sergiosandroid2@gmail.com. Preservation against deletion is NOT promised; unavailable paid delivery routes to manual support/refund rather than silently claiming successful access. | FR-PUB-09/10; AC-PUB-05 |
@@ -101,6 +101,14 @@ Canonical exclusions remain in the PRD
 product scope; feature and task anti-goals only narrow their assigned work.
 
 ## Traceability Matrix (RTM)
+
+Wave 6: scheduler закрыл [TASK-123](tasks/TASK-123-T3-FT-013-W6.task.json)
+(public API/current result и paid/free supplier, FT-013-AC-002/006/008,
+часть REQ-PUB-002/003/008) после independent
+[functional PASS](../.protocols/TASK-123-T3-FT-013-W6/verification.md) и
+[semantic-pass](../.protocols/TASK-123-T3-FT-013-W6/red-verification.md).
+На границе Wave 6 preview/browser gallery и feature verification ещё
+предстояли; актуальное покрытие приведено в Public extension RTM ниже.
 
 | REQ | Epic | Feature | Test / evidence target | Lifecycle |
 |---|---|---|---|---|
@@ -142,12 +150,117 @@ product scope; feature and task anti-goals only narrow their assigned work.
 
 ## Public extension RTM
 
+Wave 3: scheduler закрыл [TASK-121](tasks/TASK-121-T3-FT-013-W3.task.json)
+(profile/A/B, AC-004, REQ-PUB-001/008),
+[TASK-122](tasks/TASK-122-T2-FT-013-W3.task.json)
+(native search/compression, AC-007, REQ-PUB-001/002) и
+[TASK-127](tasks/TASK-127-T3-FT-014-W3.task.json)
+(tariff API, AC-004, REQ-PUB-004/008). Independent functional PASS и требуемые
+T3 semantic-pass связаны в task records и [FT-013](features/FT-013.md) /
+[FT-014](features/FT-014.md). Это частичное покрытие требований; оставшиеся
+на границе Wave 3 задачи и feature verification ещё не были завершены.
+
+Wave 4: scheduler закрыл [TASK-130](tasks/TASK-130-T2-FT-014-W4.task.json)
+(staff tariff editor, FT-014-AC-005, часть REQ-PUB-004) после independent
+[functional PASS](../.protocols/TASK-130-T2-FT-014-W4/verification.md).
+Остальное покрытие требования и feature semantic verification ещё предстоят;
+REQ-PUB-004 lifecycle остаётся planned.
+
+Wave 6: scheduler закрыл [TASK-123](tasks/TASK-123-T3-FT-013-W6.task.json)
+(public API/current result и paid/free supplier, FT-013-AC-002/006/008,
+часть REQ-PUB-002/003/008) после independent
+[functional PASS](../.protocols/TASK-123-T3-FT-013-W6/verification.md) и
+[semantic-pass](../.protocols/TASK-123-T3-FT-013-W6/red-verification.md).
+На границе Wave 6 preview/browser gallery и feature verification ещё
+предстояли; актуальное покрытие приведено в Wave 8 ниже.
+
+Wave 7: scheduler закрыл [TASK-124](tasks/TASK-124-T3-FT-013-W7.task.json)
+(private reduced previews, FT-013-AC-009, REQ-PUB-003/008),
+[TASK-125](tasks/TASK-125-T2-FT-013-W7.task.json)
+(explicit browser search/progress, FT-013-AC-003, REQ-PUB-001/002 subset),
+[TASK-128](tasks/TASK-128-T3-FT-014-W7.task.json)
+(authoritative quote, FT-014-AC-002, REQ-PUB-004/008 subset) и
+[TASK-131](tasks/TASK-131-T3-FT-014-W7.task.json)
+(staff paid/free administration, FT-014-AC-003, REQ-PUB-004/008 subset).
+Все получили independent functional PASS; TASK-124/128/131 — semantic-pass,
+TASK-125 — independent expert UX assessment. Verification links находятся в
+[FT-013](features/FT-013.md) и [FT-014](features/FT-014.md).
+На границе Wave 7 TASK-126/129/132 и feature semantic verification ещё
+предстояли, все Public extension REQ lifecycle были planned.
+
+Wave 8: scheduler закрыл [TASK-126](tasks/TASK-126-T2-FT-013-W8.task.json)
+после independent [functional PASS](../.protocols/TASK-126-T2-FT-013-W8/verification.md)
+и [TASK-132](tasks/TASK-132-T3-FT-014-W8.task.json) после
+[functional PASS](../.protocols/TASK-132-T3-FT-014-W8/verification.md) и
+[semantic-pass](../.protocols/TASK-132-T3-FT-014-W8/red-verification.md).
+Все TASK-120..126 done; [feature semantic-pass](../.tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-01.md)
+подтвердил FT-013-AC-001..009, root scheduler завершил FT-013 (verified).
+REQ-PUB-002 полностью verified. REQ-PUB-001/003/008 имеют проверенный FT-013
+subset, но сохраняют planned: retained purchase email/flow — FT-016,
+selection — TASK-129, delivery entitlement/payment — FT-015/016 ещё не завершены.
+Frozen-core supplier FT-014-AC-006 проверен TASK-132; lifecycle FT-014,
+FT-015/016 и EP-004 остаётся planned.
+
+Wave 9: owner закрыл [TASK-129](tasks/TASK-129-T2-FT-014-W9.task.json)
+после [functional PASS](../.protocols/TASK-129-T2-FT-014-W9/verification.md)
+и [TASK-133](tasks/TASK-133-T3-FT-015-W9.task.json) после
+[functional PASS](../.protocols/TASK-133-T3-FT-015-W9/verification.md) и
+[semantic-pass](../.protocols/TASK-133-T3-FT-015-W9/red-verification.md).
+Все TASK-127..132 done; [feature semantic-pass](../.tasks/FT-014/FT-014-S-RED-VERIFY-final-report-docs-01.md)
+и записанное owner completion подтверждают FT-014 verified. REQ-PUB-003 теперь
+полностью verified через FT-013 gallery + FT-014 selection; REQ-PUB-004 verified
+через все FT-014-AC-001..006 (admin, marginal quote, sticky, frozen cross-venue
+order). FT-016-AC-001 остаётся downstream consumer интеграцией этого supplier,
+а незавершённые paid flow/entitlement учитываются REQ-PUB-001/005/006/008.
+REQ-PUB-007 имеет подтверждённый ZIP subset FT-015-AC-004, но expiry/browser/
+paid delivery ещё planned; FT-015/016 и EP-004 lifecycle planned.
+
+Wave 10: owner закрыл [TASK-134](tasks/TASK-134-T3-FT-015-W10.task.json)
+после independent [functional PASS](../.protocols/TASK-134-T3-FT-015-W10/verification.md)
+и [semantic-pass](../.protocols/TASK-134-T3-FT-015-W10/red-verification.md).
+FT-015-AC-003 подтверждает private anonymous bearer ZIP streaming, stored
+entitlement и exact ready+3days expiry — subset REQ-PUB-007/008.
+Вместе с AC-004 ZIP runtime это частичное покрытие FT-015; TASK-135..136
+order HTTP/browser flow и FT-016 payment integration ещё planned.
+REQ-PUB-007/008 и FT-015/016/EP-004 сохраняют lifecycle planned;
+REQ-PUB-002/003/004 сохраняют verified. Всего TASK-120..134 done (15/20),
+TASK-135..139 planned; feature completion для FT-015 не заявлено.
+
+Wave 11: owner закрыл [TASK-135](tasks/TASK-135-T3-FT-015-W11.task.json)
+после independent [functional PASS](../.protocols/TASK-135-T3-FT-015-W11/verification.md)
+и [semantic-pass](../.protocols/TASK-135-T3-FT-015-W11/red-verification.md).
+FT-015-AC-001 подтверждает free order HTTP/owner status/entitled ready link,
+strict admission и отсутствие обязательных email/payment — subset REQ-PUB-005/008.
+FT-015 покрывает AC-001/003/004; browser AC-002 и FT-016 ещё planned.
+REQ-PUB-002/003/004 verified; остальные public REQ и FT-015/016/EP-004 planned.
+Всего TASK-120..135 done (16/20), TASK-136..139 planned; feature completion
+FT-015 не заявлено.
+
+Wave 12 terminal: owner закрыл [TASK-136](tasks/TASK-136-T2-FT-015-W12.task.json)
+после independent [functional PASS](../.protocols/TASK-136-T2-FT-015-W12/verification.md).
+Все TASK-133..136 done; [feature semantic-pass](../.tasks/FT-015/FT-015-S-RED-VERIFY-final-report-docs-01.md)
+и явное owner completion подтверждают FT-015 active/verified, AC-001..004.
+REQ-PUB-005 полностью подтверждён в free-only части, но mixed selection внутри
+paid order требует FT-016-AC-001 и сохраняет planned. REQ-PUB-001/006/007/008
+также сохраняют planned из-за незавершённых paid profile/payment/delivery
+стыков. REQ-PUB-002/003/004 остаются verified. FT-016 и EP-004 planned.
+
+Всего TASK-120..136 done (17/20), TASK-137..139 blocked.
+[TASK-137 stop evidence](../.tasks/TASK-137-T3-FT-016-W12/TASK-137-T3-FT-016-W12-S-EXECUTE-final-report-docs-01.md):
+нет required external YooKassa TEST merchant/fiscal config и authorization
+на preflight; implementation/provider calls/execution attempt не было.
+TASK-138/139 blocked по зависимостям.
+[Checkpoint](../.protocols/AUTONOMOUS-RUN/status.md): HALT_BLOCKING_QUESTIONS.
+После предоставления local TEST configuration и разрешения external TEST calls
+возобновить `/autopilot`; scheduler проверяет входы и направляет fresh
+`/exe TASK-137-T3-FT-016-W12`, dependent unblock только после prerequisites.
+
 | REQ | Epic | Feature | Test / evidence target | Lifecycle |
 |---|---|---|---|---|
 | `REQ-PUB-001` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md) (order-core supplier), [FT-016](features/FT-016.md) | `FT-013-AC-001..004`, `FT-013-AC-007`, `FT-014-AC-006`, `FT-016-AC-001`; PRD AC-PUB | planned |
-| `REQ-PUB-002` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md) | `FT-013-AC-002..003`, `FT-013-AC-007..008`; PRD AC-PUB | planned |
-| `REQ-PUB-003` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md) | `FT-013-AC-005`, `FT-013-AC-008`, `FT-013-AC-009`, `FT-014-AC-001`; PRD AC-PUB | planned |
-| `REQ-PUB-004` | [EP-004](epics/EP-004.md) | [FT-014](features/FT-014.md), [FT-016](features/FT-016.md) | `FT-014-AC-001..006`, `FT-016-AC-001`; PRD AC-PUB | planned |
+| `REQ-PUB-002` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md) | `FT-013-AC-002..003`, `FT-013-AC-007..008`; PRD AC-PUB | verified |
+| `REQ-PUB-003` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md) | `FT-013-AC-005`, `FT-013-AC-008`, `FT-013-AC-009`, `FT-014-AC-001`; PRD AC-PUB | verified |
+| `REQ-PUB-004` | [EP-004](epics/EP-004.md) | [FT-014](features/FT-014.md), [FT-016](features/FT-016.md) | `FT-014-AC-001..006`, `FT-016-AC-001`; PRD AC-PUB | verified |
 | `REQ-PUB-005` | [EP-004](epics/EP-004.md) | [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-015-AC-001..002`, `FT-016-AC-001`; PRD AC-PUB | planned |
 | `REQ-PUB-006` | [EP-004](epics/EP-004.md) | [FT-014](features/FT-014.md) (order-core supplier), [FT-016](features/FT-016.md) | `FT-014-AC-006`, `FT-016-AC-001..003`, `FT-016-AC-005`; PRD AC-PUB | planned |
 | `REQ-PUB-007` | [EP-004](epics/EP-004.md) | [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-015-AC-002..004`, `FT-016-AC-002..005`; PRD AC-PUB | planned |

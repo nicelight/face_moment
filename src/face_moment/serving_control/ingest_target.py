@@ -33,6 +33,7 @@ class Spa(Base):
     active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default="true"
     )
+    is_free: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     active_visit_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     active_visit_date_to: Mapped[date | None] = mapped_column(Date, nullable=True)
     search_today: Mapped[bool] = mapped_column(
@@ -112,7 +113,10 @@ class IngestTargetRepository:
         name: str | None = None,
         timezone: str,
         serving_pipeline_revision_id: uuid.UUID,
+        is_free: bool = False,
     ) -> IngestTarget:
+        if type(is_free) is not bool:
+            raise ValueError("is_free must be an explicit bool")
         self.lock_revision_configuration()
         if name is None:
             names = set(self._session.scalars(select(Spa.name)))
@@ -132,6 +136,7 @@ class IngestTargetRepository:
             name=normalized_name,
             timezone=normalized_timezone,
             active=True,
+            is_free=is_free,
             photo_yunet_threshold=0.7,
             serving_pipeline_revision_id=revision.id,
         )
@@ -139,6 +144,26 @@ class IngestTargetRepository:
         self._session.flush()
         self._session.refresh(spa)
         return self._as_ingest_target(spa, revision)
+
+    def configure_public_spa(
+        self, *, timezone: str, serving_pipeline_revision_id: uuid.UUID,
+        is_free: bool, name: str | None = None,
+    ) -> IngestTarget:
+        """Public-commerce creation requires the caller's explicit free flag.
+
+        Existing baseline configure_spa callers retain paid venue creation.
+        """
+        return self.configure_spa(name=name, timezone=timezone,
+                                  serving_pipeline_revision_id=serving_pipeline_revision_id,
+                                  is_free=is_free)
+
+    def set_spa_free_mode(self, spa_id: uuid.UUID, *, is_free: bool) -> bool:
+        if type(is_free) is not bool:
+            raise ValueError("is_free must be an explicit bool")
+        spa = self._load_spa(spa_id, for_update=True)
+        spa.is_free = is_free
+        self._session.flush()
+        return spa.is_free
 
     def list_active_spa_names(self) -> list[tuple[uuid.UUID, str]]:
         """Names for authenticated staff selectors, independent of pipeline health."""

@@ -4,6 +4,160 @@ status: active
 ---
 # Changelog
 
+## [2026-10-04] Wave 12 / free delivery verified; payment preflight blocked
+
+- Updated: [TASK-136](tasks/TASK-136-T2-FT-015-W12.task.json) owner closure done
+  после independent [functional PASS](../.protocols/TASK-136-T2-FT-015-W12/verification.md)
+  отражено в [FT-015](features/FT-015.md). Все TASK-133..136 done;
+  [feature semantic-pass](../.tasks/FT-015/FT-015-S-RED-VERIFY-final-report-docs-01.md)
+  и явное owner completion приняты: FT-015 active/verified.
+- Updated: [FT-016](features/FT-016.md), [EP-004](epics/EP-004.md),
+  [RTM](requirements.md#public-extension-rtm), feature/root indexes согласованы
+  с terminal queue: TASK-120..136 done (17/20), TASK-137..139 blocked.
+  REQ-PUB-002/003/004 verified; REQ-PUB-001/005..008 planned — free subset
+  закрыт, mixed paid profile/payment/delivery ещё требует FT-016.
+- Blocking: [TASK-137 preflight stop](../.tasks/TASK-137-T3-FT-016-W12/TASK-137-T3-FT-016-W12-S-EXECUTE-final-report-docs-01.md):
+  required YooKassa TEST merchant/fiscal configuration и authorization отсутствуют;
+  implementation, provider calls и execution attempt не было. TASK-138/139
+  dependency-blocked. [Checkpoint](../.protocols/AUTONOMOUS-RUN/status.md) сохраняет
+  HALT_BLOCKING_QUESTIONS: после local TEST config и разрешения external test calls
+  продолжить `/autopilot`, затем fresh `/exe TASK-137-T3-FT-016-W12`.
+- Preserved: accepted Planning Revision 4/task-plan APPROVE, canonical specs,
+  source и task/scheduler ownership. Это полный sync terminal boundary;
+  FT-016/EP-004 planned, overall SUCCESS не заявлен. Root `/autopilot` владеет
+  post-sync lint, strict doctor и advisory.
+
+## [2026-10-04] Wave 11 / public order HTTP и free integration
+
+- Updated: [FT-015](features/FT-015.md) отражает owner closure
+  [TASK-135](tasks/TASK-135-T3-FT-015-W11.task.json) как done после independent
+  [functional PASS](../.protocols/TASK-135-T3-FT-015-W11/verification.md) и
+  [semantic-pass](../.protocols/TASK-135-T3-FT-015-W11/red-verification.md).
+  AC-001 order HTTP/owner status/entitled ready link подтверждён; вместе с
+  AC-003/004 это partial coverage, browser AC-002 ещё planned.
+- Updated: [RTM](requirements.md#public-extension-rtm), [Epic](epics/EP-004.md),
+  [feature router](features/index.md) и [navigation](index.md#product-decomposition):
+  TASK-120..135 done (16/20), TASK-136..139 planned. FT-013/014 и
+  REQ-PUB-002/003/004 verified; FT-015/016/EP-004 и остальные public REQ planned.
+- Preserved: Planning Revision 4, current APPROVE reviews, canonical specs,
+  task records и scheduler checkpoint. Post-sync lint/strict doctor, promotion
+  и `/tech-debt wave 11` после gates принадлежат GENERAL/root.
+
+## [2026-10-04] Wave 10 / private bearer ZIP streaming и expiry
+
+- Updated: [FT-015](features/FT-015.md) отражает owner closure
+  [TASK-134](tasks/TASK-134-T3-FT-015-W10.task.json) как done после independent
+  [functional PASS](../.protocols/TASK-134-T3-FT-015-W10/verification.md) и
+  [semantic-pass](../.protocols/TASK-134-T3-FT-015-W10/red-verification.md):
+  AC-003 private bearer delivery/entitlement/expiry подтверждён, вместе с
+  AC-004 это partial feature coverage; order HTTP/browser ещё planned.
+- Updated: [RTM](requirements.md#public-extension-rtm),
+  [Epic](epics/EP-004.md), [feature router](features/index.md) и
+  [navigation](index.md#product-decomposition) отражают 15/20 done
+  (TASK-120..134), TASK-135..139 planned. REQ-PUB-002/003/004 verified;
+  REQ-PUB-007/008 и FT-015/016/EP-004 lifecycle planned.
+- Preserved: Planning Revision 4, current APPROVE reviews, canonical specs,
+  task records и scheduler checkpoint. Post-sync lint/strict doctor,
+  promotion и `/tech-debt wave 10` после gates принадлежат GENERAL/root.
+
+## [2026-10-04] Wave 9 / combined selection, ZIP runtime и завершение FT-014
+
+- Updated: [FT-014](features/FT-014.md) active/verified после owner closure
+  TASK-129, всех TASK-127..132 done и [feature semantic-pass](../.tasks/FT-014/FT-014-S-RED-VERIFY-final-report-docs-01.md).
+- Updated: [FT-015](features/FT-015.md) содержит TASK-133 functional PASS и
+  semantic-pass ZIP runtime/recovery/failure notification; AC-004 done,
+  TASK-134..136 и feature lifecycle planned. FT-016/EP-004 остаются planned.
+- Updated: [RTM](requirements.md#public-extension-rtm) отмечает REQ-PUB-003/004
+  verified по полному accepted coverage; REQ-PUB-002 сохраняет verified,
+  REQ-PUB-001/005..008 planned с подтверждёнными supplier subsets.
+  [Epic](epics/EP-004.md), [feature router](features/index.md) и
+  [navigation](index.md#product-decomposition) отражают 14/20 done, TASK-134..139 planned.
+- Preserved: Planning Revision 4, current APPROVE reviews, canonical specs,
+  task records и scheduler checkpoint. Post-sync lint/strict doctor, promotion
+  и следующая handoff принадлежат GENERAL/root; `/tech-debt wave 9` рекомендован
+  после успешных owner gates.
+
+## [2026-10-04] Wave 8 / gallery, frozen orders и завершение FT-013
+
+- Updated: [FT-013](features/FT-013.md) active/verified после closure TASK-126
+  и [feature semantic-pass](../.tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-01.md);
+  все TASK-120..126 done, FT-013-AC-001..009 подтверждены.
+- Updated: [FT-014](features/FT-014.md) отражает closure TASK-132 после
+  functional PASS и semantic-pass frozen core; TASK-129 и feature verification
+  ещё предстоят. FT-014..016 и [EP-004](epics/EP-004.md) lifecycle planned.
+- Updated: [RTM](requirements.md#public-extension-rtm) отмечает REQ-PUB-002
+  verified; REQ-PUB-001/003/008 сохраняют planned с проверенным FT-013 subset
+  и незавершённым покрытием selection/purchase/delivery. [Navigation](index.md#product-decomposition)
+  и [feature router](features/index.md) согласованы. Revision 4, accepted plans
+  и canonical specs сохранены; post-sync gates/promotion принадлежат root owner.
+
+## [2026-10-04] Wave 7 / previews, browser search, quote и paid/free administration
+
+- Updated: [FT-013](features/FT-013.md), [FT-014](features/FT-014.md),
+  [RTM](requirements.md#public-extension-rtm) и [navigation](index.md#product-decomposition)
+  отражают уже записанные scheduler closures TASK-124/125/128/131 как done.
+  Все имеют independent functional PASS; T3 TASK-124/128/131 — semantic-pass,
+  TASK-125 — expert UX assessment. Feature evidence связывает свежие проверки
+  private previews/executor, explicit search states, exact quote и staff free mode.
+- Updated: оставшиеся TASK-126/129/132 и feature semantic verification ещё
+  предстоят; features/REQ lifecycle planned, Planning Revision 4, accepted plans
+  и canonical specs сохранены. Post-sync lint/strict doctor и promotion — owner.
+
+
+## [2026-10-04] Wave 6 / публичный API и текущий результат
+
+- Updated: [FT-013](features/FT-013.md), [RTM](requirements.md#public-extension-rtm)
+  и [navigation](index.md#product-decomposition) отражают scheduler closure
+  [TASK-123](tasks/TASK-123-T3-FT-013-W6.task.json) как done после independent
+  [functional PASS](../.protocols/TASK-123-T3-FT-013-W6/verification.md) и
+  [semantic-pass](../.protocols/TASK-123-T3-FT-013-W6/red-verification.md).
+  Подтверждены own current result, scope/privacy/limits, native HTTPS,
+  persisted paid/free supplier, Promo/QR и atomic rollback profile/result.
+- Updated: TASK-124–126, preview/gallery и feature semantic verification ещё
+  предстоят; feature/REQ lifecycle остаётся planned. Revision 4, accepted plans
+  и canonical specs сохранены.
+
+## [2026-10-04] Wave 4 / staff editor единого тарифа
+
+- Updated: [FT-014](features/FT-014.md#execution-evidence--task-130),
+  [RTM](requirements.md#public-extension-rtm) и [navigation](index.md#product-decomposition)
+  отражают scheduler closure [TASK-130](tasks/TASK-130-T2-FT-014-W4.task.json)
+  как done после independent [functional PASS](../.protocols/TASK-130-T2-FT-014-W4/verification.md).
+  Operator/developer сохраняют и перезагружают authoritative Base/d1/d2/d3;
+  ошибки validation/CSRF видимы и сохраняют confirmed values. Native browser
+  checks обеих ролей и 1280/390, unit87 и mypy116 подтверждены.
+- Updated: feature/REQ lifecycle остаётся planned; четыре оставшиеся задачи
+  FT-014 и feature semantic verification ещё предстоят. Revision 4, accepted
+  plans и canonical specs сохранены.
+
+## [2026-10-04] Wave 3 / public profile, native search и tariff API
+
+- Updated: [FT-013](features/FT-013.md), [FT-014](features/FT-014.md),
+  [RTM](requirements.md#public-extension-rtm) и [navigation](index.md#product-decomposition)
+  согласованы с scheduler closure TASK-121/122/127: done, independent functional
+  PASS, для T3 TASK-121/127 также semantic-pass. Остальные задачи и feature
+  verification ещё предстоят; features/REQ остаются planned.
+- Fixed: TASK-121 numeric endpoints подтверждены после exact-equality и cosine
+  clamp в [−1,1]; TASK-127 canonical tariff route подтверждён через HTTPS Caddy
+  после matcher correction. Предыдущие FAIL и representative SFace large 0/0
+  observation сохранены; native compression proof не даёт accuracy guarantee.
+  Accepted plans/Revision 4 и canonical specs не изменены.
+
+## [2026-10-03] Wave 1 / FT-013 camera and local selfie history
+
+- Updated: scheduler закрыл [TASK-120](tasks/TASK-120-T2-FT-013-W1.task.json)
+  как done после independent [PASS](../.protocols/TASK-120-T2-FT-013-W1/verification.md).
+  [FT-013](features/FT-013.md) связывает camera JPEG/IndexedDB implementation
+  с execution/claim/verification evidence; остальные шесть задач не завершены.
+- Fixed: [index](index.md) и [backbone routing](spec-backbone.md#new-scope-design-routing)
+  отражают уже завершённые design и 20 approved task cards FT-013–016 при
+  Revision 4. Foundation, canonical contracts и прежняя evidence сохранены;
+  feature/REQ lifecycle остаётся planned, feature semantic gate ещё предстоит.
+
+## [2026-10-03] Execution readiness — TASK-106 evidence labels
+
+- Fixed: три подписи существующего Attempt 1 в `.protocols/TASK-106-T3-FT-011-W4/progress.md` приведены к формату claim-linked evidence. Наблюдения, independent PASS, semantic verdict и lifecycle не изменены; ранняя синхронизация нужна для strict readiness новой очереди FT-013–FT-016.
+
 ## 2026-10-03 — Публичный поиск и покупка: задачи спланированы
 
 FT-013–016 разложены в 20 indexed задач TASK-120–139: 7/6/4/3 самостоятельных

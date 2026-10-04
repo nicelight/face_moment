@@ -1,7 +1,7 @@
 {
   "id": "TASK-137-T3-FT-016-W12",
   "title": "YooKassa ready-order initiation и frozen receipt",
-  "status": "planned",
+  "status": "blocked",
   "wave": "W12",
   "feature": "FT-016",
   "reqs": [
@@ -33,7 +33,17 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "scheduler-task-blocking",
+      "verdict": "blocked",
+      "summary": "Preflight required external YooKassa TEST merchant/fiscal inputs and authorization unavailable; no implementation, external call or execution attempt. Operator supplies local test configuration and explicit test-call authorization, then /autopilot resumes /exe TASK-137-T3-FT-016-W12.",
+      "evidence": [
+        ".tasks/TASK-137-T3-FT-016-W12/TASK-137-T3-FT-016-W12-S-EXECUTE-final-report-docs-01.md",
+        ".tasks/TASK-137-T3-FT-016-W12/provider-input-presence.json"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-016.md",
     ".memory-bank/tasks/plans/IMPL-FT-016.md"

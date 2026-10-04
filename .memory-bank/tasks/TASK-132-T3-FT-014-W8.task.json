@@ -1,7 +1,7 @@
 {
   "id": "TASK-132-T3-FT-014-W8",
   "title": "Frozen order core и atomic profile update",
-  "status": "planned",
+  "status": "done",
   "wave": "W8",
   "feature": "FT-014",
   "reqs": [
@@ -33,7 +33,20 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    "VERDICT: PASS — independent /verify FT-014-AC-006 complete frozen core: canonical PostgreSQL snapshot, old/new tariff/free comparison, reopened owner read, concurrent replay/conflict, paid profile/order atomic rollback, ten validation refusals, free/no-provider state and own migration/schema/foreign-row preservation. Fresh native16 + verifier-owned12 disposable DB probes and mypy122 PASS. Evidence: .protocols/TASK-132-T3-FT-014-W8/verification.md; .tasks/TASK-132-T3-FT-014-W8/verify-probe.txt. Sol MEDIUM co-review single launch unavailable (thread limit); no retry. Status unchanged; next T3 /red-verify TASK-132-T3-FT-014-W8.",
+    {
+      "stage": "scheduler-task-closure",
+      "verdict": "done",
+      "summary": "Attempt 1 closed after independent functional PASS and semantic-pass: complete frozen canonical order snapshot, owner-scoped idempotent replay/conflict, atomic paid profile/order transaction and migration proved, including rollback with waiting concurrent retry. Later archive/payment/HTTP work remains scoped separately.",
+      "evidence": [
+        ".protocols/TASK-132-T3-FT-014-W8/progress.md",
+        ".protocols/TASK-132-T3-FT-014-W8/verification.md",
+        ".protocols/TASK-132-T3-FT-014-W8/red-verification.md",
+        ".tasks/TASK-132-T3-FT-014-W8/TASK-132-T3-FT-014-W8-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-014.md",
     ".memory-bank/tasks/plans/IMPL-FT-014.md"

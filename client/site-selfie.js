@@ -1,8 +1,11 @@
 import "./motion-ui.js";
+import { mountPublicPhotoSearch } from "./public-photo-search.js";
+import { encodeSelfie, saveSelfie } from "./site-selfie-history.js";
 
 const video = document.querySelector("#selfie-video");
 const preview = document.querySelector("#selfie-preview");
 const status = document.querySelector("#selfie-status");
+const storageWarning = document.querySelector("#selfie-storage-warning");
 const viewport = document.querySelector("#selfie-viewport");
 const retake = document.querySelector("#selfie-retake");
 const send = document.querySelector("#selfie-send");
@@ -10,6 +13,11 @@ const placeholder = document.querySelector("#selfie-placeholder");
 const readyOverlay = document.querySelector("#selfie-ready-overlay");
 const searchOverlay = document.querySelector("#selfie-search-overlay");
 let stream = null, objectUrl = null, generation = 0, selfieState = "idle", captureInProgress = false;
+let currentSelfie = null;
+
+// Explicit search consumes only this capture, never the retained history.
+export function getCurrentSelfie() { return currentSelfie; }
+const search = mountPublicPhotoSearch({ getCurrentSelfie });
 
 function releaseCamera() {
   stream?.getTracks().forEach(track => track.stop());
@@ -18,6 +26,7 @@ function releaseCamera() {
 function releasePreview() {
   if (objectUrl) URL.revokeObjectURL(objectUrl);
   objectUrl = null; preview.removeAttribute("src"); preview.hidden = true;
+  currentSelfie = null;
 }
 function setState(next) {
   selfieState = next;
@@ -25,7 +34,8 @@ function setState(next) {
   viewport.disabled = next === "opening" || next === "capturing" || next === "captured";
   viewport.setAttribute("aria-label", next === "ready" ? "Сделать снимок" : "Камера и селфи");
   readyOverlay.toggleAttribute("hidden", next !== "ready");
-  searchOverlay.toggleAttribute("hidden", next !== "captured");
+  searchOverlay.hidden = true;
+  search.refreshCapture();
 }
 function waitForVideoFrame() {
   if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth && video.videoHeight) return Promise.resolve();
@@ -64,7 +74,7 @@ async function openCamera() {
     await waitForVideoFrame();
     if (operation !== generation) return;
     placeholder.hidden = true; setState("ready");
-    status.textContent = "Камера готова. Нажмите в любое место изображения, чтобы сделать снимок.";
+    status.textContent = "Камера готова. Приблизьтесь, чтобы лицо занимало не меньше трети кадра. Нажмите на изображение, чтобы сделать снимок.";
   } catch (error) {
     if (operation !== generation) return;
     releaseCamera(); video.hidden = true; setState("error");
@@ -83,18 +93,22 @@ async function captureSelfie() {
   const operation = generation;
   captureInProgress = true; setState("capturing");
   try {
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-    canvas.getContext("2d").drawImage(video, 0, 0);
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", .9));
+    const blob = await encodeSelfie(video);
+    try {
+      await saveSelfie(blob);
+      storageWarning.hidden = true;
+    } catch {
+      storageWarning.textContent = "Снимок не сохранён в истории: хранилище браузера недоступно или заполнено. Этот снимок можно использовать для текущего поиска. Прежние снимки не удалены.";
+      storageWarning.hidden = false;
+    }
     if (operation !== generation) return;
-    if (!blob) throw new Error("capture_failed");
-    releasePreview(); objectUrl = URL.createObjectURL(blob); preview.src = objectUrl;
+    releasePreview(); currentSelfie = blob;
+    objectUrl = URL.createObjectURL(blob); preview.src = objectUrl;
     await preview.decode();
     if (operation !== generation) return;
     releaseCamera(); video.hidden = true; preview.hidden = false;
     retake.hidden = false; send.hidden = false; setState("captured");
-    status.textContent = "Селфи готово и остаётся в этом браузере. Отправка на поиск станет доступна после запуска сервиса.";
+    status.textContent = "Селфи готово. Выберите площадки и нажмите «Найти меня», чтобы отправить этот снимок на поиск.";
     retake.focus();
   } catch {
     if (operation === generation) {

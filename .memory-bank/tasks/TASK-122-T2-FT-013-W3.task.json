@@ -1,7 +1,7 @@
 {
   "id": "TASK-122-T2-FT-013-W3",
   "title": "Поиск по выбранным площадкам и всем датам",
-  "status": "planned",
+  "status": "done",
   "wave": "W3",
   "feature": "FT-013",
   "reqs": [
@@ -33,7 +33,19 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    "VERDICT: PASS — independent /verify TASK-122-T2-FT-013-W3: fresh native SFace/Buffalo and actual browser pairs, exact selected-venue all-date PostgreSQL scope/gates/thresholds/order and unchanged Promo date/pHash pass; separate verifier outcome probe covers best-face uniqueness, no-match, historical null-pHash and inactive venue rejection; mypy 115 files PASS. See .protocols/TASK-122-T2-FT-013-W3/verification.md and .tasks/TASK-122-T2-FT-013-W3/verifier-{native-tests.log,mypy.log,outcome.json,native-sface-comparison.json,native-buffalo-comparison.json}. Compression differences retained without new accuracy promise. Scheduler lifecycle unchanged; co-review single launch hit thread limit.",
+    {
+      "stage": "scheduler-task-closure",
+      "verdict": "done",
+      "summary": "Attempt 1 closed after independent functional PASS: native query and exact all-date selected-venue search, actual browser compression pairs across SFace/Buffalo, isolated DB best-face/eligibility/threshold/PROMO invariants proved. No measured compression loss in tested pairs; SFace large 0/0 limit retained. FT-013 feature semantic gate remains due.",
+      "evidence": [
+        ".protocols/TASK-122-T2-FT-013-W3/progress.md",
+        ".protocols/TASK-122-T2-FT-013-W3/verification.md",
+        ".tasks/TASK-122-T2-FT-013-W3/claim-evidence.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-013.md",
     ".memory-bank/tasks/plans/IMPL-FT-013.md"

@@ -1,7 +1,7 @@
 {
   "id": "TASK-135-T3-FT-015-W11",
   "title": "Public order HTTP и free integration",
-  "status": "planned",
+  "status": "done",
   "wave": "W11",
   "feature": "FT-015",
   "reqs": [
@@ -31,7 +31,20 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    "2026-10-04 /verify: PASS — exact FT-015-AC-001 HTTP consumer outcome; fresh verifier-owned loopback/disposable PostgreSQL+private MinIO probe63 comparisons, native8 PASS, mypy127 PASS; .protocols/TASK-135-T3-FT-015-W11/verification.md and .tasks/TASK-135-T3-FT-015-W11/verifier-observations.json. No receipt reuse; co-review launch threadlimit, no retry. Status unchanged; next per-task /red-verify.",
+    {
+      "stage": "scheduler-task-closure",
+      "verdict": "done",
+      "summary": "Attempt 1 closed after independent functional PASS and semantic-pass: public order HTTP consumes existing core/signer with owner/Origin/strict-input/rate admission, replay/conflict mapping, safe state and entitled link, free/no-email and canonical paid request shape.",
+      "evidence": [
+        ".protocols/TASK-135-T3-FT-015-W11/progress.md",
+        ".protocols/TASK-135-T3-FT-015-W11/verification.md",
+        ".protocols/TASK-135-T3-FT-015-W11/red-verification.md",
+        ".tasks/TASK-135-T3-FT-015-W11/TASK-135-T3-FT-015-W11-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-015.md",
     ".memory-bank/tasks/plans/IMPL-FT-015.md"

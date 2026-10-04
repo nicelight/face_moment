@@ -46,11 +46,30 @@
           <span id="selfie-search-overlay" class="fm-selfie-search-overlay" aria-hidden="true" hidden>подбираем Ваши фото..</span>
         </button>
         <p id="selfie-status" role="status" aria-live="polite">Нажмите на область селфи, чтобы включить камеру.</p>
-        <div class="fm-selfie-actions"><button class="fm-button fm-button-secondary" id="selfie-retake" type="button" hidden>Переснять</button><button class="fm-button" id="selfie-send" type="button" disabled hidden aria-describedby="selfie-status">Поиск скоро появится</button></div>
+        <p id="selfie-storage-warning" role="status" aria-live="polite" hidden></p>
+        <fieldset class="fm-search-selection"><legend>Где искать ваши фото?</legend><p id="search-venue-status" role="status"></p><div id="search-venues" class="fm-search-venues"></div><button id="search-venues-retry" class="fm-button fm-button-secondary" type="button" hidden>Повторить загрузку площадок</button></fieldset>
+        <div id="search-progress" class="fm-search-progress" role="status" hidden><span class="fm-search-pulse" aria-hidden="true">◎</span>Подбираем ваши моменты…</div>
+        <p id="search-status" role="status" aria-live="polite"></p>
+        <div id="search-confirmation" class="fm-search-confirmation" hidden><p>Снимок похож на другое лицо. Подтвердите, что это вы: прежние образцы А/Б заменятся этим снимком. Такой сброс доступен только один раз. Или нажмите «Переснять» ниже.</p><button id="search-confirm" class="fm-button" type="button">Это я</button></div>
+        <div id="search-summary" class="fm-search-summary" role="region" aria-label="Результат поиска" hidden></div>
+        <div class="fm-selfie-actions"><button class="fm-button fm-button-secondary" id="selfie-retake" type="button" hidden>Переснять</button><button class="fm-button" id="selfie-send" type="button" disabled hidden aria-describedby="selfie-status">Найти меня</button></div>
       </div>
     </section>
+    <div id="photo-selection-summary" class="fm-photo-selection-summary" role="region" aria-label="Выбранные фотографии" hidden>
+      <span id="photo-selection-count">Выбрано: 0</span>
+      <span id="photo-selection-total" role="status" aria-live="polite">Выберите фотографии</span>
+      <button id="photo-selection-retry" class="fm-button fm-button-secondary" type="button" hidden>Повторить расчёт</button>
+      <button id="photo-selection-download" class="fm-button" type="button" disabled>Скачать</button>
+    </div>
+  <div id="photo-download-panel" class="fm-search-summary" role="region" aria-label="Скачивание фотографий" hidden>
+    <p id="photo-download-status" role="status" aria-live="polite"></p>
+    <button id="photo-download-retry" class="fm-button fm-button-secondary" type="button" hidden>Проверить готовность</button>
+    <a id="photo-download-link" class="fm-button" download referrerpolicy="no-referrer" hidden>Скачать архив</a>
+  </div>
+    <div id="search-gallery" class="fm-photo-gallery" role="region" aria-label="Ваши фотографии по площадкам" hidden></div>
   </main>
   <footer class="fm-footer"><span>© Face Moment · Моменты, которые остаются</span><a href="/staff">Вход для команды ↗</a></footer>
+  <script type="module" src="/client/public-photo-download.js"></script>
   <script type="module" src="/client/site-selfie.js"></script>
 </body>
 </html>

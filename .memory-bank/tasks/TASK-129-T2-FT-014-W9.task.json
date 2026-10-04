@@ -1,7 +1,7 @@
 {
   "id": "TASK-129-T2-FT-014-W9",
   "title": "Общий browser selection и sticky quote",
-  "status": "planned",
+  "status": "done",
   "wave": "W9",
   "feature": "FT-014",
   "reqs": [
@@ -34,7 +34,31 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Independent current-state unit96/browser1 PASS; FT-014-AC-001 combined selection/local available all/colors/exact quote IDs and total/latest-response/pending/error/retry/current handoff/1280+390 sticky proved using isolated native HTTPS fixture. Disposable state cleaned, lifecycle unchanged. Co-review one attempt unavailable at thread limit.",
+      "evidence": [
+        ".protocols/TASK-129-T2-FT-014-W9/verification.md",
+        ".tasks/TASK-129-T2-FT-014-W9/verifier-unit.txt",
+        ".tasks/TASK-129-T2-FT-014-W9/verifier-browser.txt",
+        ".tasks/TASK-129-T2-FT-014-W9/verifier-browser/",
+        ".tasks/TASK-129-T2-FT-014-W9/verifier-selection-1280.png",
+        ".tasks/TASK-129-T2-FT-014-W9/verifier-selection-390.png"
+      ]
+    },
+    {
+      "stage": "scheduler-task-closure",
+      "verdict": "done",
+      "summary": "Attempt 1 closed after independent functional PASS: combined available selection, server-authoritative sticky quote, stale-response/pending/error handling and current selection handoff proved at desktop/mobile. Feature semantic verification follows separately.",
+      "evidence": [
+        ".protocols/TASK-129-T2-FT-014-W9/progress.md",
+        ".protocols/TASK-129-T2-FT-014-W9/verification.md",
+        ".tasks/TASK-129-T2-FT-014-W9/claim-evidence.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-014.md",
     ".memory-bank/tasks/plans/IMPL-FT-014.md"

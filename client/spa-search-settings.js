@@ -1,3 +1,5 @@
+import { confirmFreeMode } from './spa-free-settings.js';
+
 function csrfHeaders() {
   const csrf = document.cookie.split(';').map(value => value.trim())
     .find(value => value.startsWith('fm_staff_csrf='))?.slice('fm_staff_csrf='.length) ?? '';
@@ -206,13 +208,15 @@ export function mountSpaCreate(form) {
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (submit.disabled) return;
+    const isFree = form.elements.namedItem('is_free').checked;
+    if (!confirmFreeMode(isFree)) return;
     submit.disabled = cancel.disabled = true;
     status.textContent = 'Создание…';
     try {
       const response = await fetch('/api/serving/spas', {
         method: 'POST', credentials: 'same-origin', cache: 'no-store', headers: csrfHeaders(),
         body: JSON.stringify({ name: form.elements.namedItem('name').value.trim(),
-          timezone: form.elements.namedItem('timezone').value.trim() }),
+          timezone: form.elements.namedItem('timezone').value.trim(), is_free: isFree }),
       });
       if (!response.ok) {
         const messages = { 401: 'Войдите в аккаунт заново.', 403: 'Нет прав на создание площадки. Обновите страницу.',

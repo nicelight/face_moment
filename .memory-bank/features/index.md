@@ -38,7 +38,7 @@ status: active
 
 ## EP-004 — Public Discovery and Selected Originals
 
-- [FT-013](FT-013.md): camera/profile search and personal/common gallery.
-- [FT-014](FT-014.md): combined selection, global marginal tariff and venue access.
-- [FT-015](FT-015.md): selected free-original download.
-- [FT-016](FT-016.md): selected paid-photo purchase and confirmed delivery.
+- [FT-013](FT-013.md): verified camera/profile search and personal/common gallery.
+- [FT-014](FT-014.md): verified combined selection, global marginal tariff and venue access.
+- [FT-015](FT-015.md): verified free-original HTTP/browser/ZIP/bearer delivery; TASK-133..136 done и итоговый feature semantic-pass.
+- [FT-016](FT-016.md): paid purchase/delivery planned; TASK-137 blocked отсутствием YooKassa TEST configuration/authorization, TASK-138/139 dependency-blocked.

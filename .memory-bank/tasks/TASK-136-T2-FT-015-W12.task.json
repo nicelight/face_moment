@@ -1,7 +1,7 @@
 {
   "id": "TASK-136-T2-FT-015-W12",
   "title": "Browser free download, preparation и failure",
-  "status": "planned",
+  "status": "done",
   "wave": "W12",
   "feature": "FT-015",
   "reqs": [
@@ -33,7 +33,19 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    "Independent /verify PASS (attempt 1): FT-015-AC-002 browser consumer subset confirmed by fresh unit 99/99, native served browser 1/1 (25.4s, isolated PG/MinIO/order/executor/signer; real ZIP download and cleanup), and independent deferred late-state/new-result probe. Evidence: .protocols/TASK-136-T2-FT-015-W12/verification.md; .tasks/TASK-136-T2-FT-015-W12/verifier-browser.log, verifier-unit.log, verifier-browser/browser-assertions.json, verifier-browser/runtime.json, verifier-playwright/ trace, verifier-late-state.mjs/log. Supplier AC-001/003/004 remain dependency-owned; no material findings. Co-review launch unavailable (thread limit), no retry. Status unchanged; T2 closure/feature semantic review owned by parent.",
+    {
+      "stage": "scheduler-task-closure",
+      "verdict": "done",
+      "summary": "Attempt1 closed after independent functional PASS: served free browser order/download, stable attempt retry/no duplicate, changed selection/late response isolation, preparation30, safe failure and real ZIP download proved. Feature semantic verification follows separately.",
+      "evidence": [
+        ".protocols/TASK-136-T2-FT-015-W12/progress.md",
+        ".protocols/TASK-136-T2-FT-015-W12/verification.md",
+        ".tasks/TASK-136-T2-FT-015-W12/claim-evidence.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-015.md",
     ".memory-bank/tasks/plans/IMPL-FT-015.md"

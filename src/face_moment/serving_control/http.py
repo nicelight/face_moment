@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from datetime import date, datetime, timezone
+from decimal import Decimal
 from html import escape
 import uuid
 from zoneinfo import ZoneInfo
@@ -27,6 +28,7 @@ from face_moment.serving_control.active_search_date import (
     read_active_search_date,
     rename_spa,
     create_spa,
+    update_spa_free_mode,
     update_active_search_date,
     SearchDatesRecord,
     read_search_dates,
@@ -51,6 +53,12 @@ class SpaCreateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(strict=True, min_length=1, max_length=255)
     timezone: str = Field(strict=True, min_length=1, max_length=255)
+    is_free: StrictBool
+
+
+class SpaFreeModeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    is_free: StrictBool
 
 
 class SimilarityThresholdRequest(BaseModel):
@@ -205,7 +213,7 @@ def register_active_search_date_routes(
     ) -> JSONResponse:
         with _database_session(session_factory) as database_session:
             try:
-                venue = create_spa(database_session, name=payload.name, timezone=payload.timezone,
+                venue = create_spa(database_session, name=payload.name, timezone=payload.timezone, is_free=payload.is_free,
                     session_token=fm_staff_session, csrf_cookie_token=fm_staff_csrf,
                     csrf_header_token=x_csrf_token)
                 database_session.commit()
@@ -219,8 +227,29 @@ def register_active_search_date_routes(
                 raise HTTPException(status_code=503, detail="Не удалось проверить модель SFace. Проверьте настройки SFACE_* и файлы YuNet/SFace. Площадка не создана.") from error
             except ValueError as error:
                 raise HTTPException(status_code=422, detail="Проверьте название и часовой пояс площадки.") from error
-        return JSONResponse({"spa_id": str(venue.spa_id), "name": venue.name, "timezone": venue.timezone},
+        return JSONResponse({"spa_id": str(venue.spa_id), "name": venue.name, "timezone": venue.timezone, "is_free": payload.is_free},
             status_code=201, headers={"Cache-Control": "no-store"})
+
+    @app.put("/api/serving/spas/{spa_id}/is-free")
+    def write_spa_free_mode_route(
+        spa_id: uuid.UUID, payload: SpaFreeModeRequest,
+        fm_staff_session: str | None = Cookie(default=None),
+        fm_staff_csrf: str | None = Cookie(default=None),
+        x_csrf_token: str | None = Header(default=None),
+    ) -> JSONResponse:
+        with _database_session(session_factory) as database_session:
+            try:
+                is_free = update_spa_free_mode(database_session, spa_id=spa_id, is_free=payload.is_free,
+                    session_token=fm_staff_session, csrf_cookie_token=fm_staff_csrf,
+                    csrf_header_token=x_csrf_token)
+                database_session.commit()
+            except InvalidSessionError as error:
+                raise HTTPException(status_code=401) from error
+            except (CsrfValidationError, ActiveSearchDateAccessDeniedError) as error:
+                raise HTTPException(status_code=403) from error
+            except ActiveSearchDateSpaNotFoundError as error:
+                raise HTTPException(status_code=404) from error
+        return JSONResponse({"spa_id": str(spa_id), "is_free": is_free}, headers={"Cache-Control": "no-store"})
 
     @app.get("/api/serving/spas/{spa_id}/similarity-threshold")
     def read_similarity_threshold_route(
@@ -556,23 +585,42 @@ def _spa_admin_page_html(spas: Sequence[ActiveSearchDateSpa]) -> str:
 <form data-spa-rename data-spa-id="{spa.spa_id}">
 <label>Название площадки<input name="name" value="{escape(spa.name, quote=True)}" required maxlength="255"></label>
 <button type="submit">Сохранить название</button><p role="status" aria-live="polite"></p>
-</form>{_spa_search_dates_form(spa)}{_spa_similarity_form(spa)}{_spa_detector_forms(spa)}</details></article>'''
+</form>{_spa_free_mode_form(spa)}{_spa_search_dates_form(spa)}{_spa_similarity_form(spa)}{_spa_detector_forms(spa)}</details></article>'''
         for spa in spas
     ) or '<p>Нет доступных площадок.</p>'
     return f'''<!doctype html><html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Площадки</title>
 <link rel="stylesheet" href="/client/spa-search-settings.css">
-<script type="module" src="/client/spa-search-settings.js"></script></head><body>
+<script type="module" src="/client/spa-search-settings.js"></script>
+<script type="module" src="/client/photo-tariff-settings.js"></script>
+<script type="module" src="/client/spa-free-settings.js"></script></head><body>
 <main><h1>Площадки</h1>
+<section class="fm-device-card"><h2>Единый тариф фотографий</h2>
+<p>Один тариф для всех платных площадок. Base — цена первого фото, d1 — коэффициент для 2–5, d2 — для 6–20, d3 — для 21-го и следующих.</p>
+<form class="fm-spa-search" data-photo-tariff novalidate>
+<label>Base, копейки<input type="number" name="base_kopecks" min="1" step="1" required disabled></label>
+<label>d1<input type="number" name="d1" min="0" max="1" step="any" required disabled></label>
+<label>d2<input type="number" name="d2" min="0" max="1" step="any" required disabled></label>
+<label>d3<input type="number" name="d3" min="0" max="1" step="any" required disabled></label>
+<button type="submit" disabled>Сохранить тариф</button>
+<p role="status" aria-live="polite">Загрузка тарифа…</p></form></section>
 <button type="button" data-show-spa-create aria-expanded="false" aria-controls="spa-create">Добавить площадку</button>
 <section id="spa-create" class="fm-device-card fm-spa-create" hidden>
 <h2>Новая площадка</h2><form data-spa-create>
 <label>Название площадки<input name="name" required maxlength="255" autocomplete="off"></label>
 <label>Часовой пояс<select name="timezone" required>{timezone_options}</select></label>
+<label class="fm-search-toggle"><input type="checkbox" name="is_free"><span>Бесплатные фотографии</span></label>
 <p>Поиск за сегодня, порог сходства 0.38. Настройки можно изменить после создания.</p>
 <div><button type="submit">Создать площадку</button> <button type="button" data-cancel-spa-create>Отмена</button></div>
 <p role="status" aria-live="polite"></p></form></section>
 <div class="fm-device-list">{cards}</div></main></body></html>'''
+
+
+def _spa_free_mode_form(spa: ActiveSearchDateSpa) -> str:
+    return f'''<form class="fm-spa-search" data-spa-free data-spa-id="{spa.spa_id}" data-is-free="{str(spa.is_free).lower()}">
+<label class="fm-search-toggle"><input type="checkbox" name="is_free"{' checked' if spa.is_free else ''}>
+<span>Бесплатные фотографии</span></label>
+<button type="submit">Сохранить режим</button><p role="status" aria-live="polite"></p></form>'''
 
 
 def _spa_similarity_form(spa: ActiveSearchDateSpa) -> str:
@@ -627,3 +675,109 @@ def _spa_detector_forms(spa: ActiveSearchDateSpa) -> str:
              "Ниже порог, есть риск распознать одежду как лицо или пробегающую кошку :)"),
         )
     )
+
+
+class PublicSearchSettingsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    profile_similarity_threshold: float = Field(strict=True, ge=-1, le=1, allow_inf_nan=False)
+
+
+def register_public_search_settings_routes(
+    app: FastAPI, *, session_factory: Callable[[], Session],
+) -> None:
+    from face_moment.serving_control.public_search_settings import (
+        PublicSearchSettingsAccessDeniedError, read_public_search_settings,
+        save_public_search_settings,
+    )
+
+    def response(threshold: float) -> JSONResponse:
+        return JSONResponse({"schema_version": 1, "profile_similarity_threshold": threshold},
+                            headers={"Cache-Control": "no-store"})
+
+    @app.get("/api/serving/public-search-settings")
+    def read_public_settings_route(
+        fm_staff_session: str | None = Cookie(default=None),
+    ) -> JSONResponse:
+        with _database_session(session_factory) as session:
+            try:
+                threshold = read_public_search_settings(session, session_token=fm_staff_session)
+            except InvalidSessionError as error:
+                raise HTTPException(status_code=401) from error
+            except PublicSearchSettingsAccessDeniedError as error:
+                raise HTTPException(status_code=403) from error
+        return response(threshold)
+
+    @app.put("/api/serving/public-search-settings")
+    def save_public_settings_route(
+        payload: PublicSearchSettingsRequest,
+        fm_staff_session: str | None = Cookie(default=None),
+        fm_staff_csrf: str | None = Cookie(default=None),
+        x_csrf_token: str | None = Header(default=None),
+    ) -> JSONResponse:
+        with _database_session(session_factory) as session:
+            try:
+                threshold = save_public_search_settings(session,
+                    threshold=payload.profile_similarity_threshold, session_token=fm_staff_session,
+                    csrf_cookie_token=fm_staff_csrf, csrf_header_token=x_csrf_token)
+                session.commit()
+            except InvalidSessionError as error:
+                raise HTTPException(status_code=401) from error
+            except (CsrfValidationError, PublicSearchSettingsAccessDeniedError) as error:
+                raise HTTPException(status_code=403) from error
+            except ValueError as error:
+                raise HTTPException(status_code=422) from error
+        return response(threshold)
+
+
+class PhotoTariffRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    base_kopecks: int = Field(strict=True, gt=0)
+    d1: Decimal = Field(gt=0, le=1, allow_inf_nan=False)
+    d2: Decimal = Field(gt=0, le=1, allow_inf_nan=False)
+    d3: Decimal = Field(gt=0, le=1, allow_inf_nan=False)
+
+
+def register_photo_tariff_routes(app: FastAPI, *, session_factory: Callable[[], Session]) -> None:
+    from face_moment.serving_control.photo_tariff import (
+        PhotoTariffAccessDeniedError, PhotoTariffSnapshot, PhotoTariffUnavailableError,
+        read_photo_tariff, save_photo_tariff,
+    )
+
+    def response(snapshot: PhotoTariffSnapshot) -> JSONResponse:
+        return JSONResponse({"base_kopecks": snapshot.base_kopecks,
+            "d1": str(snapshot.d1), "d2": str(snapshot.d2), "d3": str(snapshot.d3)},
+            headers={"Cache-Control": "no-store"})
+
+    @app.get("/api/serving/photo-tariff")
+    def read_tariff_route(fm_staff_session: str | None = Cookie(default=None)) -> JSONResponse:
+        with _database_session(session_factory) as session:
+            try:
+                snapshot = read_photo_tariff(session, session_token=fm_staff_session)
+            except InvalidSessionError as error:
+                raise HTTPException(status_code=401) from error
+            except PhotoTariffAccessDeniedError as error:
+                raise HTTPException(status_code=403) from error
+            except PhotoTariffUnavailableError as error:
+                raise HTTPException(status_code=503, headers={"Cache-Control": "no-store"}) from error
+        return response(snapshot)
+
+    @app.put("/api/serving/photo-tariff")
+    def save_tariff_route(payload: PhotoTariffRequest,
+        fm_staff_session: str | None = Cookie(default=None),
+        fm_staff_csrf: str | None = Cookie(default=None),
+        x_csrf_token: str | None = Header(default=None),
+    ) -> JSONResponse:
+        with _database_session(session_factory) as session:
+            try:
+                snapshot = save_photo_tariff(session, base_kopecks=payload.base_kopecks,
+                    d1=payload.d1, d2=payload.d2, d3=payload.d3,
+                    session_token=fm_staff_session, csrf_cookie_token=fm_staff_csrf,
+                    csrf_header_token=x_csrf_token)
+                session.commit()
+            except InvalidSessionError as error:
+                raise HTTPException(status_code=401) from error
+            except (CsrfValidationError, PhotoTariffAccessDeniedError) as error:
+                raise HTTPException(status_code=403) from error
+            except ValueError as error:
+                raise HTTPException(status_code=422) from error
+        return response(snapshot)

@@ -78,8 +78,8 @@ status: active
 
 - [.memory-bank/spec-index.md](spec-index.md): Pure SDD spec registry and planned-spec index.
 - [.memory-bank/spec-backbone.md](spec-backbone.md): accepted complete global
-  SDD baseline at Planning Revision 4, Foundation decision and pending
-  design route for public selfie search and purchases after feature-plan review.
+  SDD baseline at Planning Revision 4, Foundation decision и завершённые
+  design/task-plan routes публичного поиска и покупки.
 - [.memory-bank/foundation.md](foundation.md): Accepted Foundation Dev Path,
   minimum substrate path, feature pressure map and exit criteria.
 - [.memory-bank/features/FT-000-foundation.md](features/FT-000-foundation.md):
@@ -135,7 +135,47 @@ status: active
 - [EP-004](epics/EP-004.md): accepted public camera discovery, combined quote
   and independently deliverable free/paid originals; [FT-013](features/FT-013.md),
   [FT-014](features/FT-014.md), [FT-015](features/FT-015.md),
-  [FT-016](features/FT-016.md) are planned and await design.
+  [FT-016](features/FT-016.md): design complete; [20 задач](tasks/plans/index.md)
+  получили task-plan APPROVE при Revision 4. В Wave 1 scheduler закрыл
+  [TASK-120](tasks/TASK-120-T2-FT-013-W1.task.json) после independent PASS
+  камеры/IndexedDB. В Wave 3 закрыты
+  [TASK-121](tasks/TASK-121-T3-FT-013-W3.task.json): profile/A/B,
+  [TASK-122](tasks/TASK-122-T2-FT-013-W3.task.json): native selected-venue search
+  и [TASK-127](tasks/TASK-127-T3-FT-014-W3.task.json): persistent tariff/API;
+  в Wave 4 [TASK-130](tasks/TASK-130-T2-FT-014-W4.task.json): staff tariff editor
+  закрыт scheduler после independent functional PASS обеих ролей.
+  В Wave 6 [TASK-123](tasks/TASK-123-T3-FT-013-W6.task.json): public API/current
+  result и paid/free supplier закрыт после independent functional PASS и
+  semantic-pass. В Wave 7 scheduler закрыл
+  [TASK-124](tasks/TASK-124-T3-FT-013-W7.task.json): private preview bytes,
+  [TASK-125](tasks/TASK-125-T2-FT-013-W7.task.json): browser search/progress,
+  [TASK-128](tasks/TASK-128-T3-FT-014-W7.task.json): authoritative quote и
+  [TASK-131](tasks/TASK-131-T3-FT-014-W7.task.json): staff paid/free mode.
+  В Wave 8 закрыты [TASK-126](tasks/TASK-126-T2-FT-013-W8.task.json): gallery
+  и [TASK-132](tasks/TASK-132-T3-FT-014-W8.task.json): frozen order core.
+  FT-013 завершена (verified) после [feature semantic-pass](../.tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-01.md);
+  REQ-PUB-002 verified. В Wave 9 закрыты [TASK-129](tasks/TASK-129-T2-FT-014-W9.task.json): combined
+  selection/sticky quote и [TASK-133](tasks/TASK-133-T3-FT-015-W9.task.json): ZIP
+  runtime/recovery/failure mail. FT-014 verified после всех шести done и
+  [feature semantic-pass](../.tasks/FT-014/FT-014-S-RED-VERIFY-final-report-docs-01.md);
+  REQ-PUB-003/004 verified. В Wave 10 закрыта
+  [TASK-134](tasks/TASK-134-T3-FT-015-W10.task.json): private bearer ZIP/expiry
+  после independent functional PASS и semantic-pass. В Wave 11 закрыта
+  [TASK-135](tasks/TASK-135-T3-FT-015-W11.task.json): public order HTTP/free
+  integration после independent functional PASS и semantic-pass. В Wave 12
+  закрыта [TASK-136](tasks/TASK-136-T2-FT-015-W12.task.json): free browser download
+  после independent [functional PASS](../.protocols/TASK-136-T2-FT-015-W12/verification.md).
+  FT-015 active/verified после всех TASK-133..136 done,
+  [feature semantic-pass](../.tasks/FT-015/FT-015-S-RED-VERIFY-final-report-docs-01.md)
+  и явного owner completion. Terminal queue: 17/20 done (TASK-120..136),
+  TASK-137..139 blocked. YooKassa TEST merchant/fiscal configuration и разрешение
+  external test calls отсутствуют на preflight TASK-137;
+  [stop evidence](../.tasks/TASK-137-T3-FT-016-W12/TASK-137-T3-FT-016-W12-S-EXECUTE-final-report-docs-01.md).
+  [Checkpoint](../.protocols/AUTONOMOUS-RUN/status.md): HALT_BLOCKING_QUESTIONS;
+  после local TEST config и authorization продолжить `/autopilot` и fresh
+  `/exe TASK-137-T3-FT-016-W12`. FT-016/EP-004 lifecycle planned;
+  REQ-PUB-002/003/004 verified, shared REQ-PUB-001/005..008 planned из-за paid
+  integration. [changelog](changelog.md) и feature evidence содержат verification links.
 
 - [.memory-bank/epics/EP-001.md](epics/EP-001.md): fresh searchable
   commercial-photo inventory, role-scoped inventory operations and recent

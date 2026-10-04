@@ -65,6 +65,7 @@ from face_moment.promo.realtime_orchestration import (
     emit_runtime_readiness_closed,
 )
 from face_moment.promo.startup_recovery import RealtimeStartupRecoveryRepository
+from face_moment.promo.public_search_http import register_public_search_route
 from face_moment.serving_control.display_client_auth import (
     DisplayClientRateLimiter,
     DisplayClientRateLimitError,
@@ -114,6 +115,10 @@ async def _realtime_lifecycle(
             DEFAULT_REALTIME_RATE_WINDOW_SECONDS,
         ),
     )
+    state["public_search_rate_limiter"] = DisplayClientRateLimiter(
+        limit=int(os.environ.get("PUBLIC_SEARCH_RATE_LIMIT", "10")),
+        window_seconds=int(os.environ.get("PUBLIC_SEARCH_RATE_WINDOW_SECONDS", "60")),
+    )
     state["health"] = {"production_model_loaded": True}
     try:
         with binding.session_factory() as database_session:
@@ -138,6 +143,7 @@ async def _realtime_lifecycle(
         state.pop("realtime_success_cooldown_ms", None)
         state.pop("qr_ticket_secret", None)
         state.pop("display_client_rate_limiter", None)
+        state.pop("public_search_rate_limiter", None)
         state.pop("server_event_emitter", None)
         binding.close()
         event_binding.close()
@@ -145,6 +151,7 @@ async def _realtime_lifecycle(
 
 def create_app() -> FastAPI:
     app = create_role_app("RealtimeFaceService", lifecycle=_realtime_lifecycle)
+    register_public_search_route(app)
 
     @app.post("/api/realtime/attempts")
     async def admit_realtime_attempt(request: Request) -> Response:

@@ -1,7 +1,7 @@
 {
   "id": "TASK-127-T3-FT-014-W3",
   "title": "Persistent global tariff и authorized staff API",
-  "status": "ready",
+  "status": "done",
   "wave": "W3",
   "feature": "FT-014",
   "reqs": [
@@ -31,7 +31,21 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    "2026-10-04 /verify attempt1: FAIL — direct PostgreSQL/API tests26 PASS, mypy116 PASS; live isolated HTTPS Caddy canonical /api/serving/photo-tariff returns empty200 without backend observation, control reaches backend. deploy/Caddyfile @backend_canonical missing exact route. Implementation-only correction, no replan; lifecycle unchanged. Evidence: .protocols/TASK-127-T3-FT-014-W3/verification.md and .tasks/TASK-127-T3-FT-014-W3/verify-edge.txt. T3 red-verify after functional PASS.",
+    "2026-10-04 /verify attempt2: PASS — fresh independent tariff/proxy tests28 PASS9.19s, mypy116 PASS; unchanged isolated real HTTPS edge control/target200 backend_observed=True correct origin/IP; disposable DB cleanup0. AC004 persistence/authorization/CSRF/atomic validation/half-up/missing/migration and owner boundaries confirmed. Prior attempt1FAIL preserved verbatim in .tasks/TASK-127-T3-FT-014-W3/verify-attempt1-history.md; original RED/edgeFAIL unchanged. Current verification.md plus verify2-pytest/mypy/edge artifacts. Lifecycle unchanged in_progress; fresh T3 red-verify then root-owned closure. Co-review once unavailable due agent thread limit.",
+    {
+      "stage": "scheduler-task-closure",
+      "verdict": "done",
+      "summary": "Attempt 2 closed after independent functional PASS and semantic-pass: persistent global tariff, authorized staff API, immutable Decimal snapshot, atomic invalid/retry/concurrent behavior and own migration verified. Canonical HTTPS routing defect corrected; prior FAIL retained.",
+      "evidence": [
+        ".protocols/TASK-127-T3-FT-014-W3/progress.md",
+        ".protocols/TASK-127-T3-FT-014-W3/verification.md",
+        ".protocols/TASK-127-T3-FT-014-W3/red-verification.md",
+        ".tasks/TASK-127-T3-FT-014-W3/TASK-127-T3-FT-014-W3-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-014.md",
     ".memory-bank/tasks/plans/IMPL-FT-014.md"

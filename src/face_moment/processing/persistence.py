@@ -30,6 +30,7 @@ from sqlalchemy.orm import Mapped, Session, mapped_column
 from sqlalchemy.types import UserDefinedType
 
 from face_moment.infrastructure.database import Base
+from face_moment.inventory.public_photo_projection import public_active_photo_scope
 from face_moment.inventory.photo_persistence import Photo
 from face_moment.processing.initial_pending import PhotoPipelineState
 
@@ -292,6 +293,56 @@ class ExactCompatibleSearchRepository:
             best_cosine_similarity=float(rows[0].cosine_similarity) if rows else None,
             eligible_photo_count=int(rows[0].eligible_photo_count) if rows else 0,
         )
+
+
+@dataclass(frozen=True, slots=True)
+class PublicPhotoMatch:
+    photo_id: uuid.UUID
+    spa_id: uuid.UUID
+    visit_date: date
+    cosine_similarity: float
+
+
+class PublicExactSearchRepository:
+    """Separate exact public scope; no Promo date or pHash eligibility."""
+
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def search(
+        self, *, pipeline_revision_id: uuid.UUID,
+        query_embedding: Sequence[float],
+        venue_thresholds: Sequence[tuple[uuid.UUID, float]],
+    ) -> tuple[PublicPhotoMatch, ...]:
+        thresholds = dict(venue_thresholds)
+        if not 1 <= len(thresholds) <= 3 or len(thresholds) != len(venue_thresholds):
+            raise ValueError("select 1–3 distinct venues")
+        if any(not math.isfinite(float(value)) for value in thresholds.values()):
+            raise ValueError("reference_threshold must be finite")
+        photos = public_active_photo_scope(tuple(thresholds))
+        vector = sql_cast(bindparam("query_embedding", value=_vector_literal(query_embedding)), Vector())
+        similarity = 1.0 - func.min(PhotoFace.embedding.op("<=>")(vector))
+        statement = (
+            select(photos.c.photo_id, photos.c.spa_id, photos.c.visit_date,
+                   similarity.label("cosine_similarity"))
+            .select_from(PhotoFace)
+            .join(photos, photos.c.photo_id == PhotoFace.photo_id)
+            .join(PhotoPipelineState,
+                  (PhotoPipelineState.photo_id == PhotoFace.photo_id)
+                  & (PhotoPipelineState.pipeline_revision_id == PhotoFace.pipeline_revision_id))
+            .where(PhotoFace.pipeline_revision_id == pipeline_revision_id,
+                   PhotoPipelineState.status == "ready",
+                   PhotoPipelineState.preview_object_key.is_not(None),
+                   PhotoPipelineState.thumbnail_object_key.is_not(None))
+            .group_by(photos.c.photo_id, photos.c.spa_id, photos.c.visit_date)
+            .having(or_(*( (photos.c.spa_id == venue_id) & (similarity >= threshold)
+                          for venue_id, threshold in thresholds.items())))
+            .order_by(asc(photos.c.spa_id), asc(photos.c.visit_date), desc(similarity), asc(photos.c.photo_id))
+        )
+        return tuple(PublicPhotoMatch(
+            photo_id=row.photo_id, spa_id=row.spa_id, visit_date=row.visit_date,
+            cosine_similarity=float(row.cosine_similarity),
+        ) for row in self._session.execute(statement))
 
 
 class ProcessingRuntimeStatus(Base):

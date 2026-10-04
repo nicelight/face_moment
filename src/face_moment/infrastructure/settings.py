@@ -65,6 +65,14 @@ class Settings:
     phone_public_rate_limit: int = DEFAULT_PHONE_PUBLIC_RATE_LIMIT
     phone_public_rate_window_seconds: int = DEFAULT_PHONE_PUBLIC_RATE_WINDOW_SECONDS
     phone_purchase_url: str | None = None
+    photo_archive_signing_secret: str | None = None
+    archive_mail_host: str | None = None
+    archive_mail_port: int = 587
+    archive_mail_from: str | None = None
+    archive_mail_username: str | None = None
+    archive_mail_password: str | None = None
+    archive_mail_starttls: bool = True
+    archive_mail_timeout_seconds: float = 10.0
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -171,6 +179,14 @@ class Settings:
                 str(DEFAULT_PHONE_PUBLIC_RATE_WINDOW_SECONDS),
             ),
             phone_purchase_url=_optional("PHONE_PURCHASE_URL"),
+            photo_archive_signing_secret=_optional("PHOTO_ARCHIVE_SIGNING_SECRET"),
+            archive_mail_host=_optional("ARCHIVE_MAIL_HOST"),
+            archive_mail_port=_positive_int("ARCHIVE_MAIL_PORT", "587"),
+            archive_mail_from=_optional("ARCHIVE_MAIL_FROM"),
+            archive_mail_username=_optional("ARCHIVE_MAIL_USERNAME"),
+            archive_mail_password=os.environ.get("ARCHIVE_MAIL_PASSWORD"),
+            archive_mail_starttls=_boolean("ARCHIVE_MAIL_STARTTLS", "true"),
+            archive_mail_timeout_seconds=_positive_float("ARCHIVE_MAIL_TIMEOUT_SECONDS", "10"),
         )
 
 
@@ -229,3 +245,10 @@ def _optional_positive_int(name: str) -> int | None:
     if parsed <= 0:
         raise RuntimeError(f"{name} must be a positive integer")
     return parsed
+
+
+def _boolean(name: str, default: str) -> bool:
+    value = os.environ.get(name, default).lower()
+    if value not in {"true", "false"}:
+        raise RuntimeError(f"{name} must be true or false")
+    return value == "true"

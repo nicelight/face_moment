@@ -1,7 +1,7 @@
 {
   "id": "TASK-121-T3-FT-013-W3",
   "title": "Скрытый профиль и допуск А/Б",
-  "status": "ready",
+  "status": "done",
   "wave": "W3",
   "feature": "FT-013",
   "reqs": [
@@ -32,7 +32,22 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    "2026-10-04 independent /verify attempt 1, scheduler mode: VERDICT: FAIL. Fresh mypy (112 files) and 5 pytest pass. Disposable PostgreSQL verifier probe reproduces accepted threshold=1 identical [.8,.6] query: allowed(A) -> allowed(B identical) -> confirmation_required -> allowed(reset) -> allowed(B identical replay) -> face_denied, cosine=0.9999999999999998 at browser_search_profile.py:118-119. Other concurrent reset/unusable/CSRF/persistence checks pass; cleanup completed. Evidence: .protocols/TASK-121-T3-FT-013-W3/verification.md; .tasks/TASK-121-T3-FT-013-W3/verifier_profile_probe.py, verify-profile-probe.log, verify-pytest.log, verify-mypy.log. Root selected same-task /exe retry then fresh /verify; lifecycle unchanged.",
+    "2026-10-04 independent /verify attempt 2, scheduler mode: VERDICT: PASS. Fresh mypy 112 files, pytest 6 passed (10.45s), boundary probe and unchanged verifier failure probe PASS. At accepted threshold=1 six identical [.8,.6] captures allowed with fixed A/B=null/reset=false; distinct concurrent reset, denial, unusable, CSRF, persisted state and isolated migration/HTTPS proof pass. GPT-6.1-Sol MEDIUM co-review: no candidate findings. Evidence: .protocols/TASK-121-T3-FT-013-W3/verification.md; .tasks/TASK-121-T3-FT-013-W3/verify2-{mypy,pytest,boundary,profile-probe}.log and final report 02. Prior FAIL preserved in verification-attempt1.md, verify-profile-probe.log and verify history. Lifecycle unchanged in_progress; next per-task /red-verify, root owns closure.",
+    "2026-10-04 independent /verify attempt 3, scheduler mode: VERDICT: PASS. Fresh pytest 7 passed (13.52s), mypy112, boundary and both unchanged failed probes PASS. At accepted threshold=-1 raw cosine=-1.0000000000000002 preserves fixed A/B/reset; threshold=1 identical replay and interior -.999 mismatch retained. Concurrency, unusable/revision, Developer session/CSRF/independent threshold, persisted cookie/last visit, disposable migration/HTTPS proof PASS. GPT-6.1-Sol MEDIUM fresh co-review no findings. Evidence: .protocols/TASK-121-T3-FT-013-W3/verification.md; .tasks/TASK-121-T3-FT-013-W3/verify3-{pytest,mypy,boundary,profile-probe,minus-one-probe}.log and final report 03. Historical verdicts preserved; verification-attempt2.md archived. Lifecycle unchanged in_progress; root next runs fresh per-task /red-verify before closure.",
+    {
+      "stage": "scheduler-task-closure",
+      "verdict": "done",
+      "summary": "Attempt 3 closed after fresh independent functional PASS and semantic-pass: fixed A/B, one reset, concurrency/revision/cookie, authorized independent threshold, migration; both numeric boundary defects corrected and regression-proved. Earlier failed attempts preserved.",
+      "evidence": [
+        ".protocols/TASK-121-T3-FT-013-W3/progress.md",
+        ".protocols/TASK-121-T3-FT-013-W3/verification.md",
+        ".protocols/TASK-121-T3-FT-013-W3/red-verification.md",
+        ".tasks/TASK-121-T3-FT-013-W3/TASK-121-T3-FT-013-W3-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-013.md",
     ".memory-bank/tasks/plans/IMPL-FT-013.md"

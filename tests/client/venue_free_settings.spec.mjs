@@ -1,0 +1,72 @@
+import { test, expect } from '@playwright/test';
+import { spawn } from 'node:child_process';
+import { createInterface } from 'node:readline';
+import { mkdir } from 'node:fs/promises';
+const evidence = '.tasks/TASK-131-T3-FT-014-W7';
+let fixture, baseURL, exited;
+test.use({ ignoreHTTPSErrors: true, viewport:{width:1280,height:900} });
+test.beforeAll(async()=>{
+ await mkdir(evidence,{recursive:true});
+ fixture=spawn('uv',['run','--locked','--env-file','.env.local','python','-m','tests.client.venue_free_browser_fixture'],{stdio:['pipe','pipe','inherit']});
+ exited=new Promise(resolve=>fixture.on('exit',resolve));
+ const lines=createInterface({input:fixture.stdout});
+ baseURL=await new Promise((resolve,reject)=>{
+  lines.on('line',line=>{if(line.startsWith('{'))resolve(JSON.parse(line).url);else console.log(line);});
+  fixture.on('exit',code=>reject(new Error(`fixture exit ${code}`)));
+ });
+});
+test.afterAll(async()=>{fixture?.stdin.end('\n');if(exited)expect(await exited).toBe(0);});
+for(const role of ['operator','developer']){
+ test(`${role}: HTTPS create, confirmation, cancellation, SSR and rejection`,async({page})=>{
+  expect((await page.request.post(`${baseURL}/api/staff/sessions`,{data:{username:`free-${role}`,password:'browser-fixture-password'}})).status()).toBe(204);
+  await page.goto(`${baseURL}/staff/spas`);
+  await expect(page.locator('[data-spa-free]').first(),'AC-003 existing venue free mode').toBeAttached();
+  let writes=[];
+  page.on('request',r=>{if((r.url().endsWith('/api/serving/spas')&&r.method()==='POST')||(r.url().endsWith('/is-free')&&r.method()==='PUT'))writes.push(r);});
+  await page.getByRole('button',{name:'Добавить площадку'}).click();
+  const create=page.locator('[data-spa-create]');
+  await create.locator('[name=name]').fill(`Venue ${role}`);
+  await create.locator('[name=is_free]').check();
+  page.once('dialog',d=>d.dismiss());await create.getByRole('button',{name:'Создать площадку'}).click();
+  expect(writes.length).toBe(0);
+  page.once('dialog',d=>d.accept());
+  const response=page.waitForResponse(r=>r.url().endsWith('/api/serving/spas')&&r.request().method()==='POST');
+  await Promise.all([page.waitForEvent('load'),create.getByRole('button',{name:'Создать площадку'}).click()]);
+  const created=await response;expect(created.status()).toBe(201);
+  expect(created.headers()['cache-control']).toBe('no-store');
+  expect(created.request().postDataJSON().is_free).toBe(true);
+  await page.reload();
+  const card=page.locator('article').filter({has:page.getByRole('heading',{name:`Venue ${role}`,exact:true})});
+  const result={spa_id:await card.locator('[data-spa-free]').getAttribute('data-spa-id')};
+  const form=()=>page.locator(`[data-spa-free][data-spa-id="${result.spa_id}"]`);
+  await form().locator('xpath=ancestor::details').evaluate(node=>node.open=true);
+  await expect(form().locator('[name=is_free]')).toBeChecked();
+  await form().locator('[name=is_free]').uncheck();
+  let saved=page.waitForResponse(r=>r.url().endsWith(`/${result.spa_id}/is-free`));
+  await form().getByRole('button',{name:'Сохранить режим'}).click();
+  expect((await saved).status()).toBe(200);
+  await page.reload();await form().locator('xpath=ancestor::details').evaluate(node=>node.open=true);
+  await expect(form().locator('[name=is_free]')).not.toBeChecked();
+  const before=writes.length;
+  await form().locator('[name=is_free]').check();page.once('dialog',d=>d.dismiss());
+  await form().getByRole('button',{name:'Сохранить режим'}).click();expect(writes.length).toBe(before);
+  page.once('dialog',d=>d.accept());saved=page.waitForResponse(r=>r.url().endsWith(`/${result.spa_id}/is-free`));
+  await form().getByRole('button',{name:'Сохранить режим'}).click();expect((await saved).status()).toBe(200);
+  await page.reload();await form().locator('xpath=ancestor::details').evaluate(node=>node.open=true);
+  await expect(form().locator('[name=is_free]')).toBeChecked();
+  await page.route('**/is-free',route=>{const headers={...route.request().headers()};delete headers['x-csrf-token'];return route.continue({headers});});
+  await form().locator('[name=is_free]').uncheck();saved=page.waitForResponse(r=>r.url().endsWith(`/${result.spa_id}/is-free`));
+  await form().getByRole('button',{name:'Сохранить режим'}).click();expect((await saved).status()).toBe(403);
+  await expect(form().getByRole('status')).toContainText('Нет прав');await page.unroute('**/is-free');
+  await page.reload();await form().locator('xpath=ancestor::details').evaluate(node=>node.open=true);
+  await expect(form().locator('[name=is_free]')).toBeChecked();
+  // Explicit paid creation sends false without opening a confirmation popup.
+  await page.getByRole('button',{name:'Добавить площадку'}).click();await create.locator('[name=name]').fill(`Paid ${role}`);
+  const paidResponse=page.waitForResponse(r=>r.url().endsWith('/api/serving/spas')&&r.request().method()==='POST');
+  await Promise.all([page.waitForEvent('load'),create.getByRole('button',{name:'Создать площадку'}).click()]);expect((await paidResponse).status()).toBe(201);
+  expect(JSON.parse(writes.at(-1).postData()).is_free).toBe(false);
+  await page.reload();
+  await page.screenshot({path:`${evidence}/${role}-staff.png`,fullPage:true});
+  console.log(`${role}: HTTPS native staff secure cookies; POST201 true/false; PUT200 true/false; cancel zero mutations; CSRF403 retained; SSR reload`);
+ });
+}

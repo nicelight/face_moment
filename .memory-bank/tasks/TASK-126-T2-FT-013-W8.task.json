@@ -1,7 +1,7 @@
 {
   "id": "TASK-126-T2-FT-013-W8",
   "title": "Лента площадок и личный watermark",
-  "status": "planned",
+  "status": "done",
   "wave": "W8",
   "feature": "FT-013",
   "reqs": [
@@ -32,7 +32,32 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Independent full FT-013-AC-005 gallery proof and expert UX inspection passed: actual HTTPS/API/private 640px previews, all granted IDs/order/matched dates/paid-free flags/removable personal watermark, current-result privacy and retake/busy/selection clearing; unit94/browser1/QR60 plus verifier-owned browser1. T2 closure-eligible; scheduler lifecycle unchanged. Sol medium co-review launch unavailable at thread limit, no retry.",
+      "evidence": [
+        ".protocols/TASK-126-T2-FT-013-W8/verification.md",
+        ".tasks/TASK-126-T2-FT-013-W8/verifier-browser.txt",
+        ".tasks/TASK-126-T2-FT-013-W8/verifier-required-browser.txt",
+        ".tasks/TASK-126-T2-FT-013-W8/verifier-unit-summary.txt",
+        ".tasks/TASK-126-T2-FT-013-W8/verifier-qr.txt",
+        ".tasks/TASK-126-T2-FT-013-W8/verifier-gallery-1280.png",
+        ".tasks/TASK-126-T2-FT-013-W8/verifier-gallery-390.png"
+      ]
+    },
+    {
+      "stage": "scheduler-task-closure",
+      "verdict": "done",
+      "summary": "Attempt 1 closed after independent functional PASS and expert UX review: all granted current-result personal/common previews, ordering/date/free scope, frontend watermark, private 640px image access and clearing/retry behavior proved. All FT-013 task records now closed; feature semantic review next before completion.",
+      "evidence": [
+        ".protocols/TASK-126-T2-FT-013-W8/progress.md",
+        ".protocols/TASK-126-T2-FT-013-W8/verification.md",
+        ".tasks/TASK-126-T2-FT-013-W8/claim-evidence.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-013.md",
     ".memory-bank/tasks/plans/IMPL-FT-013.md"

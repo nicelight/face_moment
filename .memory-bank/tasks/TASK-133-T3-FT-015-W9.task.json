@@ -1,7 +1,7 @@
 {
   "id": "TASK-133-T3-FT-015-W9",
   "title": "Bounded ZIP executor, recovery и admin mail",
-  "status": "planned",
+  "status": "done",
   "wave": "W9",
   "feature": "FT-015",
   "reqs": [
@@ -31,7 +31,20 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    "Independent /verify PASS: FT-015-AC-004 / REQ-PUB-007; fresh native runtime tests 7 passed (28.11s), mypy 124 files PASS, verifier probe 1 passed (6.81s): distinct free/paid original ZIP bytes, private anonymous denial 403, blocked compression healthz 200, single worker/shutdown and foreign state unchanged; restart/publication/source/mail failures independently rerun. Evidence: .protocols/TASK-133-T3-FT-015-W9/verification.md and .tasks/TASK-133-T3-FT-015-W9/verifier-{tests,typecheck,probe}.log, verifier-probe-result.json. Co-review one launch unavailable: thread limit. T3 requires separate /red-verify; status unchanged.",
+    {
+      "stage": "scheduler-task-closure",
+      "verdict": "done",
+      "summary": "Attempt 1 closed after independent functional PASS and semantic-pass: bounded native ZIP lifecycle, exact private originals, publication/recovery/ready_at, persisted failure and isolated mail error proved with disposable runtime fixtures.",
+      "evidence": [
+        ".protocols/TASK-133-T3-FT-015-W9/progress.md",
+        ".protocols/TASK-133-T3-FT-015-W9/verification.md",
+        ".protocols/TASK-133-T3-FT-015-W9/red-verification.md",
+        ".tasks/TASK-133-T3-FT-015-W9/TASK-133-T3-FT-015-W9-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-015.md",
     ".memory-bank/tasks/plans/IMPL-FT-015.md"

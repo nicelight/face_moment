@@ -1,7 +1,7 @@
 {
   "id": "TASK-130-T2-FT-014-W4",
   "title": "Admin editor единого тарифа",
-  "status": "planned",
+  "status": "done",
   "wave": "W4",
   "feature": "FT-014",
   "reqs": [
@@ -35,7 +35,19 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    "VERDICT: PASS — independent /verify AC-005 native role browser 2 PASS (PUT200, invalid no-write, real422/403, canonical reload, 1280/390 visual), unit87 PASS, mypy116 PASS; .protocols/TASK-130-T2-FT-014-W4/verification.md; .tasks/TASK-130-T2-FT-014-W4/verifier-{browser,unit,typecheck}.txt. T2 closure-eligible; lifecycle unchanged; FT-014 semantic verification later.",
+    {
+      "stage": "scheduler-task-closure",
+      "verdict": "done",
+      "summary": "Attempt 1 closed after independent functional PASS: both authorized staff roles edit/reload global tariff, real API validation/CSRF errors remain visible and preserve saved values; 390/1280 visual checks, 87 unit tests and mypy PASS. FT-014 feature semantic gate remains due.",
+      "evidence": [
+        ".protocols/TASK-130-T2-FT-014-W4/progress.md",
+        ".protocols/TASK-130-T2-FT-014-W4/verification.md",
+        ".tasks/TASK-130-T2-FT-014-W4/claim-evidence.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-014.md",
     ".memory-bank/tasks/plans/IMPL-FT-014.md"

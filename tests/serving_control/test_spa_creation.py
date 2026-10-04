@@ -16,7 +16,7 @@ def test_create_venue_with_shared_revision_and_independent_settings(active_searc
     cookies = _login(f.app, getattr(f, role))
     code, headers, result = _request(f.app, 'POST', '/api/serving/spas', cookies=cookies,
         headers={'X-CSRF-Token': cookies['fm_staff_csrf']},
-        body={'name': '  Новая <площадка>  ', 'timezone': 'Europe/Moscow'})
+        body={'name': '  Новая <площадка>  ', 'timezone': 'Europe/Moscow', 'is_free': False})
     assert code == 201 and headers['cache-control'] == 'no-store'
     new_id = uuid.UUID(result['spa_id'])
     assert result['name'] == 'Новая <площадка>'
@@ -37,7 +37,7 @@ def test_create_rejects_bad_input_access_and_conflicting_model_without_writes(ac
     f = active_search_date_fixture
     admin = _login(f.app, f.operator)
     photographer = _login(f.app, f.photographer)
-    good = {'name': 'Новая', 'timezone': 'UTC'}
+    good = {'name': 'Новая', 'timezone': 'UTC', 'is_free': False}
     cases = [({}, {}, good, 401), (photographer, {'X-CSRF-Token': photographer['fm_staff_csrf']}, good, 403),
         (admin, {}, good, 403)]
     for payload in ({**good, 'name': '   '}, {**good, 'timezone': 'Mars/Nowhere'},

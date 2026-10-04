@@ -1,7 +1,7 @@
 {
   "id": "TASK-134-T3-FT-015-W10",
   "title": "Private bearer ZIP streaming и expiry",
-  "status": "planned",
+  "status": "done",
   "wave": "W10",
   "feature": "FT-015",
   "reqs": [
@@ -33,7 +33,20 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    "Independent /verify: PASS for exact FT-015-AC-003. Fresh disposable-PG/private-MinIO loopback HTTP probe proves independent HMAC/ready_at binding, free/succeeded vs pending/canceled, anonymous ZIP stream, exact 3-day expiry, forged/nonready/missing/deleted denial, private403, HTTPS/privacy/no logging/config and cleanup. Required native8/mypy126/compose config PASS. Evidence: .protocols/TASK-134-T3-FT-015-W10/verification.md; .tasks/TASK-134-T3-FT-015-W10/verifier-observations.json. Co-review launch unavailable (thread limit, one attempt). Lifecycle unchanged; separate T3 red-verify required.",
+    {
+      "stage": "scheduler-task-closure",
+      "verdict": "done",
+      "summary": "Attempt 1 closed after independent functional PASS and semantic-pass: private anonymous bearer ZIP streaming, separate HMAC/immutable ready binding, stored entitlement, exact three-day expiry, safe unavailable/privacy/configuration proved.",
+      "evidence": [
+        ".protocols/TASK-134-T3-FT-015-W10/progress.md",
+        ".protocols/TASK-134-T3-FT-015-W10/verification.md",
+        ".protocols/TASK-134-T3-FT-015-W10/red-verification.md",
+        ".tasks/TASK-134-T3-FT-015-W10/TASK-134-T3-FT-015-W10-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-015.md",
     ".memory-bank/tasks/plans/IMPL-FT-015.md"

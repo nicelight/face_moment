@@ -139,6 +139,13 @@ def proxy_chain(tmp_path: Path):
         thread.join(timeout=2)
 
 
+def test_photo_tariff_canonical_path_reaches_backend(proxy_chain):
+    request, _ = proxy_chain
+    status, body = request(path="/api/serving/photo-tariff")
+    assert status == 200
+    assert body == {"ip": "127.0.0.2", "origin": f"https://{PUBLIC_HOST}", "browser_origin": f"https://{PUBLIC_HOST}"}
+
+
 def test_public_origin_distinct_ip_budgets_and_spoof_rejection(proxy_chain):
     request, inner_port = proxy_chain
     status, body = request(**{"X-Forwarded-For": "198.51.100.99", "X-Forwarded-Host": "evil.example"})
@@ -153,3 +160,11 @@ def test_public_origin_distinct_ip_budgets_and_spoof_rejection(proxy_chain):
     assert status == 200 and body["ip"] == "127.0.0.4"
     status, body = request(port=inner_port, peer="127.0.0.5", host="localhost")
     assert status == 200 and body["origin"] == "https://localhost"
+
+
+def test_venue_free_canonical_paths_reach_backend(proxy_chain):
+    request, _ = proxy_chain
+    for path in ("/api/serving/spas", "/api/serving/spas/00000000-0000-0000-0000-000000000001/is-free"):
+        status, body = request(path=path)
+        assert status == 200
+        assert body == {"ip": "127.0.0.2", "origin": f"https://{PUBLIC_HOST}", "browser_origin": f"https://{PUBLIC_HOST}"}

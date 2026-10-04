@@ -1,7 +1,7 @@
 {
   "id": "TASK-120-T2-FT-013-W1",
   "title": "Камера и локальная история селфи",
-  "status": "ready",
+  "status": "done",
   "wave": "W1",
   "feature": "FT-013",
   "reqs": [
@@ -30,7 +30,19 @@
       "required": true
     }
   ],
-  "verify": [],
+  "verify": [
+    "2026-10-03 independent /verify, attempt 1, scheduler mode: VERDICT: PASS for FT-013-AC-001 / REQ-PUB-001 camera/history subset. Repeated 83/83 unit and 4/4 browser checks; fresh verifier-owned landscape/no-upscale/current-versus-stored JPEG SHA-256/reload/asynchronous IndexedDB abort/no-auto-upload probe passed. Sol medium co-review: no findings. Evidence: .protocols/TASK-120-T2-FT-013-W1/verification.md; .tasks/TASK-120-T2-FT-013-W1/verify-unit.log, verify-browser.log, verifier-probe.json and verifier-probe-trace.zip. Native accuracy/search UI remain TASK-122/TASK-125-owned. Status unchanged; root /autopilot owns T2 closure and wave sync.",
+    {
+      "stage": "scheduler-task-closure",
+      "verdict": "done",
+      "summary": "Attempt 1 closed after independent functional PASS for FT-013-AC-001: JPEG sizing/no-upscale, append-only IndexedDB, reload, quota/unavailable/transaction abort and current Blob continuity proved. Native compression quality and search UI remain later tasks. T2 feature semantic gate remains due after all FT-013 tasks.",
+      "evidence": [
+        ".protocols/TASK-120-T2-FT-013-W1/progress.md",
+        ".protocols/TASK-120-T2-FT-013-W1/verification.md",
+        ".tasks/TASK-120-T2-FT-013-W1/TASK-120-T2-FT-013-W1-S-VERIFY-final-report-code-01.md"
+      ]
+    }
+  ],
   "docs": [
     ".memory-bank/features/FT-013.md",
     ".memory-bank/tasks/plans/IMPL-FT-013.md"
