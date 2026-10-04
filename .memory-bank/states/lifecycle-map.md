@@ -217,7 +217,8 @@ and [.memory-bank/prd.md](../prd.md) `FR-CAP-01..17`, `FR-UX-01..09`.
 - Issuing a Promo result binds СПА, immutable inclusive search-date bounds, four teaser IDs,
   `session_result_photo_ids`, `N`, QR expiry context, and one session-wide
   browser access state without per-device grant records.
-- Result-display expiry returns the display to advertising without expiring the
+- Optional first → second → прежняя реклама следует [Promo Display API](../contracts/promo-display-api.md#optional-second-slide); backend display/ACK lifecycle неизменен.
+- Final result-display expiry returns the display to advertising without expiring the
   personalized session.
 - A QR scan may open or reuse the same browser access context for 30 minutes
   from `qr_issued_at`; after successful first open, the shared context expires

@@ -310,6 +310,10 @@ deployment policy, pairing path or generic settings helper may bypass
 4. persist the result/session only when the search yields a valid result;
 5. write detailed evidence best-effort through `diagnostics`.
 
+[Второй слайд](promo-display-api.md#optional-second-slide): `promo` выбирает
+и фиксирует gallery при исходной сборке; read-only `inventory`/`processing`
+подтверждают commons и выдают preview через отдельный display/session доступ.
+
 `promo` MUST NOT activate Photos, mutate pipeline/search rules, change serving
 settings or write diagnostic-owned detail. Query selection and exact search are
 defined by [Realtime Reference Search](../domains/realtime-search.md). The exact

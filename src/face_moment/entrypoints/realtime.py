@@ -518,7 +518,7 @@ def _response_for_attempt(
 
 
 def _result_response(result: Any) -> dict[str, Any]:
-    return {
+    response = {
         "session_id": str(result.session_id),
         "teasers": [
             {
@@ -533,6 +533,18 @@ def _result_response(result: Any) -> dict[str, Any]:
         "qr_url": result.qr_url,
         "qr_first_open_expires_at": _utc_iso(result.qr_first_open_expires_at),
     }
+    if result.gallery_photos is not None:
+        response["gallery_photos"] = [
+            {
+                "photo_id": str(item.photo_id),
+                "kind": item.kind,
+                "media_url": (
+                    f"/api/promo/sessions/{result.session_id}/gallery/media/{item.photo_id}"
+                ),
+            }
+            for item in result.gallery_photos
+        ]
+    return response
 
 
 def _reference_occurrences(payload: Any) -> tuple[ReferenceOccurrence, ...]:

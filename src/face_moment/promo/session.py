@@ -23,13 +23,16 @@ from sqlalchemy import (
     update,
 )
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, Session, mapped_column
 from sqlalchemy.sql import func
 
 from face_moment.infrastructure.database import Base
 from face_moment.promo.attempt import PromoAttempt
-from face_moment.promo.result_assembly import ResultAssembly
+from face_moment.processing.promo_common_photos import read_promo_common_photos
+from face_moment.promo.result_assembly import (
+    GalleryPhoto, ResultAssembly, fill_gallery_with_commons,
+)
 
 FIRST_OPEN_TTL = timedelta(minutes=30)
 BROWSER_IDLE_TTL = timedelta(minutes=60)
@@ -83,6 +86,9 @@ class PromoSession(Base):
     teaser_photo_ids: Mapped[list[uuid.UUID]] = mapped_column(
         ARRAY(Uuid(as_uuid=True)), nullable=False
     )
+    gallery_photos: Mapped[list[dict[str, str]] | None] = mapped_column(
+        JSONB, nullable=True
+    )
     n: Mapped[int] = mapped_column(Integer, nullable=False)
     qr_ticket_hash_sha256: Mapped[bytes] = mapped_column(
         LargeBinary(length=_TICKET_BYTES), nullable=False
@@ -125,6 +131,7 @@ class ResultSessionResponse:
     n: int
     qr_url: str
     qr_first_open_expires_at: datetime
+    gallery_photos: tuple[GalleryPhoto, ...] | None = None
 
     @property
     def teaser_photo_ids(self) -> tuple[uuid.UUID, ...]:
@@ -184,6 +191,18 @@ class PromoSessionRepository:
         ticket = derive_qr_ticket(
             session_id, issued_at, qr_ticket_secret=self._qr_ticket_secret
         )
+        matched_gallery = assembly.gallery_photos or tuple(
+            GalleryPhoto(photo_id, "matched") for photo_id in assembly.teaser_photo_ids
+        )
+        gallery = fill_gallery_with_commons(
+            matched_gallery,
+            read_promo_common_photos(
+                self._session, spa_id=attempt.spa_id,
+                pipeline_revision_id=attempt.pipeline_revision_id,
+                limit=12 - len(matched_gallery),
+                excluded_photo_ids=tuple(item.photo_id for item in matched_gallery),
+            ),
+        )
         session_row = PromoSession(
             id=session_id,
             attempt_id=attempt.id,
@@ -192,6 +211,9 @@ class PromoSessionRepository:
             visit_date_to=attempt.visit_date_to or attempt.visit_date,
             session_result_photo_ids=list(assembly.session_result_photo_ids),
             teaser_photo_ids=list(assembly.teaser_photo_ids),
+            gallery_photos=[
+                {"photo_id": str(item.photo_id), "kind": item.kind} for item in gallery
+            ],
             n=assembly.n,
             qr_ticket_hash_sha256=hash_qr_ticket(ticket),
             qr_issued_at=issued_at,
@@ -328,6 +350,11 @@ class PromoSessionRepository:
             n=session_row.n,
             qr_url=f"/q?ticket={ticket}",
             qr_first_open_expires_at=_utc(session_row.qr_first_open_expires_at),
+            gallery_photos=None if session_row.gallery_photos is None else tuple(
+                GalleryPhoto(uuid.UUID(item["photo_id"]),
+                             "common" if item["kind"] == "common" else "matched")
+                for item in session_row.gallery_photos
+            ),
         )
 
     def _inject_failure(self, point: str) -> None:
@@ -394,6 +421,13 @@ def _validate_assembly(attempt: PromoAttempt, assembly: ResultAssembly) -> None:
         raise ValueError("result must contain exactly four unique teasers")
     if not set(teasers).issubset(union):
         raise ValueError("teasers must be members of the complete result union")
+    gallery = assembly.gallery_photos
+    if gallery:
+        gallery_ids = tuple(item.photo_id for item in gallery)
+        if (not 4 <= len(gallery) <= 12 or len(set(gallery_ids)) != len(gallery)
+                or gallery_ids[:4] != teasers
+                or any(item.kind != "matched" or item.photo_id not in union for item in gallery)):
+            raise ValueError("initial gallery must contain the teasers then unique matched Photos")
     if attempt.visit_date is not None and not isinstance(attempt.visit_date, date):
         raise ValueError("Attempt visit_date is invalid")
 

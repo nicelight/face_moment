@@ -16,6 +16,12 @@ _INSUFFICIENT: Literal["insufficient_results"] = "insufficient_results"
 
 
 @dataclass(frozen=True, slots=True)
+class GalleryPhoto:
+    photo_id: uuid.UUID
+    kind: Literal["matched", "common"]
+
+
+@dataclass(frozen=True, slots=True)
 class ResultAssembly:
     """Promo-owned result truth produced from processing match observations."""
 
@@ -23,6 +29,7 @@ class ResultAssembly:
     session_result_photo_ids: tuple[uuid.UUID, ...]
     teaser_photo_ids: tuple[uuid.UUID, ...]
     n: int
+    gallery_photos: tuple[GalleryPhoto, ...] = ()
 
 
 def assemble_result(
@@ -106,7 +113,43 @@ def assemble_result(
         session_result_photo_ids=session_result_photo_ids,
         teaser_photo_ids=tuple(item.photo_id for item in teasers),
         n=len(session_result_photo_ids),
+        gallery_photos=_gallery_matches(detections, teasers),
     )
+
+
+def fill_gallery_with_commons(
+    gallery: Sequence[GalleryPhoto], common_photo_ids: Sequence[uuid.UUID],
+) -> tuple[GalleryPhoto, ...]:
+    """Fill only a successful personal gallery; callers supply eligible commons."""
+    selected = list(gallery)
+    if len(selected) < 4:
+        return tuple(selected)
+    used = {item.photo_id for item in selected}
+    for photo_id in common_photo_ids:
+        if len(selected) >= 12:
+            break
+        if photo_id not in used:
+            selected.append(GalleryPhoto(photo_id, "common"))
+            used.add(photo_id)
+    return tuple(selected)
+
+
+def _gallery_matches(
+    detections: Sequence[DetectionSearchObservation],
+    teasers: Sequence[PhotoMatchObservation],
+) -> tuple[GalleryPhoto, ...]:
+    candidates = _ordered_unique_matches(
+        match for detection in detections if detection.quality_gate_passed
+        for match in detection.matches
+    )
+    selected = list(teasers)
+    teaser_ids = {item.photo_id for item in teasers}
+    remaining = [item for item in candidates if item.photo_id not in teaser_ids]
+    while len(selected) < 12 and remaining:
+        candidate = _farthest_first(remaining, selected)
+        selected.append(candidate)
+        remaining.remove(candidate)
+    return tuple(GalleryPhoto(item.photo_id, "matched") for item in selected)
 
 
 def _detections(

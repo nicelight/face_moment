@@ -35,6 +35,7 @@ from face_moment.serving_control.detector_thresholds import read_capture_detecto
 from face_moment.promo.display_media import (
     PromoMediaNotFoundError,
     resolve_teaser_media,
+    resolve_gallery_media,
 )
 from face_moment.promo.display_outcome import (
     DisplayOutcomeRepository,
@@ -350,11 +351,11 @@ def _register_promo_media_and_outcome_routes(
 ) -> None:
     """Keep the existing authenticated display routes grouped together."""
 
-    @app.get("/api/promo/sessions/{session_id}/media/{photo_id}")
-    def promo_media(
+    def serve_media(
         request: Request,
         session_id: uuid.UUID,
         photo_id: uuid.UUID,
+        *, gallery: bool,
     ) -> Response:
         settings = Settings.from_env()
         with _database_session(session_factory) as database_session:
@@ -377,7 +378,8 @@ def _register_promo_media_and_outcome_routes(
                 ) from error
 
             try:
-                body = resolve_teaser_media(
+                resolver = resolve_gallery_media if gallery else resolve_teaser_media
+                body = resolver(
                     database_session,
                     spa_id=principal.spa_id,
                     session_id=session_id,
@@ -402,6 +404,14 @@ def _register_promo_media_and_outcome_routes(
         response = Response(content=body, media_type="image/jpeg")
         response.headers["Cache-Control"] = "no-store"
         return response
+
+    @app.get("/api/promo/sessions/{session_id}/media/{photo_id}")
+    def promo_media(request: Request, session_id: uuid.UUID, photo_id: uuid.UUID) -> Response:
+        return serve_media(request, session_id, photo_id, gallery=False)
+
+    @app.get("/api/promo/sessions/{session_id}/gallery/media/{photo_id}")
+    def promo_gallery_media(request: Request, session_id: uuid.UUID, photo_id: uuid.UUID) -> Response:
+        return serve_media(request, session_id, photo_id, gallery=True)
 
     @app.put("/api/promo/sessions/{session_id}/display")
     async def promo_display_acknowledgement(

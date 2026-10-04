@@ -220,3 +220,57 @@ def test_session_migration_round_trip_and_owner_local_foreign_key(
     alembic_command.upgrade(alembic_config, "head")
     upgraded = inspect(disposable_result_engine)
     assert "promo_sessions" in upgraded.get_table_names(schema=APP_SCHEMA)
+
+
+def test_gallery_migration_round_trip_preserves_historical_session_truth() -> None:
+    from alembic.script import ScriptDirectory
+    from face_moment.entrypoints.realtime import _result_response
+    from face_moment.promo.session import derive_qr_ticket, hash_qr_ticket
+    from tests.disposable_postgresql import disposable_postgresql_engine
+
+    config = Config('alembic.ini')
+    migration = ScriptDirectory.from_config(config).get_revision('0033_promo_session_gallery')
+    assert migration.down_revision == '0032_photo_orders'
+    secret = b'task141-disposable-secret'
+    issued = datetime(2026, 8, 22, 12, 0, tzinfo=timezone.utc)
+    identity = uuid.uuid4()
+    photo_ids = [uuid.uuid4() for _ in range(4)]
+    ticket = derive_qr_ticket(identity, issued, qr_ticket_secret=secret)
+    with disposable_postgresql_engine('task141_gallery') as engine:
+        alembic_command.downgrade(config, migration.down_revision)
+        with Session(engine) as session:
+            attempt = _admit_searching(session)
+            attempt_id = attempt.id
+            session.execute(text('''INSERT INTO face_moment.promo_sessions
+                (id, attempt_id, spa_id, session_result_photo_ids, teaser_photo_ids, n,
+                 qr_ticket_hash_sha256, qr_issued_at, qr_first_open_expires_at)
+                VALUES (:id, :attempt, :spa, :photos, :photos, 4, :hash, :issued, :expires)'''),
+                {'id': identity, 'attempt': attempt_id, 'spa': attempt.spa_id, 'photos': photo_ids,
+                 'hash': hash_qr_ticket(ticket), 'issued': issued, 'expires': issued + timedelta(minutes=30)})
+            session.commit()
+        def baseline_row():
+            with engine.connect() as connection:
+                return connection.scalar(text('SELECT to_jsonb(s) FROM face_moment.promo_sessions s WHERE id=:id'), {'id': identity})
+        before = baseline_row()
+        alembic_command.upgrade(config, migration.revision)
+        with Session(engine) as session:
+            repository = PromoSessionRepository(session, qr_ticket_secret=secret)
+            historic = repository.response_for_attempt(attempt_id)
+            assert historic.gallery_photos is None
+            assert 'gallery_photos' not in _result_response(historic)
+            fresh_attempt = _admit_searching(session)
+            fresh = repository.publish_result(fresh_attempt, _assembly(), qr_issued_at=issued,
+                display_expires_at=issued + timedelta(seconds=20))
+            session.commit()
+            assert [p.photo_id for p in fresh.gallery_photos] == list(fresh.teasers)
+            assert repository.response_for_attempt(fresh_attempt.id) == fresh
+        upgraded = baseline_row()
+        assert upgraded.pop('gallery_photos') is None
+        assert upgraded == before
+        alembic_command.downgrade(config, migration.down_revision)
+        assert baseline_row() == before
+        alembic_command.upgrade(config, migration.revision)
+        upgraded = baseline_row()
+        assert upgraded.pop('gallery_photos') is None and upgraded == before
+        with Session(engine) as session:
+            assert PromoSessionRepository(session, qr_ticket_secret=secret).response_for_attempt(attempt_id) == historic

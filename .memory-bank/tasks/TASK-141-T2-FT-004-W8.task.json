@@ -1,0 +1,112 @@
+{
+  "feature": "FT-004",
+  "tier": "T2",
+  "status": "done",
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Independent AC010 verification: repository/realtime tests, migration graph, mypy128, lint and separate immutable-snapshot/no-reselection probe passed.",
+      "report": ".tasks/TASK-141-T2-FT-004-W8/TASK-141-T2-FT-004-W8-S-VERIFY-final-report-code-01.md",
+      "protocol": ".protocols/TASK-141-T2-FT-004-W8/verification.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Root standalone owner closes durable gallery publication after independent PASS; media/client remain in FT005."
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-004.md",
+    ".memory-bank/tasks/plans/IMPL-FT-004.md"
+  ],
+  "reqs": [
+    "REQ-CAP-003",
+    "REQ-REL-001",
+    "REQ-ARCH-001"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/promo-display-api.md#optional-second-slide",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/domains/promo-attempt.md#result-assembly",
+    ".memory-bank/testing/index.md#current-source-development-gate",
+    ".memory-bank/domains/promo-attempt.md#result-session-shape",
+    ".memory-bank/domains/promo-attempt.md#atomic-result-session-publication",
+    ".memory-bank/contracts/realtime-attempt-api.md#response-version-1",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract"
+  ],
+  "constraints": [
+    "Constitution I/III: implement only the accepted additive delta using existing owners and helpers. No deployment or production probe.",
+    "Preserve public phone commons restricted to matched dates; the all-dates rule is Promo-only.",
+    "Actual runtime storage is face_moment.promo_sessions.gallery_photos; primary owner and orchestration stay in promo. The entrypoint only binds and serializes the existing authenticated application result.",
+    "Choose the next available sequential Alembic filename and execution-time direct predecessor; 0033_promo_session_gallery.py is advisory. No historical backfill or default-database downgrade.",
+    "Reuse TASK-140 selection as a dependency; proof here owns only publication/integration, not selection-algorithm claims."
+  ],
+  "invariants": [
+    "The first four teaser IDs, complete union/N, search gates, QR ticket/expiry and ACK semantics remain unchanged.",
+    "Commons never make an insufficient personal result successful and never enter union/N."
+  ],
+  "id": "TASK-141-T2-FT-004-W8",
+  "wave": "W8",
+  "title": "Persist and publish the optional Promo gallery",
+  "source_artifacts": [
+    ".memory-bank/features/FT-004.md#FT-004-AC-010",
+    ".protocols/promo-second-slide/plan.md",
+    ".protocols/FT-004/plan.md"
+  ],
+  "gates": [
+    {
+      "name": "Current-source typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    },
+    {
+      "name": "Gallery persistence and realtime regression",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_result_session.py tests/promo/test_realtime_attempt_integration.py",
+      "required": true
+    }
+  ],
+  "depends_on": [
+    "TASK-140-T2-FT-004-W7",
+    "TASK-075-T3-FT-004-W5"
+  ],
+  "purpose": "Publish the initial selected gallery as durable session truth so repeat/replay does not reselect photos.",
+  "success_outcome": "The original realtime result and terminal repeat carry the same stored ordered gallery_photos while historical null-gallery sessions retain their previous response and all baseline session values remain unchanged.",
+  "touched_files": [
+    "src/face_moment/promo/session.py",
+    "src/face_moment/promo/realtime_orchestration.py",
+    "src/face_moment/promo/attempt.py",
+    "src/face_moment/entrypoints/realtime.py",
+    "migrations/versions/0033_promo_session_gallery.py",
+    "tests/promo/test_result_session.py",
+    "tests/promo/test_realtime_attempt_integration.py"
+  ],
+  "anti_goals": [
+    "No gallery HTTP-media implementation or client behavior; FT-005 owns those.",
+    "No auth, token, permission, QR secret, browser-access or first-slide ACK behavior changes.",
+    "Do not rerun selection, mutate issued arrays or refresh the gallery on terminal repeat."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Deployment/production and default/shared database downgrade",
+      "Authentication, permissions and credential lifecycle",
+      "FT-005 gallery media and browser UI implementation",
+      "Foreign-owner table writes or cross-owner cascades"
+    ],
+    "stop_conditions": [
+      "Implementation requires a non-additive or irreversible migration, security-policy change or new owner."
+    ]
+  },
+  "verification_targets": [
+    "FT-004-AC-010: start a unique disposable PostgreSQL database with a seeded historical session immediately before the new linear migration. Upgrade, read/write gallery through PromoSessionRepository, downgrade/re-upgrade, and compare historical ticket/expiry/union/N/teasers. Verify direct down_revision and project linear topology without a mutable exact-head assertion; drop only the probe database after success/failure.",
+    "FT-004-AC-010: execute initial result and terminal repeat through the current-source realtime path; change available inventory between calls and use call counters to prove no second search or selection, byte-equivalent ordered gallery entries/URLs, unchanged baseline fields and no new session. Inject publication write failure to prove no half-issued gallery/session. Historical null-gallery repeat omits gallery_photos."
+  ],
+  "evidence_required": [
+    "FT-004-AC-010 RED: baseline repository/realtime probe omits the accepted durable gallery; GREEN: disposable migration/repository and realtime proof returns persisted identical photo_id/kind/media_url order on terminal repeat, preserves historical null rows and baseline session truth, and rolls back injected publication failure. Decisive comparison: database snapshots plus initial/repeat JSON and search/selection counts; artifact: focused pytest transcript under .tasks/TASK-141-T2-FT-004-W8/."
+  ]
+}

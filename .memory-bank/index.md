@@ -192,3 +192,8 @@ status: active
   current public-site limits.
 - [Motion Atlas design brief](../.design/motion-atlas-integration/DESIGN_BRIEF.md):
   operator presets, original discussion and implementation decisions.
+
+- [Optional second Promo slide](contracts/promo-display-api.md#optional-second-slide):
+  accepted fullscreen gallery; [FT-004](features/FT-004.md) selection/persistence verified,
+  [FT-005](features/FT-005.md) authenticated media and client settings/grid/replay verified.
+  [Kiosk guide](runbooks/app_guide_ru.md#киоск-promo-и-qr) explains local enablement.

@@ -141,6 +141,54 @@ A successful response is `200 application/json` with exactly
 does not change the Promo session, QR ticket, `qr_issued_at`, first-open expiry,
 teaser IDs, union or `N`.
 
+## Optional Second Slide
+
+Решение оператора, 2026-10-04: локальная «Конфигурация» сохраняет toggle второго
+слайда и его положительную длительность в целых секундах. Без включения показ
+прежний. Первый слайд сохраняет четыре teaser, текст, QR, timing и ACK.
+Включённый второй слайд — полноэкранная сетка без QR и текста, 4 колонки × 3 строки: те же четыре Photos плюс до
+восьми дополнительных уникальных Photos; FIRST → SECOND использует только
+opacity crossfade 2 секунды. Handoff в рекламу остаётся прежним. Click/replay
+из рекламы при включении открывает второй слайд последнего успешного результата;
+иначе действует прежний replay. Нового поиска/session/ACK и продления QR нет.
+
+`promo` сразу при исходной сборке выбирает все до 12 Photos: неизменные первые
+четыре teaser, затем до восьми разнообразных union members без повторов.
+Существующий pHash farthest-first продолжает выбор относительно первых четырёх,
+с исходными similarity/`photo_id` tie-breaks. Нехватку дополняют доступные общие
+`no_faces` той же площадки за любые даты, затем пустые ячейки. Commons не входят
+в union/`N` и не помогают достичь обязательных четырёх личных teaser.
+В исходный realtime result добавляется `gallery_photos`: упорядоченный массив
+до 12 `{photo_id, kind, media_url}`, `kind` = `matched|common`; первые четыре
+совпадают с `teasers`. Список фиксируется с session для exact terminal repeat
+и replay; union остаётся существующей полной `session_result_photo_ids`.
+Нового поиска, manifest endpoint, job или polling нет. Клиент загружает
+дополнительные изображения после полного первого render; они не задерживают
+первый QR/ACK. Старый клиент игнорирует additive field, новый допускает его
+отсутствие у старого backend и использует прежний четырёхфотографический показ.
+
+Новый media path: `GET /api/promo/sessions/{session_id}/gallery/media/{photo_id}`
+→ `200 image/jpeg`, `Cache-Control: no-store`. Display Bearer, primary-key
+session lookup, равенство СПА и membership фиксированного gallery списка
+обязательны; чужое/неизвестное/недоступное → `404`. Исходный `/media/{photo_id}`
+остаётся строго four-teaser-only. `inventory` через public read-only provider
+подтверждает площадку/active visibility commons при выборе, `processing`
+подтверждает `no_faces` и предоставляет уменьшенный no-watermark JPEG через
+существующий on-demand gallery renderer. Matched preview использует issuing
+revision. Originals, raw keys и presigned URLs не выдаются; media read не
+меняет union, `N`, QR, ACK, browser access или pipeline state. Потеря дополнения
+не отменяет подтверждённый первый показ; missing ячейка остаётся пустой.
+
+Уточнение оператора, 2026-10-04: второй слайд содержит только фотографии на весь
+экран; общие фотографии берутся за любые даты этой площадки. Переход происходит
+по таймеру первого слайда без ожидания дополнительных изображений: готовые
+показываются сразу, остальные ячейки заполняются по мере загрузки; ошибка
+оставляет ячейку пустой. Длительность второго слайда отсчитывается после
+двухсекундного перехода; при replay — с появления сетки. При reduced-motion
+переход мгновенный. Локальная длительность обязательна для включения второго
+слайда. Общие Photos выбираются в стабильном порядке `photo_id`, не более
+оставшихся мест; ограничения дат публичной телефонной галереи не меняются.
+
 ## Client Outcome Rules
 
 - A compact realtime `result` is eligible for rendering only when its exact
@@ -158,7 +206,7 @@ teaser IDs, union or `N`.
   configuration leaves or returns the client to usable local advertising and
   starts no success cooldown. A best-effort `failed` report is allowed only
   for a server-issued result.
-- Result-display expiry changes only local presentation. It returns to
+- First-slide expiry follows [Optional Second Slide](#optional-second-slide) when enabled. Final result-display expiry changes only local presentation. It returns to
   advertising and MUST NOT call a session-expiry/invalidation path. Result
   display and success cooldown use their independent configured durations.
 - Missing optional audio/animation is silent and non-blocking. A server-
@@ -177,11 +225,11 @@ teaser IDs, union or `N`.
   and raw storage identities MUST NOT enter URLs or logs. Media and JSON
   responses are `no-store`; PostgreSQL, MinIO and internal ports remain private.
 - No custom error envelope, acknowledgement outbox, scheduler, reliable retry
-  queue, media cache, replacement selection or parallel session owner is added.
+  queue, media cache, replacement of issued teasers or parallel session owner is added.
 
 ## Verification Targets
 
-- Contract tests cover the exact three paths, strict JSON shapes, authenticated
+- Contract tests cover the original three paths and the gallery media path, strict JSON shapes, authenticated
   principal scope, standard statuses, `no-store` delivery and absence of raw
   storage/credential material.
 - Media fixtures prove primary-key session lookup without historical scans,
@@ -201,4 +249,4 @@ teaser IDs, union or `N`.
 ## Presentation
 
 [Kiosk operation](../runbooks/app_guide_ru.md#киоск-promo-и-qr) describes
-the adaptive card layout and replay controls. API and session semantics are unchanged.
+the existing adaptive card layout and replay controls. Optional second-slide additions follow [Optional Second Slide](#optional-second-slide).

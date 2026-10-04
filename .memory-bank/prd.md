@@ -445,6 +445,14 @@ replay does not create a new search/session or renew the QR. The latest result
 is retained only for the current page lifetime. This explicit replay is
 distinct from automatic advertising/prePromo behavior below.
 
+Operator addition, 2026-10-04: optional second slide, local toggle/duration,
+4×3 grid, immediate selection up to 12 in the initial result, deferred extra
+image loading and 2-second opacity transition follow
+[Promo Display API](contracts/promo-display-api.md#optional-second-slide).
+Operator clarification accepts a full-screen photo-only grid, timer-driven transition
+with late cells filled when ready, and common photos from any date at this venue.
+First-result acceptance is preserved.
+
 #### Advertising playlist administration — operator decisions 2026-09-16
 
 - Staff menu «Реклама» opens a list of venue names. Selecting a venue opens
@@ -493,7 +501,7 @@ implementation-ready.
 - **FR-UX-01** — Between attempts, the display MUST show locally available
   advertising. Capture/search MAY use a non-personal prePromo state; it MUST NOT
   expose a partial or stale participant result.
-- **FR-UX-02** — A successful Promo MUST show exactly four low-quality teaser
+- **FR-UX-02** — The first slide of a successful Promo MUST show exactly four low-quality teaser
   photographs without watermark and a high-contrast, fully visible, scannable
   QR code in an adaptive full-viewport layout for landscape, square and portrait
   displays; 1920x1080 is one test viewport, not a hardware restriction. The client

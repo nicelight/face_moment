@@ -1,0 +1,107 @@
+{
+  "feature": "FT-004",
+  "tier": "T2",
+  "status": "done",
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Independent AC009 verification: 11 tests, mypy128, lint133 and 100-case baseline differential/selection oracle passed.",
+      "report": ".tasks/TASK-140-T2-FT-004-W7/TASK-140-T2-FT-004-W7-S-VERIFY-final-report-code-01.md",
+      "protocol": ".protocols/TASK-140-T2-FT-004-W7/verification.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Root standalone owner closes AC009 after required independent PASS; future persistence/media/client claims remain in dependent tasks."
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-004.md",
+    ".memory-bank/tasks/plans/IMPL-FT-004.md"
+  ],
+  "reqs": [
+    "REQ-CAP-003",
+    "REQ-REL-001",
+    "REQ-ARCH-001"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/promo-display-api.md#optional-second-slide",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/domains/promo-attempt.md#result-assembly",
+    ".memory-bank/testing/index.md#current-source-development-gate",
+    ".memory-bank/contracts/boundary-map.md#processing-input-projections",
+    ".memory-bank/domains/realtime-search.md#exact-compatible-search"
+  ],
+  "constraints": [
+    "Constitution I/III: implement only the accepted additive delta using existing owners and helpers. No deployment or production probe.",
+    "Preserve public phone commons restricted to matched dates; the all-dates rule is Promo-only.",
+    "Primary application owner is promo under src/face_moment/promo; inventory and processing expose read-only providers through accepted graph edges. The realtime entrypoint must not own selection.",
+    "Reuse the existing farthest-first helper and match ordering; the common provider is bounded to one authoritative venue and remaining capacity <=8. Advisory new filenames may be adjusted by executor."
+  ],
+  "invariants": [
+    "The first four teaser IDs, complete union/N, search gates, QR ticket/expiry and ACK semantics remain unchanged.",
+    "Commons never make an insufficient personal result successful and never enter union/N."
+  ],
+  "id": "TASK-140-T2-FT-004-W7",
+  "wave": "W7",
+  "title": "Select the initial optional Promo gallery",
+  "source_artifacts": [
+    ".memory-bank/features/FT-004.md#FT-004-AC-009",
+    ".protocols/promo-second-slide/plan.md",
+    ".protocols/FT-004/plan.md"
+  ],
+  "gates": [
+    {
+      "name": "Current-source typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    },
+    {
+      "name": "Gallery selection and assembly regression",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_promo_gallery_selection.py tests/promo/test_result_assembly.py",
+      "required": true
+    }
+  ],
+  "depends_on": [
+    "TASK-071-T2-FT-004-W3",
+    "TASK-123-T3-FT-013-W6"
+  ],
+  "purpose": "Produce the promo-owned fixed ordered gallery from existing search observations and bounded owner-provided commons.",
+  "success_outcome": "An independently callable selection returns at most twelve unique typed gallery entries, preserving the four teasers and union/N and filling only remaining places with eligible same-venue commons.",
+  "touched_files": [
+    "src/face_moment/promo/result_assembly.py",
+    "src/face_moment/promo/gallery_selection.py",
+    "src/face_moment/processing/promo_common_photos.py",
+    "src/face_moment/inventory/public_photo_projection.py",
+    "tests/promo/test_result_assembly.py",
+    "tests/promo/test_promo_gallery_selection.py"
+  ],
+  "anti_goals": [
+    "No persistence, realtime response integration, HTTP gallery-media route or browser change.",
+    "No new inference, search, derivative generation, background work or public-phone scope expansion."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Authentication/permission/secret changes",
+      "Session schema/publication and gallery HTTP media",
+      "Client display/configuration and public-phone date semantics",
+      "Foreign capability direct writes"
+    ],
+    "stop_conditions": [
+      "Selection requires a new ownership edge or a product decision beyond Optional Second Slide."
+    ]
+  },
+  "verification_targets": [
+    "FT-004-AC-009: use existing match observations with ties, repeated IDs, >12 and 4..11 union members; compare exact order and unchanged four teasers/union/N. Include <4 personal matches plus many commons, proving no success rescue.",
+    "FT-004-AC-009: disposable PostgreSQL seeded across venues/dates/visibility/states proves public owner reads return only active same-venue no_faces commons, stable photo_id order, limit at most eight/remaining capacity, and zero writes. Existing phone provider retains its matched-date filter. Reuse tests/disposable_postgresql.py and verify teardown; repeat produces the same results."
+  ],
+  "evidence_required": [
+    "FT-004-AC-009 RED: focused selection/provider probe on baseline cannot produce the accepted ordered up-to-12 gallery; GREEN: exact fixture output and bounded owner-provider rows satisfy AC-009 including no-rescue and unchanged phone date scope. Decisive comparison: ordered photo_id/kind list and immutable teaser/union/N against fixture truth; artifact: focused pytest transcript under .tasks/TASK-140-T2-FT-004-W7/."
+  ]
+}

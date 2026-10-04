@@ -174,6 +174,13 @@ Fewer than four unique valid Photos returns `insufficient_results` and creates
 no result session. No tracking, identity clustering, group-coverage guarantee,
 weak-match admission, replacement selection or `N` truncation is introduced.
 
+Сборка сразу выбирает до 12 Photos и фиксирует `gallery_photos` вместе с session
+для repeat/replay по [Optional Second Slide](../contracts/promo-display-api.md#optional-second-slide);
+первые четыре teaser, полная union, `N` и исходный поиск остаются прежними.
+Историческая session без gallery сохраняет прежний четырёхфотографический показ.
+Selection implementation: [result assembly](../../src/face_moment/promo/result_assembly.py);
+bounded commons supplier: [processing projection](../../src/face_moment/processing/promo_common_photos.py).
+
 ## Result Session Shape
 
 One successful Attempt creates one `face_moment.promo_sessions` row owned by
@@ -186,11 +193,20 @@ One successful Attempt creates one `face_moment.promo_sessions` row owned by
 | `spa_id`, `visit_date`, `visit_date_to` | Immutable inclusive scope copied from the Attempt snapshot. Historical single-date records represent equal bounds. |
 | `session_result_photo_ids` | Ordered unique UUID array containing the complete valid union. |
 | `teaser_photo_ids` | Ordered UUID array of exactly four unique union members. |
+| `gallery_photos` | Nullable ordered JSON list of `{photo_id, kind}` fixed by initial assembly; `kind` is `matched` or `common`. Null denotes a historical session without gallery; new results contain 4–12 unique entries with the four teaser IDs first. Media URLs are derived from the session and Photo IDs, not stored secrets/keys. |
 | `n` | Integer equal to the union cardinality and at least four. |
 | `qr_ticket_hash_sha256` | Required unique digest of the opaque QR ticket; plaintext is not stored. |
 | `qr_issued_at`, `qr_first_open_expires_at` | Server timestamps separated by the accepted 30-minute first-open interval. |
 | `browser_first_opened_at`, `browser_last_seen_at` | Nullable server timestamps for the one session-wide browser-access state; both are null before first open, otherwise both are present and `browser_last_seen_at >= browser_first_opened_at`. |
 | `created_at` | Server timestamp. |
+
+The additive gallery migration preserves every existing session field and leaves
+historical `gallery_photos` null; it performs no selection or media backfill.
+Gallery writes share the existing atomic result-publication transaction. Terminal
+repeat reads the stored list, even after inventory changes; null omits the
+additive response field. Upgrade/downgrade/re-upgrade proof uses a disposable
+database and verifies historical data preservation plus the direct predecessor
+in the shared linear stream, without an exact-current-head assertion.
 
 Photo IDs are durable historical references rather than ownership-crossing
 foreign keys. Photo soft delete does not alter the row; later hard purge may

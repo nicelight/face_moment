@@ -4,6 +4,34 @@ status: active
 ---
 # Changelog
 
+## [2026-10-04] Wave 10 — Optional fullscreen second slide
+- TASK-143 closed after independent AC-007 PASS: local toggle/duration, fixed
+  fullscreen 4×3 gallery, timed opacity transition, late fill and direct replay.
+- [Evidence](../.protocols/TASK-143-T2-FT-005-W10/verification.md):104 unit tests,
+  five controlled-clock tests, three browser scenarios; Playwright CLI confirms
+  Configuration/reload and landscape/portrait gallery without extra ACK/search.
+- [Kiosk guide](runbooks/app_guide_ru.md#киоск-promo-и-qr) updated. Bounded
+  second-slide implementation complete; broader deferred acceptance unchanged.
+
+## [2026-10-04] Wave 9 — Authorized Promo gallery media
+- TASK-142 closed after independent functional PASS and semantic-pass: fixed
+  gallery membership, real display auth, issuing previews and reduced commons.
+- [Evidence](../.protocols/TASK-142-T3-FT-005-W9/verification.md): HTTP denial matrix,
+  unchanged all-table snapshots, strict legacy teaser route. Client TASK-143 next.
+
+## [2026-10-04] Wave 8 — Fixed Promo gallery publication
+- TASK-141 closed after independent AC-010 PASS: nullable gallery snapshot,
+  additive initial/repeat response, no reselection and preserved legacy sessions.
+- [Evidence](../.protocols/TASK-141-T2-FT-004-W8/verification.md): disposable migration
+  roundtrip, atomic rollback and exact-repeat checks. FT-004 production acceptance
+  remains deferred; FT-005 media/display continues.
+
+## [2026-10-04] Wave 7 — Optional Promo gallery selection
+- TASK-140 closed after independent AC-009 PASS: unchanged four teasers and full N,
+  up-to-12 diverse matches, bounded same-venue commons across dates; phone scope preserved.
+- [Evidence](../.protocols/TASK-140-T2-FT-004-W7/verification.md): 11 tests plus
+  independent 100-case comparison. Persistence/media/client remain separate tasks.
+
 ## [2026-10-04] Wave 12 / free delivery verified; payment preflight blocked
 
 - Updated: [TASK-136](tasks/TASK-136-T2-FT-015-W12.task.json) owner closure done

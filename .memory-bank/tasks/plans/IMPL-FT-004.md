@@ -166,3 +166,52 @@ edges match the accepted Boundary Map; the feature remains
 evaluate the queue at Planning Revision `4` without implementation guesses.
 FT-004 feature completion is not claimed until the production AC-004 evidence
 exists.
+
+## Optional Second-Slide Delta
+
+Accepted source: [Optional Second Slide](../../contracts/promo-display-api.md#optional-second-slide).
+AC-009 owns selection; AC-010 owns durable publication. Existing cards and their
+proof remain intact. No production acceptance, deployment or existing search
+redesign is added. FT-005 owns gallery media and browser behavior.
+
+- `TASK-140-T2-FT-004-W7`: independently usable initial gallery selection,
+  primary owner `promo` (`src/face_moment/promo/`). Reuse result-assembly
+  observations and pHash helpers. Read eligible commons through the registered
+  [Participant Promo](../../contracts/boundary-map.md#participant-promo) and
+  [Processing input projections](../../contracts/boundary-map.md#processing-input-projections)
+  boundaries: inventory owns active venue scope, processing owns `no_faces`.
+  The bounded provider returns at most the remaining eight places from one
+  token-derived СПА, across all dates, without changing the existing public
+  phone matched-date provider. Depends on completed assembly TASK-071 and
+  public projection substrate TASK-123; therefore W7.
+- `TASK-141-T2-FT-004-W8`: persist the selected list in
+  `face_moment.promo_sessions.gallery_photos`, wire initial assembly and publish
+  the additive response with exact terminal repeat. Primary owner `promo`;
+  realtime entrypoint only serializes/binds calls. Depends on TASK-140 and
+  completed realtime boundary TASK-075; therefore W8. Reversible additive
+  migration/API work changes no authentication, secret or permission behavior.
+
+Advisory files and focused runnable gates are in each card. New code stays in
+existing owner roots; no foreign writes, new service/job/manifest endpoint,
+media generation during selection or client search is introduced. Empty gallery
+capacity does not replace four-teaser success criteria.
+
+Canonical concern actions: reuse Promo Display API (selection/public shape),
+Boundary Map (owners/edges), testing index (disposable database/current-source
+gates); extend existing Promo Attempt Result Session Shape with nullable stored
+gallery, and reconcile Realtime Attempt API Response Version 1 with the already
+accepted additive field. No new spec or behavior-spec file is needed. Planning
+Revision remains 4 and the Foundation dependency remains transitive.
+
+Proof: TASK-140 owns deterministic selection and real read-provider fixtures;
+TASK-141 owns migration preservation, atomic publication and terminal-repeat
+fixtures. Capture honest task-owned RED before production edits and equivalent
+GREEN afterwards, or retain honest pre-implementation GREEN. Both use current
+source typecheck/focused tests and native Memory Bank lint. Stateful proof uses
+`tests/disposable_postgresql.py`, known seeded rows, repeatable execution and
+cleanup of its unique database. No default database downgrade is authorized.
+Historical production correctness evidence is not rerun for this delta.
+
+Next: independent fresh `/review-tasks-plan FT-004`; then applicable doctor,
+sequential execution and independent task verification. Completed baseline
+semantic evidence does not establish completion of the two new cards.

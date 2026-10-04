@@ -13,6 +13,8 @@ source_of_truth:
 задаёт processing-owned on-demand resized JPEG из private original, включая
 исторические `no_faces`. Это отдельное rendering operation: existing terminal
 states/derivative keys, model revisions и Photo worker не изменяются.
+[Второй Promo-слайд](../contracts/promo-display-api.md#optional-second-slide)
+переиспользует renderer для session-authorized commons без original bytes.
 
 ## Scope And Ownership
 

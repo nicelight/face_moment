@@ -27,7 +27,7 @@ import { createSignalProgress } from "./signal-progress.js";
 import "./motion-ui.js";
 import { readClientDiagnosticEvents, saveClientDiagnosticEvents } from "./client-diagnostic-history.js";
 import { openPromoLayoutEditor } from "./promo-layout-editor.js";
-import { MAX_PROMO_SECONDS, readPromoSeconds, savePromoSeconds } from "./promo-display-preferences.js";
+import { MAX_PROMO_SECONDS, readPromoSeconds, savePromoSeconds, readPromoSecondSlide, savePromoSecondSlide } from "./promo-display-preferences.js";
 import { createAdvertisingPlayer } from "./advertising-player.js";
 import { animatePromoEntrance } from "./promo-entrance.js";
 import { MIN_CAPTION_SIZE, MAX_CAPTION_SIZE, readAdvertisingCaption, saveAdvertisingCaption } from "./advertising-caption.js";
@@ -298,7 +298,51 @@ function mountPromoDurationConfiguration(card) {
     }
   });
   card.append(form);
+  mountSecondSlideConfiguration(card);
   refreshConfiguredScreen();
+}
+
+function mountSecondSlideConfiguration(card) {
+  const saved = readPromoSecondSlide();
+  const form = document.createElement("form");
+  form.className = "promo-second-slide-panel";
+  const toggleLabel = document.createElement("label");
+  const toggle = document.createElement("input");
+  toggle.type = "checkbox";
+  toggle.id = "promo-second-slide-enabled";
+  toggle.checked = saved.enabled;
+  toggleLabel.append(toggle, " Второй слайд с фотографиями");
+  const label = document.createElement("label");
+  label.htmlFor = "promo-second-slide-seconds";
+  label.textContent = "Длительность второго слайда, секунд";
+  const seconds = document.createElement("input");
+  seconds.id = "promo-second-slide-seconds";
+  seconds.type = "number";
+  seconds.min = "1";
+  seconds.max = String(MAX_PROMO_SECONDS);
+  seconds.step = "1";
+  seconds.value = saved.seconds ?? "";
+  seconds.required = toggle.checked;
+  toggle.addEventListener("change", () => { seconds.required = toggle.checked; });
+  const save = document.createElement("button");
+  save.type = "submit";
+  save.textContent = "Сохранить второй слайд";
+  const status = document.createElement("p");
+  status.setAttribute("role", "status");
+  status.textContent = "До 12 фотографий на весь экран после слайда с QR. Настройка сохраняется в этом браузере.";
+  form.append(toggleLabel, label, seconds, save, status);
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+    try {
+      const settings = savePromoSecondSlide(toggle.checked, seconds.value);
+      status.textContent = settings.enabled ? `Сохранено: второй слайд, ${settings.seconds} сек.` : "Сохранено: второй слайд выключен.";
+    } catch (error) {
+      status.textContent = error instanceof TypeError
+        ? "Для включения введите целое положительное число секунд."
+        : "Не удалось сохранить. Разрешите хранение данных в браузере и повторите.";
+    }
+  });
+  card.append(form);
 }
 
 function mountAdvertisingCaptionConfiguration(card) {

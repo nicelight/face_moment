@@ -24,3 +24,21 @@ export function savePromoSeconds(value) {
   globalThis.localStorage.setItem(PROMO_DURATION_KEY, String(seconds));
   return seconds;
 }
+
+export const PROMO_SECOND_SLIDE_KEY = "face-moment.promo-second-slide";
+
+export function readPromoSecondSlide() {
+  try {
+    const saved = JSON.parse(globalThis.localStorage.getItem(PROMO_SECOND_SLIDE_KEY));
+    const seconds = parsePromoSeconds(saved?.seconds);
+    return { enabled: saved?.enabled === true && seconds !== null, seconds };
+  } catch { return { enabled: false, seconds: null }; }
+}
+
+export function savePromoSecondSlide(enabled, value) {
+  const seconds = parsePromoSeconds(value);
+  if (enabled && seconds === null) throw new TypeError("invalid_promo_seconds");
+  const settings = { enabled: enabled === true, seconds };
+  globalThis.localStorage.setItem(PROMO_SECOND_SLIDE_KEY, JSON.stringify(settings));
+  return settings;
+}

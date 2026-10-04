@@ -250,3 +250,51 @@ Foundation gate transitively; task-relevant modules, edges and exact contracts
 match the accepted Boundary Map; feature design remains complete; and fresh
 planning review can evaluate the queue at Planning Revision `4` without
 implementation guesses.
+
+
+## Optional Second Slide
+
+The accepted [Optional Second Slide](../../contracts/promo-display-api.md#optional-second-slide)
+is implemented as two additive outcomes; historical task identity, scope and
+proof are retained. No new production task or change to the deferred TASK-079
+is part of this bounded operator request.
+
+| Task | Owner/root | Claim | Prerequisites and reason |
+|---|---|---|---|
+| TASK-142-T3-FT-005-W9 | promo, `src/face_moment/promo/` | FT-005-AC-008 | TASK-141 fixed persisted gallery, TASK-076 display Bearer/media seam, TASK-123 existing gallery renderer; authorization is independently HTTP-verifiable. |
+| TASK-143-T2-FT-005-W10 | promo presentation, `client/` | FT-005-AC-007 | TASK-142 gallery media, TASK-077 ACK and TASK-078 timers; local preferences, grid transition and replay are one complete display lifecycle. |
+
+Use the accepted [Participant Promo](../../contracts/boundary-map.md#participant-promo)
+read-only inventory/processing edges and
+[central-origin delivery](../../contracts/boundary-map.md#central-origin-client-delivery).
+HTTP/composition only bind the promo application; no direct foreign table reads
+or writes, public-original delivery, new jobs, manifest endpoint or polling.
+TASK-142 reads `face_moment.promo_sessions.gallery_photos` through the existing
+promo repository; TASK-141 owns persistence/migration. Matched previews retain
+issuing Attempt revision. Commons reuse processing's reduced-JPEG renderer.
+Existing `/api/promo/*` forwarding covers the new route without deployment work.
+
+Concern actions are reuse: Promo Display API for settings/media/timing/replay,
+Realtime Attempt API for additive input compatibility, Promo Attempt for stored
+session shape, Display Client Access for authentication, Boundary Map for owner
+edges, Public Search API for existing gallery renderer, and testing index for
+current-source/browser proof. No new spec identity, ownership or revision.
+
+Expected advisory surfaces: `src/face_moment/promo/display_media.py`,
+`src/face_moment/promo/http.py`, owner public exports/projections as needed;
+`client/promo-display.js`, `client/promo-display-preferences.js`, `client/app.js`,
+`client/styles.css`, focused media/client/browser tests, and kiosk guide.
+Local preferences extend the existing localStorage adapter; no server settings
+schema. Exact new preference key names remain internal implementation detail;
+proof must save/read through the real adapter and survive page reload.
+
+Proof stays with each implementation: media auth/404/no-store/unchanged-state
+RED/GREEN in disposable storage; client controlled timers/promises and actual
+Playwright CLI flow with transcript plus screenshots/trace. Extras never delay
+first QR/ACK; missing extras do not fail that first result. Replays have no ACK,
+new session/search or QR renewal. Browser disposal/timer and object-URL cleanup
+prevent late image completion from repainting after expiry or replacement.
+Run current-source mypy for server work, focused pytest, Node tests and Memory
+Bank lint. UI gates use the existing pinned Playwright runner plus required
+agent-run `playwright cli`; physical pilot proof remains deferred. Constitutional
+KISS, unchanged session authority and safe isolated fixtures apply to both cards.

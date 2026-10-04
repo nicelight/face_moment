@@ -7,6 +7,10 @@ source_of_truth:
 ---
 # Realtime Attempt API
 
+Решение 2026-10-04: successful result получает additive `gallery_photos`
+по [Optional Second Slide](promo-display-api.md#optional-second-slide);
+четыре `teasers`, полная union, `N`, QR и критерий success сохраняются.
+
 ## Displayed server identity
 
 Responses projected from an admitted Attempt include
@@ -125,7 +129,11 @@ Compact outcome names are:
 - `interrupted`;
 - `in_progress`, only when the same idempotency key is already non-terminal.
 
-Non-`result` responses omit `result`. A `result` response contains exactly:
+Non-`result` responses omit `result`. A `result` response contains the following
+baseline fields plus, for a session with a stored gallery, additive
+`gallery_photos` as defined by
+[Optional Second Slide](promo-display-api.md#optional-second-slide). Historical
+sessions without that list omit the additive field. The baseline example is:
 
 ```json
 {

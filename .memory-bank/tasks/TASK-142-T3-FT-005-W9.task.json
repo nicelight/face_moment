@@ -1,0 +1,115 @@
+{
+  "feature": "FT-005",
+  "status": "done",
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Independent real-auth HTTP matrix twice: 50 requests, 27-table snapshots unchanged; 8 tests, mypy128 and mb-lint133 pass. Luna best-effort unavailable (thread limit). T3 awaits separate red-verify.",
+      "report": ".tasks/TASK-142-T3-FT-005-W9/TASK-142-T3-FT-005-W9-S-VERIFY-final-report-code-01.md",
+      "protocol": ".protocols/TASK-142-T3-FT-005-W9/verification.md"
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "summary": "Independent adversarial review plus5HTTP probes: reduced metadata-free common JPEG, sanitized storage failures, no state changes.",
+      "report": ".tasks/TASK-142-T3-FT-005-W9/TASK-142-T3-FT-005-W9-S-RED-VERIFY-final-report-docs-01.md",
+      "protocol": ".protocols/TASK-142-T3-FT-005-W9/red-verification.md"
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Root standalone owner closes AC008 after independent functional PASS and semantic-pass; all evidence local/disposable, no production remainder for this task."
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-005.md",
+    ".memory-bank/tasks/plans/IMPL-FT-005.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/promo-display-api.md#optional-second-slide",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/testing/index.md#current-source-development-gate",
+    ".memory-bank/contracts/promo-display-api.md#teaser-media",
+    ".memory-bank/contracts/promo-display-api.md#failures-and-security",
+    ".memory-bank/domains/display-client-access.md",
+    ".memory-bank/domains/promo-attempt.md#result-session-shape",
+    ".memory-bank/contracts/public-photo-search-api.md"
+  ],
+  "constraints": [
+    "Constitution I/III: bounded accepted second-slide delta; no deployment or production probes.",
+    "Primary owner is promo under src/face_moment/promo; HTTP adapters only authenticate/serialize and bind its application. Use public inventory/processing projections through Participant Promo; no foreign direct queries/writes.",
+    "Read fixed gallery from face_moment.promo_sessions.gallery_photos, never select replacements. Matched uses the issuing Attempt revision; common uses existing processing renderer without derivative writes.",
+    "T3 auth evidence uses disposable state and existing rights only; independently verify and red-verify per tier policy."
+  ],
+  "invariants": [
+    "The first four teaser IDs, union/N, QR lifetime and first-slide ACK remain unchanged."
+  ],
+  "gates": [
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    },
+    {
+      "name": "Current-source typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Gallery media and teaser regression",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_promo_gallery_media.py tests/promo/test_promo_display_api.py",
+      "required": true
+    }
+  ],
+  "id": "TASK-142-T3-FT-005-W9",
+  "tier": "T3",
+  "wave": "W9",
+  "title": "Serve authorized fixed Promo gallery media",
+  "source_artifacts": [
+    ".memory-bank/features/FT-005.md#FT-005-AC-008",
+    ".protocols/promo-second-slide/plan.md",
+    ".protocols/FT-005/plan.md"
+  ],
+  "reqs": [
+    "REQ-UX-001",
+    "REQ-SEC-001",
+    "REQ-ARCH-001"
+  ],
+  "depends_on": [
+    "TASK-141-T2-FT-004-W8",
+    "TASK-076-T3-FT-005-W1",
+    "TASK-123-T3-FT-013-W6"
+  ],
+  "purpose": "Make the fixed gallery readable only by its venue display principal through promo-owned authorization.",
+  "success_outcome": "Gallery members return no-store reduced JPEG through the new path; invalid/foreign/nonmember/unavailable reads disclose nothing, preserve the strict old teaser route and mutate no domain state.",
+  "touched_files": [
+    "src/face_moment/promo/display_media.py",
+    "src/face_moment/promo/http.py",
+    "src/face_moment/promo/__init__.py",
+    "tests/promo/test_promo_gallery_media.py",
+    "tests/promo/test_promo_display_api.py"
+  ],
+  "anti_goals": [
+    "No selection or persisted gallery-publication implementation; those outcomes belong to TASK-140/141.",
+    "No client UI, credential lifecycle, public-phone date policy or deployment changes."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/default database mutation or credential disclosure",
+      "Session selection/publication and gallery schema changes",
+      "Client UI and foreign capability writes"
+    ],
+    "stop_conditions": [
+      "Media access requires expanding accepted authority or a new owner/edge.",
+      "Security probes cannot be isolated and cleaned safely."
+    ]
+  },
+  "verification_targets": [
+    "FT-005-AC-008: use disposable PostgreSQL plus task-owned preview/original fixtures and real display authentication through HTTP. Probe matched issuing-revision and common no_faces JPEG, content type/no-store, missing/invalid/reset/inactive principal 401; foreign session/photo, nonmember, missing issuing revision/bytes, hard-purged and legacy-null gallery 404. An additional gallery member stays 404 on the old teaser route. Read only through public inventory/processing providers; inspect primary-key lookup and no historical scans.",
+    "FT-005-AC-008: snapshot session/Attempt, union/N, ticket/expiry/browser access and processing rows before/after reads including failures; prove no mutation or replacement selection, no raw keys/presigned/original delivery and no credential/result logging. Use unique disposable IDs, rerun from the same initial fixture and clean only task-owned database/objects on success or failure."
+  ],
+  "evidence_required": [
+    "FT-005-AC-008 RED: baseline valid fixed gallery request cannot deliver the authorized member at the new route; GREEN: same authorized fixture returns reduced JPEG and all scoped denial/strict-teaser cases return the contract statuses with unchanged state. Decisive comparison: sanitized HTTP matrix, provider/revision observations and before/after snapshots; artifact: focused test transcript under .tasks/TASK-142-T3-FT-005-W9/."
+  ]
+}

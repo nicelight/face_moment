@@ -130,8 +130,19 @@ def test_result_route_publishes_v1_and_terminal_repeat_without_second_search(
     attempt_id = uuid.uuid4()
     body, content_type = _multipart(_manifest(attempt_id, count=2))
 
+    from face_moment.promo import session as session_module
+    original_common_read = session_module.read_promo_common_photos
+    common_reads = []
+    def read_commons(*args, **kwargs):
+        common_reads.append(kwargs['limit'])
+        return original_common_read(*args, **kwargs)
+    monkeypatch.setattr(session_module, 'read_promo_common_photos', read_commons)
     first = _request(app, body, content_type, token)
+    assert len(first[2].get("result", {}).get("gallery_photos", [])) == 5, "initial response must publish the fixed gallery"
+    # A newly available common Photo must not change a terminal response.
+    _add_gallery_common(engine, spa_id, 'after-first-result')
     second = _request(app, body, content_type, token)
+    assert common_reads == [7]
 
     assert first[0] == second[0] == 200
     assert first[2] == second[2]
@@ -144,10 +155,14 @@ def test_result_route_publishes_v1_and_terminal_repeat_without_second_search(
         "n",
         "qr_url",
         "qr_first_open_expires_at",
+        "gallery_photos",
     }
     assert len(result["teasers"]) == 4
     assert len({item["photo_id"] for item in result["teasers"]}) == 4
     assert result["n"] == 5
+    assert [p['photo_id'] for p in result['gallery_photos'][:4]] == [p['photo_id'] for p in result['teasers']]
+    assert all(p['kind'] == 'matched' and p['media_url'] ==
+        f"/api/promo/sessions/{result['session_id']}/gallery/media/{p['photo_id']}" for p in result['gallery_photos'])
     assert result["qr_url"].startswith("/q?ticket=")
     assert calls == ["search"]
 
@@ -163,6 +178,7 @@ def test_result_route_publishes_v1_and_terminal_repeat_without_second_search(
         assert attempt.domain_outcome == "result"
         stored = session.scalar(select(PromoSession).where(PromoSession.attempt_id == attempt.id))
         assert (stored.visit_date, stored.visit_date_to) == (attempt.visit_date, attempt.visit_date_to)
+        assert stored.gallery_photos == [{k: v for k, v in item.items() if k != 'media_url'} for item in result['gallery_photos']]
         assert stored.visit_date_to == datetime(2026, 8, 22).date()
         assert session.scalar(
             select(func.count()).select_from(PromoSession).where(
@@ -606,3 +622,34 @@ def test_concurrent_route_auth_workers_keep_rate_budget(
     with Session(engine) as session:
         assert session.scalar(select(func.count()).select_from(PromoAttempt)) == limit
     print({"worker_auth_allowed": statuses.count(200), "worker_auth_denied": statuses.count(429)})
+
+
+def _add_gallery_common(engine, spa_id, marker):
+    from tests.processing.test_realtime_search import _add_photo
+    with Session(engine) as session:
+        from face_moment.serving_control.ingest_target import Spa
+        revision = session.get(Spa, spa_id).serving_pipeline_revision_id
+        photo_id, _ = _add_photo(session, marker=marker, spa_id=spa_id, revision_id=revision,
+            embedding=(1.,) + (0.,)*127, prefix='task141/', visit_date=datetime(2001, 1, 1).date(),
+            state_status='no_faces', has_preview=False)
+        session.commit()
+        return photo_id
+
+
+def test_initial_gallery_persists_common_and_historical_null_repeat_omits_it(realtime_state, monkeypatch):
+    app, engine, spa_id, token = realtime_state
+    common_id = _add_gallery_common(engine, spa_id, 'before-first-result')
+    monkeypatch.setattr(realtime, 'search_realtime_references', lambda **kwargs: _successful_search_result())
+    body, content_type = _multipart(_manifest(uuid.uuid4(), count=2))
+    first = _request(app, body, content_type, token)
+    result = first[2]['result']
+    assert first[0] == 200 and result['n'] == 5 and len(result['gallery_photos']) == 6
+    assert result['gallery_photos'][-1]['photo_id'] == str(common_id)
+    assert result['gallery_photos'][-1]['kind'] == 'common'
+    with Session(engine) as session:
+        row = session.get(PromoSession, uuid.UUID(result['session_id']))
+        assert row.gallery_photos[-1] == {'photo_id': str(common_id), 'kind': 'common'}
+        row.gallery_photos = None  # Historical migration representation.
+        session.commit()
+    repeated = _request(app, body, content_type, token)[2]['result']
+    assert repeated == {key: value for key, value in result.items() if key != 'gallery_photos'}

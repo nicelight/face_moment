@@ -1,0 +1,117 @@
+{
+  "feature": "FT-005",
+  "status": "done",
+  "verify": [
+    {
+      "verdict": "PASS",
+      "date": "2026-10-04T11:54:14.146528+00:00",
+      "summary": "Independent FT-005-AC-007 verification: fresh 104 unit, 5 focused and 3 browser scenarios plus mb-lint passed; local settings/reload, timing, fixed grid, late/failing cells, replay/legacy and cleanup proven. Fresh Luna co-review: no candidates. Lifecycle unchanged.",
+      "evidence": [
+        ".protocols/TASK-143-T2-FT-005-W10/verification.md",
+        ".tasks/TASK-143-T2-FT-005-W10/TASK-143-T2-FT-005-W10-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-143-T2-FT-005-W10/verify-unit-resume.txt",
+        ".tasks/TASK-143-T2-FT-005-W10/verify-focused-resume.txt",
+        ".tasks/TASK-143-T2-FT-005-W10/verify-browser-resume.txt",
+        ".tasks/TASK-143-T2-FT-005-W10/verify-lint-resume.txt",
+        ".tasks/TASK-143-T2-FT-005-W10/cli-transcript.txt"
+      ]
+    },
+    {
+      "stage": "closure",
+      "verdict": "done",
+      "summary": "Root standalone owner closes FT-005-AC-007 after independent PASS: saved local settings, timed fullscreen gallery/late fill/replay, legacy behavior and resource cleanup verified in controlled clocks and actual browsers."
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-005.md",
+    ".memory-bank/tasks/plans/IMPL-FT-005.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/contracts/promo-display-api.md#optional-second-slide",
+    ".memory-bank/contracts/boundary-map.md#participant-promo",
+    ".memory-bank/testing/index.md#current-source-development-gate",
+    ".memory-bank/contracts/realtime-attempt-api.md#response-version-1",
+    ".memory-bank/contracts/promo-display-api.md#client-outcome-rules",
+    ".memory-bank/contracts/boundary-map.md#central-origin-client-delivery",
+    ".memory-bank/testing/index.md#ui-verification",
+    ".memory-bank/testing/client-realtime.md#repository-browser-runner"
+  ],
+  "constraints": [
+    "Constitution I/III: bounded accepted second-slide delta; no deployment or production probes.",
+    "Presentation owner is promo with external SpaPromoClient under client/. Extend existing display controller/preferences; localStorage read/write belongs in client/promo-display-preferences.js, no settings framework. Actual runtime storage is kiosk-origin localStorage; choose internal keys consistently with existing face-moment.promo-display-seconds and prove save/read/reload.",
+    "Use playwright cli for actual-browser UI proof; retain concrete Configuration, transition, late-cell and replay flow artifacts, without a general UI audit.",
+    "The latest successful result remains page-lifetime-only. Reuse immutable gallery; absence of gallery falls back to four-photo behavior. Extra image failure never undoes an already confirmed first result."
+  ],
+  "invariants": [
+    "The first four teaser IDs, union/N, QR lifetime and first-slide ACK remain unchanged."
+  ],
+  "gates": [
+    {
+      "name": "Memory Bank lint",
+      "command": "node .memory-bank/scripts/mb-lint.mjs",
+      "required": true
+    },
+    {
+      "name": "Client regression",
+      "command": "npm run test:unit",
+      "required": true
+    },
+    {
+      "name": "Second-slide browser regression",
+      "command": "npm run test:browser -- tests/client/test_promo_second_slide.spec.mjs tests/client/test_promo_replay.spec.mjs",
+      "required": true
+    }
+  ],
+  "id": "TASK-143-T2-FT-005-W10",
+  "tier": "T2",
+  "wave": "W10",
+  "title": "Present the optional timed Promo gallery and replay",
+  "source_artifacts": [
+    ".memory-bank/features/FT-005.md#FT-005-AC-007",
+    ".protocols/promo-second-slide/plan.md",
+    ".protocols/FT-005/plan.md"
+  ],
+  "reqs": [
+    "REQ-UX-001",
+    "REQ-UX-003",
+    "REQ-REL-001"
+  ],
+  "depends_on": [
+    "TASK-142-T3-FT-005-W9",
+    "TASK-077-T3-FT-005-W2",
+    "TASK-078-T3-FT-005-W2"
+  ],
+  "purpose": "Let the kiosk display more issued photos with local configuration while preserving first-slide confirmation and session lifetime.",
+  "success_outcome": "Saved enabled settings drive timer-based photo-only 4x3 gallery and direct replay; delayed/failing additions never block first QR/ACK or timer transitions, and expiry returns to advertising.",
+  "touched_files": [
+    "client/promo-display.js",
+    "client/promo-display-preferences.js",
+    "client/app.js",
+    "client/styles.css",
+    "tests/client/test_promo_second_slide.mjs",
+    "tests/client/test_promo_second_slide.spec.mjs",
+    ".memory-bank/runbooks/app_guide_ru.md"
+  ],
+  "anti_goals": [
+    "No backend settings, gallery selection, persistence, auth policy, new search/session/ACK or QR lifetime changes.",
+    "No general visual audit, new client framework, jobs or polling."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Backend security, gallery selection and session/ACK persistence",
+      "Deployment or production credentials",
+      "Phone gallery behavior and paid flow"
+    ],
+    "stop_conditions": [
+      "Accepted result/media contracts do not supply the required fixed gallery.",
+      "Implementation requires a material new product decision or security policy."
+    ]
+  },
+  "verification_targets": [
+    "FT-005-AC-007: controlled clocks and deferred image promises prove extras start after complete first render, unchanged first QR/ACK, timer-driven 2000ms opacity-only FIRST to SECOND without waiting, duration measured after transition or immediately with reduced-motion, 12 fixed slots with unique available photos and empty missing/failed slots, late fill and advertisement handoff. Cover disabled and absent-field legacy result, prevent stale completion after replacement/expiry/dispose, and dispose timers/object URLs.",
+    "FT-005-AC-007: use playwright cli against disposable central-origin client fixtures at logical landscape and portrait viewports. Save toggle and positive whole seconds through Configuration, reload and read through real localStorage adapter; invalid/missing duration cannot enable. Drive FIRST to photo-only full-screen 4x3 SECOND with slow/failing image and reduced-motion, expiry to advertising and click/replay directly to latest successful grid. Compare request/ACK counts and QR identity; disable and repeat legacy four-photo replay. Retain CLI transcript and decisive screenshots/trace under .tasks/TASK-143-T2-FT-005-W10/; remove disposable browser storage/profile and processes."
+  ],
+  "evidence_required": [
+    "FT-005-AC-007 RED: accepted enabled configuration and controlled result cannot produce the timed second grid or direct gallery replay on baseline; GREEN: equivalent fixtures and saved settings produce exact layout/timing/late-fill/replay with unchanged first ACK/QR and correct advertising return, while disabled/legacy paths retain baseline. Decisive comparison: controlled state/timer/request trace plus actual browser layout and settings reload; artifact: focused unit/browser results and Playwright CLI transcript/screenshots under .tasks/TASK-143-T2-FT-005-W10/."
+  ]
+}

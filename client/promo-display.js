@@ -1,5 +1,5 @@
 import { applySavedPromoLayout } from "./promo-layout.js";
-import { promoDurationMs } from "./promo-display-preferences.js";
+import { promoDurationMs, readPromoSecondSlide } from "./promo-display-preferences.js";
 import { getDisplayRequestHeaders } from "./display-client-config.js";
 
 const PROMO_COPY = "Ваши фото можно скачать по QR коду или на сайте face-momet.ru";
@@ -84,6 +84,27 @@ export function validatePromoResult(result, { origin = defaultOrigin() } = {}) {
     });
   });
 
+  let galleryPhotos;
+  if (payload.gallery_photos !== undefined) {
+    if (!Array.isArray(payload.gallery_photos) || payload.gallery_photos.length < 4 || payload.gallery_photos.length > 12) {
+      throw new TypeError("promo_gallery_invalid");
+    }
+    const ids = new Set();
+    galleryPhotos = Object.freeze(payload.gallery_photos.map((item, index) => {
+      requireObject(item, "promo_gallery_photo");
+      if (typeof item.photo_id !== "string" || !item.photo_id.trim() || ids.has(item.photo_id)
+          || !["matched", "common"].includes(item.kind)
+          || (index < 4 && (item.photo_id !== teasers[index].photo_id || item.kind !== "matched"))) {
+        throw new TypeError("promo_gallery_invalid");
+      }
+      ids.add(item.photo_id);
+      const url = sameOriginUrl(item.media_url, origin, "promo_gallery_url");
+      if (url.pathname !== `${MEDIA_PATH_PREFIX}${encodeURIComponent(payload.session_id)}/gallery/media/${encodeURIComponent(item.photo_id)}`
+          || url.search || url.hash) throw new TypeError("promo_gallery_url_invalid");
+      return Object.freeze({ photo_id: item.photo_id, kind: item.kind, media_url: url.href });
+    }));
+  }
+
   const qrUrl = sameOriginUrl(payload.qr_url, origin, "promo_qr_url");
   const qrTicket = qrUrl.searchParams.get("ticket");
   if (qrUrl.pathname !== "/q" || !qrTicket?.trim()) {
@@ -92,6 +113,7 @@ export function validatePromoResult(result, { origin = defaultOrigin() } = {}) {
   return Object.freeze({
     session_id: payload.session_id,
     teasers: Object.freeze(teasers),
+    ...(galleryPhotos ? { gallery_photos: galleryPhotos } : {}),
     n: payload.n,
     qr_url: qrUrl.href,
     qr_first_open_expires_at: payload.qr_first_open_expires_at,
@@ -520,6 +542,7 @@ export class PromoDisplayController {
     this.displayConfigurationOperations = new Map();
     this.previewResources = new Set();
     this.renderedCard = null;
+    this.transitionCard = null;
     this.lastResult = null;
     this.isReplaying = false;
   }
@@ -565,15 +588,86 @@ export class PromoDisplayController {
   }
 
   removeRenderedCard() {
-    const card = this.renderedCard;
+    const cards = [this.renderedCard, this.transitionCard].filter(Boolean);
     this.renderedCard = null;
-    if (!card) return;
-    card.getAnimations?.({ subtree: true }).forEach(animation => animation.cancel());
-    const children = Array.from(
-      this.container.childNodes ?? this.container.children ?? [],
-    );
-    if (!children.includes(card)) return;
-    this.container.replaceChildren(...children.filter((child) => child !== card));
+    this.transitionCard = null;
+    for (const card of cards) card.getAnimations?.({ subtree: true }).forEach(animation => animation.cancel());
+    const children = Array.from(this.container.childNodes ?? this.container.children ?? []);
+    if (cards.some(card => children.includes(card))) {
+      this.container.replaceChildren(...children.filter(child => !cards.includes(child)));
+    }
+  }
+
+  dispose() {
+    this.generation += 1;
+    this.clearDisplayExpiryTimer();
+    this.cancelPendingWork();
+    this.removeRenderedCard();
+    this.releasePreviewResources();
+    this.isVisible = false;
+    this.isReplaying = false;
+    this.lastResult = null;
+  }
+
+  createGallery(images = []) {
+    const card = this.document.createElement("section");
+    card.className = "view-card promo-card promo-gallery";
+    card.dataset.view = "result";
+    const cells = Array.from({ length: 12 }, () => {
+      const cell = this.document.createElement("div");
+      cell.className = "promo-gallery-cell";
+      card.append(cell);
+      return cell;
+    });
+    images.forEach((source, index) => {
+      const image = this.document.createElement("img");
+      image.src = source.src;
+      image.alt = source.alt;
+      cells[index].append(image);
+    });
+    return { card, cells };
+  }
+
+  loadGalleryPhotos(photos, gallery, resource, generation, start = 0) {
+    photos.slice(start).forEach((photo, offset) => {
+      const controller = this.beginPendingOperation();
+      const work = loadPreview({ teaser: photo, fetchImpl: this.fetchImpl,
+        imageFactory: this.imageFactory, urlApi: this.urlApi, signal: controller.signal,
+        onObjectUrl: url => this.registerPreviewObjectUrl(resource, url) });
+      void this.runWithDeadline(work, { controller, timeoutMs: this.loadingDeadlineMs,
+        timeoutError: new Error("promo_media_timeout") }).then(image => {
+        if (generation === this.generation && !resource.released && this.isVisible) {
+          gallery.cells[start + offset].replaceChildren(image);
+        }
+      }).catch(() => {}).finally(() => this.endPendingOperation(controller));
+    });
+  }
+
+  scheduleSecondSlide(attemptId, firstDurationMs, secondDurationMs, gallery) {
+    this.clearDisplayExpiryTimer();
+    const generation = this.generation;
+    this.displayExpiryTimer = this.setTimeoutImpl(() => {
+      this.displayExpiryTimer = null;
+      if (generation !== this.generation || !this.isVisible) return;
+      const first = this.renderedCard;
+      this.transitionCard = first;
+      this.renderedCard = gallery.card;
+      this.container.replaceChildren(first, gallery.card);
+      const finish = () => {
+        if (generation !== this.generation || !this.isVisible) return;
+        first.getAnimations?.({ subtree: true }).forEach(animation => animation.cancel());
+        gallery.card.getAnimations?.().forEach(animation => animation.cancel());
+        this.container.replaceChildren(gallery.card);
+        this.transitionCard = null;
+        this.scheduleDisplayExpiry(attemptId, secondDurationMs);
+      };
+      if (globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches) finish();
+      else {
+        first.animate?.([{ opacity: 1 }, { opacity: 0 }], { duration: 2000, easing: "linear", fill: "forwards" });
+        gallery.card.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 2000, easing: "linear", fill: "forwards" });
+        this.displayExpiryTimer = this.setTimeoutImpl(finish, 2000);
+      }
+    }, firstDurationMs);
   }
 
   beginPendingOperation() {
@@ -783,7 +877,21 @@ export class PromoDisplayController {
       if (this.requireDisplayConfig && configuration === null) {
         throw new Error("promo_display_configuration_missing");
       }
+      const secondSlide = readPromoSecondSlide();
+      const useGallery = secondSlide.enabled && normalized.gallery_photos;
       previewResource = this.beginPreviewResource();
+      if (replay && useGallery) {
+        const gallery = this.createGallery();
+        this.container.replaceChildren(gallery.card);
+        this.renderedCard = gallery.card;
+        this.isVisible = true;
+        this.scheduleDisplayExpiry(attemptId, secondSlide.seconds * 1000, true);
+        this.loadGalleryPhotos(normalized.gallery_photos, gallery, previewResource, generation);
+        const detail = Object.freeze({ handled: true, stale: false, attemptId, state: "result",
+          replay: true, qrFullyVisible: false, acknowledgement: { sent: false, reason: "replay" } });
+        this.onComplete(detail);
+        return detail;
+      }
       const previewController = this.beginPendingOperation();
       let images;
       if (!replay) this.onLoading({ attemptId });
@@ -839,9 +947,13 @@ export class PromoDisplayController {
           return { stale: true, attemptId };
         }
       }
+      const gallery = useGallery ? this.createGallery(images) : null;
       if (configuration !== null) {
-        this.scheduleDisplayExpiry(attemptId, promoDurationMs(configuration.result_display_ms), replay);
+        const durationMs = promoDurationMs(configuration.result_display_ms);
+        if (gallery) this.scheduleSecondSlide(attemptId, durationMs, secondSlide.seconds * 1000, gallery);
+        else this.scheduleDisplayExpiry(attemptId, durationMs, replay);
       }
+      if (gallery) this.loadGalleryPhotos(normalized.gallery_photos, gallery, previewResource, generation, 4);
       const qrFullyVisibleElapsedMs = replay ? null : this.qrFullyVisibleElapsedMs(timing);
       let acknowledgement = { sent: false, reason: "timing_unavailable" };
       if (qrFullyVisibleElapsedMs !== null) {
@@ -877,6 +989,8 @@ export class PromoDisplayController {
             acknowledgement,
           });
           this.isVisible = false;
+          this.clearDisplayExpiryTimer();
+          this.cancelPendingWork();
           this.removeRenderedCard();
           this.releasePreviewResource(previewResource);
           this.onFailure(detail);
