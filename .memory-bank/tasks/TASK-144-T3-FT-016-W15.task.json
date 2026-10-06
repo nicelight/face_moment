@@ -1,0 +1,120 @@
+{
+  "id": "TASK-144-T3-FT-016-W15",
+  "title": "Browser recovery when free quote becomes paid before order POST",
+  "status": "done",
+  "wave": "W15",
+  "feature": "FT-016",
+  "reqs": [
+    "REQ-PUB-001",
+    "REQ-PUB-004",
+    "REQ-PUB-005",
+    "REQ-PUB-006"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-129-T2-FT-014-W9",
+    "TASK-136-T2-FT-015-W12",
+    "TASK-138-T3-FT-016-W13"
+  ],
+  "touched_files": [
+    "client/public-photo-download.js",
+    "tests/client/test_public_photo_payment.mjs",
+    "tests/client/public_photo_payment.spec.mjs",
+    "tests/client/public_photo_download_browser_fixture.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Client unit tests",
+      "command": "npm run test:unit",
+      "required": true
+    },
+    {
+      "name": "Focused served browser flow",
+      "command": "npm run test:browser -- tests/client/public_photo_payment.spec.mjs",
+      "required": true
+    }
+  ],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "pass",
+      "summary": "Independent GPT-6 Sol verify attempt1: accepted FT-016-AC-001 repair and relevant regressions PASS. Fresh unit108/108, paid browser8/8, free browser1/1; frozen item flags and profile verified by independent served trace. Read-only Reviewer; root records output. Separate T3 semantic review remains due.",
+      "evidence": [
+        ".protocols/TASK-144-T3-FT-016-W15/verification.md",
+        ".tasks/TASK-144-T3-FT-016-W15/TASK-144-T3-FT-016-W15-S-VERIFY-final-report-docs-01.md"
+      ]
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "summary": "Independent GPT-6 Sol semantic Reviewer: accepted TASK-144 outcome, direct boundary rules, definite/ambiguous rejection semantics and frozen order behavior inspected; both co-reviews found no material defect or operator question. Root records read-only output.",
+      "evidence": [
+        ".protocols/TASK-144-T3-FT-016-W15/red-verification.md",
+        ".tasks/TASK-144-T3-FT-016-W15/TASK-144-T3-FT-016-W15-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    },
+    {
+      "stage": "scheduler-closure",
+      "verdict": "done",
+      "summary": "Attempt1 closes after fresh independent functional PASS and separate semantic-pass. All task-owned T3 obligations satisfied; no production acceptance/deploy/live payment claimed.",
+      "evidence": [
+        ".protocols/TASK-144-T3-FT-016-W15/verification.md",
+        ".protocols/TASK-144-T3-FT-016-W15/red-verification.md"
+      ]
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-016.md",
+    ".memory-bank/tasks/plans/IMPL-FT-016.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-016.md#FT-016-AC-001: RED: with a quoted free selection, changing the venue to paid before its new-order POST currently yields a rejected request without the accepted recovery message; visible retry can repeat the same known-rejected free POST. GREEN: served proof identifies the free-to-paid change from current server conditions, not 422 alone; shows «Условия изменились, выберите фотографии повторно», permits ordinary fresh selection, and visible retry does not loop the known-rejected old free POST. No order/payment form is claimed and no automatic continuation follows. A separate ambiguous POST outcome retains the same body/client_request_id for user retry, creates at most one order, and triggers zero automatic continuation; unrelated POST validation/errors are not presented as changed conditions. Existing mixed paid/free browser order, email and frozen-order integration still pass. Record separate network, UI, profile and order/provider comparisons in .tasks/TASK-144-T3-FT-016-W15/claim-evidence.md. Preserve pre-existing GREEN; setup failure is not RED."
+  ],
+  "purpose": "Restore an ordinary visitor path when current paid settings invalidate a previously free quote before creating an order.",
+  "success_outcome": "The served browser explains the changed conditions and allows a fresh selection without automatic purchase continuation.",
+  "anti_goals": [
+    "No server/API/schema/provider changes, automatic purchase retry, new client history or polling layer; created orders retain their frozen amount and free flags."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy, real payment/email, shared operator database or destructive probes",
+      "Server order/payment owners, shared API/schema, unrelated Promo/QR and other feature behavior"
+    ],
+    "stop_conditions": [
+      "A repair requires a server/shared contract or changed product behavior, or the browser cannot distinguish a safe ordinary new selection within accepted behavior."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-016.md#FT-016-AC-001",
+    ".protocols/FT-016/clarification.md#task-139-принятый-kiss-repair-browser-continuation-2026-10-06",
+    ".protocols/FT-016/clarification.md#task-144-определённый-отказ-и-неопределённый-post",
+    ".memory-bank/bugs/public-photo-purchase-browser-continuation.md",
+    ".protocols/TASK-139-T3-FT-016-W14/verification.md",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-016.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries",
+    ".memory-bank/domains/photo-orders.md",
+    ".memory-bank/contracts/photo-purchase-api.md",
+    ".memory-bank/states/lifecycle-map.md#public-visitor-flow"
+  ],
+  "constraints": [
+    "Planning Revision 4 and Constitution KISS; advisory paths do not restrict necessary task-local fixture edits."
+  ],
+  "invariants": [
+    "promo server remains order/payment authority; browser never infers paid entitlement or overwrites frozen order state.",
+    "TASK-139 stays failed with exhausted retry budget; supplier proof belongs to done tasks."
+  ],
+  "verification_targets": [
+    "FT-016-AC-001: In the actual served browser with isolated backend and fake provider, quote a free selected photo, hold the new-order POST, switch its venue free-to-paid through the existing fixture, then release it. Establish the changed condition from current server conditions rather than HTTP 422 alone. Observe the old request rejected without an order or provider call, the exact accepted message, ordinary new selection obtaining the current server quote, and visible retry not looping the known-rejected old free POST; no automatic POST/payment navigation follows the old selection. Deliberate user retry after a fresh selection/quote remains available.",
+    "FT-016-AC-001: Separately inject an unrelated POST validation/error and an ambiguous POST outcome in the served fixture. The unrelated failure must not display the changed-conditions message. After the ambiguous outcome, a user retry preserves exactly the same request body and client_request_id, yields at most one order, and has zero automatic continuation; compare POST payloads/counts, order identity and UI state.",
+    "FT-016-AC-001: Focused unit and served regression also cover ordinary mixed-venue paid/free selection, browser email/method submission, one saved profile email/last visit, and already created order amount/free flags remaining server-frozen. Use disposable fixture state, safe rerun and cleanup; report observed network/UI/profile/order values and compare with the criterion. Existing TASK-132/137/138 server supplier proofs are prerequisites, not this task's claims."
+  ]
+}

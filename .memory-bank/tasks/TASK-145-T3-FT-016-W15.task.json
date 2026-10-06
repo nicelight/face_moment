@@ -1,0 +1,118 @@
+{
+  "id": "TASK-145-T3-FT-016-W15",
+  "title": "Browser retry refreshes retained pending order after new search",
+  "status": "done",
+  "wave": "W15",
+  "feature": "FT-016",
+  "reqs": [
+    "REQ-PUB-006",
+    "REQ-PUB-007"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-129-T2-FT-014-W9",
+    "TASK-136-T2-FT-015-W12",
+    "TASK-138-T3-FT-016-W13"
+  ],
+  "touched_files": [
+    "client/public-photo-download.js",
+    "tests/client/test_public_photo_payment.mjs",
+    "tests/client/public_photo_payment.spec.mjs"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Client unit tests",
+      "command": "npm run test:unit",
+      "required": true
+    },
+    {
+      "name": "Focused served browser flow",
+      "command": "npm run test:browser -- tests/client/public_photo_payment.spec.mjs",
+      "required": true
+    }
+  ],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "pass",
+      "summary": "Independent read-only GPT-6 Sol verify attempt1 PASS for FT-016-AC-005. Fresh108unit/9paidbrowser/1freebrowser plus target1/1: same-order owner and authenticated provider GET, zero new order/payment creation, pending originals closed, server-confirmed bearer; nonempty start and existing branches preserved. Root records output; separate semantic verification due.",
+      "evidence": [
+        ".protocols/TASK-145-T3-FT-016-W15/verification.md",
+        ".tasks/TASK-145-T3-FT-016-W15/TASK-145-T3-FT-016-W15-S-VERIFY-final-report-docs-01.md",
+        ".tasks/TASK-145-T3-FT-016-W15/independent-pending-retry-trace.zip"
+      ]
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "summary": "Fresh independent read-only GPT-6 Sol semantic review: supported empty/nonempty retry and server-only payment truth inspected; both co-reviews found no material break or operator question.",
+      "evidence": [
+        ".protocols/TASK-145-T3-FT-016-W15/red-verification.md",
+        ".tasks/TASK-145-T3-FT-016-W15/TASK-145-T3-FT-016-W15-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    },
+    {
+      "stage": "scheduler-closure",
+      "verdict": "done",
+      "summary": "Attempt1 closes after fresh independent functional PASS and separate semantic-pass. All task-owned T3 gates satisfied; production acceptance remains separate.",
+      "evidence": [
+        ".protocols/TASK-145-T3-FT-016-W15/verification.md",
+        ".protocols/TASK-145-T3-FT-016-W15/red-verification.md"
+      ]
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-016.md",
+    ".memory-bank/tasks/plans/IMPL-FT-016.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-016.md#FT-016-AC-005: RED: after a pending provider return and new search, retry with empty selected photo_ids currently performs zero owner status GETs for the saved order. GREEN: retry performs owner status GET through existing controller.refresh(), keeps the same order, and exposes paid download only after server confirmation; a nonempty selection still follows start(). Empty-selection retry creates zero new order POSTs, browser payment-initiation POSTs or provider create/payment-initiation POSTs. Authenticated provider status GET during owner refresh is permitted and expected for a pending order with provider ID. The existing preparation, card/SBP redirect, failed/unavailable delivery and confirmed-link browser paths still pass. Record separate branch, network, order/provider and UI comparisons in .tasks/TASK-145-T3-FT-016-W15/claim-evidence.md. Preserve pre-existing GREEN; setup failure is not RED."
+  ],
+  "purpose": "Keep the saved paid order reachable when a new public search leaves an empty current selection.",
+  "success_outcome": "Retry refreshes the retained order for an empty selection and uses ordinary start for a nonempty selection.",
+  "anti_goals": [
+    "No payment history, polling, new state layer, new order, automatic payment continuation or server/API/schema change."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy, real payment/email, shared operator database or destructive probes",
+      "Server payment/entitlement owner, shared API/schema, unrelated Promo/QR and other feature behavior"
+    ],
+    "stop_conditions": [
+      "Repair needs a new server/shared contract, persistence/history/polling layer or changed product behavior."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-016.md#FT-016-AC-005",
+    ".protocols/FT-016/clarification.md#task-139-принятый-kiss-repair-browser-continuation-2026-10-06",
+    ".protocols/FT-016/clarification.md#task-145-ноль-новых-платежей-при-owner-refresh",
+    ".memory-bank/bugs/public-photo-purchase-browser-continuation.md",
+    ".protocols/TASK-139-T3-FT-016-W14/verification.md",
+    ".memory-bank/requirements.md",
+    ".memory-bank/tasks/plans/IMPL-FT-016.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/constitution.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries",
+    ".memory-bank/domains/browser-search-profile.md",
+    ".memory-bank/domains/photo-orders.md",
+    ".memory-bank/contracts/photo-purchase-api.md",
+    ".memory-bank/states/lifecycle-map.md#public-visitor-flow"
+  ],
+  "constraints": [
+    "Planning Revision 4 and Constitution KISS; advisory paths do not restrict necessary task-local fixture edits."
+  ],
+  "invariants": [
+    "promo server remains the payment and entitlement authority; pending return never grants originals from browser state.",
+    "TASK-139 stays failed with exhausted retry budget; supplier proof belongs to done tasks."
+  ],
+  "verification_targets": [
+    "FT-016-AC-005: In the actual served browser with isolated backend/fake provider, create a paid order, return while provider remains pending, perform a new search with zero selected photo_ids, then click retry. Compare owner status GET count before/after, prove the retained order id is reused and zero new order POSTs, browser payment-initiation POSTs or provider create/payment-initiation POSTs occur. Authenticated provider status GET during owner refresh is permitted and expected for a pending order with provider ID; paid download remains closed while pending. After fake server-confirmed success, retry may show only the existing server-issued bearer link.",
+    "FT-016-AC-005: With a nonempty ready selection, retry continues through ordinary controller.start() rather than refresh of an unrelated saved order. Focused unit and served regressions cover both branches plus preparation/retry delay, provider navigation only after ready, card/SBP choices, archive failure without payment, confirmed link and unavailable paid delivery guidance. Use disposable fixture state, safe rerun and cleanup; report request counts, order identity and UI comparison. Existing TASK-137/138 server truth is prerequisite, not adopted proof."
+  ]
+}

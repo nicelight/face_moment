@@ -40,6 +40,154 @@ async function setup(page) {
 }
 const state=async page=>(await page.request.post(`${baseURL}/__fixture`,{data:{}})).json();
 
+test('TASK-145 FT-016-AC-005 empty retry after new search refreshes saved pending order', async ({page}) => {
+  await page.request.post(`${baseURL}/__fixture`,{data:{block:true,archive_fail:false,provider_status:'pending',reset_settings:true}});
+  const calls=[];
+  page.on('request', request => {
+    const path=new URL(request.url()).pathname;
+    if (path.startsWith('/api/public/orders')) calls.push({method:request.method(),path});
+  });
+  await setup(page);
+  await page.locator('#search-gallery > section').nth(0).locator('.fm-photo-select-paid input').first().check();
+  await page.locator('#photo-selection-download').click();
+  await page.locator('#photo-payment-email').fill('retained@example.test');
+  await page.locator('#photo-payment-form button').click();
+  await expect(page.locator('#photo-download-status')).toContainText('30 секунд');
+  await page.request.post(`${baseURL}/__fixture`,{data:{release:true}});
+  await expect.poll(async()=>(await state(page)).orders.at(-1).status).toBe('ready');
+  await page.locator('#photo-download-retry').click();
+  await expect(page).toHaveURL(/\/__provider\/checkout\//);
+  await page.locator('#return-to-site').click();
+  await expect(page.locator('#photo-download-status')).toContainText('Ожидаем подтверждения');
+  const beforeSearch=await state(page);
+  const order=beforeSearch.orders.at(-1);
+  expect(order.provider).toBeTruthy();
+  await setup(page);
+  await expect(page.locator('#photo-download-status')).toContainText('Ожидаем подтверждения');
+  expect(await page.locator('#search-gallery input:checked').count()).toBe(0);
+  await expect(page.locator('#photo-download-retry')).toBeVisible();
+  const before=await state(page);
+  const ownerPath=`/api/public/orders/${order.id}`;
+  const ownerGets=()=>calls.filter(call=>call.method==='GET'&&call.path===ownerPath).length;
+  const orderPosts=()=>calls.filter(call=>call.method==='POST'&&call.path==='/api/public/orders').length;
+  const paymentPosts=()=>calls.filter(call=>call.method==='POST'&&call.path===`${ownerPath}/payment`).length;
+  const counts={gets:ownerGets(),orders:orderPosts(),payments:paymentPosts(),creates:before.provider_requests.length,providerGets:before.provider_status_reads.length};
+  await page.locator('#photo-download-retry').click();
+  await expect.poll(ownerGets).toBe(counts.gets+1);
+  await expect(page.locator('#photo-download-status')).toContainText('Ожидаем подтверждения');
+  await expect(page.locator('#photo-download-link')).toBeHidden();
+  const pending=await state(page);
+  expect(pending.orders.at(-1).id).toBe(order.id);
+  expect(pending.orders).toHaveLength(before.orders.length);
+  expect(orderPosts()).toBe(counts.orders);
+  expect(paymentPosts()).toBe(counts.payments);
+  expect(pending.provider_requests).toHaveLength(counts.creates);
+  expect(pending.provider_status_reads).toHaveLength(counts.providerGets+1);
+  expect(pending.provider_status_reads.at(-1)).toEqual({id:order.provider,authenticated:true});
+  await page.request.post(`${baseURL}/__fixture`,{data:{provider_status:'succeeded'}});
+  await page.locator('#photo-download-retry').click();
+  await expect(page.locator('#photo-download-link')).toBeVisible();
+  const href=await page.locator('#photo-download-link').getAttribute('href');
+  expect(href).toMatch(new RegExp(`^/api/public/archives/${order.id}\\?token=`));
+  const confirmed=await state(page);
+  expect(confirmed.orders.at(-1).id).toBe(order.id);
+  expect(confirmed.orders.at(-1).payment_status).toBe('succeeded');
+  expect(confirmed.orders).toHaveLength(before.orders.length);
+  expect(orderPosts()).toBe(counts.orders);
+  expect(paymentPosts()).toBe(counts.payments);
+  expect(confirmed.provider_requests).toHaveLength(counts.creates);
+  console.log(`TASK-145 empty retry: order=${order.id} owner_GET=${ownerGets()-counts.gets} order_POST=0 payment_POST=0 provider_create=0 authenticated_provider_GET=${confirmed.provider_status_reads.length-counts.providerGets} pending_link=closed confirmed_link=server`);
+});
+
+test('FT-016-AC-001 free quote changed to paid before held order POST recovers by new selection', async ({page}) => {
+  await page.request.post(`${baseURL}/__fixture`,{data:{block:true,archive_fail:false,provider_status:'pending',reset_settings:true}});
+  const calls=[];
+  page.on('request', request => {
+    if (request.url().includes('/api/public/orders') || request.url().endsWith('/api/public/quote'))
+      calls.push({method:request.method(),path:new URL(request.url()).pathname,body:request.postDataJSON()});
+  });
+  const before=await state(page);
+  await setup(page);
+  const free=page.locator('#search-gallery > section').nth(1).locator('.fm-photo-select-free input').first();
+  await free.check();
+  await expect(page.locator('#photo-selection-total')).toHaveText('0,00 ₽');
+  let releasePost;
+  const held=new Promise(resolve => {releasePost=resolve;});
+  await page.route('**/api/public/orders', async route => {
+    if (route.request().method()==='POST') await held;
+    await route.continue();
+  });
+  await page.locator('#photo-selection-download').click();
+  await expect.poll(()=>calls.filter(call=>call.path==='/api/public/orders' && call.method==='POST').length).toBe(1);
+  await page.request.post(`${baseURL}/__fixture`,{data:{free_to_paid:true}});
+  const rejected=page.waitForResponse(response=>response.url().endsWith('/api/public/orders') && response.request().method()==='POST');
+  const rechecked=page.waitForResponse(response=>response.url().endsWith('/api/public/quote') && response.request().method()==='POST');
+  releasePost();
+  expect((await rejected).status()).toBe(422);
+  const currentQuote=await (await rechecked).json();
+  expect(currentQuote).toMatchObject({currency:'RUB',selected_count:1,paid_count:1,total_kopecks:101});
+  await expect(page.locator('#photo-download-status')).toHaveText('Условия изменились, выберите фотографии повторно');
+  const afterReject=await state(page);
+  expect(afterReject.orders).toHaveLength(before.orders.length);
+  expect(afterReject.provider_requests).toHaveLength(before.provider_requests.length);
+  expect(calls.filter(call=>call.path==='/api/public/quote')).toHaveLength(2);
+  expect(calls.some(call=>call.path.endsWith('/payment'))).toBe(false);
+  expect(page.url()).toBe(`${baseURL}/`);
+  expect(await page.locator('#photo-download-retry').isVisible()).toBe(false);
+  await page.locator('#photo-selection-download').click();
+  expect(calls.filter(call=>call.path==='/api/public/orders' && call.method==='POST')).toHaveLength(1);
+  await free.uncheck();
+  await free.check();
+  await expect(page.locator('#photo-selection-total')).toHaveText('1,01 ₽');
+  await page.locator('#photo-selection-download').click();
+  await expect(page.locator('#photo-payment-email')).toBeVisible();
+  expect(calls.filter(call=>call.path==='/api/public/orders' && call.method==='POST')).toHaveLength(1);
+  await page.locator('#photo-payment-email').fill('changed@example.test');
+  await page.locator('#photo-payment-form button').click();
+  await expect(page.locator('#photo-download-status')).toContainText('30 секунд');
+  const afterFresh=await state(page);
+  expect(afterFresh.orders).toHaveLength(before.orders.length+1);
+  expect(afterFresh.orders.at(-1).total).toBe(101);
+  expect(afterFresh.orders.at(-1).items[0].is_free).toBe(false);
+  expect(afterFresh.provider_requests).toHaveLength(before.provider_requests.length);
+  const posts=calls.filter(call=>call.path==='/api/public/orders' && call.method==='POST');
+  expect(posts).toHaveLength(2);
+  expect(posts[1].body.client_request_id).not.toBe(posts[0].body.client_request_id);
+  expect(posts[1].body.email).toBe('changed@example.test');
+  console.log(`TASK-144 changed: rejected=${posts[0].body.client_request_id} fresh=${posts[1].body.client_request_id} quotes=${calls.filter(call=>call.path==='/api/public/quote').length} orders=${afterFresh.orders.length-before.orders.length} providers=${afterFresh.provider_requests.length-before.provider_requests.length}`);
+});
+
+test('FT-016-AC-001 unrelated order 422 does not claim changed conditions', async ({page}) => {
+  await page.request.post(`${baseURL}/__fixture`,{data:{block:true,archive_fail:false,provider_status:'pending',reset_settings:true}});
+  const before=await state(page);
+  await setup(page);
+  const free=page.locator('#search-gallery > section').nth(1).locator('.fm-photo-select-free input').first();
+  await free.check();
+  await expect(page.locator('#photo-selection-total')).toHaveText('0,00 ₽');
+  let posts=0, quotes=0;
+  page.on('request', request => {
+    if(request.url().endsWith('/api/public/orders') && request.method()==='POST') posts++;
+    if(request.url().endsWith('/api/public/quote') && request.method()==='POST') quotes++;
+  });
+  await page.route('**/api/public/orders', async route => {
+    const original=route.request().postDataJSON();
+    const invalid=await route.fetch({postData:JSON.stringify({...original,photo_ids:['invalid-photo-id']})});
+    expect(invalid.status()).toBe(422);
+    await route.fulfill({response:invalid});
+  });
+  await page.locator('#photo-selection-download').click();
+  await expect(page.locator('#photo-download-status')).toHaveText('Не удалось оформить заказ. Выберите фотографии повторно.');
+  expect(quotes).toBe(1);
+  expect(posts).toBe(1);
+  expect(await page.locator('#photo-download-retry').isVisible()).toBe(false);
+  await page.locator('#photo-selection-download').click();
+  expect(posts).toBe(1);
+  const after=await state(page);
+  expect(after.orders).toHaveLength(before.orders.length);
+  expect(after.provider_requests).toHaveLength(before.provider_requests.length);
+  console.log(`TASK-144 unrelated 422: quote_recheck=${quotes} old_post=${posts} orders=0 providers=0`);
+});
+
 for (const mode of ['new_paid_tariff','change_settings']) test(`FT-016-AC-001/005 server order replaces pre-create quote: ${mode}`, async ({page}) => {
   await page.request.post(`${baseURL}/__fixture`,{data:{block:true,archive_fail:false,provider_status:'pending',reset_settings:true}});
   await setup(page);
@@ -194,6 +342,9 @@ test('FT-016-AC-005 failed archive keeps payment closed and records mail attempt
   });
   await page.locator('#photo-payment-form button').click();
   await expect(page.locator('#photo-download-status')).toContainText('Не удалось проверить');
+  expect(posts).toHaveLength(1);
+  expect((await state(page)).orders).toHaveLength(before.orders.length+1);
+  expect((await state(page)).provider_requests).toHaveLength(before.provider_requests.length);
   await page.locator('#photo-download-retry').click();
   await expect(page.locator('#photo-download-status')).toContainText('30 секунд');
   expect(posts).toHaveLength(2);

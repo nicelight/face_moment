@@ -19,4 +19,4 @@ status: active
 - [IMPL-FT-013](IMPL-FT-013.md): семь принятых результатов public camera/profile/search/gallery.
 - [IMPL-FT-014](IMPL-FT-014.md): шесть результатов selection/quote/admin и frozen order core.
 - [IMPL-FT-015](IMPL-FT-015.md): четыре результата ZIP runtime/free HTTP/private bearer/browser download.
-- [IMPL-FT-016](IMPL-FT-016.md): три результата YooKassa initiation/confirmation и paid browser integration.
+- [IMPL-FT-016](IMPL-FT-016.md): verified development YooKassa initiation/confirmation и две done browser successor-коррекции; TASK-139 остаётся historical failed.

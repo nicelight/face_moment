@@ -286,13 +286,23 @@ Wave 14: [TASK-139](tasks/TASK-139-T3-FT-016-W14.task.json) завершилас
 FT-016-AC-001/005 не закрыты. RTM lifecycle остаётся: REQ-PUB-002/003/004
 verified, REQ-PUB-001/005/006/007/008 planned; FT-016 и EP-004 planned.
 
+Wave 15: root закрыл [TASK-144](tasks/TASK-144-T3-FT-016-W15.task.json)
+для FT-016-AC-001 и [TASK-145](tasks/TASK-145-T3-FT-016-W15.task.json)
+для FT-016-AC-005 после независимых functional PASS и semantic-pass, связанных
+в карточках. С уже done TASK-137/138 это покрывает все development AC-001..005;
+FT-013/014/015 были verified ранее. [Решение владельца](../.protocols/AUTONOMOUS-RUN/decision-log.md#wave15-closure-owner-decision)
+разрешает FT-016, EP-004 и REQ-PUB-001..008 lifecycle verified по принятому
+development scope. Исторический TASK-139 остаётся failed; успешен только
+двухзадачный successor run. Production activation, фискальный чек, внешний
+real-shop SBP, SMTP setup и deployment отдельно не доказаны.
+
 | REQ | Epic | Feature | Test / evidence target | Lifecycle |
 |---|---|---|---|---|
-| `REQ-PUB-001` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md) (order-core supplier), [FT-016](features/FT-016.md) | `FT-013-AC-001..004`, `FT-013-AC-007`, `FT-014-AC-006`, `FT-016-AC-001`; PRD AC-PUB | planned |
+| `REQ-PUB-001` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md) (order-core supplier), [FT-016](features/FT-016.md) | `FT-013-AC-001..004`, `FT-013-AC-007`, `FT-014-AC-006`, `FT-016-AC-001`; PRD AC-PUB | verified |
 | `REQ-PUB-002` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md) | `FT-013-AC-002..003`, `FT-013-AC-007..008`; PRD AC-PUB | verified |
 | `REQ-PUB-003` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md) | `FT-013-AC-005`, `FT-013-AC-008`, `FT-013-AC-009`, `FT-014-AC-001`; PRD AC-PUB | verified |
 | `REQ-PUB-004` | [EP-004](epics/EP-004.md) | [FT-014](features/FT-014.md), [FT-016](features/FT-016.md) | `FT-014-AC-001..006`, `FT-016-AC-001`; PRD AC-PUB | verified |
-| `REQ-PUB-005` | [EP-004](epics/EP-004.md) | [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-015-AC-001..002`, `FT-016-AC-001`; PRD AC-PUB | planned |
-| `REQ-PUB-006` | [EP-004](epics/EP-004.md) | [FT-014](features/FT-014.md) (order-core supplier), [FT-016](features/FT-016.md) | `FT-014-AC-006`, `FT-016-AC-001..003`, `FT-016-AC-005`; PRD AC-PUB | planned |
-| `REQ-PUB-007` | [EP-004](epics/EP-004.md) | [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-015-AC-002..004`, `FT-016-AC-002..005`; PRD AC-PUB | planned |
-| `REQ-PUB-008` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md), [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-013-AC-006`, `FT-013-AC-008..009`, `FT-014-AC-003..004`, `FT-015-AC-001`, `FT-015-AC-003`, `FT-016-AC-003..004`; PRD AC-PUB | planned |
+| `REQ-PUB-005` | [EP-004](epics/EP-004.md) | [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-015-AC-001..002`, `FT-016-AC-001`; PRD AC-PUB | verified |
+| `REQ-PUB-006` | [EP-004](epics/EP-004.md) | [FT-014](features/FT-014.md) (order-core supplier), [FT-016](features/FT-016.md) | `FT-014-AC-006`, `FT-016-AC-001..003`, `FT-016-AC-005`; PRD AC-PUB | verified |
+| `REQ-PUB-007` | [EP-004](epics/EP-004.md) | [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-015-AC-002..004`, `FT-016-AC-002..005`; PRD AC-PUB | verified |
+| `REQ-PUB-008` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md), [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-013-AC-006`, `FT-013-AC-008..009`, `FT-014-AC-003..004`, `FT-015-AC-001`, `FT-015-AC-003`, `FT-016-AC-003..004`; PRD AC-PUB | verified |

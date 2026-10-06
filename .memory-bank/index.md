@@ -68,7 +68,7 @@ status: active
   immutable TASK-101 failure evidence and verified TASK-111 successor
   resolution.
 - [.memory-bank/bugs/public-photo-purchase-browser-continuation.md](bugs/public-photo-purchase-browser-continuation.md):
-  финальный TASK-139 browser FAIL и маршрут планирования FT-016 successor repair.
+  исторический TASK-139 browser FAIL и подтверждённое исправление двумя W15 successors.
 - [.memory-bank/epics/index.md](epics/index.md): router for the four product
   epics (C4 L2).
 - [.memory-bank/features/index.md](features/index.md): router for the sixteen product
@@ -137,7 +137,7 @@ status: active
 - [EP-004](epics/EP-004.md): accepted public camera discovery, combined quote
   and independently deliverable free/paid originals; [FT-013](features/FT-013.md),
   [FT-014](features/FT-014.md), [FT-015](features/FT-015.md),
-  [FT-016](features/FT-016.md): design complete; [20 задач](tasks/plans/index.md)
+  [FT-016](features/FT-016.md): design complete; [исходные 20 задач](tasks/plans/index.md)
   получили task-plan APPROVE при Revision 4. В Wave 1 scheduler закрыл
   [TASK-120](tasks/TASK-120-T2-FT-013-W1.task.json) после independent PASS
   камеры/IndexedDB. В Wave 3 закрыты
@@ -178,16 +178,22 @@ status: active
   исправления attempt 1, independent [functional PASS](../.protocols/TASK-138-T3-FT-016-W13/verification.md)
   и [semantic-pass](../.protocols/TASK-138-T3-FT-016-W13/red-verification.md):
   server-confirmed paid entitlement и bearer ZIP с исходным ready+3days.
-  На границе Wave 14 остаются 19/20 done (TASK-120..138); TASK-139 failed
+  На границе Wave 14 были 19/20 done (TASK-120..138); TASK-139 failed
   после финального independent [functional FAIL](../.protocols/TASK-139-T3-FT-016-W14/verification.md)
   и исчерпания двух повторов. [BUG](bugs/public-photo-purchase-browser-continuation.md)
-  описывает незакрытые browser AC-001/005 и successor route для FT-016.
+  сохраняет эти исторические browser-сбои и successor route для FT-016.
+  [TASK-144](tasks/TASK-144-T3-FT-016-W15.task.json) и
+  [TASK-145](tasks/TASK-145-T3-FT-016-W15.task.json) закрыты root как две
+  независимые browser-коррекции после fresh task-plan APPROVE, functional PASS
+  и semantic-pass. С TASK-137/138 они покрывают FT-016-AC-001..005.
   Исторический [preflight stop](../.tasks/TASK-137-T3-FT-016-W12/TASK-137-T3-FT-016-W12-S-EXECUTE-final-report-docs-01.md)
-  сохранён. FT-016/EP-004 lifecycle planned; REQ-PUB-002/003/004 verified,
-  shared REQ-PUB-001/005..008 planned до paid browser/feature completion;
-  общего SUCCESS и deployment нет.
-  [Checkpoint](../.protocols/AUTONOMOUS-RUN/status.md) и [changelog](changelog.md)
-  содержат текущий wave-boundary status.
+  сохранён. По [решению владельца](../.protocols/AUTONOMOUS-RUN/decision-log.md#wave15-closure-owner-decision)
+  FT-013..016, EP-004 и REQ-PUB-001..008 имеют development lifecycle verified.
+  TASK-139 остаётся historical failed; успех относится только к двухзадачному
+  successor run. Production activation, фискальный чек, real-shop SBP, SMTP
+  setup и deployment отдельно не доказаны. Текущее состояние — в
+  [changelog](changelog.md); [run checkpoint](../.protocols/AUTONOMOUS-RUN/status.md)
+  передаёт post-sync gates root GENERAL.
 
 - [.memory-bank/epics/EP-001.md](epics/EP-001.md): fresh searchable
   commercial-photo inventory, role-scoped inventory operations and recent

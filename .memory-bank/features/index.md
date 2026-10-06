@@ -41,4 +41,4 @@ status: active
 - [FT-013](FT-013.md): verified camera/profile search and personal/common gallery.
 - [FT-014](FT-014.md): verified combined selection, global marginal tariff and venue access.
 - [FT-015](FT-015.md): verified free-original HTTP/browser/ZIP/bearer delivery; TASK-133..136 done и итоговый feature semantic-pass.
-- [FT-016](FT-016.md): paid purchase/delivery planned; TASK-137/138 done после payment initiation и server-confirmed bearer proof, TASK-139 failed после финального browser FAIL; [BUG](../bugs/public-photo-purchase-browser-continuation.md) маршрутизирует successor repair.
+- [FT-016](FT-016.md): verified development purchase/delivery; TASK-137/138/144/145 done покрывают AC-001..005, TASK-139 сохраняет historical failed verdict; production activation отдельна.

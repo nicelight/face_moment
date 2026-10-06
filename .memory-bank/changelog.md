@@ -4,6 +4,23 @@ status: active
 ---
 # Changelog
 
+## [2026-10-06] Wave 15 / development closure FT-016 и EP-004
+
+- Updated: root закрыл [TASK-144](tasks/TASK-144-T3-FT-016-W15.task.json)
+  и [TASK-145](tasks/TASK-145-T3-FT-016-W15.task.json) после отдельных
+  independent functional PASS и semantic-pass. Они подтверждают browser
+  FT-016-AC-001/005; done TASK-137/138 подтверждают AC-002..004.
+- Updated: [решение владельца](../.protocols/AUTONOMOUS-RUN/decision-log.md#wave15-closure-owner-decision)
+  разрешило [FT-016](features/FT-016.md), [EP-004](epics/EP-004.md) и
+  [RTM REQ-PUB-001..008](requirements.md#public-extension-rtm) development
+  lifecycle verified. [Feature router](features/index.md),
+  [epic router](epics/index.md), [plan](tasks/plans/IMPL-FT-016.md),
+  [plan router](tasks/plans/index.md) и [root navigation](index.md#product-decomposition)
+  согласованы. TASK-139 остаётся failed с неизменными отчётами; успешен только
+  successor run. Production activation, fiscal issuance, real-shop SBP, SMTP
+  и deployment не подтверждены. Root GENERAL владеет post-sync lint,
+  strict doctor и bounded advisory.
+
 ## [2026-10-06] Wave 14 / browser purchase failed after final verification
 
 - Updated: root записал [TASK-139](tasks/TASK-139-T3-FT-016-W14.task.json)

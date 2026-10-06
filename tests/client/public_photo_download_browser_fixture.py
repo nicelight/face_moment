@@ -50,6 +50,7 @@ try:
     archive_fail = False
     mails = []
     provider_requests = []
+    provider_status_reads = []
     provider_payments = {}
     provider_status = 'pending'
     checkout_base = ''
@@ -69,6 +70,7 @@ try:
         def do_GET(self):
             payment = next((p for p in provider_payments.values() if self.path.endswith('/' + p['id'])), None)
             if payment is None: self.send_error(404); return
+            provider_status_reads.append({'id': payment['id'], 'authenticated': self.headers.get('Authorization', '').startswith('Basic ')})
             body = json.dumps({**payment, 'status': provider_status, 'paid': provider_status == 'succeeded'}).encode()
             self.send_response(200); self.send_header('Content-Type', 'application/json'); self.end_headers()
             self.wfile.write(body)
@@ -101,7 +103,7 @@ try:
             config = json.loads(body)
             archive_fail = config.get('archive_fail', archive_fail)
             provider_status = config.get('provider_status', provider_status)
-            if config.get('change_settings') or config.get('new_paid_tariff') or config.get('reset_settings') or config.get('expire_last'):
+            if config.get('change_settings') or config.get('new_paid_tariff') or config.get('free_to_paid') or config.get('reset_settings') or config.get('expire_last'):
                 from face_moment.serving_control.ingest_target import Spa
                 with Session(engine) as session:
                     if config.get('change_settings'):
@@ -109,9 +111,12 @@ try:
                         session.get(Spa, venues[0]).is_free = True
                     if config.get('new_paid_tariff'):
                         session.get(PhotoTariff, 1).base_kopecks = Decimal(999)
+                    if config.get('free_to_paid'):
+                        session.get(Spa, venues[1]).is_free = False
                     if config.get('reset_settings'):
                         session.get(PhotoTariff, 1).base_kopecks = Decimal(101)
                         session.get(Spa, venues[0]).is_free = False
+                        session.get(Spa, venues[1]).is_free = True
                     if config.get('expire_last'):
                         latest = session.query(PhotoOrder).order_by(PhotoOrder.created_at.desc()).first()
                         latest.ready_at = datetime.now(timezone.utc) - timedelta(days=4)
@@ -135,7 +140,8 @@ try:
                 profiles = [{'email': p.email, 'last_visit_at': p.last_visit_at.isoformat() if p.last_visit_at else None}
                     for p in session.query(BrowserSearchProfile)]
             await send({'type': 'http.response.body', 'body': json.dumps({'orders':orders,'profiles':profiles,
-                'mail_count':len(mails),'provider_requests':provider_requests}).encode()})
+                'mail_count':len(mails),'provider_requests':provider_requests,
+                'provider_status_reads':provider_status_reads}).encode()})
         elif scope['type'] == 'http' and scope['path'].startswith('/__provider/checkout/'):
             body = b'<a href="/?payment_return=1" id="return-to-site">Return to Face Moment</a>'
             await send({'type':'http.response.start','status':200,'headers':[(b'content-type',b'text/html')]})

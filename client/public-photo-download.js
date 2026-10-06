@@ -2,16 +2,19 @@
 export function createPhotoDownload({ request, makeId = () => crypto.randomUUID(), onChange = () => {},
   navigate = url => window.location.assign(url), remember = () => {}, forget = () => {} }) {
   let attempt = null;
+  let blockedKey = null;
   const emit = state => onChange(Number.isInteger(attempt?.total_kopecks)
     ? {...state, total_kopecks: attempt.total_kopecks} : state);
   const key = selection => JSON.stringify([selection.result_id, [...selection.photo_ids].sort()]);
   function select(selection) {
     if (attempt?.redirected && !selection.photo_ids.length) return;
     const nextKey = key(selection);
+    if (blockedKey && blockedKey !== nextKey) { blockedKey = null; emit({ status: 'idle' }); }
     if (attempt && attempt.key !== nextKey) { attempt = null; forget(); emit({ status: 'idle' }); }
   }
   async function start(selection, payment = null) {
     select(selection);
+    if (blockedKey === key(selection)) return;
     if (!selection.quote || !selection.photo_ids.length) return;
     const paid = selection.quote.total_kopecks > 0 && selection.quote.paid_count > 0;
     if (!paid && (selection.quote.total_kopecks !== 0 || selection.quote.paid_count !== 0)) return;
@@ -52,7 +55,23 @@ export function createPhotoDownload({ request, makeId = () => crypto.randomUUID(
         navigate(url);
       }
       else emit({ status: 'failed' });
-    } catch { if (attempt === current) emit({ status: 'error' }); }
+    } catch (error) {
+      if (attempt !== current) return;
+      if (!current.order && !current.paid && error?.status === 422) {
+        let changed = false;
+        try {
+          const quote = await request('/api/public/quote', {
+            result_id: current.body.result_id, photo_ids: current.body.photo_ids });
+          changed = quote.currency === 'RUB' && quote.selected_count === current.body.photo_ids.length
+            && Number.isInteger(quote.total_kopecks) && quote.total_kopecks > 0
+            && Number.isInteger(quote.paid_count) && quote.paid_count > 0;
+        } catch { /* A failed quote cannot establish changed conditions. */ }
+        if (attempt !== current) return;
+        attempt = null;
+        blockedKey = current.key;
+        emit({ status: changed ? 'changed' : 'invalid' });
+      } else emit({ status: 'error' });
+    }
     finally { current.busy = false; }
   }
   async function resume(saved) {
@@ -89,7 +108,8 @@ export function mountPhotoDownload(summary, panel) {
     if (selectionTotal && Number.isInteger(state.total_kopecks)) selectionTotal.textContent =
       `${new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(state.total_kopecks / 100)} ₽`;
     if (form) form.hidden = state.status !== 'email';
-    message.textContent = ({ email: 'Укажите email и способ оплаты для выбранных фотографий.', loading: 'Проверяем архив…', preparing: 'Архив готовится. Повторите через 30 секунд.', failed: 'Не удалось подготовить архив. Обратитесь в поддержку.', canceled: 'Оплата не подтверждена. Обратитесь в поддержку, если нужна помощь.', pending: 'Ожидаем подтверждения оплаты. Проверьте снова через 30 секунд.', redirecting: 'Переходим к оплате…', unavailable: 'Архив недоступен или срок ссылки истёк. Обратитесь в поддержку для ручного возврата.', error: 'Не удалось проверить архив. Повторите попытку. Если ошибка сохраняется, обратитесь в поддержку.', ready: 'Архив готов. Скачайте выбранные фотографии.' })[state.status] || '';
+    message.textContent = ({ email: 'Укажите email и способ оплаты для выбранных фотографий.', loading: 'Проверяем архив…', preparing: 'Архив готовится. Повторите через 30 секунд.', failed: 'Не удалось подготовить архив. Обратитесь в поддержку.', canceled: 'Оплата не подтверждена. Обратитесь в поддержку, если нужна помощь.', pending: 'Ожидаем подтверждения оплаты. Проверьте снова через 30 секунд.', redirecting: 'Переходим к оплате…', unavailable: 'Архив недоступен или срок ссылки истёк. Обратитесь в поддержку для ручного возврата.', changed: 'Условия изменились, выберите фотографии повторно', invalid: 'Не удалось оформить заказ. Выберите фотографии повторно.', error: 'Не удалось проверить архив. Повторите попытку. Если ошибка сохраняется, обратитесь в поддержку.', ready: 'Архив готов. Скачайте выбранные фотографии.' })[state.status] || '';
+    if (selectionTotal && ['changed', 'invalid'].includes(state.status)) selectionTotal.textContent = 'Выберите фотографии повторно';
     retry.hidden = !['preparing', 'pending', 'error', 'failed', 'canceled'].includes(state.status);
     retry.disabled = state.status === 'loading';
     link.hidden = state.status !== 'ready';
@@ -102,7 +122,7 @@ export function mountPhotoDownload(summary, panel) {
     forget: () => sessionStorage.removeItem(memoryKey),
     request: async (url, body) => {
     const response = await fetch(url, { method: body ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store', ...(body ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}) });
-    if (!response.ok) throw new Error('order_unavailable');
+    if (!response.ok) throw Object.assign(new Error('order_unavailable'), {status: response.status});
     return response.json();
   }});
   summary.addEventListener('photo-selection-change', event => { selection = event.detail; controller.select(selection); });
@@ -115,7 +135,7 @@ export function mountPhotoDownload(summary, panel) {
     if (!['bank_card','sbp'].includes(payment_method)) return;
     void controller.start(selection, {email,payment_method});
   });
-  retry.addEventListener('click', () => { if (selection) void controller.start(selection); else void controller.refresh(); });
+  retry.addEventListener('click', () => { if (selection?.photo_ids.length) void controller.start(selection); else void controller.refresh(); });
   try {
     const saved = JSON.parse(sessionStorage.getItem(memoryKey));
     if (saved) void controller.resume(saved);
