@@ -9,9 +9,18 @@ RUN sed -i 's|URIs: http://deb.debian.org/|URIs: https://deb.debian.org/|' /etc/
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
+COPY requirements-runtime.lock.txt ./
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    unset PIP_NO_CACHE_DIR \
+    && python -m pip wheel --no-deps --wheel-dir /wheels -r requirements-runtime.lock.txt
+
+FROM builder AS app_builder
+
 COPY pyproject.toml ./
 COPY src ./src
-RUN python -m pip wheel --wheel-dir /wheels .
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    unset PIP_NO_CACHE_DIR \
+    && python -m pip wheel --no-deps --wheel-dir /app-wheels .
 
 FROM python:3.11-slim-bookworm AS runtime
 
@@ -30,8 +39,11 @@ RUN sed -i 's|URIs: http://deb.debian.org/|URIs: https://deb.debian.org/|' /etc/
 
 WORKDIR /app
 COPY --from=builder /wheels /wheels
-RUN python -m pip install --no-index --find-links=/wheels face-moment \
+RUN python -m pip install --no-index --no-deps /wheels/*.whl \
     && rm -rf /wheels
+COPY --from=app_builder /app-wheels /app-wheels
+RUN python -m pip install --no-index --no-deps /app-wheels/*.whl \
+    && rm -rf /app-wheels
 
 COPY --chown=app:app pyproject.toml alembic.ini ./
 COPY --chown=app:app migrations ./migrations

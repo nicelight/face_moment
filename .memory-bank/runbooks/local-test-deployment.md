@@ -82,8 +82,20 @@ disposable volumes and a loopback-only HTTPS edge, then cleans up only its own
 containers, network, volumes and image. It is the authoritative local proof
 for deployment packaging.
 
+The Docker build installs the runtime dependency set exported from the existing
+`uv.lock` before it copies `src` or `client`. A source-only or client-only edit
+must reuse the dependency wheel and runtime-install layers. The builder uses a
+persistent BuildKit pip cache for wheel downloads and source builds, so a
+dependency-layer rebuild can reuse previously fetched packages. Keep the
+generated runtime requirements in sync with `uv.lock` using
+`uv export --frozen --no-dev --no-emit-project --output-file requirements-runtime.lock.txt`;
+do not resolve newer transitive versions as part of a source-only build. A new
+or changed dependency may need one real download and build. Do not force
+`--no-cache`, upgrade dependencies, or prune shared caches for an ordinary
+packaged smoke.
+
 The [Dockerfile](../../Dockerfile) switches the official Bookworm APT source
-URIs to HTTPS in both build stages before `apt-get update`. This bounds an
+URIs to HTTPS in the builder and runtime base stages before `apt-get update`. This bounds an
 observed local HTTP delivery failure in which package sizes differed from the
 signed index; APT package and signature checks remain in force.
 
