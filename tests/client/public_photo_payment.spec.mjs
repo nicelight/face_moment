@@ -1,0 +1,232 @@
+import { test, expect } from '@playwright/test';
+import { spawn } from 'node:child_process';
+import { createInterface } from 'node:readline';
+import { readFile } from 'node:fs/promises';
+
+let fixture, baseURL, exited;
+test.use({ ignoreHTTPSErrors: true, viewport: {width: 1280, height: 900}, trace: 'on' });
+test.beforeAll(async () => {
+  fixture = spawn('uv', ['run', '--locked', '--env-file', '.env.local', 'python', '-m', 'tests.client.public_photo_download_browser_fixture'], {stdio: ['pipe', 'pipe', 'inherit']});
+  exited = new Promise(resolve => fixture.on('exit', resolve));
+  const lines = createInterface({input: fixture.stdout});
+  baseURL = await new Promise((resolve, reject) => {
+    lines.on('line', line => {if (line.startsWith('{')) resolve(JSON.parse(line).url); else console.log(line);});
+    fixture.on('exit', code => reject(new Error(`fixture exit ${code}`)));
+  });
+});
+test.afterAll(async () => {fixture?.stdin.end('\n'); if (exited) expect(await exited).toBe(0);});
+async function setup(page) {
+  await page.route('**/camera-fixture.png', route => readFile('tests/client/fixtures/selfie-portrait-small.png').then(body => route.fulfill({contentType:'image/png',body})));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'mediaDevices', {configurable:true,value:{getUserMedia:async()=>({getTracks:()=>[{stop(){}}]})}});
+    Object.defineProperty(HTMLMediaElement.prototype, 'srcObject', {configurable:true,set(v){this.__stream=v;},get(){return this.__stream;}});
+    Object.defineProperty(HTMLMediaElement.prototype, 'readyState', {configurable:true,get:()=>4});
+    Object.defineProperty(HTMLVideoElement.prototype, 'videoWidth', {configurable:true,get:()=>310});
+    Object.defineProperty(HTMLVideoElement.prototype, 'videoHeight', {configurable:true,get:()=>360});
+    HTMLMediaElement.prototype.play = async () => {const image=new Image();image.src='/camera-fixture.png';await image.decode();window.__cameraImage=image;};
+    const drawImage=CanvasRenderingContext2D.prototype.drawImage;
+    CanvasRenderingContext2D.prototype.drawImage=function(source,...args){return drawImage.call(this,source instanceof HTMLVideoElement?window.__cameraImage:source,...args);};
+  });
+  await page.goto(baseURL);
+  await page.locator('#selfie-viewport').click();
+  await expect(page.locator('#selfie-viewport')).toHaveAttribute('data-state','ready');
+  await page.locator('#selfie-viewport').click();
+  await expect(page.locator('#selfie-viewport')).toHaveAttribute('data-state','captured');
+  await page.locator('#search-venues input').nth(0).check();
+  await page.locator('#search-venues input').nth(1).check();
+  const response=page.waitForResponse(r=>r.url().endsWith('/api/public/search'));
+  await page.locator('#selfie-send').click();
+  return (await response).json();
+}
+const state=async page=>(await page.request.post(`${baseURL}/__fixture`,{data:{}})).json();
+
+for (const mode of ['new_paid_tariff','change_settings']) test(`FT-016-AC-001/005 server order replaces pre-create quote: ${mode}`, async ({page}) => {
+  await page.request.post(`${baseURL}/__fixture`,{data:{block:true,archive_fail:false,provider_status:'pending',reset_settings:true}});
+  await setup(page);
+  await page.locator('#search-gallery > section').nth(0).locator('.fm-photo-select-paid input').first().check();
+  await expect(page.locator('#photo-selection-total')).toHaveText('1,01 ₽');
+  await page.locator('#photo-selection-download').click();
+  await page.locator('#photo-payment-email').fill('changed@example.test');
+  await page.request.post(`${baseURL}/__fixture`,{data:{[mode]:true}});
+  const before=await state(page);
+  await page.locator('#photo-payment-form button').click();
+  await expect(page.locator('#photo-download-status')).toContainText('30 секунд');
+  const actual=mode==='new_paid_tariff' ? 999 : 0;
+  await expect(page.locator('#photo-selection-total')).toHaveText(actual ? '9,99 ₽' : '0,00 ₽');
+  let snapshot=await state(page);
+  expect(snapshot.orders).toHaveLength(before.orders.length+1);
+  expect(snapshot.orders.at(-1).total).toBe(actual);
+  expect(snapshot.provider_requests).toHaveLength(before.provider_requests.length);
+  await page.request.post(`${baseURL}/__fixture`,{data:{change_settings:true,release:true}});
+  await expect.poll(async()=>(await state(page)).orders.at(-1).status).toBe('ready');
+  await page.locator('#photo-download-retry').click();
+  if (actual) {
+    await expect(page).toHaveURL(/\/__provider\/checkout\//);
+    snapshot=await state(page);
+    expect(snapshot.provider_requests.at(-1).payload.amount.value).toBe('9.99');
+    expect(snapshot.orders.at(-1).total).toBe(999);
+  } else {
+    await expect(page.locator('#photo-download-link')).toBeVisible();
+    expect((await state(page)).provider_requests).toHaveLength(before.provider_requests.length);
+    const downloadPromise=page.waitForEvent('download');
+    await page.locator('#photo-download-link').click();
+    expect((await readFile(await (await downloadPromise).path())).subarray(0,2).toString()).toBe('PK');
+  }
+});
+
+for (const method of ['bank_card','sbp']) test(`FT-016-AC-001/005 paid served selection ${method}`, async ({page}) => {
+  await page.request.post(`${baseURL}/__fixture`,{data:{block:true,archive_fail:false,provider_status:'pending',reset_settings:true}});
+  const requests=[];
+  page.on('request', request => {
+    if (request.url().includes('/api/public/orders')) requests.push({method:request.method(),path:new URL(request.url()).pathname,body:request.postDataJSON()});
+  });
+  const before=(await state(page)).orders.length;
+  const result=await setup(page);
+  const sections=page.locator('#search-gallery > section');
+  await sections.nth(0).locator('.fm-photo-select-paid input').first().check();
+  await sections.nth(1).locator('.fm-photo-select-free input').first().check();
+  await expect(page.locator('#photo-selection-total')).not.toHaveText('0,00 ₽');
+  await page.locator('#photo-selection-download').click();
+  await expect(page.locator('#photo-payment-email')).toBeVisible();
+  await expect(page.locator('#photo-payment-method')).toBeVisible();
+  expect((await state(page)).orders).toHaveLength(before);
+  expect(result.result_id).toBeTruthy();
+  if (method==='sbp') {
+    await page.setViewportSize({width:390,height:850});
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    await expect(page.locator('#photo-payment-form')).toBeVisible();
+  }
+  await page.locator('#photo-payment-email').fill('frozen@example.test');
+  await page.locator('#photo-payment-method').selectOption(method);
+  await page.locator('#photo-payment-form button').click();
+  await expect(page.locator('#photo-download-status')).toContainText('30 секунд');
+  let snapshot=await state(page);
+  expect(snapshot.orders).toHaveLength(before+1);
+  const order=snapshot.orders.at(-1);
+  expect(order.photo_ids).toEqual(expect.arrayContaining([result.venues[0].personal[0].id,result.venues[1].personal[0].id]));
+  expect(order.total).toBeGreaterThan(0);
+  expect(order.email).toBe('frozen@example.test');
+  expect(order.method).toBe(method);
+  expect(order.items).toHaveLength(2);
+  expect(order.items.filter(item=>item.is_free)).toHaveLength(1);
+  expect(order.items.find(item=>item.is_free).unit_kopecks).toBe(0);
+  expect(snapshot.profiles.find(profile=>profile.email==='frozen@example.test')?.last_visit_at).toBeTruthy();
+  const post=requests.find(r=>r.method==='POST'&&r.path==='/api/public/orders');
+  expect(Object.keys(post.body).sort()).toEqual(['client_request_id','email','payment_method','photo_ids','result_id']);
+  expect(post.body.result_id).toBe(result.result_id);
+  expect(post.body.photo_ids).toEqual(expect.arrayContaining(order.photo_ids));
+  const firstProviderCount=snapshot.provider_requests.length;
+  await page.locator('#photo-download-retry').click();
+  await expect(page.locator('#photo-download-status')).toContainText('30 секунд');
+  expect((await state(page)).provider_requests).toHaveLength(firstProviderCount);
+  expect(requests.filter(r=>r.method==='POST'&&r.path==='/api/public/orders')).toHaveLength(1);
+  await page.request.post(`${baseURL}/__fixture`,{data:{change_settings:true,release:true}});
+  await expect.poll(async()=>(await state(page)).orders.at(-1).status).toBe('ready');
+  await page.locator('#photo-download-retry').click();
+  await expect(page).toHaveURL(/\/__provider\/checkout\//);
+  snapshot=await state(page);
+  expect(snapshot.provider_requests).toHaveLength(firstProviderCount+1);
+  const payment=snapshot.provider_requests.at(-1);
+  expect(payment.key).toBe(order.id);
+  expect(payment.payload.payment_method_data).toEqual({type:method});
+  expect(payment.payload.receipt.customer.email).toBe('frozen@example.test');
+  expect(payment.payload.receipt.items.every(item=>Number(item.amount.value)>0)).toBe(true);
+  expect(payment.payload.receipt.items.reduce((sum,item)=>sum+Math.round(Number(item.amount.value)*100)*Number(item.quantity),0)).toBe(order.total);
+  expect(payment.payload.amount.value).toBe('1.01');
+  expect(payment.payload.amount.currency).toBe('RUB');
+  expect(payment.payload.confirmation.return_url).toBe(`${baseURL}/?payment_return=1`);
+  expect(snapshot.orders.at(-1).total).toBe(order.total);
+  await page.locator('#return-to-site').click();
+  await expect(page.locator('#photo-download-status')).toContainText('Ожидаем подтверждения');
+  await expect(page.locator('#photo-download-link')).toBeHidden();
+  const ownerGetsBeforeRetry=requests.filter(r=>r.method==='GET'&&r.path===`/api/public/orders/${order.id}`).length;
+  await page.locator('#photo-download-retry').click();
+  await expect(page.locator('#photo-download-status')).toContainText('Ожидаем подтверждения');
+  expect(requests.filter(r=>r.method==='GET'&&r.path===`/api/public/orders/${order.id}`).length).toBeGreaterThan(ownerGetsBeforeRetry);
+  expect(requests.filter(r=>r.method==='POST'&&r.path==='/api/public/orders')).toHaveLength(1);
+  expect((await state(page)).provider_requests).toHaveLength(firstProviderCount+1);
+  await page.request.post(`${baseURL}/__fixture`,{data:{provider_status:'succeeded'}});
+  await page.locator('#photo-download-retry').click();
+  await expect(page.locator('#photo-download-link')).toBeVisible();
+  const href=await page.locator('#photo-download-link').getAttribute('href');
+  expect(href).toMatch(/^\/api\/public\/archives\/.+\?token=/);
+  const downloadPromise=page.waitForEvent('download');
+  await page.locator('#photo-download-link').click();
+  const download=await downloadPromise;
+  expect(download.suggestedFilename()).toBe('face-moment-photos.zip');
+  expect((await readFile(await download.path())).subarray(0,2).toString()).toBe('PK');
+  snapshot=await state(page);
+  expect(snapshot.orders.at(-1).payment_status).toBe('succeeded');
+  expect(snapshot.orders.at(-1).client_request_id).toBe(post.body.client_request_id);
+  if (method==='bank_card') {
+    await page.route('**/api/public/archives/**', route=>route.fulfill({status:404,body:'unsafe storage detail'}));
+    await page.locator('#photo-download-link').click();
+    await expect(page.locator('#photo-download-status')).toContainText('ручного возврата');
+    await expect(page.locator('#photo-download-link')).toBeHidden();
+    expect(await page.locator('#photo-download-status').textContent()).not.toContain('unsafe');
+    await page.unroute('**/api/public/archives/**');
+    await page.context().clearCookies();
+    await page.reload();
+    await expect(page.locator('#photo-download-link')).toBeHidden();
+    expect((await page.request.get(`${baseURL}${href}`)).status()).toBe(200);
+  } else {
+    await page.request.post(`${baseURL}/__fixture`,{data:{expire_last:true}});
+    await page.reload();
+    await expect(page.locator('#photo-download-status')).toContainText('ручного возврата');
+    await expect(page.locator('#photo-download-link')).toBeHidden();
+    expect((await page.request.get(`${baseURL}${href}`)).status()).toBe(404);
+  }
+  console.log(`FT-016-AC-001/005 ${method} PASS order=${order.id} mixed=${order.photo_ids.length} paid=${order.total} provider=${snapshot.provider_requests.length} confirmed bearer/${method==='bank_card'?'cookie-loss':'expiry'}`);
+});
+
+test('FT-016-AC-005 failed archive keeps payment closed and records mail attempt', async ({page}) => {
+  await page.request.post(`${baseURL}/__fixture`,{data:{block:true,archive_fail:true,provider_status:'pending',reset_settings:true}});
+  const before=await state(page);
+  await setup(page);
+  await page.locator('#search-gallery > section').nth(0).locator('.fm-photo-select-paid input').first().check();
+  await page.locator('#photo-selection-download').click();
+  await page.locator('#photo-payment-email').fill('failure@example.test');
+  const posts=[];let lose=true;
+  page.on('request',request=>{if(request.method()==='POST'&&new URL(request.url()).pathname==='/api/public/orders')posts.push(request.postDataJSON());});
+  await page.route('**/api/public/orders',async route=>{
+    if(lose&&route.request().method()==='POST') {lose=false;expect((await route.fetch()).status()).toBe(200);await route.abort('failed');}
+    else await route.continue();
+  });
+  await page.locator('#photo-payment-form button').click();
+  await expect(page.locator('#photo-download-status')).toContainText('Не удалось проверить');
+  await page.locator('#photo-download-retry').click();
+  await expect(page.locator('#photo-download-status')).toContainText('30 секунд');
+  expect(posts).toHaveLength(2);
+  expect(posts[0]).toEqual(posts[1]);
+  expect((await state(page)).orders).toHaveLength(before.orders.length+1);
+  await page.request.post(`${baseURL}/__fixture`,{data:{release:true}});
+  await expect.poll(async()=>(await state(page)).orders.at(-1).status).toBe('failed');
+  await page.locator('#photo-download-retry').click();
+  await expect(page.locator('#photo-download-status')).toContainText('поддержку');
+  await expect(page.locator('#photo-download-link')).toBeHidden();
+  const after=await state(page);
+  expect(after.mail_count).toBe(before.mail_count+1);
+  expect(after.provider_requests).toHaveLength(before.provider_requests.length);
+  expect(after.orders.at(-1).payment_status).toBe('pending');
+  console.log('FT-016-AC-005 failure PASS no provider navigation; mail attempt recorded');
+});
+
+test('FT-016-AC-005 canceled provider return keeps paid link closed', async ({page}) => {
+  await page.request.post(`${baseURL}/__fixture`,{data:{block:true,archive_fail:false,provider_status:'pending',reset_settings:true}});
+  await setup(page);
+  await page.locator('#search-gallery > section').nth(0).locator('.fm-photo-select-paid input').first().check();
+  await page.locator('#photo-selection-download').click();
+  await page.locator('#photo-payment-email').fill('canceled@example.test');
+  await page.locator('#photo-payment-form button').click();
+  await expect(page.locator('#photo-download-status')).toContainText('30 секунд');
+  await page.request.post(`${baseURL}/__fixture`,{data:{release:true}});
+  await expect.poll(async()=>(await state(page)).orders.at(-1).status).toBe('ready');
+  await page.locator('#photo-download-retry').click();
+  await expect(page).toHaveURL(/\/__provider\/checkout\//);
+  await page.request.post(`${baseURL}/__fixture`,{data:{provider_status:'canceled'}});
+  await page.locator('#return-to-site').click();
+  await expect(page.locator('#photo-download-status')).toContainText('Оплата не подтверждена');
+  await expect(page.locator('#photo-download-link')).toBeHidden();
+  expect((await state(page)).orders.at(-1).payment_status).toBe('canceled');
+  console.log('FT-016-AC-005 canceled PASS no paid download');
+});

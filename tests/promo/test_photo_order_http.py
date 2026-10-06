@@ -153,7 +153,8 @@ def test_owner_status_safe_error_and_entitled_signer(order_http, caplog):
             session.get(PhotoOrder,uuid.UUID(paid_id)).payment_status=payment;session.commit()
         content=call('GET',f'/api/public/orders/{paid_id}')[2]
         assert ('download_url' in content)==(payment=='succeeded')
-    assert call('POST',f'/api/public/orders/{paid_id}/payment',payload={})[0]==404
+    # Payment route now exists; this supplier fixture has no provider/receipt config.
+    assert call('POST',f'/api/public/orders/{paid_id}/payment',payload={})[0]==503
     assert key not in caplog.text and SECRET not in caplog.text
     with Session(engine) as session:
         assert all(o.provider_payment_id is None and o.payment_requested_at is None for o in session.query(PhotoOrder))

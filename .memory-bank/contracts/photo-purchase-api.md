@@ -1,7 +1,7 @@
 ---
 description: Настройки тарифа, публичный заказ, ЮKassa и архивная выдача.
 status: active
-last_updated: 2026-10-03
+last_updated: 2026-10-05
 source_of_truth:
   - .memory-bank/contracts/photo-purchase-api.md
 ---
@@ -67,5 +67,13 @@ Provider/mail fakes доказывают отсутствие payment до ZIP r
 amount/receipt/email, оба метода, server GET authentication и поддельный/duplicate
 webhook, browser-return bypass, canceled/pending без выдачи. Staff tests проверяют
 обе разрешённые роли/CSRF, popup cancel и atomic invalid-setting rejection.
-Внешний test-mode join проверяет реальный card/СБП redirect и receipt payload;
-реальные payment/email не нужны для unit verification.
+Внешний YooKassa TEST join проверяет `bank_card` redirect и frozen receipt payload.
+Для `sbp` реальный application route и HTTP adapter проверяются с изолированным
+fake provider: `payment_method_data.type=sbp`, frozen receipt, idempotence,
+ошибки и browser continuation. TEST магазин не подтверждает внешний СБП redirect:
+[ЮKassa разрешает TEST платежи картой и ЮMoney, остальные способы — только в
+настоящем магазине](https://yookassa.ru/developers/payment-acceptance/testing-and-going-live/testing).
+Перед включением СБП в production обязателен отдельный внешний redirect/receipt
+proof в настоящем магазине с явным разрешением оператора на реальные вызовы и
+платёж. До разрешения production calls не выполняются; fake proof не выдаётся
+за внешний SBP join.

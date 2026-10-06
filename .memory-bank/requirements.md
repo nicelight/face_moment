@@ -1,7 +1,7 @@
 ---
 description: Stable product requirements and traceability for Face Moment, including functional multi-venue operation.
 status: draft
-last_updated: 2026-10-04
+last_updated: 2026-10-06
 ---
 # Requirements
 
@@ -236,7 +236,7 @@ REQ-PUB-002/003/004 verified; остальные public REQ и FT-015/016/EP-004
 Всего TASK-120..135 done (16/20), TASK-136..139 planned; feature completion
 FT-015 не заявлено.
 
-Wave 12 terminal: owner закрыл [TASK-136](tasks/TASK-136-T2-FT-015-W12.task.json)
+Wave 12 initial terminal checkpoint (historical): owner закрыл [TASK-136](tasks/TASK-136-T2-FT-015-W12.task.json)
 после independent [functional PASS](../.protocols/TASK-136-T2-FT-015-W12/verification.md).
 Все TASK-133..136 done; [feature semantic-pass](../.tasks/FT-015/FT-015-S-RED-VERIFY-final-report-docs-01.md)
 и явное owner completion подтверждают FT-015 active/verified, AC-001..004.
@@ -254,6 +254,37 @@ TASK-138/139 blocked по зависимостям.
 После предоставления local TEST configuration и разрешения external TEST calls
 возобновить `/autopilot`; scheduler проверяет входы и направляет fresh
 `/exe TASK-137-T3-FT-016-W12`, dependent unblock только после prerequisites.
+
+Resumed Wave 12: owner закрыл [TASK-137](tasks/TASK-137-T3-FT-016-W12.task.json)
+после independent [functional PASS](../.protocols/TASK-137-T3-FT-016-W12/verification.md)
+и [semantic-pass](../.protocols/TASK-137-T3-FT-016-W12/red-verification.md).
+FT-016-AC-002 подтверждает ready paid ZIP admission, TEST card redirect и
+принятый frozen receipt payload — subset REQ-PUB-006/007. Фактический режим
+регистрации чеков и фискальный выпуск не доказаны. Всего TASK-120..137 done
+(18/20); TASK-138/139 остаются blocked до отдельного scheduler promotion.
+REQ-PUB-001/005/006/007/008, FT-016 и EP-004 остаются planned: server
+confirmation, paid entitlement и browser flow ещё не завершены.
+REQ-PUB-002/003/004 сохраняют verified.
+
+Wave 13: owner закрыл [TASK-138](tasks/TASK-138-T3-FT-016-W13.task.json) после
+исправления attempt 1, independent [functional PASS](../.protocols/TASK-138-T3-FT-016-W13/verification.md)
+и [semantic-pass](../.protocols/TASK-138-T3-FT-016-W13/red-verification.md).
+FT-016-AC-003/004 подтверждают server-confirmed paid entitlement и доступ к
+выбранному bearer ZIP с исходным ready+3days — subset REQ-PUB-006/007/008.
+Всего TASK-120..138 done (19/20); TASK-139 blocked до scheduler promotion.
+REQ-PUB-001/005/006/007/008, FT-016 и EP-004 сохраняют planned: browser
+AC-001/005 и итоговая feature verification ещё впереди. REQ-PUB-002/003/004
+остаются verified.
+
+Wave 14: [TASK-139](tasks/TASK-139-T3-FT-016-W14.task.json) завершилась
+финальным independent [functional FAIL](../.protocols/TASK-139-T3-FT-016-W14/verification.md)
+после начальной попытки и двух повторов. При free-to-paid смене до POST
+браузер получает 422 без формы оплаты; после pending provider return и нового
+поиска повтор не запрашивает owner status. [BUG](bugs/public-photo-purchase-browser-continuation.md)
+фиксирует successor route. TASK-120..138 остаются 19 done; TASK-139 failed.
+Подтверждённые supplier/server и free subsets сохраняются, но browser
+FT-016-AC-001/005 не закрыты. RTM lifecycle остаётся: REQ-PUB-002/003/004
+verified, REQ-PUB-001/005/006/007/008 planned; FT-016 и EP-004 planned.
 
 | REQ | Epic | Feature | Test / evidence target | Lifecycle |
 |---|---|---|---|---|

@@ -26,8 +26,11 @@ from face_moment.diagnostics.capture_identity_http import register_capture_ident
 from face_moment.entrypoints.common import create_role_app, run, server_event_lifecycle
 from face_moment.infrastructure.settings import Settings
 from face_moment.infrastructure.archive_failure_mail import ArchiveFailureMail
+from face_moment.infrastructure.yookassa_payments import YooKassaPayments
 from face_moment.promo.photo_archive_executor import PhotoArchiveExecutor
 from face_moment.promo.photo_archive_http import register_photo_archive_route
+from face_moment.promo.photo_payment import PhotoPaymentConfirmer, PhotoPaymentInitiator
+from face_moment.promo.photo_payment_http import register_photo_payment_route
 from face_moment.infrastructure.object_store import PrivateObjectStore
 from face_moment.inventory.http import register_ingest_target_routes
 from face_moment.inventory.staff_media_http import register_staff_media_routes
@@ -86,6 +89,17 @@ async def _backend_lifecycle(
     state.update(public_preview_executor=executor, public_preview_slot=threading.Lock(),
                  public_preview_store=PrivateObjectStore(settings))
     state["photo_archive_signing_secret"] = settings.photo_archive_signing_secret
+    payment_provider = YooKassaPayments(settings.yookassa_shop_id, settings.yookassa_secret_key)
+    state['photo_payment_initiator'] = PhotoPaymentInitiator(
+        lambda: Session(database_engine), PrivateObjectStore(settings), payment_provider,
+        return_url=settings.yookassa_return_url,
+        receipt_description=settings.yookassa_receipt_description,
+        receipt_vat_code=settings.yookassa_receipt_vat_code,
+        receipt_payment_subject=settings.yookassa_receipt_payment_subject,
+        receipt_payment_mode=settings.yookassa_receipt_payment_mode,
+        receipt_tax_system_code=settings.yookassa_receipt_tax_system_code,
+    )
+    state['photo_payment_confirmer'] = PhotoPaymentConfirmer(lambda: Session(database_engine), payment_provider)
     archive_executor = PhotoArchiveExecutor(
         lambda: Session(database_engine), PrivateObjectStore(settings), ArchiveFailureMail(settings),
     )
@@ -105,6 +119,8 @@ async def _backend_lifecycle(
         for key in ("public_preview_executor", "public_preview_slot", "public_preview_store", "public_quote_rate_limiter", "public_order_rate_limiter"):
             state.pop(key, None)
         state.pop("photo_archive_signing_secret", None)
+        state.pop('photo_payment_initiator', None)
+        state.pop('photo_payment_confirmer', None)
         state.pop("session_factory", None)
         database_engine.dispose()
 
@@ -121,6 +137,7 @@ def create_app() -> FastAPI:
     register_public_result_routes(app, session_factory=session_factory)
     register_public_quote_route(app, session_factory=session_factory)
     register_public_order_routes(app, session_factory=session_factory)
+    register_photo_payment_route(app, session_factory=session_factory)
     register_photo_archive_route(app, session_factory=session_factory)
     register_staff_session_routes(app, session_factory=session_factory)
     register_attempt_investigation_routes(app, session_factory=session_factory)

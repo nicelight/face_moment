@@ -67,6 +67,8 @@ status: active
 - [.memory-bank/bugs/task-101-calibration-missing-original-terminalization.md](bugs/task-101-calibration-missing-original-terminalization.md):
   immutable TASK-101 failure evidence and verified TASK-111 successor
   resolution.
+- [.memory-bank/bugs/public-photo-purchase-browser-continuation.md](bugs/public-photo-purchase-browser-continuation.md):
+  финальный TASK-139 browser FAIL и маршрут планирования FT-016 successor repair.
 - [.memory-bank/epics/index.md](epics/index.md): router for the four product
   epics (C4 L2).
 - [.memory-bank/features/index.md](features/index.md): router for the sixteen product
@@ -167,15 +169,25 @@ status: active
   после independent [functional PASS](../.protocols/TASK-136-T2-FT-015-W12/verification.md).
   FT-015 active/verified после всех TASK-133..136 done,
   [feature semantic-pass](../.tasks/FT-015/FT-015-S-RED-VERIFY-final-report-docs-01.md)
-  и явного owner completion. Terminal queue: 17/20 done (TASK-120..136),
-  TASK-137..139 blocked. YooKassa TEST merchant/fiscal configuration и разрешение
-  external test calls отсутствуют на preflight TASK-137;
-  [stop evidence](../.tasks/TASK-137-T3-FT-016-W12/TASK-137-T3-FT-016-W12-S-EXECUTE-final-report-docs-01.md).
-  [Checkpoint](../.protocols/AUTONOMOUS-RUN/status.md): HALT_BLOCKING_QUESTIONS;
-  после local TEST config и authorization продолжить `/autopilot` и fresh
-  `/exe TASK-137-T3-FT-016-W12`. FT-016/EP-004 lifecycle planned;
-  REQ-PUB-002/003/004 verified, shared REQ-PUB-001/005..008 planned из-за paid
-  integration. [changelog](changelog.md) и feature evidence содержат verification links.
+  и явного owner completion. После возобновления Wave 12 закрыта
+  [TASK-137](tasks/TASK-137-T3-FT-016-W12.task.json) после independent
+  [functional PASS](../.protocols/TASK-137-T3-FT-016-W12/verification.md) и
+  [semantic-pass](../.protocols/TASK-137-T3-FT-016-W12/red-verification.md):
+  TEST card redirect и frozen receipt payload для готового paid ZIP.
+  В Wave 13 закрыта [TASK-138](tasks/TASK-138-T3-FT-016-W13.task.json) после
+  исправления attempt 1, independent [functional PASS](../.protocols/TASK-138-T3-FT-016-W13/verification.md)
+  и [semantic-pass](../.protocols/TASK-138-T3-FT-016-W13/red-verification.md):
+  server-confirmed paid entitlement и bearer ZIP с исходным ready+3days.
+  На границе Wave 14 остаются 19/20 done (TASK-120..138); TASK-139 failed
+  после финального independent [functional FAIL](../.protocols/TASK-139-T3-FT-016-W14/verification.md)
+  и исчерпания двух повторов. [BUG](bugs/public-photo-purchase-browser-continuation.md)
+  описывает незакрытые browser AC-001/005 и successor route для FT-016.
+  Исторический [preflight stop](../.tasks/TASK-137-T3-FT-016-W12/TASK-137-T3-FT-016-W12-S-EXECUTE-final-report-docs-01.md)
+  сохранён. FT-016/EP-004 lifecycle planned; REQ-PUB-002/003/004 verified,
+  shared REQ-PUB-001/005..008 planned до paid browser/feature completion;
+  общего SUCCESS и deployment нет.
+  [Checkpoint](../.protocols/AUTONOMOUS-RUN/status.md) и [changelog](changelog.md)
+  содержат текущий wave-boundary status.
 
 - [.memory-bank/epics/EP-001.md](epics/EP-001.md): fresh searchable
   commercial-photo inventory, role-scoped inventory operations and recent

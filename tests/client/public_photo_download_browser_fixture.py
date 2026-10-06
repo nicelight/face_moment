@@ -5,7 +5,11 @@ import subprocess
 import sys
 import tempfile
 import threading
+import uuid
+from datetime import datetime, timedelta, timezone
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from sqlalchemy.orm import Session
 import numpy as np
 import uvicorn
 from tests.promo.test_public_search_api import public_fixture
@@ -15,7 +19,6 @@ generator = public_fixture.__wrapped__()
 try:
     engine, backend, realtime, model, venues, personal, common = next(generator)
     from concurrent.futures import ThreadPoolExecutor
-    from sqlalchemy.orm import Session
     from face_moment.infrastructure.settings import Settings
     from face_moment.infrastructure.object_store import PrivateObjectStore, ensure_bucket
     from face_moment.inventory.photo_persistence import Photo
@@ -34,7 +37,6 @@ try:
             image=Image.open('tests/client/fixtures/selfie-portrait-small.png').convert('RGB').resize((1200,1400))
             encoded=BytesIO();image.save(encoded,'JPEG');store.put(key=key,body=encoded.getvalue());keys.append(key)
         session.commit()
-    from datetime import datetime, timezone
     from decimal import Decimal
     from face_moment.serving_control.photo_tariff import PhotoTariff
     from face_moment.serving_control.display_client_auth import DisplayClientRateLimiter
@@ -47,6 +49,33 @@ try:
     gate = threading.Event()
     archive_fail = False
     mails = []
+    provider_requests = []
+    provider_payments = {}
+    provider_status = 'pending'
+    checkout_base = ''
+    class ProviderHandler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            payload = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+            key = self.headers['Idempotence-Key']
+            provider_requests.append({'key': key, 'payload': payload})
+            if key not in provider_payments:
+                provider_payments[key] = {'id': str(uuid.uuid4()), 'amount': payload['amount'],
+                    'metadata': payload['metadata']}
+            payment = provider_payments[key]
+            body = json.dumps({**payment, 'status': 'pending',
+                'confirmation': {'type': 'redirect', 'confirmation_url': f'{checkout_base}/__provider/checkout/{key}'}}).encode()
+            self.send_response(200); self.send_header('Content-Type', 'application/json'); self.end_headers()
+            self.wfile.write(body)
+        def do_GET(self):
+            payment = next((p for p in provider_payments.values() if self.path.endswith('/' + p['id'])), None)
+            if payment is None: self.send_error(404); return
+            body = json.dumps({**payment, 'status': provider_status, 'paid': provider_status == 'succeeded'}).encode()
+            self.send_response(200); self.send_header('Content-Type', 'application/json'); self.end_headers()
+            self.wfile.write(body)
+        def log_message(self, *_args): pass
+    provider_server = ThreadingHTTPServer(('127.0.0.1', 0), ProviderHandler)
+    provider_thread = threading.Thread(target=provider_server.serve_forever, daemon=True)
+    provider_thread.start()
     class ArchiveStore:
         def read(self, *, key):
             if not key.startswith('photo-archives/'):
@@ -63,7 +92,7 @@ try:
     archive_executor.start()
     busy = False
     async def app(scope, receive, send):
-        global busy, archive_fail
+        global busy, archive_fail, provider_status
         if scope['type'] == 'http' and scope['path'] == '/__fixture':
             body = b''
             while True:
@@ -71,6 +100,22 @@ try:
                 if not msg.get('more_body'): break
             config = json.loads(body)
             archive_fail = config.get('archive_fail', archive_fail)
+            provider_status = config.get('provider_status', provider_status)
+            if config.get('change_settings') or config.get('new_paid_tariff') or config.get('reset_settings') or config.get('expire_last'):
+                from face_moment.serving_control.ingest_target import Spa
+                with Session(engine) as session:
+                    if config.get('change_settings'):
+                        session.get(PhotoTariff, 1).base_kopecks = Decimal(999)
+                        session.get(Spa, venues[0]).is_free = True
+                    if config.get('new_paid_tariff'):
+                        session.get(PhotoTariff, 1).base_kopecks = Decimal(999)
+                    if config.get('reset_settings'):
+                        session.get(PhotoTariff, 1).base_kopecks = Decimal(101)
+                        session.get(Spa, venues[0]).is_free = False
+                    if config.get('expire_last'):
+                        latest = session.query(PhotoOrder).order_by(PhotoOrder.created_at.desc()).first()
+                        latest.ready_at = datetime.now(timezone.utc) - timedelta(days=4)
+                    session.commit()
             if config.get('release'): gate.set()
             if config.get('block'): gate.clear()
             model.embedding = np.eye(1, 128, k=config.get('vector', 0), dtype=np.float32)[0]
@@ -83,9 +128,18 @@ try:
             with Session(engine) as session:
                 orders = [{'id':str(o.id), 'status':o.archive_status, 'client_request_id':o.client_request_id,
                     'photo_ids':[i['photo_id'] for i in o.items], 'total':int(o.total_kopecks),
-                    'email':o.email, 'method':o.payment_method, 'provider':o.provider_payment_id}
+                    'email':o.email, 'method':o.payment_method, 'provider':o.provider_payment_id,
+                    'payment_status':o.payment_status, 'items':o.items}
                     for o in session.query(PhotoOrder).order_by(PhotoOrder.created_at)]
-            await send({'type': 'http.response.body', 'body': json.dumps({'orders':orders,'mail_count':len(mails)}).encode()})
+                from face_moment.promo.browser_search_profile import BrowserSearchProfile
+                profiles = [{'email': p.email, 'last_visit_at': p.last_visit_at.isoformat() if p.last_visit_at else None}
+                    for p in session.query(BrowserSearchProfile)]
+            await send({'type': 'http.response.body', 'body': json.dumps({'orders':orders,'profiles':profiles,
+                'mail_count':len(mails),'provider_requests':provider_requests}).encode()})
+        elif scope['type'] == 'http' and scope['path'].startswith('/__provider/checkout/'):
+            body = b'<a href="/?payment_return=1" id="return-to-site">Return to Face Moment</a>'
+            await send({'type':'http.response.start','status':200,'headers':[(b'content-type',b'text/html')]})
+            await send({'type':'http.response.body','body':body})
         else:
             target = realtime if scope.get('path') == '/api/public/search' else backend
             await target(scope, receive, send)
@@ -94,6 +148,16 @@ try:
         subprocess.run(['openssl','req','-x509','-newkey','rsa:2048','-nodes','-keyout',key,'-out',cert,'-days','1','-subj','/CN=localhost'],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
         with socket.socket() as listener:
             listener.bind(('127.0.0.1',0)); listener.listen(128)
+            checkout_base = f'https://127.0.0.1:{listener.getsockname()[1]}'
+            from face_moment.infrastructure.yookassa_payments import YooKassaPayments
+            from face_moment.promo.photo_payment import PhotoPaymentInitiator, PhotoPaymentConfirmer
+            provider = YooKassaPayments('fake-shop', 'fake-secret',
+                endpoint=f'http://127.0.0.1:{provider_server.server_port}/v3/payments')
+            backend.state.role_state['photo_payment_initiator'] = PhotoPaymentInitiator(
+                lambda: Session(engine), store, provider, return_url=f'{checkout_base}/?payment_return=1',
+                receipt_description='Оказание цифровых услуг', receipt_vat_code=1,
+                receipt_payment_subject='service', receipt_payment_mode='full_payment', receipt_tax_system_code=None)
+            backend.state.role_state['photo_payment_confirmer'] = PhotoPaymentConfirmer(lambda: Session(engine), provider)
             server=uvicorn.Server(uvicorn.Config(app,log_level='error',lifespan='off',ssl_keyfile=key,ssl_certfile=cert))
             worker=threading.Thread(target=server.run,kwargs={'sockets':[listener]});worker.start()
             print(json.dumps({'url':f'https://127.0.0.1:{listener.getsockname()[1]}'}),flush=True)
@@ -102,6 +166,8 @@ try:
                 if busy: _PROCESS_LOCAL_REALTIME_SLOT.release()
                 server.should_exit=True;worker.join(timeout=15)
 finally:
+    if 'provider_server' in globals(): provider_server.shutdown(); provider_server.server_close()
+    if 'provider_thread' in globals(): provider_thread.join(timeout=5)
     if 'gate' in globals(): gate.set()
     if 'archive_executor' in globals(): archive_executor.stop()
     if 'store' in globals():

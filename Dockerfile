@@ -3,7 +3,8 @@ FROM python:3.11-slim-bookworm AS builder
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
 
-RUN apt-get update \
+RUN sed -i 's|URIs: http://deb.debian.org/|URIs: https://deb.debian.org/|' /etc/apt/sources.list.d/debian.sources \
+    && apt-get update \
     && apt-get install --yes --no-install-recommends build-essential \
     && rm -rf /var/lib/apt/lists/*
 
@@ -21,7 +22,8 @@ ENV TZ=Asia/Novosibirsk \
     FACE_MOMENT_CLIENT_ROOT=/app/client \
     PIP_NO_CACHE_DIR=1
 
-RUN apt-get update \
+RUN sed -i 's|URIs: http://deb.debian.org/|URIs: https://deb.debian.org/|' /etc/apt/sources.list.d/debian.sources \
+    && apt-get update \
     && apt-get install --yes --no-install-recommends libgomp1 \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --create-home --uid 10001 app

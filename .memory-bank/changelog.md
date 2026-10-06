@@ -4,6 +4,70 @@ status: active
 ---
 # Changelog
 
+## [2026-10-06] Wave 14 / browser purchase failed after final verification
+
+- Updated: root записал [TASK-139](tasks/TASK-139-T3-FT-016-W14.task.json)
+  `failed` после начальной попытки и двух ограниченных повторов. Финальная
+  independent [functional проверка](../.protocols/TASK-139-T3-FT-016-W14/verification.md)
+  выявила free-to-paid POST 422 без формы оплаты и отсутствие owner status GET
+  после pending provider return и нового поиска. Ранее исправленные пути и
+  [semantic-fail второй попытки](../.protocols/TASK-139-T3-FT-016-W14/red-verification.md)
+  сохранены как историческая evidence; [BUG](bugs/public-photo-purchase-browser-continuation.md)
+  направляет обычное FT-016 successor planning/review/readiness после возобновления.
+- Updated: [FT-016](features/FT-016.md), [EP-004](epics/EP-004.md),
+  [RTM](requirements.md#public-extension-rtm), [feature index](features/index.md),
+  [historical implementation plan](tasks/plans/IMPL-FT-016.md) и
+  [root index](index.md#product-decomposition) отражают 19 done
+  (TASK-120..138) и TASK-139 failed. FT-013/014/015 verified; FT-016/EP-004
+  planned. REQ-PUB-002/003/004 verified, REQ-PUB-001/005/006/007/008 planned.
+  Browser FT-016-AC-001/005 и overall SUCCESS не заявлены. Текущий запуск
+  остановлен с `HALT_FAILURE_BUDGET`; remote writes/deployment не было.
+- Updated: для локального packaged smoke официальный Bookworm APT source
+  переключён на HTTPS в обоих Docker build stages после наблюдавшегося
+  несоответствия размеров пакетов при HTTP доставке. Почему и где применять
+  проверку описано в [local test deployment](runbooks/local-test-deployment.md#packaged-smoke);
+  локальный smoke PASS не заменяет browser acceptance. Task registry
+  [index.json](tasks/index.json) уже ссылается на authoritative TASK-139,
+  поэтому состав и зависимости задач не менялись.
+- Next owner: root `/autopilot` выполняет post-sync lint и strict doctor и
+  сохраняет failure halt; после возобновления оператором нужен обычный
+  `/feature-to-tasks FT-016`, отдельный `/review-tasks-plan FT-016` и readiness.
+
+## [2026-10-05] Wave 13 / server-confirmed paid delivery partial closure
+
+- Updated: [TASK-138](tasks/TASK-138-T3-FT-016-W13.task.json) закрыта root
+  scheduler после исправленного attempt 1, независимого
+  [functional PASS](../.protocols/TASK-138-T3-FT-016-W13/verification.md) и
+  отдельного [semantic-pass](../.protocols/TASK-138-T3-FT-016-W13/red-verification.md).
+  FT-016-AC-003/004 подтверждают authenticated server payment truth,
+  paid entitlement и selected bearer ZIP с исходным ready+3days.
+- Updated: [FT-016](features/FT-016.md), [EP-004](epics/EP-004.md),
+  [RTM](requirements.md#public-extension-rtm), [feature index](features/index.md),
+  [implementation plan](tasks/plans/IMPL-FT-016.md) и [root index](index.md#product-decomposition)
+  отражают 19/20 done (TASK-120..138). TASK-139 остаётся blocked до отдельного
+  scheduler promotion. FT-016/EP-004 и REQ-PUB-001/005/006/007/008 planned;
+  REQ-PUB-002/003/004 verified. Planning Revision 4 и task-plan APPROVE
+  сохранены; contract/spec semantics не менялись.
+- Next owner: root `/autopilot` выполняет post-sync lint/strict doctor, затем
+  advisory `/tech-debt wave 13` и отдельный promotion pass.
+
+## [2026-10-05] Wave 12 / payment initiation closed after resumed verification
+
+- Updated: [TASK-137](tasks/TASK-137-T3-FT-016-W12.task.json) закрыта root owner
+  после independent [functional PASS](../.protocols/TASK-137-T3-FT-016-W12/verification.md)
+  и [semantic-pass](../.protocols/TASK-137-T3-FT-016-W12/red-verification.md).
+  FT-016-AC-002 подтверждает ready paid ZIP admission, YooKassa TEST card
+  redirect и frozen receipt payload; режим регистрации и выпуск фискального
+  чека не заявлены. Исторический preflight stop сохранён в task evidence.
+- Updated: [FT-016](features/FT-016.md), [EP-004](epics/EP-004.md),
+  [RTM](requirements.md#public-extension-rtm), [feature index](features/index.md)
+  и [root navigation](index.md#product-decomposition) отражают 18/20 done
+  (TASK-120..137). TASK-138/139 пока blocked до отдельного scheduler promotion.
+  FT-016/EP-004 и REQ-PUB-001/005/006/007/008 planned; REQ-PUB-002/003/004
+  verified. Planning Revision 4 и task-plan APPROVE сохраняются.
+- Next owner: root `/autopilot` выполняет post-sync lint/strict doctor,
+  advisory `/tech-debt wave 12` и отдельный promotion pass.
+
 ## [2026-10-04] Wave 10 — Optional fullscreen second slide
 - TASK-143 closed after independent AC-007 PASS: local toggle/duration, fixed
   fullscreen 4×3 gallery, timed opacity transition, late fill and direct replay.

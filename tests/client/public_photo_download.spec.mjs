@@ -120,9 +120,9 @@ test('FT-015-AC-002 free served browser order preparation failure and ready', as
     expect(await page.locator('#photo-download-status').textContent()).not.toContain('unsafe');
     proved('unavailable ready delivery renders safe manual support',await page.locator('#photo-download-status').textContent());
     expect(network.some(r=>r.path.endsWith('/payment'))).toBe(false);expect(page.url()).toBe(`${baseURL}/`);
-    await expect(page.locator('input[type=email],select[name=payment_method]')).toHaveCount(0);
+    await expect(page.locator('#photo-payment-form')).toBeHidden();
     expect(errors).toEqual([]);snapshot=await state();expect(snapshot.orders.every(o=>o.total===0 && o.email===null && o.method===null && o.provider===null)).toBe(true);
-    proved('no payment navigation/email form/private errors; all orders free',snapshot.orders.length);
+    proved('no payment navigation/visible email form/private errors; all orders free',snapshot.orders.length);
     for(const width of [1280,390]) {
       await page.setViewportSize({width,height:900});await page.locator('#photo-download-panel').scrollIntoViewIfNeeded();
       expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);

@@ -1,7 +1,7 @@
 {
   "id": "TASK-138-T3-FT-016-W13",
   "title": "Server-confirmed payment и paid bearer integration",
-  "status": "blocked",
+  "status": "done",
   "wave": "W13",
   "feature": "FT-016",
   "reqs": [
@@ -37,12 +37,66 @@
   ],
   "verify": [
     {
+      "stage": "scheduler-resume",
+      "verdict": "ready",
+      "summary": "TASK-002, TASK-134 and TASK-137 are done; former provider authorization blocker resolved. Wave12 sync, lint and strict doctor passed; bounded advisory report completed. FT-016 APPROVE matches Planning Revision 4. Promoted for sequential execution; historical block retained below.",
+      "evidence": [
+        ".protocols/TASK-137-T3-FT-016-W12/verification.md",
+        ".protocols/TASK-137-T3-FT-016-W12/red-verification.md",
+        "PAPERCUTS/TECHDEBTS/public-photo-wave12-task137-resumed-technical-debt-2026-10-05.md"
+      ]
+    },
+    {
       "stage": "scheduler-task-blocking",
       "verdict": "blocked",
       "summary": "Dependency blocked by TASK-137; same YooKassa TEST input/authorization root blocker. No execution attempt; scheduler may unblock only after dependency and readiness gates permit.",
       "evidence": [
         ".tasks/TASK-137-T3-FT-016-W12/TASK-137-T3-FT-016-W12-S-EXECUTE-final-report-docs-01.md",
         ".tasks/TASK-137-T3-FT-016-W12/provider-input-presence.json"
+      ]
+    },
+    {
+      "stage": "verify",
+      "verdict": "fail",
+      "summary": "Independent verify attempt1: focused2 passed, adjacent25 passed/1 skipped, mypy131 clean, but real YooKassa full payment notification rejected422 before authenticated server GET. Implementation-only AC003 defect.",
+      "evidence": [
+        ".protocols/TASK-138-T3-FT-016-W13/verification.md",
+        "https://yookassa.ru/developers/using-api/webhooks"
+      ]
+    },
+    {
+      "stage": "scheduler-retry",
+      "verdict": "retry",
+      "summary": "Authorize attempt2 within same TASK138 scope: accept provider payment object with additional fields, use only id for authenticated server lookup, add full-notification regression. Preserve original RED and safe isolated proof; no external side effect replay. One unsuccessful attempt; two retries budget, first used next.",
+      "evidence": [
+        ".protocols/TASK-138-T3-FT-016-W13/verification.md"
+      ]
+    },
+    {
+      "stage": "verify",
+      "verdict": "pass",
+      "summary": "Independent attempt2 PASS by verify_payment_138_retry for FT-016-AC-003/004. Full provider notification accepted, only id used for authenticated GET; matched truth durably grants entitlement, bearer preserves original deadline. Focused3 passed, adjacent26 passed/1skip, mypy131 clean; fresh ASGI full-object probe passed. Separate T3 red-verify remains due.",
+      "evidence": [
+        ".protocols/TASK-138-T3-FT-016-W13/verification.md",
+        ".tasks/TASK-138-T3-FT-016-W13/claim-evidence.md"
+      ]
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "summary": "Independent GPT-6 Sol red_payment_138: accepted server truth, concurrency/idempotence, ownership/status/bearer/deadline reviewed; no material findings or operator question.",
+      "evidence": [
+        ".protocols/TASK-138-T3-FT-016-W13/red-verification.md",
+        ".tasks/TASK-138-T3-FT-016-W13/TASK-138-T3-FT-016-W13-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    },
+    {
+      "stage": "scheduler-closure",
+      "verdict": "done",
+      "summary": "Attempt2 closes after fresh independent functional PASS and separate semantic-pass. Attempt1 failure corrected, all T3 obligations met. No deployment/real payment authorized.",
+      "evidence": [
+        ".protocols/TASK-138-T3-FT-016-W13/verification.md",
+        ".protocols/TASK-138-T3-FT-016-W13/red-verification.md"
       ]
     }
   ],

@@ -1,7 +1,7 @@
 ---
 description: Three paid integration outcomes consuming frozen orders and archive delivery.
 status: active
-last_updated: 2026-10-03
+last_updated: 2026-10-05
 ---
 # IMPL-FT-016
 
@@ -58,15 +58,41 @@ subject paths. Real registered backend/provider HTTP adapter against fake provid
 disposable PostgreSQL/private objects, synthetic multi-venue inputs, read-after-new
 session/restart and deterministic clock prove claims. Unique namespace and finally
 cleanup permit safe rerun. Real served Playwright flow joins backend rather than
-mock-only assertions. Provider/mail tests use fakes; no real money/email. Required
-external configured YooKassa test-mode card/SBP redirect plus receipt-payload join
-belongs TASK-137; executor stops honestly if required test merchant/fiscal config
-or authorization is absent. This planning run does not execute external calls.
+mock-only assertions. Provider/mail tests use fakes; no real money/email.
+TASK-137 owns external YooKassa TEST `bank_card` redirect and frozen receipt
+payload join. Its real application route and HTTP adapter also prove `sbp` with
+an isolated fake HTTP provider: method payload, frozen receipt, idempotence and
+errors. TASK-139 proves browser continuation for both choices against the fake
+provider. The TEST shop exposes `bank_card,yoo_money` but no `sbp`; its receipt
+check mode has not been confirmed. The authorized external card join returned
+HTTP 200/pending with matching frozen amount/order metadata, a redirect and
+the transmitted frozen receipt payload, as recorded in
+`.tasks/TASK-137-T3-FT-016-W12/claim-evidence.md`. This proves the accepted
+TEST claim; actual merchant receipt mode and fiscal receipt issuance remain
+unproven and are not TASK-137 closure criteria. Merchant inputs are ИП, УСН
+«доходы», без НДС, service description «Оказание цифровых услуг»; credentials
+stay in ignored `.env.yookassa.local`, never in logs or task evidence.
+
+Before production SBP enablement, separate external redirect/receipt proof in
+the real shop remains mandatory with explicit operator authorization for real
+calls/payment. It is a release checkpoint, not TASK-137 TEST evidence; no
+production call is part of this plan. The existing three task boundaries,
+tiers, waves and dependencies remain unchanged. TASK-137 subsequently closed
+done after independent functional PASS and semantic-pass. TASK-138 also closed
+done after attempt 2 independent functional PASS and separate semantic-pass;
+TASK-139 was blocked pending scheduler promotion at the Wave 13 boundary.
+After promotion it exhausted the initial attempt and two retries; the final
+independent [functional FAIL](../../../.protocols/TASK-139-T3-FT-016-W14/verification.md)
+and [failed task record](../TASK-139-T3-FT-016-W14.task.json) supersede that
+execution handoff. The existing plan and review remain historical; the
+[BUG](../../bugs/public-photo-purchase-browser-continuation.md) routes
+normal FT-016 successor planning and separate review after operator resume.
 
 Native mypy/relevant pytest and client unit/focused browser gates; inspect accepted
 ownership rather than invent missing architecture command. T3 isolated harm probes
 cover premature charge, forged server truth, duplicates, privacy and paid delivery
 bypass. Upstream proof is consumed rather than copied. Secrets/private keys/tokens
-redacted. All tasks planned: production/deploy actions prohibited, human checkpoints
-remain with execution workflow. No implementation or test execution at planning.
-Next fresh `/review-tasks-plan FT-016` then applicable doctor/execution gates.
+redacted. Production/deploy actions prohibited, human checkpoints
+remain with execution workflow. This planning correction executed no code or tests.
+The fresh `/review-tasks-plan FT-016` returned APPROVE at Revision 4 before
+TASK-137 verification and closure.

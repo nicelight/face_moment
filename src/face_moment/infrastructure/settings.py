@@ -73,6 +73,14 @@ class Settings:
     archive_mail_password: str | None = None
     archive_mail_starttls: bool = True
     archive_mail_timeout_seconds: float = 10.0
+    yookassa_shop_id: str | None = None
+    yookassa_secret_key: str | None = None
+    yookassa_return_url: str | None = None
+    yookassa_receipt_description: str | None = None
+    yookassa_receipt_vat_code: int | None = None
+    yookassa_receipt_payment_subject: str | None = None
+    yookassa_receipt_payment_mode: str | None = None
+    yookassa_receipt_tax_system_code: int | None = None
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -187,6 +195,14 @@ class Settings:
             archive_mail_password=os.environ.get("ARCHIVE_MAIL_PASSWORD"),
             archive_mail_starttls=_boolean("ARCHIVE_MAIL_STARTTLS", "true"),
             archive_mail_timeout_seconds=_positive_float("ARCHIVE_MAIL_TIMEOUT_SECONDS", "10"),
+            yookassa_shop_id=_optional("YOOKASSA_SHOP_ID"),
+            yookassa_secret_key=_optional("YOOKASSA_SECRET_KEY"),
+            yookassa_return_url=_optional("YOOKASSA_RETURN_URL"),
+            yookassa_receipt_description=_optional("YOOKASSA_RECEIPT_DESCRIPTION"),
+            yookassa_receipt_vat_code=_optional_positive_int("YOOKASSA_RECEIPT_VAT_CODE"),
+            yookassa_receipt_payment_subject=_optional("YOOKASSA_RECEIPT_PAYMENT_SUBJECT"),
+            yookassa_receipt_payment_mode=_optional("YOOKASSA_RECEIPT_PAYMENT_MODE"),
+            yookassa_receipt_tax_system_code=_optional_positive_int("YOOKASSA_RECEIPT_TAX_SYSTEM_CODE"),
         )
 
 

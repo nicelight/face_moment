@@ -16,6 +16,7 @@ from face_moment.infrastructure.object_store import PrivateObjectStore
 from face_moment.promo.browser_search_profile import BrowserSearchProfileRepository, COOKIE_NAME, set_browser_profile_cookie
 from face_moment.promo.photo_archive_delivery import archive_download_url
 from face_moment.promo.photo_orders import PhotoOrderConflictError, PhotoOrderRepository
+from face_moment.promo.photo_payment import PaymentProviderError, PhotoPaymentConfirmer
 from face_moment.promo.public_photo_search import PublicProfileRequiredError, PublicResultNotFoundError
 from face_moment.promo.public_search_http import PUBLIC_HEADERS, _failure
 from face_moment.serving_control.display_client_auth import DisplayClientRateLimiter
@@ -106,6 +107,9 @@ def register_public_order_routes(app: FastAPI, *, session_factory: Callable[[], 
         state = request.app.state.role_state
 
         def read() -> dict[str, Any]:
+            confirmer = state.get('photo_payment_confirmer')
+            if confirmer is not None:
+                cast(PhotoPaymentConfirmer, confirmer).refresh_owned(cookie_token=token, order_id=identity)
             with session_factory() as session:
                 if BrowserSearchProfileRepository(session).find(token) is None:
                     raise PublicProfileRequiredError
@@ -131,6 +135,8 @@ def register_public_order_routes(app: FastAPI, *, session_factory: Callable[[], 
             raise _failure(401) from error
         except PublicResultNotFoundError as error:
             raise _failure(404) from error
+        except PaymentProviderError as error:
+            raise _failure(502) from error
         except Exception as error:
             raise _failure(500) from error
         return JSONResponse(content, headers=PUBLIC_HEADERS)

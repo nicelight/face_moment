@@ -1,7 +1,7 @@
 {
   "id": "TASK-139-T3-FT-016-W14",
   "title": "Browser paid order и provider continuation",
-  "status": "blocked",
+  "status": "failed",
   "wave": "W14",
   "feature": "FT-016",
   "reqs": [
@@ -40,12 +40,62 @@
   ],
   "verify": [
     {
+      "stage": "verify",
+      "verdict": "fail",
+      "summary": "Independent final attempt3 FAIL: served free-to-paid change before POST returns422/no payment form; pending provider return followed by new search leaves retry visible but performs no owner status GET. Native unit108/paidbrowser6/freebrowser1 passed yet omitted these reachable AC001/005 branches.",
+      "evidence": [".protocols/TASK-139-T3-FT-016-W14/verification.md", ".tasks/TASK-139-T3-FT-016-W14/cli-attempt3-verification.txt"]
+    },
+    {
+      "stage": "scheduler-failure",
+      "verdict": "failed",
+      "summary": "Root failure disposition after initial attempt and two bounded retries all unsuccessful. No fourth attempt. Implementation-only browser defects preserved in BUG note; normal FT016 successor planning/review/readiness required before repair execution. No downstream task depends on139; no dependent blocking writes needed. Deployment halted before remote writes.",
+      "evidence": [".memory-bank/bugs/public-photo-purchase-browser-continuation.md", ".protocols/AUTONOMOUS-RUN/status.md"]
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-fail",
+      "summary": "Attempt2 independent functional PASS, but fresh semantic review proves stale browser amount and paid-to-free delivery failure when supported settings change before new-order POST. Fixed accepted server-authoritative order semantics; implementation-only consumer correction.",
+      "evidence": [".protocols/TASK-139-T3-FT-016-W14/verification.md", ".protocols/TASK-139-T3-FT-016-W14/red-verification.md"]
+    },
+    {
+      "stage": "scheduler-retry",
+      "verdict": "retry",
+      "summary": "Authorize final attempt3, second retry, only reconciles actual new-order amount/free mode before browser continuation with supported settings-race regression. Preserve original RED and previous failures, no supplier/schema/refund/product expansion; fresh required gates remain due.",
+      "evidence": [".protocols/TASK-139-T3-FT-016-W14/red-verification.md"]
+    },
+    {
+      "stage": "scheduler-resume",
+      "verdict": "ready",
+      "summary": "All dependencies TASK002/138/136/129 done; former TEST input blocker resolved. Wave13 sync/lint/strict doctor passed; tech-debt report completed without material findings. Current FT016 APPROVE matches Planning Revision4. Historical block below superseded; selected work remains development-only.",
+      "evidence": [
+        ".protocols/TASK-138-T3-FT-016-W13/verification.md",
+        ".protocols/TASK-138-T3-FT-016-W13/red-verification.md",
+        "PAPERCUTS/TECHDEBTS/public-photo-wave13-task138-technical-debt-2026-10-05.md"
+      ]
+    },
+    {
       "stage": "scheduler-task-blocking",
       "verdict": "blocked",
       "summary": "Dependency blocked by TASK-138; same YooKassa TEST input/authorization root blocker. No execution attempt; scheduler may unblock only after dependency and readiness gates permit.",
       "evidence": [
         ".tasks/TASK-137-T3-FT-016-W12/TASK-137-T3-FT-016-W12-S-EXECUTE-final-report-docs-01.md",
         ".tasks/TASK-137-T3-FT-016-W12/provider-input-presence.json"
+      ]
+    },
+    {
+      "stage": "verify",
+      "verdict": "fail",
+      "summary": "Independent attempt1 FAIL by verify_payment_139: paid archive GET404 after confirmed link renders preparation-failed without required unavailable/manual-refund guidance. Fresh unit106/paidbrowser4/freebrowser1 passed but missed branch; separate actual served paid flow probe proves defect.",
+      "evidence": [
+        ".protocols/TASK-139-T3-FT-016-W14/verification.md"
+      ]
+    },
+    {
+      "stage": "scheduler-retry",
+      "verdict": "retry",
+      "summary": "Authorize attempt2 bounded UI correction for paid delivery error and regression; preserve free preparation failure. Same accepted AC005, no new contracts/product behavior. Original RED retained; safe isolated probes only. First unsuccessful attempt for139, first retry authorized.",
+      "evidence": [
+        ".protocols/TASK-139-T3-FT-016-W14/verification.md"
       ]
     }
   ],
@@ -103,6 +153,6 @@
     "FT-016-AC-001: Actual served site attaches paid flow to TASK-129 selection/quote and TASK-136 download interaction, collects valid email and bank_card|sbp without signup, POSTs canonical selected current result/photo_ids/client_request_id/email/method to TASK-135. Same attempt reuses client_request_id for click/retry/return. Actual backend integration observes one mixed multi-venue order, zero free lines, saved profile.email/last_visit_at and frozen order.email after independent DB session; settings changes leave existing order used by provider unchanged. Core formula/atomicity/concurrent idempotence proof stays TASK-132, browser integration only.",
     "FT-016-AC-005: Served browser goes download→email/method→order/preparation→ready→payment endpoint→confirmation_url; no provider navigation while requested/preparing/failed. Preparing shows повторите через 30 секунд and retry checks same order; failure explains safe error/manual support without payment navigation, actual fake-mail supplier records notification attempt. Both card and QR/SBP choices map canonical methods. No extra queue/UI state machine/service.",
     "FT-016-AC-005: Provider return navigates to server-owned served URL and refreshes retained owner order through actual status endpoint; browser return/query cannot enable download. Pending/canceled/failed verification keeps link closed; confirmed yields existing bearer download. Cookie loss does not recover purchase, already-issued bearer works independently. Unavailable/expired paid delivery shows clear manual support/refund message. Free-only supplier path continues without mandatory email/payment.",
-    "FT-016-AC-001 / FT-016-AC-005: Focused native Playwright served shell/script→actual isolated backend with synthetic mixed venues/profile/orders/private store and HTTP fake provider/mail; no mock-only end-to-end claim. Trace network/order/receipt/redirect/return/download plus per-claim comparison; unit tests for local rendering. Unique disposable prefixes and cleanup finally. External YooKassa test-mode card/SBP/receipt join is owned TASK-137 and consumed, not re-proved here."
+    "FT-016-AC-001 / FT-016-AC-005: Focused native Playwright served shell/script→actual isolated backend with synthetic mixed venues/profile/orders/private store and HTTP fake provider/mail; no mock-only end-to-end claim. Trace network/order/receipt/redirect/return/download for bank_card and sbp browser choices with per-claim comparison; unit tests for local rendering. Unique disposable prefixes and cleanup finally. External YooKassa TEST bank_card redirect/frozen receipt join is owned TASK-137 and consumed, not re-proved here; fake SBP continuation is not external real-shop proof."
   ]
 }

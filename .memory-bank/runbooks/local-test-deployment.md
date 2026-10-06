@@ -1,7 +1,7 @@
 ---
 description: Local test deployment procedures for the editable development stack and disposable packaged smoke.
 status: active
-last_updated: 2026-09-16
+last_updated: 2026-10-06
 source_of_truth:
   - .memory-bank/runbooks/local-test-deployment.md
 ---
@@ -81,6 +81,11 @@ The smoke builds current source, starts a separately named Compose project with
 disposable volumes and a loopback-only HTTPS edge, then cleans up only its own
 containers, network, volumes and image. It is the authoritative local proof
 for deployment packaging.
+
+The [Dockerfile](../../Dockerfile) switches the official Bookworm APT source
+URIs to HTTPS in both build stages before `apt-get update`. This bounds an
+observed local HTTP delivery failure in which package sizes differed from the
+signed index; APT package and signature checks remain in force.
 
 It requires Docker with Compose, Python 3, and these SFace files:
 

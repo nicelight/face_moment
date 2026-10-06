@@ -5,7 +5,7 @@ const free = (ids=['free']) => ({result_id:'result',photo_ids:ids,quote:{total_k
 test('ambiguous create retries reuse client_request_id; known order refresh creates no duplicate', async () => {
   const calls=[],states=[];let fail=true,ids=0;
   const controller=createPhotoDownload({makeId:()=>`attempt-${++ids}`,onChange:s=>states.push(s),request:async(url,body)=>{
-    calls.push({url,body});if(body){if(fail){fail=false;throw Error('lost response');}return {id:'order'};}
+    calls.push({url,body});if(body){if(fail){fail=false;throw Error('lost response');}return {id:'order',total_kopecks:0};}
     return {total_kopecks:0,archive_status:'preparing'};
   }});
   await controller.start(free());assert.equal(states.at(-1).status,'error');
@@ -17,7 +17,7 @@ test('ambiguous create retries reuse client_request_id; known order refresh crea
 test('changed selection resets attempt and drops late status from old order; paid quote does not create', async () => {
   let release,ids=0;const states=[],posts=[];
   const controller=createPhotoDownload({makeId:()=>String(++ids),onChange:s=>states.push(s),request:async(url,body)=>{
-    if(body){posts.push(body);return {id:body.client_request_id};}
+    if(body){posts.push(body);return {id:body.client_request_id,total_kopecks:0};}
     if(url.endsWith('/1'))return new Promise(resolve=>{release=resolve;});
     return {archive_status:'ready',total_kopecks:0,download_url:'/api/public/archives/2?token=synthetic'};
   }});
@@ -34,5 +34,5 @@ test('concurrent click is one creation; archive failure is distinct from transpo
     return {total_kopecks:0,archive_status:'failed',error:'unsafe private key'};
   }});
   const first=controller.start(free());await controller.start(free());assert.equal(posts,1);
-  release({id:'order'});await first;assert.deepEqual(states.at(-1),{status:'failed'});
+  release({id:'order',total_kopecks:0});await first;assert.deepEqual(states.at(-1),{status:'failed',total_kopecks:0});
 });

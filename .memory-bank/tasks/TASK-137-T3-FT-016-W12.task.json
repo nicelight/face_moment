@@ -1,7 +1,7 @@
 {
   "id": "TASK-137-T3-FT-016-W12",
   "title": "YooKassa ready-order initiation и frozen receipt",
-  "status": "blocked",
+  "status": "done",
   "wave": "W12",
   "feature": "FT-016",
   "reqs": [
@@ -41,6 +41,56 @@
       "evidence": [
         ".tasks/TASK-137-T3-FT-016-W12/TASK-137-T3-FT-016-W12-S-EXECUTE-final-report-docs-01.md",
         ".tasks/TASK-137-T3-FT-016-W12/provider-input-presence.json"
+      ]
+    },
+    {
+      "stage": "scheduler-task-resume",
+      "verdict": "ready",
+      "summary": "Scheduler unblocked TASK-137 after accepted FT-016 card/SBP proof split, current independent task-plan APPROVE at Planning Revision 4, provided local TEST credentials and explicit merchant fiscal inputs, operator authorization for TEST calls, and strict mb-doctor PASS. Historical preflight block remains preserved; TASK-138/139 stay blocked until dependencies close. Receipt mode must be checked before external card join; deprecated fiscalization_enabled=false alone does not block local implementation or establish API impossibility.",
+      "evidence": [
+        ".tasks/TASK-MB-REVIEW-TASKS-PLAN/TASK-MB-REVIEW-TASKS-PLAN-S-TASKS-FT-016-final-report-docs-01.md",
+        ".protocols/FT-016/clarification.md",
+        ".protocols/AUTONOMOUS-RUN/decision-log.md",
+        ".protocols/AUTONOMOUS-RUN/status.md"
+      ]
+    },
+    {
+      "stage": "verify",
+      "verdict": "needs_clarification",
+      "summary": "Independent AC-002 local and external TEST card probes passed, but accepted operational preflight still calls for actual TEST receipt-check mode before card join. GET /me exposed no mode and pending payment no registration field; clarify whether provider acceptance of frozen receipt payload/redirect suffices, without claiming fiscal issuance.",
+      "evidence": [
+        ".protocols/TASK-137-T3-FT-016-W12/verification.md",
+        ".tasks/TASK-137-T3-FT-016-W12/claim-evidence.md",
+        ".tasks/TASK-137-T3-FT-016-W12/test-shop-card-observation.json"
+      ]
+    },
+    {
+      "stage": "verify",
+      "verdict": "pass",
+      "summary": "Independent FT-016-AC-002 proof passed: fresh local route/provider tests 7 passed (external opt-in skipped), mypy 131 files passed, and authorized YooKassa TEST bank_card join passed on retry after a transient pre-payment GET /me timeout. TEST response was HTTP 200/pending with frozen 1.52 RUB, matching order metadata, accepted redirect and transmitted two-group frozen receipt payload. Merchant receipt mode and fiscal issuance remain unproved and are not TASK-137 closure claims under approved Planning Revision 4. T3 per-task red-verify remains required; lifecycle unchanged.",
+      "evidence": [
+        ".protocols/TASK-137-T3-FT-016-W12/verification.md",
+        ".tasks/TASK-137-T3-FT-016-W12/claim-evidence.md",
+        ".tasks/TASK-137-T3-FT-016-W12/test-shop-card-observation.json",
+        ".protocols/TASK-137-T3-FT-016-W12/handoff.md"
+      ]
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "summary": "Independent GPT-6 Sol semantic review found no admitted material AC-002 defect. TEST receipt payload acceptance/card redirect proven; fiscal issuance unclaimed. Optional co-review launches unavailable under thread limit.",
+      "evidence": [
+        ".protocols/TASK-137-T3-FT-016-W12/red-verification.md",
+        ".tasks/TASK-137-T3-FT-016-W12/TASK-137-T3-FT-016-W12-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    },
+    {
+      "stage": "scheduler-closure",
+      "verdict": "done",
+      "summary": "Root /autopilot closes TASK-137 after fresh independent functional PASS and per-task semantic-pass. Documentation-only clarification resolved under unchanged Revision4; no failed execution attempt added. No production acceptance claimed.",
+      "evidence": [
+        ".protocols/TASK-137-T3-FT-016-W12/verification.md",
+        ".protocols/TASK-137-T3-FT-016-W12/red-verification.md"
       ]
     }
   ],
@@ -95,7 +145,7 @@
   "verification_targets": [
     "FT-016-AC-002: Actual registered POST /api/public/orders/{id}/payment checks owner profile/matching Origin/configured limits via existing public boundary; requested/preparing/failed/free/expired/missing ZIP cannot initiate provider. Ready archive validated before any provider call; foreign/missing profile cannot obtain confirmation_url. Consume TASK-133 status/mail, no ZIP failure/mail proof adoption.",
     "FT-016-AC-002: Implement real authenticated YooKassa HTTP adapter bound in backend composition, with network IO outside event loop; POST /v3/payments HTTP Basic shop_id/key, stable Idempotence-Key, capture:true, frozen amount/RUB/method bank_card|sbp, metadata.order_id and server-owned return_url. Only confirmation_url exposed, secrets/private keys absent from JSON/logs. Missing credentials/fiscal configuration returns503 before provider.",
-    "FT-016-AC-002: Receipt uses frozen order.email and paid lines grouped by unit price (<=4 groups), free lines excluded, quantities/amount sum equals payment; explicit merchant fiscal deployment fields never invented. Changed current profile email/tariff/free settings cannot alter payload. Repeated/concurrent create or uncertain response uses same durable key/order/provider id; PostgreSQL face_moment.photo_orders read after new session/restart proves persisted correlation and safe retry. Past provider idempotency window requires manual reconciliation, no blind new charge.",
-    "FT-016-AC-002: Real adapter against isolated fake HTTP provider records auth/idempotence/payload and timeout/replay; synthetic disposable PostgreSQL/private store with unique namespace and cleanup finally, fake mail only. Native mypy/pytest and module ownership inspection. Required external configured YooKassa test-mode join: both card/SBP confirmation redirects and receipt payload; retain request/redirect evidence redacted, no real money/email. Execution must obtain required test merchant/fiscal config and authorization for external test-mode calls; absence is an honest execution stop, never substitute fake evidence or silently waive this join."
+    "FT-016-AC-002: Receipt uses frozen order.email and paid lines grouped by unit price (<=4 groups), free lines excluded, quantities/amount sum equals payment; merchant inputs are ИП, УСН «доходы», без НДС, service description «Оказание цифровых услуг». Verify configured merchant fields in the submitted frozen receipt payload and provider acceptance of that payload; do not invent fiscal values. Changed current profile email/tariff/free settings cannot alter payload. Repeated/concurrent create or uncertain response uses same durable key/order/provider id; PostgreSQL face_moment.photo_orders read after new session/restart proves persisted correlation and safe retry. Past provider idempotency window requires manual reconciliation, no blind new charge.",
+    "FT-016-AC-002: Real application route and authenticated HTTP adapter against isolated fake provider prove bank_card and sbp (`payment_method_data.type=sbp`), frozen receipt, idempotence, errors and timeout/replay; synthetic disposable PostgreSQL/private store with unique namespace and cleanup finally, fake mail only. Native mypy/pytest and module ownership inspection. External YooKassa TEST join proves bank_card confirmation redirect and transmitted frozen receipt payload with redacted request/redirect evidence; TEST does not prove external SBP redirect. Record actual HTTP response/status, frozen amount/order metadata, redirect and submitted receipt payload; actual merchant receipt mode and fiscal receipt issuance are unproven and must not be claimed as TASK-137 evidence. Credentials remain in ignored .env.yookassa.local and are never printed. External SBP redirect/receipt proof in a real shop is mandatory before production enablement, with explicit operator authorization for real calls/payment, and is not task closure evidence."
   ]
 }

@@ -62,6 +62,16 @@
       <button id="photo-selection-download" class="fm-button" type="button" disabled>Скачать</button>
     </div>
   <div id="photo-download-panel" class="fm-search-summary" role="region" aria-label="Скачивание фотографий" hidden>
+    <form id="photo-payment-form" hidden>
+      <label for="photo-payment-email">Email для чека и связи по заказу</label>
+      <input id="photo-payment-email" name="email" type="email" autocomplete="email" required maxlength="254" inputmode="email">
+      <label for="photo-payment-method">Способ оплаты</label>
+      <select id="photo-payment-method" name="payment_method" required>
+        <option value="bank_card">Банковская карта</option>
+        <option value="sbp">СБП (QR)</option>
+      </select>
+      <button class="fm-button" type="submit">Подготовить заказ</button>
+    </form>
     <p id="photo-download-status" role="status" aria-live="polite"></p>
     <button id="photo-download-retry" class="fm-button fm-button-secondary" type="button" hidden>Проверить готовность</button>
     <a id="photo-download-link" class="fm-button" download referrerpolicy="no-referrer" hidden>Скачать архив</a>
