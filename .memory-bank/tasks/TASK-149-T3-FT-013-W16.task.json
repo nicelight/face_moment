@@ -1,0 +1,114 @@
+{
+  "id": "TASK-149-T3-FT-013-W16",
+  "title": "Сохранять новый профиль только после найденных фото",
+  "status": "done",
+  "wave": "W16",
+  "feature": "FT-013",
+  "reqs": [
+    "REQ-PUB-001",
+    "REQ-PUB-008"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-121-T3-FT-013-W3",
+    "TASK-123-T3-FT-013-W6",
+    "TASK-138-T3-FT-016-W13"
+  ],
+  "touched_files": [
+    "src/face_moment/promo/browser_search_profile.py",
+    "src/face_moment/promo/public_photo_search.py",
+    "src/face_moment/promo/public_search_http.py",
+    "tests/promo/test_public_search_api.py",
+    "tests/promo/test_browser_search_profile.py"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Python typecheck",
+      "command": "uv run --locked python -m mypy src/face_moment",
+      "required": true
+    },
+    {
+      "name": "Profile and public API integration",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_browser_search_profile.py tests/promo/test_public_search_api.py",
+      "required": true
+    }
+  ],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Fresh GPT-6 Sol: mypy 131 files, profile/API 14 tests and independent isolated SQL/HTTP probe. New empty/retake/deadline leaves no durable profile/result or new cookie; first match atomic; existing A/B/email/result/paid order retained.",
+      "evidence": [
+        ".protocols/TASK-149-T3-FT-013-W16/verification.md",
+        ".protocols/capture-retry-2026-10-07/task-149-verification-report.md"
+      ]
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "summary": "Fresh GPT-6 Sol adversarial review found no material violation of AC-013 persistence, transaction/HTTP authority or existing-profile/purchase retention.",
+      "evidence": [
+        ".protocols/TASK-149-T3-FT-013-W16/red-verification.md",
+        ".tasks/TASK-149-T3-FT-013-W16/TASK-149-T3-FT-013-W16-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    },
+    {
+      "stage": "manual-owner-closure",
+      "verdict": "done",
+      "summary": "Root explicit manual owner closed TASK-149 after independent functional PASS and separate semantic-pass. Feature semantic verification and wave sync pending."
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-013.md",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-013: RED: existing first no_matches commits browser_search_profiles/A and sends fm_browser_profile. GREEN: same isolated SQL+HTTP probe shows no new durable rows/cookie on first empty, atomic first match, and preserved existing profile/A/B/result/order/purchase after later empty; .tasks/TASK-149-T3-FT-013-W16/claim-evidence.md. Setup failure не RED."
+  ],
+  "purpose": "В promo завершить success-only commit нового profile/A/result и защищённой cookie, не нарушив существующий A/B и заказы.",
+  "success_outcome": "Первый no_matches нового посетителя не оставляет PostgreSQL profile/A/result или Set-Cookie fm_browser_profile; первый match атомарно сохраняет всё; поздний no_matches не удаляет существующие профиль, A/B, result, заказы и покупки.",
+  "anti_goals": [
+    "Не добавлять таблицу, миграцию, server cooldown, новый rate limiter или менять purchase/payment semantics."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy actions and live database",
+      "Writes in processing, inventory, serving_control or orders",
+      "Destructive tests against shared operator state"
+    ],
+    "stop_conditions": [
+      "Stop on a newly required public/shared contract, owner change, production action or higher tier; route through owning workflow."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-013",
+    ".memory-bank/prd.md#2026-10-07--capture-flash-post-capture-selection-and-empty-search-retry",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/constitution.md",
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/domains/browser-search-profile.md#данные-и-владелец",
+    ".memory-bank/domains/browser-search-profile.md#аб",
+    ".memory-bank/contracts/public-photo-search-api.md#границы",
+    ".memory-bank/contracts/public-photo-search-api.md#защита-и-проверка",
+    ".memory-bank/contracts/boundary-map.md#shared-postgresql-contract"
+  ],
+  "constraints": [
+    "Planning Revision 4; direct accepted AC only; no new server cooldown, storage table, migration, device fingerprint, package dependency or production task.",
+    "touched_files is advisory; existing historical task identities/status/evidence remain unchanged.",
+    "Primary owner promo in src/face_moment/promo/; processing matches and serving_control/inventory read projections cross accepted Public search and delivery edges. No foreign owner direct writes."
+  ],
+  "invariants": [
+    "The browser may only call the accepted public API; server search/profile and all-date selection authority remain with their existing owners.",
+    "Tests and RED/GREEN prove only this task-owned AC; dependent historical evidence is prerequisite, not adopted proof."
+  ],
+  "verification_targets": [
+    "FT-013-AC-013: existing tests.disposable_postgresql unique isolated DB/session and HTTPS/API fixture; native selected-venue no_matches with no input auth cookie => read-after-new-session profile/sample/result absent and Set-Cookie fm_browser_profile absent; first personal match => atomic persisted profile/A/result and protected cookie; existing profile with A/B/result/order/purchase => later no_matches preserves rows and cookie/last_visit rules. Include retake/deadline failure/rollback and repeat search, cleanup via existing disposable helper; never production/shared DB. Client cooldown cookie remains separate and is not counted as profile auth. Diff inspection confirms promo-only writes and accepted processing/serving_control/inventory read edges."
+  ]
+}

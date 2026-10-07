@@ -1,0 +1,101 @@
+{
+  "id": "TASK-148-T2-FT-013-W16",
+  "title": "Отдельный экран пустого результата и повтор",
+  "status": "done",
+  "wave": "W16",
+  "feature": "FT-013",
+  "reqs": [
+    "REQ-PUB-002",
+    "REQ-PUB-009"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-125-T2-FT-013-W7"
+  ],
+  "touched_files": [
+    "client/public-photo-search.js",
+    "client/site.html",
+    "client/site.css",
+    "tests/client/test_public_photo_search.mjs",
+    "tests/client/public_photo_search.spec.mjs"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Client unit",
+      "command": "npm run test:unit",
+      "required": true
+    },
+    {
+      "name": "Browser search journey",
+      "command": "npm run test:browser -- tests/client/public_photo_search.spec.mjs",
+      "required": true
+    }
+  ],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Independent GPT-6 Sol: exact 265-character empty-result copy and retry, mobile own probe, no automatic POST, HTTP 500 distinct. Unit 108/108, browser 4/4, capture regression 5/5.",
+      "evidence": [
+        ".protocols/TASK-148-T2-FT-013-W16/verification.md",
+        ".protocols/capture-retry-2026-10-07/task-148-verification-report.md",
+        ".tasks/TASK-148-T2-FT-013-W16/verify-browser"
+      ]
+    },
+    {
+      "stage": "manual-owner-closure",
+      "verdict": "done",
+      "summary": "Root explicit manual owner closed TASK-148 after independent functional PASS; feature semantic verification remains pending."
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-013.md",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-012: RED: завершённый no_matches показывает generic status без отдельного экрана и действия повтора. GREEN: тот же browser probe показывает отдельный экран с точной строкой AC-012 и работающую кнопку «Попробовать еще» при отсутствии активной паузы; .tasks/TASK-148-T2-FT-013-W16/claim-evidence.md. Setup failure не RED."
+  ],
+  "purpose": "Показать отдельный экран завершённого no_matches и дать действие повтора поверх существующего typed API outcome.",
+  "success_outcome": "Завершённый no_matches без активной паузы показывает точный текст AC-012; «Попробовать еще» возвращает к повторному поиску без ограничения доступных дат.",
+  "anti_goals": [
+    "Не реализовывать cookie-счётчик, cooldown, server state или ограничение трёх месяцев."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy actions",
+      "Server profile/order/processing writes",
+      "Promo/QR date/search behavior"
+    ],
+    "stop_conditions": [
+      "Stop on a newly required public/shared contract, owner change, production action or higher tier; route through owning workflow."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-012",
+    ".memory-bank/prd.md#2026-10-07--capture-flash-post-capture-selection-and-empty-search-retry",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/constitution.md",
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/public-photo-search-api.md#browser-и-media",
+    ".memory-bank/contracts/public-photo-search-api.md#защита-и-проверка"
+  ],
+  "constraints": [
+    "Planning Revision 4; direct accepted AC only; no new server cooldown, storage table, migration, device fingerprint, package dependency or production task.",
+    "touched_files is advisory; existing historical task identities/status/evidence remain unchanged.",
+    "Primary implementation is the public browser in client/; typed no_matches/result crosses the existing Public Search API. Server admission and profile cookie remain promo-owned."
+  ],
+  "invariants": [
+    "The browser may only call the accepted public API; server search/profile and all-date selection authority remain with their existing owners.",
+    "Tests and RED/GREEN prove only this task-owned AC; dependent historical evidence is prerequisite, not adopted proof."
+  ],
+  "verification_targets": [
+    "FT-013-AC-012: существующий Playwright HTTPS/browser fixture с isolated context: реальный completed no_matches показывает отдельный экран и точную строку/пробелы по AC-012; кнопка «Попробовать еще» возвращает к повторному поиску. Проверить, что технический отказ не выдаётся за completed no_matches и подсказка о трёх месяцах не сужает server all-date scope. Без реализации или доказательства cookie lifecycle AC-014; cleanup context делает rerun безопасным."
+  ]
+}

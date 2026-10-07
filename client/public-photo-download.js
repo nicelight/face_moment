@@ -7,7 +7,7 @@ export function createPhotoDownload({ request, makeId = () => crypto.randomUUID(
     ? {...state, total_kopecks: attempt.total_kopecks} : state);
   const key = selection => JSON.stringify([selection.result_id, [...selection.photo_ids].sort()]);
   function select(selection) {
-    if (attempt?.redirected && !selection.photo_ids.length) return;
+    if (attempt?.order && attempt.paid && !selection.photo_ids.length) return;
     const nextKey = key(selection);
     if (blockedKey && blockedKey !== nextKey) { blockedKey = null; emit({ status: 'idle' }); }
     if (attempt && attempt.key !== nextKey) { attempt = null; forget(); emit({ status: 'idle' }); }
@@ -91,7 +91,13 @@ export function createPhotoDownload({ request, makeId = () => crypto.randomUUID(
       else emit({status:'pending'});
     } catch { emit({status:'error'}); }
   }
-  return { select, start, resume, refresh: () => attempt?.order ? resume({key:attempt.key,id:attempt.order.id,client_request_id:attempt.body.client_request_id}) : undefined };
+  function refresh() {
+    if (!attempt?.order) return;
+    if (!attempt.redirected && attempt.paid) return start({result_id:attempt.body.result_id,
+      photo_ids:attempt.body.photo_ids,quote:{total_kopecks:attempt.total_kopecks,paid_count:1}});
+    return resume({key:attempt.key,id:attempt.order.id,client_request_id:attempt.body.client_request_id});
+  }
+  return { select, start, resume, refresh };
 }
 
 export function mountPhotoDownload(summary, panel) {

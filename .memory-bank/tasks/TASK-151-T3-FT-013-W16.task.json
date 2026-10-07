@@ -1,0 +1,117 @@
+{
+  "id": "TASK-151-T3-FT-013-W16",
+  "title": "Сохранить preparing заказ при паузе поиска и продолжить оплату после ready",
+  "status": "in_progress",
+  "wave": "W16",
+  "feature": "FT-013",
+  "reqs": [
+    "REQ-PUB-001",
+    "REQ-PUB-006",
+    "REQ-PUB-007",
+    "REQ-PUB-009"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-145-T3-FT-016-W15",
+    "TASK-148-T2-FT-013-W16",
+    "TASK-150-T2-FT-013-W16"
+  ],
+  "touched_files": [
+    "client/public-photo-download.js",
+    "tests/client/test_public_photo_payment.mjs",
+    "tests/client/public_photo_payment.spec.mjs"
+  ],
+  "tier": "T3",
+  "gates": [
+    {
+      "name": "Client unit",
+      "command": "npm run test:unit",
+      "required": true
+    },
+    {
+      "name": "Focused payment browser",
+      "command": "npm run test:browser -- tests/client/public_photo_payment.spec.mjs",
+      "required": true
+    },
+    {
+      "name": "Search browser regression",
+      "command": "npm run test:browser -- tests/client/public_photo_search.spec.mjs",
+      "required": true
+    }
+  ],
+  "verify": [
+    {
+      "stage": "verify-attempt-1",
+      "verdict": "NEEDS-CLARIFICATION",
+      "summary": "Independent outcome probes pass; payment gate twice 9/10 due immediate requested/preparing assertion. Original RED path overwritten by native runner; root routes test synchronization and truthful evidence repair, task remains in_progress.",
+      "evidence": [
+        ".protocols/TASK-151-T3-FT-013-W16/verification.md",
+        ".protocols/capture-retry-2026-10-07/task-151-verification-report.md"
+      ]
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-013.md",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-014 (exact Preparing-order continuity subsection #preparing-order-continuity only): RED: in the existing HTTPS fixture, a paid preparing order is created before redirect, a new search and five real no_matches clear selection and hide its panel/refresh; merely retaining it still leaves pre-redirect ready refresh status-only. GREEN: the same journey keeps the same order ID/panel/refresh through cooldown, owner GET checks that order, ready initiates payment for it without a second POST /orders; pending after redirect gives no paid link until server-confirmed success. Record before/after UI, requests and order identity in .tasks/TASK-151-T3-FT-013-W16/claim-evidence.md. Setup failure is not RED; TASK-150 cookie/count and TASK-145 post-redirect proof stay with their owners."
+  ],
+  "purpose": "Сохранить доступ к уже созданному paid order при пустом выборе после поиска и продолжить оплату в текущей вкладке после готовности ZIP.",
+  "success_outcome": "Во время cooldown созданный preparing заказ остаётся доступным; pre-redirect refresh проверяет тот же order и после ready продолжает его оплату, post-redirect refresh остаётся status-only, новый непустой выбор использует start().",
+  "anti_goals": [
+    "Нет нового browser/server order history, pre-redirect reload/resume promise, повторного POST /orders, server payment/schema/profile/processing changes, real financial actions или production/deploy."
+  ],
+  "runtime_context": {
+    "write_boundary": [
+      "client/public-photo-download.js",
+      "tests/client/test_public_photo_payment.mjs",
+      "tests/client/public_photo_payment.spec.mjs"
+    ],
+    "forbidden_scope": [
+      "Server, schema, profile and processing source changes",
+      "Production/deploy, real financial actions, real provider/email calls or shared operator database",
+      "Changes to TASK-145/150 identities, statuses or evidence; search cookie/count implementation"
+    ],
+    "stop_conditions": [
+      "If another project-authored file is needed, route write-boundary revision before execution; do not write it under advisory touched_files.",
+      "Stop on a new public/shared contract, owner or tier change, server payment/state change, production action or irreversible probe."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-014",
+    ".memory-bank/features/FT-013.md#preparing-order-continuity",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md",
+    ".protocols/capture-retry-2026-10-07/order-continuity-triage-report.md",
+    ".tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-01.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/constitution.md",
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/features/FT-016.md#FT-016-AC-005",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#external-and-runtime-boundaries",
+    ".memory-bank/contracts/public-photo-search-api.md#browser-и-media",
+    ".memory-bank/contracts/photo-purchase-api.md",
+    ".memory-bank/domains/photo-orders.md#исполнение-и-выдача",
+    ".memory-bank/domains/browser-search-profile.md#данные-и-владелец",
+    ".memory-bank/states/lifecycle-map.md#public-visitor-flow"
+  ],
+  "constraints": [
+    "Planning Revision 4, design/behavior impact none; one bounded FT-013 AC-014 subset, no new product requirement or AC ID.",
+    "Primary owner public browser client/; it calls accepted public APIs. promo retains server profile/order/payment authority; no cross-owner direct writes.",
+    "Pre-redirect continuity applies only to an in-memory created order in the current tab; after redirect or reload, existing saved-order status semantics remain.",
+    "T3 isolated fixture must use existing disposable DB helper with permission for that test state, safe rerun and cleanup. Never use shared/live DB or actual payment provider."
+  ],
+  "invariants": [
+    "Cooldown gates new search POST only; it does not hide an already created order or block owner status GET and payment continuation after ZIP ready.",
+    "Exactly the existing order is used: no second POST /orders, no payment before ready, no paid link while pending; entitlement follows server-confirmed status only.",
+    "TASK-150 retains cookie/count proof and TASK-145 retains post-redirect proof; regression of those paths is not adoption of their claims."
+  ],
+  "verification_targets": [
+    "FT-013-AC-014 Preparing-order continuity: existing HTTPS browser fixture with isolated disposable DB/helper, explicit permission and cleanup, real public search responses (five completed no_matches), actual fixture order state and controlled ZIP/payment/provider stubs. Create paid preparing order before redirect; run new search, clear selection and reach fifth-outcome cooldown. Compare visible order panel/refresh, exact order ID, owner GET count/path, zero search POST during cooldown and exactly one POST /orders over the journey. Advance same order to ready; refresh calls payment only after ready, with same ID and no new order. Record network/UI comparison and safe rerun. No external payment.",
+    "Regression for this change: after redirect, pending refresh is status-only and cannot show paid link until server-confirmed success returns the server-issued URL; new nonempty selection follows ordinary start rather than refreshing unrelated old order. Native unit, focused payment browser and search browser gates cover current delta; no repeat of TASK-150 cookie counting or TASK-145 historical proof. Independent /verify PASS, per-task /red-verify semantic-pass, owner closure and fresh FT-013 feature semantic decision follow."
+  ]
+}

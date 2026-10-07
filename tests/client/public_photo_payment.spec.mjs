@@ -40,6 +40,88 @@ async function setup(page) {
 }
 const state=async page=>(await page.request.post(`${baseURL}/__fixture`,{data:{}})).json();
 
+test('TASK-151 FT-013-AC-014 preparing order survives five empty searches and pays once ready', async ({page}, testInfo) => {
+  await page.request.post(`${baseURL}/__fixture`,{data:{block:true,archive_fail:false,provider_status:'pending',reset_settings:true,vector:0}});
+  const calls=[];
+  page.on('request', request => {
+    const path=new URL(request.url()).pathname;
+    if(path==='/api/public/search' || path.startsWith('/api/public/orders')) calls.push({method:request.method(),path});
+  });
+  await setup(page);
+  await page.locator('#search-gallery > section').nth(0).locator('.fm-photo-select-paid input').first().check();
+  await page.locator('#photo-selection-download').click();
+  await page.locator('#photo-payment-email').fill('continuity@example.test');
+  await page.locator('#photo-payment-form button').click();
+  await expect(page.locator('#photo-download-status')).toContainText('Архив готовится');
+  await expect.poll(async () => (await state(page)).orders.at(-1)?.status).toBe('preparing');
+  const before=await state(page);
+  const order=before.orders.at(-1);
+  expect(order.status).toBe('preparing');
+  expect(before.provider_requests).toHaveLength(0);
+  const ownerPath=`/api/public/orders/${order.id}`;
+  const count=(method,path)=>calls.filter(call=>call.method===method&&call.path===path).length;
+  expect(count('POST','/api/public/orders')).toBe(1);
+  await page.locator('#selfie-retake').click();
+  await expect(page.locator('#selfie-viewport')).toHaveAttribute('data-state','ready');
+  await page.locator('#selfie-viewport').click();
+  await expect(page.locator('#selfie-viewport')).toHaveAttribute('data-state','captured');
+  await page.request.post(`${baseURL}/__fixture`,{data:{vector:1}});
+  for(let n=1;n<=5;n++) {
+    const response=page.waitForResponse(r=>r.url().endsWith('/api/public/search'));
+    await page.locator('#selfie-send').click();
+    expect((await (await response).json()).outcome).toBe('no_matches');
+    await expect(page.locator('#search-empty')).toBeVisible();
+    if(n<5) {
+      await page.locator('#search-empty-retry').click();
+      await expect(page.locator('#selfie-viewport')).toHaveAttribute('data-state','ready');
+      await page.locator('#selfie-viewport').click();
+      await expect(page.locator('#selfie-viewport')).toHaveAttribute('data-state','captured');
+    }
+  }
+  await expect(page.locator('#search-empty-retry')).toBeHidden();
+  expect(count('POST','/api/public/search')).toBe(6);
+  expect(count('POST','/api/public/orders')).toBe(1);
+  await page.screenshot({path:testInfo.outputPath('preparing-fifth-empty.png'),fullPage:true});
+  console.log(`TASK-151 fifth: order=${order.id} search_POST=${count('POST','/api/public/search')} order_POST=${count('POST','/api/public/orders')} panel_visible=${await page.locator('#photo-download-panel').isVisible()} refresh_visible=${await page.locator('#photo-download-retry').isVisible()}`);
+  await expect(page.locator('#photo-download-panel')).toBeVisible();
+  await expect(page.locator('#photo-download-retry')).toBeVisible();
+  const beforeGet=count('GET',ownerPath);
+  await page.locator('#photo-download-retry').click();
+  await expect.poll(()=>count('GET',ownerPath)).toBe(beforeGet+1);
+  await expect(page.locator('#photo-download-status')).toContainText('Архив готовится');
+  expect(count('POST',`${ownerPath}/payment`)).toBe(0);
+  expect((await state(page)).provider_requests).toHaveLength(0);
+  await page.request.post(`${baseURL}/__fixture`,{data:{release:true}});
+  await expect.poll(async()=>(await state(page)).orders.at(-1).status).toBe('ready');
+  const beforeReadyGet=count('GET',ownerPath);
+  await page.locator('#photo-download-retry').click();
+  await expect.poll(()=>count('POST',`${ownerPath}/payment`)).toBe(1);
+  await expect(page).toHaveURL(/\/__provider\/checkout\//);
+  expect(count('GET',ownerPath)).toBe(beforeReadyGet+1);
+  expect(count('POST','/api/public/orders')).toBe(1);
+  expect(count('POST',`${ownerPath}/payment`)).toBe(1);
+  const initiated=await state(page);
+  expect(initiated.orders.at(-1).id).toBe(order.id);
+  expect(initiated.provider_requests).toHaveLength(1);
+  expect(initiated.provider_requests[0].key).toBe(order.id);
+  console.log(`TASK-151 ready: order=${order.id} owner_GET=${count('GET',ownerPath)} order_POST=${count('POST','/api/public/orders')} payment_POST=${count('POST',`${ownerPath}/payment`)} provider_create=${initiated.provider_requests.length}`);
+  await page.locator('#return-to-site').click();
+  await expect(page.locator('#photo-download-status')).toContainText('Ожидаем подтверждения');
+  await expect(page.locator('#photo-download-link')).toBeHidden();
+  const beforePendingGet=count('GET',ownerPath);
+  await page.locator('#photo-download-retry').click();
+  await expect.poll(()=>count('GET',ownerPath)).toBe(beforePendingGet+1);
+  await expect(page.locator('#photo-download-link')).toBeHidden();
+  expect(count('POST',`${ownerPath}/payment`)).toBe(1);
+  await page.request.post(`${baseURL}/__fixture`,{data:{provider_status:'succeeded'}});
+  await page.locator('#photo-download-retry').click();
+  await expect(page.locator('#photo-download-link')).toBeVisible();
+  expect(await page.locator('#photo-download-link').getAttribute('href')).toMatch(new RegExp(`^/api/public/archives/${order.id}\\?token=`));
+  expect(count('POST','/api/public/orders')).toBe(1);
+  expect(count('POST',`${ownerPath}/payment`)).toBe(1);
+  console.log(`TASK-151 confirmed: order=${order.id} pending_link=closed confirmed_link=server order_POST=1 payment_POST=1`);
+});
+
 test('TASK-145 FT-016-AC-005 empty retry after new search refreshes saved pending order', async ({page}) => {
   await page.request.post(`${baseURL}/__fixture`,{data:{block:true,archive_fail:false,provider_status:'pending',reset_settings:true}});
   const calls=[];

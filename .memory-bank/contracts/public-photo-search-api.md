@@ -1,7 +1,7 @@
 ---
 description: Публичный поиск, разрешённая галерея и уменьшенные preview bytes.
 status: active
-last_updated: 2026-10-03
+last_updated: 2026-10-07
 source_of_truth:
   - .memory-bank/contracts/public-photo-search-api.md
 ---
@@ -31,6 +31,13 @@ Public admission не ожидает занятый Promo slot: возвраща
 с конкурирующим public запросом, без нового performance target.
 `busy|deadline|retake_required|confirmation_required|face_denied|no_matches`
 не являются успешной галереей. Technical failures — общие HTTP statuses.
+Форма success и `no_matches` остаётся в `schema_version=1`: success публикует
+текущий result; `no_matches` возвращает прежний
+`{schema_version:1,outcome:"no_matches"}` без нового result или profile cookie.
+Новый profile cookie выдаётся только после сохранения profile/A/result при
+найденных личных фото; `no_matches` существующего профиля сохраняет прежний
+result, А/Б, профиль и заказы. Запись и переходы — в
+[Browser Search Profile](../domains/browser-search-profile.md).
 
 `processing` готовит текущее лицо native adapter и ищет exact cosine только
 active совместимые `ready` Photos выбранных площадок по всем visit_date.
@@ -46,9 +53,27 @@ threshold сохраняется; Promo date settings
 
 ## Browser и media
 
-Камера/IndexedDB/compression/progress: [FT-013 AC-001..003](../features/FT-013.md#acceptance-criteria).
+Камера/IndexedDB/compression/progress: [FT-013 AC-001..003, AC-010..012](../features/FT-013.md#acceptance-criteria).
 История сохраняет каждый capture, включая retake/отказ/failed search;
 на сервер отправляется только текущий снимок после «Найти меня».
+При «Жмак меня» на 50–100 ms белеет viewport вне существующего круга;
+круг остаётся видимым. Выбор 1–3 площадок скрыт и недоступен до готового
+снимка, после съёмки доступен; отправка остаётся только по «Найти меня».
+
+Браузер ведёт отдельную от `fm_browser_profile` доступную JS cookie со
+счётчиком последовательных завершённых `no_matches` и временем окончания
+паузы; сервер не хранит и не использует её для admission. Счётчик общий для
+смены площадок и reload. Успешный result сбрасывает его; camera/network/server errors,
+`busy|deadline|retake_required|confirmation_required|face_denied` и другие
+неуспешные outcomes его не расходуют. Первые четыре `no_matches` показывают
+отдельный экран с точным текстом и кнопкой «Попробовать еще» из
+[PRD clarification](../prd.md#2026-10-07--capture-flash-post-capture-selection-and-empty-search-retry).
+Пятый подряд сразу показывает точный текст паузы из того же PRD и блокирует
+новый submit до времени пятого результата +30 минут; после истечения
+cookie/счётчик сбрасываются.
+Подсказка о трёх месяцах не ограничивает поиск по всем датам.
+Очистка cookie или другой браузер обходят это локальное ограничение; новый
+серверный cooldown или идентификация устройства не вводятся.
 
 Gallery renderer использует private original через `inventory` projection,
 ориентацию и JPEG encoding `processing`; возвращает JPEG шириной 640 px,
@@ -65,7 +90,7 @@ Frontend накладывает снимаемый watermark только на �
 
 Edge направляет только `/api/public/search` в RealtimeFaceService; остальные
 public routes обслуживает backend. Missing cookie на защищённом API→401, чужой
-result/photo→404; search может создать профиль по Browser Search Profile.
+result/photo→404. Серверные IP/profile rate limits независимы от browser cookie паузы.
 Все JSON используют schema_version=1; unknown request fields→422.
 
 Public JSON/media: HTTPS, no-store, no-referrer; cookie/token/selfie/embedding
@@ -78,5 +103,8 @@ session/CSRF обязательны. Другие reference settings эта за
 Fixtures: scope 0/4/foreign venues, все даты, no-match, А/Б, corrupted/multiface,
 профиль чужого результата, matched-date `no_faces`, historical originals;
 decoded preview width>=320 и отсутствие original bytes. Browser проверяет
-network до Submit, IndexedDB/quota и watermark. Compression пары проверяют
+network до Submit, IndexedDB/quota, flash 50–100 ms вне круга, post-capture
+выбор, точные строки `no_matches`, четыре повтора, пятый +30 min, reload,
+смену площадок, success reset и исключённые outcomes, а также watermark.
+Compression пары проверяют
 face count/gate/embedding/matches, не объявляют новую гарантию accuracy.

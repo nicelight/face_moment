@@ -1,7 +1,8 @@
 """Promo-owned hidden profile admission; processing supplies the current query.
 
 No selfie bytes or diagnostics are stored here. Caller commits the transaction
-and sends the cookie only after successful commit, including bounded denials.
+and sends the cookie only after successful commit; new unsuccessful profiles
+are rolled back by the search owner.
 """
 from __future__ import annotations
 
@@ -57,6 +58,7 @@ class BrowserProfileAdmission:
     outcome: Literal["allowed", "retake_required", "confirmation_required", "face_denied"]
     query: PreparedReferenceQuery | None
     message: str | None = None
+    is_new: bool = False
 
 
 def set_browser_profile_cookie(response: Response, cookie_token: str) -> None:
@@ -81,12 +83,14 @@ class BrowserSearchProfileRepository:
         self, *, cookie_token: str | None, query: PreparedReferenceQuery | None,
         confirm_reset: bool = False,
     ) -> BrowserProfileAdmission:
-        """Only a search action creates unknown profiles; None means unusable capture.
+        """Prepare an unknown profile in the caller's transaction.
 
         processing must validate single-face/native quality before supplying the
-        compatible query. Row lock is held until the caller's commit/rollback.
+        compatible query. None means unusable capture. Row lock is held until
+        the caller's commit/rollback.
         """
         record = self.find(cookie_token, lock=True)
+        is_new = record is None
         if record is None:
             cookie_token = secrets.token_hex(32)
             record = BrowserSearchProfile(cookie_digest=hashlib.sha256(cookie_token.encode()).hexdigest(),
@@ -142,4 +146,4 @@ class BrowserSearchProfileRepository:
                 outcome, message = "confirmation_required", CONFIRMATION_MESSAGE
         self.session.flush()
         return BrowserProfileAdmission(record.id, cookie_token, outcome,
-                                       query if outcome == "allowed" else None, message)
+                                       query if outcome == "allowed" else None, message, is_new)

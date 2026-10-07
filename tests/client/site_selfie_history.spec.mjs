@@ -79,6 +79,65 @@ async function history(page) {
   }, { DB, STORE });
 }
 
+for (const [label, width, height] of [['desktop', 1280, 800], ['mobile', 390, 844]]) {
+  test(`capture flash preserves the SVG circle for 75 ms on ${label}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height });
+    await setup(page);
+    await page.locator('#selfie-viewport').click();
+    await expect(page.locator('#selfie-viewport')).toHaveAttribute('data-state', 'ready');
+    await page.clock.pauseAt(new Date('2026-10-07T08:00:00Z'));
+    await page.evaluate(() => document.querySelector('#selfie-viewport').click());
+
+    const flash = page.locator('#selfie-flash');
+    await expect(flash).toBeVisible();
+    const geometry = await page.evaluate(() => {
+      const circle = document.querySelector('#selfie-ready-overlay circle');
+      const overlay = document.querySelector('#selfie-flash');
+      const rect = circle.getBoundingClientRect();
+      return {
+        circleVisible: getComputedStyle(circle).visibility === 'visible' && !circle.closest('[hidden]'),
+        centerX: rect.x + rect.width / 2,
+        centerY: rect.y + rect.height / 2,
+        radius: rect.width / 2,
+        flashX: parseFloat(overlay.style.getPropertyValue('--flash-x')),
+        flashY: parseFloat(overlay.style.getPropertyValue('--flash-y')),
+        flashRadius: parseFloat(overlay.style.getPropertyValue('--flash-radius')),
+        background: getComputedStyle(overlay).backgroundColor,
+      };
+    });
+    expect(geometry.circleVisible).toBe(true);
+    expect(geometry.background).toBe('rgb(255, 255, 255)');
+    expect(geometry.flashX).toBeCloseTo(geometry.centerX, 1);
+    expect(geometry.flashY).toBeCloseTo(geometry.centerY, 1);
+    expect(geometry.flashRadius).toBeGreaterThanOrEqual(geometry.radius);
+    const screenshot = await page.screenshot({ path: testInfo.outputPath(`flash-${label}.png`) });
+    const pixels = await page.evaluate(async ({ base64, geometry }) => {
+      const image = new Image();
+      image.src = `data:image/png;base64,${base64}`;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width; canvas.height = image.height;
+      const context = canvas.getContext('2d');
+      context.drawImage(image, 0, 0);
+      const sample = (x, y) => [...context.getImageData(x, y, 1, 1).data].slice(0, 3);
+      return { outside: sample(10, 10), circle: sample(Math.round(geometry.centerX), Math.round(geometry.centerY)) };
+    }, { base64: screenshot.toString('base64'), geometry });
+    expect(pixels.outside).toEqual([255, 255, 255]);
+    expect(pixels.circle).not.toEqual([255, 255, 255]);
+    await page.clock.runFor(49);
+    await expect(flash).toBeVisible();
+    await page.clock.runFor(26);
+    await expect(flash).toBeHidden();
+    await expect(page.locator('#selfie-viewport')).toHaveAttribute('data-state', 'captured');
+    expect(await history(page)).toHaveLength(1);
+    await writeFile(testInfo.outputPath(`flash-${label}.json`), JSON.stringify({
+      viewport: { width, height }, geometry, pixels,
+      flashVisibleAtMs: 0, flashStillVisibleAtMs: 49, flashHiddenAtMs: 75,
+      capturedJpegHistoryCount: 1,
+    }, null, 2));
+  });
+}
+
 test('camera JPEG downscales/no-upscale q0.85 and retains every capture across reload', async ({ page }) => {
   await setup(page);
   await capture(page);

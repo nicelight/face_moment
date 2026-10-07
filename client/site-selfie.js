@@ -11,6 +11,7 @@ const retake = document.querySelector("#selfie-retake");
 const send = document.querySelector("#selfie-send");
 const placeholder = document.querySelector("#selfie-placeholder");
 const readyOverlay = document.querySelector("#selfie-ready-overlay");
+const flash = document.querySelector("#selfie-flash");
 const searchOverlay = document.querySelector("#selfie-search-overlay");
 let stream = null, objectUrl = null, generation = 0, selfieState = "idle", captureInProgress = false;
 let currentSelfie = null;
@@ -33,7 +34,7 @@ function setState(next) {
   viewport.dataset.state = next;
   viewport.disabled = next === "opening" || next === "capturing" || next === "captured";
   viewport.setAttribute("aria-label", next === "ready" ? "Сделать снимок" : "Камера и селфи");
-  readyOverlay.toggleAttribute("hidden", next !== "ready");
+  readyOverlay.toggleAttribute("hidden", next !== "ready" && next !== "capturing");
   searchOverlay.hidden = true;
   search.refreshCapture();
 }
@@ -88,10 +89,20 @@ viewport.addEventListener("click", () => {
   else if (selfieState === "ready") void captureSelfie();
 });
 retake.addEventListener("click", openCamera);
+function startCaptureFlash() {
+  const circle = readyOverlay.querySelector("circle").getBoundingClientRect();
+  flash.style.setProperty("--flash-x", `${circle.x + circle.width / 2}px`);
+  flash.style.setProperty("--flash-y", `${circle.y + circle.height / 2}px`);
+  flash.style.setProperty("--flash-radius", `${Math.max(circle.width, circle.height) / 2 + 3}px`);
+  flash.hidden = false;
+  return new Promise(resolve => setTimeout(() => { flash.hidden = true; resolve(); }, 75));
+}
 async function captureSelfie() {
   if (selfieState !== "ready" || captureInProgress || !video.videoWidth || !video.videoHeight) return;
   const operation = generation;
-  captureInProgress = true; setState("capturing");
+  captureInProgress = true;
+  const flashDone = startCaptureFlash();
+  setState("capturing");
   try {
     const blob = await encodeSelfie(video);
     try {
@@ -106,6 +117,7 @@ async function captureSelfie() {
     objectUrl = URL.createObjectURL(blob); preview.src = objectUrl;
     await preview.decode();
     if (operation !== generation) return;
+    await flashDone;
     releaseCamera(); video.hidden = true; preview.hidden = false;
     retake.hidden = false; send.hidden = false; setState("captured");
     status.textContent = "Селфи готово. Выберите площадки и нажмите «Найти меня», чтобы отправить этот снимок на поиск.";

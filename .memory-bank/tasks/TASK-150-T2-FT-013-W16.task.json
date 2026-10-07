@@ -1,0 +1,107 @@
+{
+  "id": "TASK-150-T2-FT-013-W16",
+  "title": "Browser-cookie счётчик пустых поисков и пауза",
+  "status": "done",
+  "wave": "W16",
+  "feature": "FT-013",
+  "reqs": [
+    "REQ-PUB-009"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-125-T2-FT-013-W7"
+  ],
+  "touched_files": [
+    "client/public-photo-search.js",
+    "client/site.html",
+    "client/site.css",
+    "tests/client/test_public_photo_search.mjs",
+    "tests/client/public_photo_search.spec.mjs"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Client unit",
+      "command": "npm run test:unit",
+      "required": true
+    },
+    {
+      "name": "Browser search journey",
+      "command": "npm run test:browser -- tests/client/public_photo_search.spec.mjs",
+      "required": true
+    }
+  ],
+  "verify": [
+    {
+      "stage": "verify-attempt-1",
+      "verdict": "FAIL",
+      "summary": "Independent two-tab probe: late sixth no_matches replaces active count=5/deadline with invalid count=6, clearing cookie and allowing a new POST before deadline. Root routes bounded repair within AC-014, task remains in_progress.",
+      "evidence": [
+        ".protocols/capture-retry-2026-10-07/task-150-verification-report.md"
+      ]
+    },
+    {
+      "stage": "verify-attempt-2",
+      "verdict": "PASS",
+      "summary": "Fresh GPT-6 Sol: unit 108/108, browser 7/7 and own two-tab probe. Count/deadline survives late sixth result; no new POST before fifth +30min; reset/exclusions/order actions preserved.",
+      "evidence": [
+        ".protocols/TASK-150-T2-FT-013-W16/verification.md",
+        ".protocols/capture-retry-2026-10-07/task-150-verification-attempt-2-report.md"
+      ]
+    },
+    {
+      "stage": "manual-owner-closure",
+      "verdict": "done",
+      "summary": "Root explicit manual owner closed TASK-150 after independent attempt-2 PASS; prior FAIL retained. Feature semantic verification pending."
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-013.md",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-014: RED: пять completed no_matches не создают browser-cookie счётчик/паузу и новый POST остаётся доступным. GREEN: тот же browser probe показывает счёт 1–5, точную пятую строку, блокировку нового POST до пятого исхода +30 min, expiry/success reset и нерасходующие outcomes; .tasks/TASK-150-T2-FT-013-W16/claim-evidence.md. Setup failure не RED."
+  ],
+  "purpose": "В public browser ограничить новые поиски после пяти подряд завершённых no_matches через отдельную cookie.",
+  "success_outcome": "После пятого подряд completed no_matches сразу показана точная пауза AC-014; browser cookie хранит счётчик и deadline через reload/смену площадок, новый поиск заблокирован на 30 минут; success/expiry очищают счётчик, прочие outcomes его не расходуют.",
+  "anti_goals": [
+    "Не реализовывать экран/кнопку AC-012 или менять существующие заказы, order refresh, оплату, server admission и all-date scope."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy actions",
+      "Server profile/order/processing writes",
+      "Promo/QR date/search behavior"
+    ],
+    "stop_conditions": [
+      "Stop on a newly required public/shared contract, owner change, production action or higher tier; route through owning workflow."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-014",
+    ".memory-bank/prd.md#2026-10-07--capture-flash-post-capture-selection-and-empty-search-retry",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/constitution.md",
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/public-photo-search-api.md#browser-и-media",
+    ".memory-bank/contracts/public-photo-search-api.md#защита-и-проверка"
+  ],
+  "constraints": [
+    "Planning Revision 4; direct accepted AC-014 only; no new server cooldown, storage table, migration, device fingerprint, package dependency or production task.",
+    "touched_files is advisory; existing historical task identities/status/evidence remain unchanged.",
+    "Primary owner is the public browser in client/; typed no_matches/result crosses the existing Public Search API. Server admission/profile cookie remain promo-owned."
+  ],
+  "invariants": [
+    "Cooldown gates only new search submission; existing result, order refresh and payment remain available.",
+    "Tests and RED/GREEN prove only AC-014; AC-012 screen proof remains with TASK-148. The combined journey is checked after both outcomes are implemented."
+  ],
+  "verification_targets": [
+    "FT-013-AC-014: existing Playwright HTTPS/browser fixture with isolated context/cookie jar and controlled browser time: real completed no_matches 1–5 across reload and venue change, four available retries, exact fifth copy/spacing, no new POST until fifth outcome +30 min, expiry and success reset. Camera/network/server/busy/deadline/retake/confirmation/denial do not consume count. Cookie inspection shows only separate JS-readable browser cooldown state; diff inspection shows no server cooldown record. Browser network stubs show the guard applies only to new search POST, leaving existing result/order refresh and payment actions reachable without initiating a real payment. Fresh context and cleanup make rerun safe; AC-012 exact screen/return is independently proved by TASK-148 and both form the feature-level full journey."
+  ]
+}

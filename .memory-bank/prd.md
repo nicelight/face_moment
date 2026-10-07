@@ -4,7 +4,7 @@ status: draft
 type: prd
 clarification_status: complete
 constitution_checked: true
-last_updated: 2026-10-03
+last_updated: 2026-10-07
 ---
 # PRD
 
@@ -20,13 +20,49 @@ beyond the resolved behavior, constraints and acceptance criteria below.
 
 ## Clarifications
 
+### 2026-10-07 — Capture flash, post-capture selection and empty-search retry
+
+The operator requested three bounded changes to the public selfie journey:
+
+- On the capture press («Жмак меня»), the entire viewport outside the existing
+  circle becomes white for 50–100 ms during photography. The circle itself
+  remains visible. No new camera/model/compression behavior is requested.
+- Selection of 1–3 venues is visible and available only after a photograph
+  has been captured; selfie submission still requires explicit «Найти меня».
+- No matches shows a dedicated empty-result screen with this exact text:
+  «К сожалению, нам не удалось найти  Вас на прошедших мероприятиях. Возможно, Вы посещали нас слишком давно? Если фото с Вами были сделаны не позднее 3х месяцев назад, попробуйте сделать селфи еще раз, выберите светлое место, так нам будет легче рассмотреть ваше лицо»
+  and «Попробовать еще». After five unsuccessful searches the browser shows
+  «на данный момент не удалось найти подходящих фоток, но Вы можете поискать себя  через пол часа»
+  and prevents a new search for 30 minutes using browser cookies only.
+  No server table, device fingerprint or server-side cooldown history is added.
+  This is a same-browser convenience limit, not robust device identification;
+  clearing cookies or using another browser can bypass it.
+- A new unmatched visitor must not leave a durable hidden profile or its A/B
+  samples on the server. A new profile is retained only after photos are found.
+  Existing profiles and purchases are not deleted by a later empty search.
+  The user-facing three-month suggestion does not request narrowing the accepted
+  all-available-dates search scope.
+
+Operator continuation «окей» accepted five consecutive completed `no_matches`
+outcomes, with a successful search resetting the counter. The 30-minute interval
+starts at the fifth empty outcome; expiry clears the counter. Camera, network,
+technical errors, busy responses and unusable-selfie outcomes do not consume it.
+Cookie-only cooldown remains separate from existing server admission limits.
+
+Owner: public-extension PRD clarification, then applicable feature decomposition
+and `/spec-redesign` for the existing profile/search persistence contract before
+fresh FT-013 task planning/review. Existing completed-task evidence is preserved;
+these changes have not been implemented or deployed.
+
 ### 2026-10-03 — Public selfie search and selective delivery
 
 Operator decisions in [PAYMENS_TS.md](../PAYMENS_TS.md) replace earlier fixed-whole-package and signup assumptions. All selfies remain locally; submission follows explicit selection of 1–3 venues. Common no_faces photos are limited to matched personal-photo visit dates and are free everywhere. Separate guaranteed archive preservation against original deletion was rejected as overengineering. Later accepted answers: global marginal RUB tariff, one cross-venue selection/order, free-green/paid-blue checks, watermarked personal previews, email receipts and manual refunds, frozen order quote and persistent profiles with last visit. Numeric prices/face thresholds remain configuration.
 
 
 Historical pilot clarification is complete. Accepted public-extension decisions
-are incorporated into FR-PUB and AC-PUB below; extension clarification is complete after the accepted continuation and preview-width decisions.
+are incorporated into FR-PUB and AC-PUB below; the original extension was clarified
+after the accepted continuation and preview-width decisions. The 2026-10-07
+retry delta is clarified by the accepted continuation recorded above.
 
 ### 2026-08-29 — Independent production performance gates
 
@@ -685,16 +721,17 @@ implementation-ready.
 
 ### H. Public selfie search and purchase — accepted extension 2026-10-03
 
-- **FR-PUB-01** — Селфи снимается только камерой сайта. Все сделанные снимки сохраняются в IndexedDB как JPEG Blob и не удаляются после поиска; начальные параметры длинная сторона до 960 px, quality 0.85, без upscale исходника, лицо не менее 30% изображения. При quota/недоступности показываем предупреждение, продолжаем текущий поиск без сохранения нового снимка и не удаляем прежние; параметры требуют downstream-проверки качества, не гарантируют точность; загрузки из галереи/аватарки нет. Кнопка диагностики и отправка локальной истории отложены.
-- **FR-PUB-02** — После съёмки пользователь выбирает 1–3 площадки и нажимает «Найти меня». Только тогда текущее селфи отправляется серверу. Сервер проверяет выбор и ищет только внутри него по всем доступным датам неудалённых пригодных фото; Promo date settings не ограничивают этот поиск.
+- **FR-PUB-01** — Селфи снимается только камерой сайта. При нажатии «Жмак меня» для съёмки весь экран, кроме существующего круга, становится белым на 50–100 мс во время фотографирования. Все сделанные снимки сохраняются в IndexedDB как JPEG Blob и не удаляются после поиска; начальные параметры длинная сторона до 960 px, quality 0.85, без upscale исходника, лицо не менее 30% изображения. При quota/недоступности показываем предупреждение, продолжаем текущий поиск без сохранения нового снимка и не удаляем прежние; параметры требуют downstream-проверки качества, не гарантируют точность; загрузки из галереи/аватарки нет. Кнопка диагностики и отправка локальной истории отложены.
+- **FR-PUB-02** — До готового снимка выбор площадок скрыт и недоступен. После съёмки пользователь выбирает 1–3 площадки и нажимает «Найти меня». Только тогда текущее селфи отправляется серверу. Сервер проверяет выбор и ищет только внутри него по всем доступным датам неудалённых пригодных фото; Promo date settings не ограничивают этот поиск.
 - **FR-PUB-03** — Во время поиска показываются анимация/progress bar; имитация не выдаётся за измеренный процент, если сервер не предоставляет измеренных данных; результат содержит число личных фото, площадки и даты. Вне выбранных площадок результаты не раскрываются. Регистрации или авторизации посетителя нет.
-- **FR-PUB-04** — Случайный секретный токен в защищённой HttpOnly cookie связывает браузер со скрытым серверным профилем. Embedding’и и ограничения авторитетны на сервере. Потеря cookie создаёт новый профиль без восстановления покупок; fingerprinting и liveness не требуются. Простой rate limit использует профиль и IP, не идентифицируя человека по IP.
+- **FR-PUB-04** — Случайный секретный токен в защищённой HttpOnly cookie связывает браузер со скрытым серверным профилем. Новый профиль и его образцы сохраняются только после поиска с найденными фотографиями; пустой поиск нового посетителя не оставляет профиль на сервере. Для существующих профилей embedding’и и ограничения авторитетны на сервере; последующий пустой поиск не удаляет профиль или покупки. Потеря cookie позволяет создать новый профиль при следующем успешном поиске без восстановления покупок; fingerprinting и liveness не требуются. Простой server rate limit использует профиль и IP, не идентифицируя человека по IP; новый cooldown пустых поисков хранится отдельно только в browser cookie.
 - **FR-PUB-05** — Профиль хранит два фиксированных embedding-образца А/Б для вариаций одной личности. Первый пригодный снимок занимает А; первое несовпадение занимает Б. Совпадение с любым разрешает поиск без автоматической замены образцов. При несовпадении с обоими показывается предупреждение о запрете сканирования чужого лица и предлагается «Это я»/«Переснять»: единственный подтверждённый сброс делает текущий снимок новым А, удаляет прежние А/Б и вновь допускает Б. После использованного сброса последующее несовпадение с обоими отклоняется, но пересъёмка/поиск подходящего лица остаются. Непригодные снимки (нет/несколько лиц, недостаточное качество) не расходуют образцы/сброс. Developer настраивает порог А/Б независимо от порога поиска по профессиональным фотографиям; изменение одного автоматически не меняет другой; поиск использует текущее селфи, а не union А/Б.
 - **FR-PUB-06** — Галерея — единая лента: заголовок площадки, личные фото с watermark, общие, следующая площадка. no_faces — только за даты личных совпадений и бесплатно везде. Watermark личных preview обязателен; frontend watermark принимается как снимаемый; защиту originals обеспечивает private serving. Прежние Promo/QR teaser сохраняют no-watermark scope. Фактическая ширина preview image публичной галереи не менее 320 px (не только CSS); верхняя граница/высота не заданы. Браузер получает уменьшенные preview, originals остаются private и выдаются только разрешённым архивным доступом после бесплатного entitlement или server-confirmed оплаты; removable frontend watermark не заменяет эту защиту.
 - **FR-PUB-07** — Выбор фото общий между площадками; одна покупка включает все выбранные снимки. Бесплатные выбранные имеют зелёную галочку, платные личные — синюю. Sticky top показывает количество всех выбранных фото (включая бесплатные), серверную общую сумму и «Скачать». Select-all текущей площадки выбирает её доступные фото без отдельной пакетной цены.
 - **FR-PUB-08** — Площадка платная/бесплатная при создании и в настройках; включение бесплатности подтверждается popup. Бесплатные площадки и общие фото не дают платную сумму. Глобальный тариф RUB настраивают operator/developer: первое платное личное фото Base; каждое 2–5 Base×d1; каждое 6–20 Base×d2; каждое 21+ Base×d3. Количество n суммируется по всем выбранным площадкам; маржинальная формула не пересчитывает более ранние фото по следующей ступени. Старые ступени и «все» как тариф отменены. Созданный заказ фиксирует состав/цену/режим; изменения настроек действуют на новые заказы (разрешённый KISS выбор).
 - **FR-PUB-09** — Единственный провайдер — ЮKassa. Email платного сценария сохраняется в скрытом профиле для чека; обязательный email бесплатной выдачи не вводим, возвраты ручные. «Скачать» → выбор способа → запуск процесса: сначала готовится архив, затем открывается выбранная card/QR форма ЮKassa; этот порядок исключает списание до готовности. Пока архив готовится, предлагаем повторить через 30 секунд; при ошибке формирования пользователь видит ошибку, оплата не запускается, приложение автоматически отправляет admin email на sergiosandroid2@gmail.com. Платная выдача только после серверного подтверждения; повторные уведомления идемпотентны.
 - **FR-PUB-10** — Бесплатный выбор выдаёт архивную ссылку без оплаты. Архив содержит выбранные оригиналы; bearer-ссылка на 3 дня от готовности действует независимо от cookie. Гарантированную сохранность вопреки удалению оригиналов не добавляем; ошибки выдачи направляют в ручную поддержку/возврат. Скрытые профили автоматически не удаляются, учитывается последнее посещение; отдельная автоматическая очистка заказов на запуске не задана.
+- **FR-PUB-11** — Завершённый поиск `no_matches` показывает отдельный экран с точным текстом и кнопкой «Попробовать еще» из clarification 2026-10-07. Считаются пять подряд завершённых `no_matches` в одном браузере независимо от выбранных площадок; успешный поиск сбрасывает счётчик. Ошибки камеры/сети/сервера, `busy` и непригодное селфи его не расходуют. Пятая неудача сразу показывает точный текст паузы из той же clarification и блокирует новый поиск на 30 минут от этой неудачи; после истечения счётчик сбрасывается. Счётчик и срок хранятся только в browser cookie, сохраняются при перезагрузке и не создают серверных записей. Это не идентификация устройства и не защита от очистки cookie.
 
 ## Non-functional Requirements
 
@@ -1095,11 +1132,12 @@ pilot acceptance; YooKassa is accepted for the public extension, with email rece
 
 ### Public extension acceptance
 
-- **AC-PUB-01** — Network inspection confirms no selfie submission before «Найти меня»; server tests reject 0/>3 venues and demonstrate no cross-selection result leakage while including eligible dates.
+- **AC-PUB-01** — Browser verifies a 50–100 ms white viewport flash outside the preserved capture circle, and venue selection hidden/unavailable before capture and available after it. Network inspection confirms no selfie submission before «Найти меня»; server tests reject 0/>3 venues and demonstrate no cross-selection result leakage while including eligible dates.
 - **AC-PUB-02** — Browser flow preserves all captured selfies including retake, A/B denial and failed search except warned quota fallback, and provides progress/results without signup; simulated progress is never presented as measured percentage without server measurements. A/B state-transition fixtures cover both matches, B admission, one reset, later denial and non-consuming unusable captures, foreign-face warning before reset, Developer threshold configuration and its independence from professional-photo search threshold.
 - **AC-PUB-03** — Gallery fixtures show personal first, then only matched-date no_faces photos; common photos cost zero on both paid/free venues and select-all stays within the current venue. Inspect the decoded public-gallery preview image dimensions: actual width >=320 px, independently of CSS. Verify private-original access remains gated by server free/payment authorization; this does not alter Promo/QR preview acceptance.
 - **AC-PUB-04** — Server quote/free-download/payment fixtures verify the global marginal RUB formula across selected venues, no payment for free media and no paid-original delivery before server payment confirmation; duplicate confirmations are idempotent.
 - **AC-PUB-05** — Archive-generation failure fixtures verify an error shown to the user, no provider/payment initiation and an admin-email delivery attempt to sergiosandroid2@gmail.com using a fake mail adapter. Ready archive contains allowed selected originals; bearer access is usable without browser profile and expires at ready+3 days, without claiming preservation against deletion.
+- **AC-PUB-06** — Browser fixtures verify exact empty-result copy and retry button, four available retries followed by cooldown on the fifth completed `no_matches`, persistence across reload and venue changes, no new search during cooldown, expiry at fifth failure +30 minutes, success reset and no counting of technical/unusable-selfie outcomes. Server fixtures demonstrate no durable profile/sample or new profile cookie for a first unmatched visitor, and preservation of existing profiles and purchases after later empty searches. The three-month copy does not narrow the all-available-dates search scope.
 
 
 ### Controlled pilot setup

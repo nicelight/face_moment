@@ -23,6 +23,17 @@ status: active
 
 ## Public extension contracts
 
+- [PRD capture/retry delta](prd.md#2026-10-07--capture-flash-post-capture-selection-and-empty-search-retry):
+  приняты вспышка, выбор после съёмки и cookie-only повтор пустого поиска;
+  пять подряд `no_matches`, сброс при успехе и пауза 30 минут после пятой неудачи;
+  [FT-013](features/FT-013.md) содержит AC-010..014, а
+  [REQ-PUB-001/002/006/007/008/009](requirements.md#public-extension-requirements--2026-10-03)
+  трассируют принятое изменение. Fresh `/review-feat-plan` дал APPROVE;
+  bounded `/spec-redesign` обновил существующие профильный и поисковый
+  contracts. Design FT-013 complete; TASK-146..150 done, TASK-151 planned
+  после feature semantic-fail и ждёт fresh `/review-tasks-plan FT-013`;
+  Revision 4 не менялась.
+
 - [Public Search](contracts/public-photo-search-api.md): endpoints, scope и gallery bytes.
 - [Browser profile](domains/browser-search-profile.md): А/Б и серверные результаты.
 - [Purchase API](contracts/photo-purchase-api.md): tariff/admin, ЮKassa и download.
@@ -117,7 +128,9 @@ status: active
 - [.memory-bank/runbooks/app_guide_ru.md](runbooks/app_guide_ru.md):
   краткое руководство пользователя по приложению и средам.
 - [.memory-bank/runbooks/server-deployment.md](runbooks/server-deployment.md):
-  canonical non-destructive deploy на facecentral и public acceptance.
+  canonical non-destructive deploy на facecentral и public acceptance;
+  текущий public search/archive release `cf498fd` развёрнут 2026-10-07,
+  реальные платежи и SMTP отдельно не настроены.
 - [.memory-bank/runbooks/vps-caddy.md](runbooks/vps-caddy.md): VPS Caddy,
   FRP-backhaul, ACME certificate и доверенный visitor IP.
 - [.memory-bank/runbooks/local-test-deployment.md](runbooks/local-test-deployment.md):
@@ -137,7 +150,10 @@ status: active
 - [EP-004](epics/EP-004.md): accepted public camera discovery, combined quote
   and independently deliverable free/paid originals; [FT-013](features/FT-013.md),
   [FT-014](features/FT-014.md), [FT-015](features/FT-015.md),
-  [FT-016](features/FT-016.md): design complete; [исходные 20 задач](tasks/plans/index.md)
+  [FT-016](features/FT-016.md): исходный design complete, новый FT-013
+  capture/retry delta прошёл review/redesign; TASK-146..150 done,
+  TASK-151 ожидает fresh task-plan review после feature semantic-fail;
+  [исходные 20 задач](tasks/plans/index.md)
   получили task-plan APPROVE при Revision 4. В Wave 1 scheduler закрыл
   [TASK-120](tasks/TASK-120-T2-FT-013-W1.task.json) после independent PASS
   камеры/IndexedDB. В Wave 3 закрыты
@@ -194,6 +210,12 @@ status: active
   setup и deployment отдельно не доказаны. Текущее состояние — в
   [changelog](changelog.md); [run checkpoint](../.protocols/AUTONOMOUS-RUN/status.md)
   передаёт post-sync gates root GENERAL.
+
+  Запись выше — исторический итог прежнего scope. Принятый 2026-10-07 delta
+  открыл только FT-013-AC-010..014: текущие FT-013/EP-004 и
+  REQ-PUB-001/002/008/009 имеют lifecycle `planned` до новой проверки.
+  FT-014..016, старые AC, завершённые task records/evidence и Planning
+  Revision 4 сохранены.
 
 - [.memory-bank/epics/EP-001.md](epics/EP-001.md): fresh searchable
   commercial-photo inventory, role-scoped inventory operations and recent

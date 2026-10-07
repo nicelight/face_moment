@@ -1,13 +1,13 @@
 ---
 description: Product definition (C4 L1) for Face Moment with functional multi-venue operation.
 status: draft
-last_updated: 2026-10-03
+last_updated: 2026-10-07
 ---
 # Face Moment Product
 
 ## Product Identity
 
-Accepted public extension: a visitor takes a camera selfie, selects 1–3 venues,
+Accepted public extension: a visitor takes a camera selfie, then selects 1–3 venues,
 finds personal photographs across their available dates, selects from one feed,
 sees one marginal RUB quote and downloads free originals or buys paid originals
 through YooKassa. An invisible browser profile replaces signup. Detailed product
@@ -65,11 +65,14 @@ hypothesis and is not a current actor.
 
 ## Primary Flow
 
-Public extension: camera → locally retained JPEG in IndexedDB → choose 1–3
-venues → explicit search → A/B profile admissibility → animated scoped result
-→ venue-heading/personal-watermarked/common feed → cross-venue selection and
+Public extension: camera → 50–100 ms white viewport outside the capture circle
+→ locally retained JPEG in IndexedDB → reveal and choose 1–3 venues → explicit
+search → A/B profile admissibility. Success opens the animated scoped result,
+then venue-heading/personal-watermarked/common feed → cross-venue selection and
 quote → «Скачать» → ready archive → free bearer link or YooKassa card/QR →
-server-confirmed paid archive access. Link TTL: 3 days from archive readiness.
+server-confirmed paid archive access. Completed `no_matches` opens the exact
+empty-result retry; the fifth consecutive one starts a 30-minute browser-cookie
+pause. Link TTL: 3 days from archive readiness.
 Email of paid flow is retained for receipt; refunds are manual. Archive failure
 shows an error and sends an administrator email without initiating payment.
 
@@ -105,7 +108,13 @@ surface.
 ## Success Contract
 
 - Public search submits a selfie only after explicit 1–3-venue choice and
-  never reveals other venues; available undeleted dates inside choice are used.
+  never reveals other venues; venue choice is hidden and unavailable until
+  capture, and available undeleted dates inside choice are used.
+- First unmatched visitors leave no durable profile, A/B samples or new profile
+  cookie; existing profiles and orders survive later empty searches. A success
+  clears the browser-cookie empty-search counter; the fifth consecutive completed
+  `no_matches` starts a 30-minute pause, while technical/unusable outcomes do
+  not count.
 - Local selfie history survives successful search; storage failure warns and
   allows the current search without silently evicting old images. Starter JPEG
   resize/quality is verified without promising an accuracy target.
@@ -188,6 +197,8 @@ Historical pilot success contract:
 - Public signup/OAuth, profile recovery after cookie loss, liveness,
   fingerprinting, advanced anti-abuse, additional payment providers and future
   support-button retrieval of the local selfie history.
+- A server table, fingerprint or new auth cookie for empty-search cooldown; the
+  browser-cookie limit can be bypassed by clearing cookies or changing browser.
 - Guaranteed archive/source preservation against original deletion.
 - Per-venue prices, retroactive whole-order discount and the old special
   “all photos” package price are superseded by the accepted global marginal tariff.
@@ -221,7 +232,9 @@ Historical pilot-only exclusions (payment and public search are now extension sc
 ## Canonical Inputs
 
 - [EP-004](epics/EP-004.md): public discovery, configured quote and free/paid
-  selected-original delivery; FT-013..016 are planned outcomes awaiting design.
+  selected-original delivery; the 2026-10-07 FT-013 delta has complete design
+  and has five planned successor cards pending fresh task-plan review while
+  earlier verified evidence is retained.
 
 - [.memory-bank/prd.md](prd.md): clarified product contract and acceptance.
 - [.memory-bank/constitution.md](constitution.md): governing priorities and

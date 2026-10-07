@@ -16,7 +16,7 @@ status: active
 - [IMPL-FT-009](IMPL-FT-009.md): non-blocking structured server events, bounded developer search and expiry.
 - [IMPL-FT-010](IMPL-FT-010.md): normalized ground-truth annotations, developer entry and retention.
 
-- [IMPL-FT-013](IMPL-FT-013.md): семь принятых результатов public camera/profile/search/gallery.
+- [IMPL-FT-013](IMPL-FT-013.md): семь прежних public camera/profile/search/gallery результатов, пять capture/retry successors и одна bounded preparing-order continuity successor.
 - [IMPL-FT-014](IMPL-FT-014.md): шесть результатов selection/quote/admin и frozen order core.
 - [IMPL-FT-015](IMPL-FT-015.md): четыре результата ZIP runtime/free HTTP/private bearer/browser download.
 - [IMPL-FT-016](IMPL-FT-016.md): verified development YooKassa initiation/confirmation и две done browser successor-коррекции; TASK-139 остаётся historical failed.

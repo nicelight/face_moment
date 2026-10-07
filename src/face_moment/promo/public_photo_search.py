@@ -138,6 +138,9 @@ def execute_public_photo_search(
                     response['outcome'] = 'no_matches'
             if time.monotonic() >= deadline_at:
                 return {'schema_version': 1, 'outcome': 'deadline'}, None
+            if admission.is_new and response['outcome'] != 'result':
+                session.rollback()
+                return response, None
             session.commit()
             return response, admission.cookie_token
     finally:

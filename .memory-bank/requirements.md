@@ -1,7 +1,7 @@
 ---
 description: Stable product requirements and traceability for Face Moment, including functional multi-venue operation.
 status: draft
-last_updated: 2026-10-06
+last_updated: 2026-10-07
 ---
 # Requirements
 
@@ -58,19 +58,21 @@ last_updated: 2026-10-06
 
 ## Public extension requirements — 2026-10-03
 
-These requirements derive from the clarified PRD and accepted delta,
-not from a completed design. Historical RTM lifecycle/evidence remains unchanged.
+These requirements derive from the clarified PRD. The 2026-10-07 bounded
+capture/retry delta reopens only affected target coverage; historical RTM
+milestones and completed task evidence below remain unchanged.
 
 | ID | Requirement | PRD basis |
 |---|---|---|
-| `REQ-PUB-001` | All camera-only captures MUST remain locally as IndexedDB JPEG Blob through retake, A/B denial and failed/successful search (starter long edge <=960 px, q0.85, no upscale, face >=30% image, empirical quality verification without accuracy promise); quota/unavailable storage MUST warn and allow current search without retaining the new image or evicting old ones. A hidden protected-cookie profile MUST retain fixed A/B with one confirmed reset preceded by a foreign-face warning; Developer MUST configure the A/B threshold independently of professional-photo search threshold without automatically changing it, non-consuming unusable captures, server-authoritative limits, no signup/recovery, retained email/last visit and no automatic profile deletion. | FR-PUB-01/04/05/10; AC-PUB-02 |
-| `REQ-PUB-002` | Search MUST submit only the current selfie after explicit 1–3 venue selection and «Найти меня», validate that scope on the server, use all available undeleted compatible dates inside selection regardless of Promo date settings, reveal no outside-venue results, and show animation/progress without presenting simulation as measured percentage absent server measurements, plus personal count, venue names and visit dates. | FR-PUB-02/03; AC-PUB-01/02 |
+| `REQ-PUB-001` | On «Жмак меня», capture MUST show a white full viewport outside the preserved circle for 50–100 ms. All camera-only captures MUST remain locally as IndexedDB JPEG Blob through retake, A/B denial and failed/successful search (starter long edge <=960 px, q0.85, no upscale, face >=30% image, empirical quality verification without accuracy promise); quota/unavailable storage MUST warn and allow current search without retaining the new image or evicting old ones. A hidden protected-cookie profile MUST retain fixed A/B with one confirmed reset preceded by a foreign-face warning; Developer MUST configure the A/B threshold independently of professional-photo search threshold without automatically changing it. Unusable captures do not consume A/B/reset; existing profiles and orders survive later empty searches. A first unmatched visitor MUST leave no durable profile, A/B samples or new profile cookie; a new profile persists only after photos are found. Established profiles retain email/last visit, server-authoritative A/B limits and no automatic deletion; no signup/recovery. | FR-PUB-01/04/05/10; AC-PUB-01/02/06 |
+| `REQ-PUB-002` | Venue selection MUST be hidden and unavailable until the current selfie is captured, then allow 1–3 venues. Search MUST submit only that selfie after explicit «Найти меня», validate that scope on the server, use all available undeleted compatible dates inside selection regardless of Promo date settings, reveal no outside-venue results, and show animation/progress without presenting simulation as measured percentage absent server measurements, plus personal count, venue names and visit dates. | FR-PUB-02/03; AC-PUB-01/02/06 |
 | `REQ-PUB-003` | One public feed MUST group venue heading -> personal photos -> common -> next venue; personal previews use accepted removable frontend watermark; all public gallery preview images have actual width >=320 px, without changing Promo/QR. Common processed no_faces photos MUST be limited to personal-match dates of that venue and free everywhere. Selection uses green for free and blue for paid personal, select-all is venue-local, combined count includes all selected photos. | FR-PUB-06/07; ACverified |
 | `REQ-PUB-004` | Operator/developer MUST manage free/paid venue mode at create/settings, confirm enabling free mode by popup, and configure one global RUB Base/d1/d2/d3 tariff. For n selected paid personal photos across paid venues total MUST be Base*(min(n,1)+d1*min(max(n-1,0),4)+d2*min(max(n-5,0),15)+d3*max(n-20,0)); all free media is excluded. Sticky top MUST show all-selected count, authoritative total and «Скачать». One cross-venue order freezes selected composition, price and free mode; later setting changes apply to new orders. | FR-PUB-07/08; ACverified |
 | `REQ-PUB-005` | A free-only selected set MUST deliver an archive bearer link without payment initiation or mandatory receipt email; both free-venue personal and allowed common photos qualify. Mixed selection keeps free photos free inside one paid order. | FR-PUB-08/10; AC-PUB-04/05 |
 | `REQ-PUB-006` | One cross-venue paid selection MUST use only YooKassa, collect/store profile email for receipt, choose card/QR method, prepare archive BEFORE opening the provider form and permit paid-original access only after server-confirmed payment. Duplicate confirmations MUST not duplicate purchases; refunds are manual. No charge may start before archive ready. | FR-PUB-09; AC-PUB-04/05 |
 | `REQ-PUB-007` | Allowed selected originals MUST form one archive with bearer access expiring at ready+3 days, usable independently of browser cookie. While preparing, user sees retry-in-30-seconds instruction. Generation failure MUST show user error, initiate no payment and send admin email to sergiosandroid2@gmail.com. Preservation against deletion is NOT promised; unavailable paid delivery routes to manual support/refund rather than silently claiming successful access. | FR-PUB-09/10; AC-PUB-05 |
-| `REQ-PUB-008` | Public extension MUST use HTTPS, protected profile cookie and server-authoritative profile/IP rate limiting (IP is not identity); originals/private stores MUST stay private and media access MUST enforce free entitlement or server-confirmed payment. Browser receives reduced previews only; removable frontend watermark does not protect originals. | FR-PUB-04/06/09/10; NFR-SEC-01/03; AC-PUB-01/03/04 |
+| `REQ-PUB-008` | Public extension MUST use HTTPS and a protected profile cookie only when a profile is retained; first unmatched visitors receive no new profile cookie. Established profiles and IP remain subject to server-authoritative rate limiting (IP is not identity); originals/private stores MUST stay private and media access MUST enforce free entitlement or server-confirmed payment. Browser receives reduced previews only; removable frontend watermark does not protect originals. The empty-search cooldown in REQ-PUB-009 is browser-cookie-only and separate from server admission limits. | FR-PUB-04/06/09/10/11; NFR-SEC-01/03; AC-PUB-01/03/04/06 |
+| `REQ-PUB-009` | Completed `no_matches` MUST show the exact empty-result copy and «Попробовать еще» from PRD clarification 2026-10-07. The browser MUST count five consecutive completed `no_matches` across venue changes and reloads; success resets the count, while camera/network/server errors, `busy` and unusable selfies do not count. The fifth empty outcome MUST immediately show the exact cooldown copy and block new searches until 30 minutes from that outcome; expiry resets the count. Count and deadline MUST live only in browser cookies, with no server cooldown history, fingerprint or new auth cookie. The three-month suggestion MUST NOT narrow all-available-dates search. | FR-PUB-11; AC-PUB-06 |
 
 ## Material NFR Ownership
 
@@ -286,7 +288,7 @@ Wave 14: [TASK-139](tasks/TASK-139-T3-FT-016-W14.task.json) завершилас
 FT-016-AC-001/005 не закрыты. RTM lifecycle остаётся: REQ-PUB-002/003/004
 verified, REQ-PUB-001/005/006/007/008 planned; FT-016 и EP-004 planned.
 
-Wave 15: root закрыл [TASK-144](tasks/TASK-144-T3-FT-016-W15.task.json)
+Wave 15 (historical): root закрыл [TASK-144](tasks/TASK-144-T3-FT-016-W15.task.json)
 для FT-016-AC-001 и [TASK-145](tasks/TASK-145-T3-FT-016-W15.task.json)
 для FT-016-AC-005 после независимых functional PASS и semantic-pass, связанных
 в карточках. С уже done TASK-137/138 это покрывает все development AC-001..005;
@@ -296,13 +298,25 @@ development scope. Исторический TASK-139 остаётся failed; у
 двухзадачный successor run. Production activation, фискальный чек, внешний
 real-shop SBP, SMTP setup и deployment отдельно не доказаны.
 
+2026-10-07 accepted target: PRD `FR-PUB-01/02/04/11` и `AC-PUB-01/06`
+добавили FT-013-AC-010..014. Прежний Wave 15 `verified` относится только к
+AC-001..009 и не подтверждает эти новые критерии. Текущие `REQ-PUB-001/002/008`
+и новый `REQ-PUB-009` имеют lifecycle `planned`: design FT-013 согласован,
+TASK-146..150 done, а AC-014 preparing-order continuity ждёт planned TASK-151,
+fresh task-plan review, исполнение и проверку.
+`REQ-PUB-003..005` и FT-014..016 сохраняют прежнее проверенное покрытие.
+Для `REQ-PUB-006/007` прежний FT-016 proof остаётся, но сквозной путь
+`FT-013-AC-014` с созданным `preparing` заказом ждёт TASK-151 и новой
+feature semantic verification; lifecycle этих двух REQ до неё `planned`.
+
 | REQ | Epic | Feature | Test / evidence target | Lifecycle |
 |---|---|---|---|---|
-| `REQ-PUB-001` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md) (order-core supplier), [FT-016](features/FT-016.md) | `FT-013-AC-001..004`, `FT-013-AC-007`, `FT-014-AC-006`, `FT-016-AC-001`; PRD AC-PUB | verified |
-| `REQ-PUB-002` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md) | `FT-013-AC-002..003`, `FT-013-AC-007..008`; PRD AC-PUB | verified |
+| `REQ-PUB-001` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md) (order-core supplier), [FT-016](features/FT-016.md) | Historical `FT-013-AC-001..004/007`, `FT-014-AC-006`, `FT-016-AC-001`; new `FT-013-AC-010/013/014` (order continuity subset); PRD AC-PUB-01/02/06 | planned |
+| `REQ-PUB-002` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md) | Historical `FT-013-AC-002..003/007..008`; new `FT-013-AC-011/012`; PRD AC-PUB-01/02/06 | planned |
 | `REQ-PUB-003` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md) | `FT-013-AC-005`, `FT-013-AC-008`, `FT-013-AC-009`, `FT-014-AC-001`; PRD AC-PUB | verified |
 | `REQ-PUB-004` | [EP-004](epics/EP-004.md) | [FT-014](features/FT-014.md), [FT-016](features/FT-016.md) | `FT-014-AC-001..006`, `FT-016-AC-001`; PRD AC-PUB | verified |
 | `REQ-PUB-005` | [EP-004](epics/EP-004.md) | [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-015-AC-001..002`, `FT-016-AC-001`; PRD AC-PUB | verified |
-| `REQ-PUB-006` | [EP-004](epics/EP-004.md) | [FT-014](features/FT-014.md) (order-core supplier), [FT-016](features/FT-016.md) | `FT-014-AC-006`, `FT-016-AC-001..003`, `FT-016-AC-005`; PRD AC-PUB | verified |
-| `REQ-PUB-007` | [EP-004](epics/EP-004.md) | [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-015-AC-002..004`, `FT-016-AC-002..005`; PRD AC-PUB | verified |
-| `REQ-PUB-008` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md), [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-013-AC-006`, `FT-013-AC-008..009`, `FT-014-AC-003..004`, `FT-015-AC-001`, `FT-015-AC-003`, `FT-016-AC-003..004`; PRD AC-PUB | verified |
+| `REQ-PUB-006` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md) (order continuity), [FT-014](features/FT-014.md) (order-core supplier), [FT-016](features/FT-016.md) | `FT-014-AC-006`, `FT-016-AC-001..003/005`, `FT-013-AC-014` (pre-redirect continuation subset); PRD AC-PUB | planned |
+| `REQ-PUB-007` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md) (order continuity), [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-015-AC-002..004`, `FT-016-AC-002..005`, `FT-013-AC-014` (preparing/ready subset); PRD AC-PUB | planned |
+| `REQ-PUB-008` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md), [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | Historical `FT-013-AC-006/008..009`, `FT-014-AC-003..004`, `FT-015-AC-001/003`, `FT-016-AC-003..004`; new `FT-013-AC-013`; PRD AC-PUB-06 | planned |
+| `REQ-PUB-009` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md) | `FT-013-AC-012/014` (cookie proof TASK-150; order continuity subset TASK-151); PRD AC-PUB-06 | planned |

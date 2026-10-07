@@ -4,6 +4,16 @@ status: active
 ---
 # Changelog
 
+## [2026-10-07] Central public search/archive deployment
+
+- Deployed exact `cf498fd` with full migration to `0033_promo_session_gallery`;
+  existing venue, environment values and PostgreSQL/MinIO volumes preserved.
+- Application roles ready; production recognition models loaded, public route
+  acceptance passed. Operator restored the retention timer after startup.
+- [Deployment record](runbooks/server-deployment.md#verified-public-searcharchive-release--2026-10-07)
+  records current image and evidence. Real-shop YooKassa and SMTP remain
+  unconfigured; deployment is not live-payment/fiscal or participant-photo E2E proof.
+
 ## [2026-10-06] Wave 15 / development closure FT-016 и EP-004
 
 - Updated: root закрыл [TASK-144](tasks/TASK-144-T3-FT-016-W15.task.json)

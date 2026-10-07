@@ -1,0 +1,94 @@
+{
+  "id": "TASK-146-T1-FT-013-W16",
+  "title": "Белая вспышка при съёмке селфи",
+  "status": "done",
+  "wave": "W16",
+  "feature": "FT-013",
+  "reqs": [
+    "REQ-PUB-001"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-120-T2-FT-013-W1"
+  ],
+  "touched_files": [
+    "client/site-selfie.js",
+    "client/site.html",
+    "client/site.css",
+    "tests/client/site_selfie_history.spec.mjs"
+  ],
+  "tier": "T1",
+  "gates": [
+    {
+      "name": "Browser capture",
+      "command": "npm run test:browser -- tests/client/site_selfie_history.spec.mjs",
+      "required": true
+    }
+  ],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Independent PASS for FT-013-AC-010: fresh Chromium browser 5/5, desktop/mobile geometry and independent PNG pixel sampling, controlled-clock flash at 0/49 ms and hidden at 75 ms, JPEG/history retained; three read-only co-reviews found no material defect.",
+      "evidence": [
+        ".protocols/TASK-146-T1-FT-013-W16/run.md",
+        ".protocols/capture-retry-2026-10-07/task-146-verification-report.md",
+        ".tasks/TASK-146-T1-FT-013-W16/verify-browser/"
+      ]
+    },
+    {
+      "stage": "manual-owner-closure",
+      "verdict": "done",
+      "summary": "Root GENERAL closes the bounded T1 task after independent PASS, complete compact evidence and required gates. Production deployment is outside this closure.",
+      "evidence": [".protocols/TASK-146-T1-FT-013-W16/run.md"]
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-013.md",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-010: RED: существующий capture не делает viewport белым на 50–100 ms. GREEN: тот же browser probe показывает белую область с сохранённым кругом и временем, в .tasks/TASK-146-T1-FT-013-W16/claim-evidence.md; setup failures не RED."
+  ],
+  "purpose": "Одна локальная визуальная реакция существующей камеры на capture press.",
+  "success_outcome": "На desktop/mobile viewport область вне существующего круга белая 50–100 ms, круг виден; captured JPEG/history/search ведут себя как прежде.",
+  "anti_goals": [
+    "Не менять camera parameters, JPEG encoder, IndexedDB или поиск."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy actions",
+      "Server profile/search/order writes",
+      "Promo/QR behavior outside current capture"
+    ],
+    "stop_conditions": [
+      "Stop on a newly required public/shared contract, owner change, production action or higher tier; route through owning workflow."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-010",
+    ".memory-bank/prd.md#2026-10-07--capture-flash-post-capture-selection-and-empty-search-retry",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/constitution.md",
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/public-photo-search-api.md#browser-и-media"
+  ],
+  "constraints": [
+    "Planning Revision 4; direct accepted AC only; no new server cooldown, storage table, migration, device fingerprint, package dependency or production task.",
+    "touched_files is advisory; existing historical task identities/status/evidence remain unchanged.",
+    "Primary implementation is the public browser in client/; no server or public API change."
+  ],
+  "invariants": [
+    "The browser may only call the accepted public API; server search/profile and all-date selection authority remain with their existing owners.",
+    "Tests and RED/GREEN prove only this task-owned AC; dependent historical evidence is prerequisite, not adopted proof."
+  ],
+  "verification_targets": [
+    "FT-013-AC-010: Playwright capture с реальным camera fixture на representative desktop/mobile viewport: screenshot/DOM timing от нажатия «Жмак меня», белая область вне круга, видимый круг, 50–100 ms и сохранённый capture. Состояние camera/history проверять только как regression текущего изменения; новый recognition proof не требуется."
+  ]
+}

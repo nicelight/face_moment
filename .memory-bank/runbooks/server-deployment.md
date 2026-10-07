@@ -1,7 +1,7 @@
 ---
 description: Canonical non-destructive procedure for deploying Face Moment to facecentral and accepting the public origin.
 status: active
-last_updated: 2026-09-16
+last_updated: 2026-10-07
 source_of_truth:
   - .memory-bank/runbooks/server-deployment.md
 ---
@@ -304,6 +304,42 @@ host timer. Its activation deletes expired diagnostic data according to the
 existing retention policy, so it belongs to the approved deployment window.
 
 ## Public acceptance
+
+### Verified public search/archive release — 2026-10-07
+
+Central release commit `cf498fd9df87c528d860272164ed1830339bc48d` is deployed
+from clean prior checkout `ff27965`. The current application image for backend,
+background-worker and realtime is
+`sha256:5fd309bc506f317bc5bd39c20358259c885e1f13b1df8c2b07cdd91205ad4c93`.
+The full migration procedure reached `0033_promo_session_gallery`;
+`initialize-venue` completed without adding a venue (the existing count remains
+one). PostgreSQL and MinIO named volumes and existing environment values were
+preserved. The previously absent stable archive signing secret was generated
+without exposing its value; the server environment remains mode600/facemoment.
+
+The current-source local packaged proof passed before deployment, including
+native SFace, migration, role readiness and restart/storage persistence. Separate
+source-only and client-only rebuild probes confirmed dependency wheel/install
+cache reuse without downloads. The runtime dependency export follows unchanged
+`uv.lock`; packaging/cache maintenance is described in the
+[local deployment runbook](local-test-deployment.md#packaged-smoke).
+
+All three application roles are ready; worker and realtime report the production
+model loaded. Inner Caddy configuration, local health, public pages/assets,
+HTTPS redirect and anonymous API admission checks passed. Existing images were
+not pruned and no database downgrade or fixture import was performed.
+
+Retention was suspended by the operator during migration; after application
+startup the operator announced restoring it, and acceptance observed it active
+from `2026-10-07 10:34:50 +07`, with the cleanup service idle.
+
+This is application deployment acceptance, not proof of real-original-photo
+end-to-end delivery or a real payment. Public payment remains inactive: real
+YooKassa merchant inputs are absent and TEST credentials were not deployed.
+SMTP notification inputs are absent; fiscal issuance and real-shop SBP remain
+unverified. Detailed evidence:
+[central rollout](../../.protocols/central-deployment-2026-10-06/central-rollout-acceptance.md),
+[packaged proof](../../.protocols/central-deployment-2026-10-06/cache-aware-final-packaged-smoke.md).
 
 ### Verified central rollout — 2026-09-16
 

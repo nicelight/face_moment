@@ -1,7 +1,7 @@
 ---
-description: Seven accepted implementation outcomes for public selfie search and private gallery.
+description: Public selfie search, private gallery and bounded capture/retry successors.
 status: active
-last_updated: 2026-10-03
+last_updated: 2026-10-07
 ---
 # IMPL-FT-013
 
@@ -66,3 +66,73 @@ backfill/no_faces rewrite, extra workers/queues, новой accuracy/latency г�
 Constitution KISS, private stores и concise canonical links обязательны.
 Следующий шаг: отдельный свежий `/review-tasks-plan FT-013`, затем применимые
 workflow gates. Task planning не выполняет implementation/deploy.
+
+## 2026-10-07 capture/retry reconciliation
+
+[PRD clarification](../../prd.md#2026-10-07--capture-flash-post-capture-selection-and-empty-search-retry),
+[FT-013 AC-010..014](../../features/FT-013.md#acceptance-criteria) и
+[REQ-PUB-001/002/008/009](../../requirements.md) задают пять результатов;
+[Public Search API](../../contracts/public-photo-search-api.md#browser-и-media)
+и [Browser Search Profile](../../domains/browser-search-profile.md#данные-и-владелец)
+сохраняют прежние owners и Planning Revision 4.
+
+| Successor | Самостоятельный результат; owner/root | Основание порядка |
+|---|---|---|
+| TASK-146-T1-FT-013-W16 | White capture flash; public browser, `client/` | TASK-120 даёт работающий capture. |
+| TASK-147-T2-FT-013-W16 | Площадки только после capture; public browser, `client/` | TASK-120 и TASK-125 дают capture и явный submit. |
+| TASK-148-T2-FT-013-W16 | Точный empty-result screen и действие повтора, AC-012; public browser, `client/` | TASK-125 даёт typed `no_matches`. |
+| TASK-149-T3-FT-013-W16 | Success-only profile/A/result/cookie persistence; `promo`, `src/face_moment/promo/` | TASK-121/123 дают А/Б и search/result; TASK-138 даёт сохранённую paid purchase для проверки сохранности. |
+| TASK-150-T2-FT-013-W16 | Browser-cookie счётчик и cooldown, AC-014; public browser, `client/` | TASK-125 даёт typed outcomes; экран TASK-148 не является prerequisite. |
+
+[Boundary graph](../../contracts/boundary-map.md#public-search-and-delivery):
+browser использует только public API; `promo` владеет profile/result,
+`processing` — matches, `serving_control` — venue/settings projection.
+Ожидаемые пути: `client/site-selfie.js`, `client/public-photo-search.js`,
+`client/site.html`, `client/site.css`, `tests/client/`; для TASK-149 —
+`src/face_moment/promo/browser_search_profile.py`,
+`src/face_moment/promo/public_photo_search.py`,
+`src/face_moment/promo/public_search_http.py`, `tests/promo/`.
+
+RED/GREEN и тесты находятся в карточках реализации. Browser fixture проверяет
+AC-012 на completed `no_matches` без паузы; TASK-150 проверяет cookie AC-014
+на пяти исходах, reload/venue, expiry/success reset, исключениях и запрете
+нового search POST. Непрерывность order refresh/payment проверяет TASK-151.
+Временный context и управляемое
+browser time обеспечивают rerun/cleanup. TASK-149 использует disposable
+PostgreSQL для read/write, сохранности существующих заказов и отсутствия новой
+profile cookie на первом пустом поиске. После TASK-148 и TASK-150 feature
+verification проверяет путь четырёх экранов/повторов, пятой паузы и нового
+поиска после expiry. Никакой production-only task нет.
+
+## Preparing-order continuity successor
+
+[FT-013-AC-014](../../features/FT-013.md#preparing-order-continuity) требует,
+чтобы cooldown останавливал новый поиск, сохраняя доступ к созданному заказу.
+[Feature semantic-fail](../../../.tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-01.md)
+и [triage](../../../.protocols/capture-retry-2026-10-07/order-continuity-triage-report.md)
+показали два связанных client gap: пустой выбор удаляет `preparing` attempt до
+redirect, а refresh идёт по post-redirect status-only пути. Один новый
+[TASK-151-T3-FT-013-W16](../TASK-151-T3-FT-013-W16.task.json) владеет только
+непрерывностью уже созданного заказа. Он зависит от done TASK-150 (cooldown) и
+TASK-145 (платёжный browser flow); их cookie и post-redirect proof не переназначены.
+Foundation gate TASK-002 остаётся прямой зависимостью. W16 сохраняется.
+
+Primary owner — public browser `client/public-photo-download.js`; он использует
+только [Public Search API](../../contracts/public-photo-search-api.md#browser-и-media)
+и [Purchase API](../../contracts/photo-purchase-api.md), без server/profile/
+processing writes. [Photo Orders](../../domains/photo-orders.md#исполнение-и-выдача)
+остаётся authority для ZIP и payment. Hard write boundary содержит только
+`client/public-photo-download.js`, `tests/client/test_public_photo_payment.mjs`
+и `tests/client/public_photo_payment.spec.mjs`; дополнительный файл требует
+маршрутизации до исполнения. Отсутствуют новая история, восстановление до
+redirect после reload, server/financial/production actions и смена Revision 4.
+
+Proof: honest RED/GREEN в существующем HTTPS fixture с изолированным состоянием,
+реальными пятью `no_matches` и заглушками order/payment. Сравнить одинаковый
+order ID, owner GET, один `POST /orders`, сохранённую панель и доступный refresh;
+после ZIP `ready` продолжить оплату того же заказа. Pending после redirect
+держит paid link закрытым до server-confirmed success; новый непустой выбор
+использует обычный start. Native gates: `npm run test:unit`, focused payment
+browser и search browser regression. T3 требует отдельные functional verify и
+task red-verify; feature completion — новый semantic verdict и owner closure.
+Design/behavior impact: none; используются существующие canonical specs.

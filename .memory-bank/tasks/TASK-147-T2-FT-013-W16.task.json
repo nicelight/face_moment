@@ -1,0 +1,107 @@
+{
+  "id": "TASK-147-T2-FT-013-W16",
+  "title": "Показ выбора площадок после готового снимка",
+  "status": "done",
+  "wave": "W16",
+  "feature": "FT-013",
+  "reqs": [
+    "REQ-PUB-002"
+  ],
+  "depends_on": [
+    "TASK-002-T2-FT-000-W0",
+    "TASK-120-T2-FT-013-W1",
+    "TASK-125-T2-FT-013-W7"
+  ],
+  "touched_files": [
+    "client/site-selfie.js",
+    "client/public-photo-search.js",
+    "client/site.html",
+    "client/site.css",
+    "tests/client/public_photo_search.spec.mjs",
+    "tests/client/test_public_photo_search.mjs"
+  ],
+  "tier": "T2",
+  "gates": [
+    {
+      "name": "Client unit",
+      "command": "npm run test:unit",
+      "required": true
+    },
+    {
+      "name": "Browser search journey",
+      "command": "npm run test:browser -- tests/client/public_photo_search.spec.mjs",
+      "required": true
+    },
+    {
+      "name": "Server scope regression",
+      "command": "uv run --locked --env-file .env.local python -m pytest tests/promo/test_public_search_api.py",
+      "required": true
+    }
+  ],
+  "verify": [
+    {
+      "stage": "verify",
+      "verdict": "PASS",
+      "summary": "Fresh GPT-6 Sol Reviewer: AC-011 desktop/mobile capture and retake gate; 1–3 venues; no POST before Find; current JPEG bytes only. Unit 108/108, browser 3/3, server scope 6/6, capture regression 5/5.",
+      "evidence": [
+        ".protocols/TASK-147-T2-FT-013-W16/verification.md",
+        ".protocols/capture-retry-2026-10-07/task-147-verification-report.md",
+        ".tasks/TASK-147-T2-FT-013-W16/verify-browser"
+      ]
+    },
+    {
+      "stage": "manual-owner-closure",
+      "verdict": "done",
+      "summary": "Root explicit manual owner closed TASK-147 after independent functional PASS. Feature semantic verification remains pending."
+    }
+  ],
+  "docs": [
+    ".memory-bank/features/FT-013.md",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "evidence_required": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-011: RED: до готового снимка venue fieldset/inputs видны или доступны. GREEN: тот же browser trace показывает gate до capture, выбор 1–3 после и отсутствие POST до submit; .tasks/TASK-147-T2-FT-013-W16/claim-evidence.md. Setup/test-only failure не RED."
+  ],
+  "purpose": "Согласовать видимость и доступность venue selection с существующим capture state, сохраняя явный submit.",
+  "success_outcome": "Выбор 1–3 площадок скрыт/недоступен до готового current selfie и доступен после него; до «Найти меня» нет POST; серверный поиск сохраняет all-date scope.",
+  "anti_goals": [
+    "Не менять серверную валидацию venue_ids или date scope."
+  ],
+  "runtime_context": {
+    "forbidden_scope": [
+      "Production/deploy actions",
+      "Server profile/search/order writes",
+      "Promo/QR date/search behavior"
+    ],
+    "stop_conditions": [
+      "Stop on a newly required public/shared contract, owner change, production action or higher tier; route through owning workflow."
+    ]
+  },
+  "source_artifacts": [
+    ".memory-bank/features/FT-013.md#FT-013-AC-011",
+    ".memory-bank/prd.md#2026-10-07--capture-flash-post-capture-selection-and-empty-search-retry",
+    ".memory-bank/tasks/plans/IMPL-FT-013.md"
+  ],
+  "normative_inputs": [
+    ".memory-bank/constitution.md",
+    ".memory-bank/spec-backbone.md",
+    ".memory-bank/spec-index.md",
+    ".memory-bank/architecture/system-architecture.md#public-search-and-selected-delivery",
+    ".memory-bank/contracts/boundary-map.md#public-search-and-delivery",
+    ".memory-bank/contracts/boundary-map.md#capability-application-boundaries",
+    ".memory-bank/contracts/public-photo-search-api.md#browser-и-media",
+    ".memory-bank/contracts/public-photo-search-api.md#границы"
+  ],
+  "constraints": [
+    "Planning Revision 4; direct accepted AC only; no new server cooldown, storage table, migration, device fingerprint, package dependency or production task.",
+    "touched_files is advisory; existing historical task identities/status/evidence remain unchanged.",
+    "Primary implementation is the public browser in client/; only the existing Public Search API crosses into promo. Server venue/date validation remains server-owned."
+  ],
+  "invariants": [
+    "The browser may only call the accepted public API; server search/profile and all-date selection authority remain with their existing owners.",
+    "Tests and RED/GREEN prove only this task-owned AC; dependent historical evidence is prerequisite, not adopted proof."
+  ],
+  "verification_targets": [
+    "FT-013-AC-011: real browser state/network trace в одном временном context: idle/opening/ready/capturing не показывает доступный selection, captured показывает 1–3; retake возвращает gate; POST отсутствует до explicit Submit. Existing server scope fixture подтверждает 0/>3 и все доступные даты как regression; не переписывать server scope. Diff inspection подтверждает client-only owner и отсутствие server authority bypass."
+  ]
+}

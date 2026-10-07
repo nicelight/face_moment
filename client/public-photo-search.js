@@ -1,6 +1,32 @@
 import { mountPhotoSelection } from './public-photo-selection.js';
 import { renderPublicPhotoGallery } from './public-photo-gallery.js';
 
+const retryCookie = 'fm_search_retry';
+const pauseMs = 30 * 60 * 1000;
+function clearRetry() {
+  document.cookie = `${retryCookie}=; Path=/; Max-Age=0; SameSite=Lax`;
+}
+function readRetry() {
+  const value = document.cookie.split('; ').find(part => part.startsWith(`${retryCookie}=`));
+  if (!value) return { count: 0, until: 0 };
+  try {
+    const state = JSON.parse(decodeURIComponent(value.slice(retryCookie.length + 1)));
+    if (Number.isInteger(state.count) && state.count >= 1 && state.count <= 5 &&
+        Number.isFinite(state.until) && (state.count === 5 ? state.until > Date.now() : state.until === 0)) return state;
+  } catch { /* A changed or corrupt browser cookie starts a fresh sequence. */ }
+  clearRetry();
+  return { count: 0, until: 0 };
+}
+function countEmptyResult() {
+  const current = readRetry();
+  if (current.until) return current;
+  const count = current.count + 1;
+  const until = count === 5 ? Date.now() + pauseMs : 0;
+  const state = { count, until };
+  document.cookie = `${retryCookie}=${encodeURIComponent(JSON.stringify(state))}; Path=/; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}${until ? '; Max-Age=1800' : ''}`;
+  return state;
+}
+
 // Browser adapts the accepted public API; profile and search decisions stay server-owned.
 export async function searchCurrentSelfie(selfie, venueIds, confirmReset = false) {
   if (!(selfie instanceof Blob) || selfie.type !== 'image/jpeg' || venueIds.length < 1 || venueIds.length > 3 || new Set(venueIds).size !== venueIds.length) {
@@ -16,6 +42,14 @@ export async function searchCurrentSelfie(selfie, venueIds, confirmReset = false
 }
 
 export function mountPublicPhotoSearch({ getCurrentSelfie }) {
+  const viewport = document.querySelector('#selfie-viewport');
+  const panel = document.querySelector('.fm-selfie-panel');
+  const empty = document.querySelector('#search-empty');
+  const emptyCopy = document.querySelector('#search-empty-copy');
+  const retryEmpty = document.querySelector('#search-empty-retry');
+  const retryCopy = emptyCopy.textContent;
+  const pauseCopy = 'на данный момент не удалось найти подходящих фоток, но Вы можете поискать себя  через пол часа';
+  const fieldset = document.querySelector('fieldset.fm-search-selection');
   const venues = document.querySelector('#search-venues');
   const venueStatus = document.querySelector('#search-venue-status');
   const reload = document.querySelector('#search-venues-retry');
@@ -30,20 +64,34 @@ export function mountPublicPhotoSearch({ getCurrentSelfie }) {
   const gallery = document.querySelector('#search-gallery');
   const selection = mountPhotoSelection(document.querySelector('#photo-selection-summary'));
   let busy = false, capture = null, pendingConfirmation = null;
+  let pauseTimer = null;
   const inputs = () => [...venues.querySelectorAll('input')];
   const selected = () => inputs().filter(input => input.checked).map(input => input.value);
+  function showPause(until) {
+    panel.hidden = true; empty.hidden = false;
+    emptyCopy.textContent = pauseCopy; retryEmpty.hidden = true;
+    clearTimeout(pauseTimer);
+    pauseTimer = setTimeout(() => {
+      if (!readRetry().until) { clearResult(); updateControls(); }
+    }, Math.max(0, until - Date.now()));
+  }
   function updateControls() {
+    const captureReady = viewport.dataset.state === 'captured' && !!getCurrentSelfie();
     const count = selected().length;
-    send.disabled = busy || !getCurrentSelfie() || count < 1 || count > 3;
+    fieldset.hidden = !captureReady;
+    fieldset.disabled = !captureReady;
+    send.disabled = busy || !!readRetry().until || !captureReady || count < 1 || count > 3;
     retake.disabled = busy;
-    reload.disabled = busy;
-    for (const input of inputs()) input.disabled = busy || (count === 3 && !input.checked);
-    confirm.disabled = busy || !pendingConfirmation;
+    reload.disabled = busy || !captureReady;
+    for (const input of inputs()) input.disabled = busy || !captureReady || (count === 3 && !input.checked);
+    confirm.disabled = busy || !!readRetry().until || !pendingConfirmation;
     progress.hidden = !busy; overlay.hidden = !busy;
   }
   function clearResult() {
     selection.clear();
     pendingConfirmation = null; confirmation.hidden = true;
+    empty.hidden = true; panel.hidden = false;
+    emptyCopy.textContent = retryCopy; retryEmpty.hidden = false;
     summary.replaceChildren(); summary.hidden = true; gallery.replaceChildren(); gallery.hidden = true; status.textContent = '';
   }
   function refreshCapture() {
@@ -82,6 +130,8 @@ export function mountPublicPhotoSearch({ getCurrentSelfie }) {
     summary.hidden = false;
   }
   async function submit(confirmReset = false) {
+    const cooldown = readRetry();
+    if (cooldown.until) { showPause(cooldown.until); updateControls(); return; }
     if (busy || send.disabled || (confirmReset && pendingConfirmation !== getCurrentSelfie())) return;
     const selfie = getCurrentSelfie(), venueIds = selected();
     clearResult(); busy = true; updateControls();
@@ -93,13 +143,19 @@ export function mountPublicPhotoSearch({ getCurrentSelfie }) {
       switch (result.outcome) {
         case 'result':
           if (!Number.isInteger(result.personal_count) || result.personal_count < 1 || !Array.isArray(result.venues)) throw new Error('invalid_result');
+          clearRetry();
           renderSummary(result); renderPublicPhotoGallery(gallery, result, selection.start(result)); status.textContent = 'Поиск завершён.'; break;
         case 'confirmation_required':
           pendingConfirmation = selfie; confirmation.hidden = false;
           status.textContent = result.message || 'Снимок отличается от предыдущих. Возможно, это другое лицо.'; break;
         case 'face_denied': status.textContent = result.message || 'Это лицо невозможно искать, так как оно отличается от тех лиц, которые вы искали ранее'; break;
         case 'retake_required': status.textContent = 'Переснимите селфи: нужно одно хорошо видимое лицо, занимающее не меньше трети кадра.'; break;
-        case 'no_matches': status.textContent = 'Ваши фотографии не найдены в выбранных площадках. Попробуйте другое селфи или площадки.'; break;
+        case 'no_matches':
+          { const retry = countEmptyResult();
+            if (retry.until) showPause(retry.until);
+            else { panel.hidden = true; empty.hidden = false; retryEmpty.focus(); }
+          }
+          break;
         case 'busy': status.textContent = 'Поиск сейчас занят. Повторите через некоторое время.'; break;
         case 'deadline': status.textContent = 'Время поиска истекло. Попробуйте ещё раз.'; break;
         default: throw new Error('unknown_outcome');
@@ -110,9 +166,12 @@ export function mountPublicPhotoSearch({ getCurrentSelfie }) {
     } finally { busy = false; updateControls(); }
   }
   venues.addEventListener('change', () => { clearResult(); updateControls(); });
+  retryEmpty.addEventListener('click', () => { clearResult(); retake.click(); });
   send.addEventListener('click', () => void submit());
   confirm.addEventListener('click', () => void submit(true));
   reload.addEventListener('click', () => void loadVenues());
+  const existingPause = readRetry();
+  if (existingPause.until) showPause(existingPause.until);
   void loadVenues();
   return { refreshCapture };
 }

@@ -4,6 +4,51 @@ import {createPhotoDownload} from '../../client/public-photo-download.js';
 
 const paid = () => ({result_id:'result',photo_ids:['paid','free'],quote:{total_kopecks:101,paid_count:1}});
 
+test('pre-redirect preparing order survives empty selection and refresh pays only after ready', async () => {
+  let archive='preparing';const calls=[],states=[],navigations=[];
+  const controller=createPhotoDownload({makeId:()=> 'same-id',onChange:s=>states.push(s),navigate:url=>navigations.push(url),
+    request:async(url,body)=>{
+      calls.push({url,body});
+      if(url==='/api/public/orders')return {id:'order',total_kopecks:101};
+      if(url==='/api/public/orders/order/payment')return {confirmation_url:'https://fake-provider.test/checkout'};
+      return {archive_status:archive,total_kopecks:101,payment_status:'pending'};
+    }});
+  await controller.start(paid());
+  await controller.start(paid(),{email:'continuity@example.test',payment_method:'bank_card'});
+  controller.select({...paid(),photo_ids:[]});
+  await controller.refresh();
+  assert.equal(states.at(-1).status,'preparing');
+  assert.equal(calls.filter(call=>call.url==='/api/public/orders').length,1);
+  assert.equal(calls.filter(call=>call.url==='/api/public/orders/order').length,2);
+  assert.equal(calls.some(call=>call.url.endsWith('/payment')),false);
+  archive='ready';await controller.refresh();
+  assert.equal(calls.filter(call=>call.url==='/api/public/orders').length,1);
+  assert.equal(calls.filter(call=>call.url==='/api/public/orders/order').length,3);
+  assert.equal(calls.filter(call=>call.url==='/api/public/orders/order/payment').length,1);
+  assert.deepEqual(navigations,['https://fake-provider.test/checkout']);
+});
+
+test('new nonempty selection starts an ordinary new paid attempt', async () => {
+  const calls=[],states=[];
+  const controller=createPhotoDownload({makeId:()=>`request-${calls.filter(call=>call.url==='/api/public/orders').length+1}`,
+    onChange:s=>states.push(s),request:async(url,body)=>{
+      calls.push({url,body});
+      if(url==='/api/public/orders')return {id:`order-${calls.filter(call=>call.url==='/api/public/orders').length}`,total_kopecks:101};
+      return {archive_status:'preparing',total_kopecks:101,payment_status:'pending'};
+    }});
+  await controller.start(paid());
+  await controller.start(paid(),{email:'first@example.test',payment_method:'bank_card'});
+  const next={...paid(),result_id:'next-result',photo_ids:['next-paid']};
+  controller.select(next);
+  await controller.start(next);
+  assert.equal(states.at(-1).status,'email');
+  await controller.start(next,{email:'next@example.test',payment_method:'sbp'});
+  const posts=calls.filter(call=>call.url==='/api/public/orders');
+  assert.equal(posts.length,2);
+  assert.equal(posts[1].body.result_id,'next-result');
+  assert.equal(posts[1].body.payment_method,'sbp');
+});
+
 test('paid attempt freezes email, method and id across ambiguous POST and stays preparing before provider', async () => {
   const calls=[], states=[]; let lose=true;
   const controller=createPhotoDownload({makeId:()=> 'same-id',onChange:s=>states.push(s),request:async(url,body)=>{

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import date, datetime, timezone
+from decimal import Decimal
 from io import BytesIO
 import json
 import threading
@@ -22,11 +23,14 @@ from face_moment.inventory.photo_persistence import Photo
 from face_moment.processing.persistence import PublicExactSearchRepository
 from face_moment.processing.reference_query import PreparedReferenceQuery, ReferenceQualityObservation
 from face_moment.promo.browser_search_profile import BrowserSearchProfile, BrowserSearchProfileRepository, COOKIE_NAME
+from face_moment.promo.photo_orders import PhotoOrder, PhotoOrderRepository
+from face_moment.promo.photo_payment import PhotoPaymentConfirmer
 from face_moment.promo.public_photo_search import PublicSearchResult
 from face_moment.promo.realtime_orchestration import _PROCESS_LOCAL_REALTIME_SLOT
 from face_moment.serving_control.display_client_auth import DisplayClientRateLimiter
 from face_moment.serving_control.ingest_target import IngestTargetRepository, Spa
 from face_moment.serving_control.realtime_context import RealtimeContextRepository
+from face_moment.serving_control.photo_tariff import PhotoTariff
 from face_moment.processing.revisions import PipelineCode, PipelineRevisionRepository
 from tests.disposable_postgresql import disposable_postgresql_engine
 from tests.pipeline_compatibility import PIPELINE_COMPATIBILITY
@@ -148,6 +152,78 @@ def cookie(headers):
 def security(headers):
     assert headers['cache-control'] == 'no-store' and headers['referrer-policy'] == 'no-referrer'
     assert 'access-control-allow-origin' not in headers
+
+
+def test_first_empty_does_not_persist_profile_then_match_and_paid_purchase_survive_empty(public_fixture):
+    engine, backend, _, model, venues, personal, _ = public_fixture
+    model.faces = 0
+    code, headers, retake = submit(public_fixture, selected=[str(venues[0])])
+    assert code == 200 and retake['outcome'] == 'retake_required'
+    assert 'set-cookie' not in headers
+    model.faces = 1
+    model.embedding = np.eye(1, 128, k=5, dtype=np.float32)[0]
+    for candidate in (None, 'unknown-profile-token'):
+        code, headers, empty = submit(public_fixture, selected=[str(venues[0])], token=candidate)
+        assert code == 200 and empty == {'schema_version': 1, 'outcome': 'no_matches'}
+        assert 'set-cookie' not in headers
+        with Session(engine) as session:
+            assert session.scalar(select(BrowserSearchProfile)) is None
+            assert session.scalar(select(PublicSearchResult)) is None
+
+    model.embedding = np.eye(1, 128, dtype=np.float32)[0]
+    code, headers, success = submit(public_fixture, selected=[str(venues[0])])
+    assert code == 200 and success['outcome'] == 'result'
+    token = cookie(headers)
+    assert all(flag in headers['set-cookie'] for flag in ('HttpOnly', 'Secure', 'SameSite=lax'))
+    result_id = uuid.UUID(success['result_id'])
+    with Session(engine) as session:
+        profile = BrowserSearchProfileRepository(session).find(token)
+        assert profile is not None and profile.a_embedding == model.embedding.tolist()
+        assert profile.b_embedding is None
+        assert session.get(PublicSearchResult, result_id).profile_id == profile.id
+        profile_id = profile.id
+    assert request(backend, 'GET', f'/api/public/results/{result_id}', token=token)[2] == success
+
+    # Existing owner command creates an actual paid order; provider truth marks its purchase.
+    with Session(engine) as session:
+        session.add(PhotoTariff(id=1, base_kopecks=Decimal(101), d1=Decimal('.5'),
+            d2=Decimal('.3'), d3=Decimal('.1'), updated_at=datetime.now(timezone.utc)))
+        session.commit()
+    class AvailableOriginal:
+        def exists(self, *, key):
+            return True
+    with Session(engine) as session:
+        order = PhotoOrderRepository(session).create(cookie_token=token, result_id=result_id,
+            photo_ids=[personal[0, 2026]], client_request_id='task149-paid',
+            object_store=AvailableOriginal(), email='retained@example.test', payment_method='bank_card')
+        order.provider_payment_id = 'task149-synthetic-paid'
+        order_id = order.id
+        total = int(order.total_kopecks)
+        session.commit()
+    class PaidProvider:
+        def get_payment(self, payment_id):
+            assert payment_id == 'task149-synthetic-paid'
+            return {'id': payment_id, 'status': 'succeeded', 'paid': True,
+                'amount': {'value': f'{total / 100:.2f}', 'currency': 'RUB'},
+                'metadata': {'order_id': str(order_id)}}
+    PhotoPaymentConfirmer(lambda: Session(engine), PaidProvider()).confirm('task149-synthetic-paid')
+    with Session(engine) as session:
+        last_visit_before_empty = session.get(BrowserSearchProfile, profile_id).last_visit_at
+    model.embedding = np.eye(1, 128, k=1, dtype=np.float32)[0]
+    code, headers, empty = submit(public_fixture, selected=[str(venues[0])], token=token)
+    assert code == 200 and empty == {'schema_version': 1, 'outcome': 'no_matches'}
+    assert cookie(headers) == token
+    with Session(engine) as session:
+        profile = session.get(BrowserSearchProfile, profile_id)
+        assert profile is not None and profile.email == 'retained@example.test'
+        assert profile.a_embedding == np.eye(1, 128, dtype=np.float32)[0].tolist()
+        assert profile.b_embedding == model.embedding.tolist()
+        assert profile.last_visit_at > last_visit_before_empty
+        assert session.get(PublicSearchResult, result_id) is not None
+        order = session.get(PhotoOrder, order_id)
+        assert order is not None and order.payment_status == 'succeeded' and order.paid_at is not None
+        assert order.email == 'retained@example.test'
+    assert request(backend, 'GET', f'/api/public/results/{result_id}', token=token)[2] == success
 
 
 def test_scope_current_result_paid_free_common_and_private_json(public_fixture):
