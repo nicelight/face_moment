@@ -126,7 +126,8 @@ status: active
   Photo, processing, inventory, purge, Promo and diagnostics lifecycles.
 - [.memory-bank/runbooks/](runbooks/): Runbooks и operational procedures.
 - [.memory-bank/runbooks/app_guide_ru.md](runbooks/app_guide_ru.md):
-  краткое руководство пользователя по приложению и средам.
+  краткое руководство пользователя по приложению и средам, включая открытый
+  раздел информации покупателям на главной и замену временных реквизитов.
 - [.memory-bank/runbooks/server-deployment.md](runbooks/server-deployment.md):
   canonical non-destructive deploy на facecentral и public acceptance;
   текущий capture/retry release `47f9a19` развёрнут 2026-10-07 с сохранением
