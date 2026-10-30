@@ -4,6 +4,41 @@ status: active
 ---
 # Changelog
 
+## [2026-10-07] Capture/retry deployment
+
+- Deployed reviewed commit `47f9a19` to facecentral via exact Git bundle.
+  Three application roles healthy; models loaded, public routes 9/9 and assets 5/5.
+- Cached builds downloaded no dependencies. Existing schema, venue, volumes,
+  environment and enabled retention timer preserved; migrate/initialize were no-ops.
+- Retained separate release and exact-source rollback image tags. No production
+  selfie/payment/email test writes. [Acceptance and image IDs](runbooks/server-deployment.md#verified-captureretry-follow-up--2026-10-07).
+
+## [2026-10-07] Wave 16 / FT-013 capture/retry development closure
+
+- Updated: root как explicit manual owner закрыл indexed
+  [TASK-146..151](features/FT-013.md#sdd-design-gate) после применимых
+  independent functional PASS и T3 semantic-pass. TASK-151 подтвердил
+  preparing-order continuity: [functional PASS](../.protocols/TASK-151-T3-FT-013-W16/verification.md),
+  [semantic-pass](../.protocols/TASK-151-T3-FT-013-W16/red-verification.md).
+- Updated: [FT-013](features/FT-013.md) и [EP-004](epics/EP-004.md) имеют
+  development lifecycle `verified`; текущий
+  [feature semantic-pass](../.tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-01.md)
+  покрывает AC-001..014. [RTM](requirements.md#public-extension-rtm)
+  согласована: REQ-PUB-001/002/006/007/008/009 verified;
+  REQ-PUB-003..005 и FT-014..016 остаются verified без новых изменений.
+  Исторический [FAIL](../.tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-03.md)
+  и прежний [PASS AC-001..009](../.tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-02.md)
+  сохранены. [План](tasks/plans/IMPL-FT-013.md), индексы и навигация
+  отражают это решение; Planning Revision 4 и canonical specs не менялись.
+- Fixed: ссылки на исторический FAIL в TASK-151 card, claim и текущих
+  протоколах направлены на report 03. Native captured reports TASK-145/150
+  и report 03 не переписывались.
+- Runtime: текущий checkout `47f9a19`; существующий server deployment runbook
+  сохраняет operator exception с включённым retention timer, проверкой уже
+  текущего Alembic head и no-op initialization. Эта синхронизация не выполняла
+  deployment; production payment/SMTP и fiscal proof отдельно не заявлены.
+  Root выполняет post-sync lint/doctor до следующего handoff.
+
 ## [2026-10-07] Central public search/archive deployment
 
 - Deployed exact `cf498fd` with full migration to `0033_promo_session_gallery`;
@@ -199,7 +234,7 @@ status: active
 ## [2026-10-04] Wave 8 / gallery, frozen orders и завершение FT-013
 
 - Updated: [FT-013](features/FT-013.md) active/verified после closure TASK-126
-  и [feature semantic-pass](../.tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-01.md);
+  и [feature semantic-pass](../.tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-02.md);
   все TASK-120..126 done, FT-013-AC-001..009 подтверждены.
 - Updated: [FT-014](features/FT-014.md) отражает closure TASK-132 после
   functional PASS и semantic-pass frozen core; TASK-129 и feature verification

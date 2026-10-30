@@ -38,11 +38,9 @@ status: active
 
 ## EP-004 — Public Discovery and Selected Originals
 
-- [FT-013](FT-013.md): прежний camera/profile search и gallery verified;
-  capture flash, post-capture venue choice, exact retry/cooldown и отсутствие
-  нового профиля при первом `no_matches` согласованы в canonical contracts;
-  design complete; TASK-146..150 done, а preparing-order continuity
-  TASK-151 planned после feature semantic-fail; нужен fresh task-plan review.
+- [FT-013](FT-013.md): AC-001..014 verified; capture flash, post-capture
+  venue choice, exact retry/cooldown, success-only profile и preparing-order
+  continuity покрыты done TASK-146..151 и текущим feature semantic-pass.
 - [FT-014](FT-014.md): verified combined selection, global marginal tariff and venue access.
 - [FT-015](FT-015.md): verified free-original HTTP/browser/ZIP/bearer delivery; TASK-133..136 done и итоговый feature semantic-pass.
 - [FT-016](FT-016.md): verified development purchase/delivery; TASK-137/138/144/145 done покрывают AC-001..005, TASK-139 сохраняет historical failed verdict; production activation отдельна.

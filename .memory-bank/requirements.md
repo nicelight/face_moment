@@ -195,7 +195,7 @@ Wave 8: scheduler закрыл [TASK-126](tasks/TASK-126-T2-FT-013-W8.task.json)
 и [TASK-132](tasks/TASK-132-T3-FT-014-W8.task.json) после
 [functional PASS](../.protocols/TASK-132-T3-FT-014-W8/verification.md) и
 [semantic-pass](../.protocols/TASK-132-T3-FT-014-W8/red-verification.md).
-Все TASK-120..126 done; [feature semantic-pass](../.tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-01.md)
+Все TASK-120..126 done; [feature semantic-pass](../.tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-02.md)
 подтвердил FT-013-AC-001..009, root scheduler завершил FT-013 (verified).
 REQ-PUB-002 полностью verified. REQ-PUB-001/003/008 имеют проверенный FT-013
 subset, но сохраняют planned: retained purchase email/flow — FT-016,
@@ -298,25 +298,28 @@ development scope. Исторический TASK-139 остаётся failed; у
 двухзадачный successor run. Production activation, фискальный чек, внешний
 real-shop SBP, SMTP setup и deployment отдельно не доказаны.
 
-2026-10-07 accepted target: PRD `FR-PUB-01/02/04/11` и `AC-PUB-01/06`
-добавили FT-013-AC-010..014. Прежний Wave 15 `verified` относится только к
-AC-001..009 и не подтверждает эти новые критерии. Текущие `REQ-PUB-001/002/008`
-и новый `REQ-PUB-009` имеют lifecycle `planned`: design FT-013 согласован,
-TASK-146..150 done, а AC-014 preparing-order continuity ждёт planned TASK-151,
-fresh task-plan review, исполнение и проверку.
-`REQ-PUB-003..005` и FT-014..016 сохраняют прежнее проверенное покрытие.
-Для `REQ-PUB-006/007` прежний FT-016 proof остаётся, но сквозной путь
-`FT-013-AC-014` с созданным `preparing` заказом ждёт TASK-151 и новой
-feature semantic verification; lifecycle этих двух REQ до неё `planned`.
+Wave 16: PRD `FR-PUB-01/02/04/11` и `AC-PUB-01/06` добавили
+FT-013-AC-010..014. [TASK-146..151](features/FT-013.md#sdd-design-gate) done;
+TASK-151 подтвердил непрерывность созданного `preparing` заказа после пяти
+`no_matches` отдельными [functional PASS](../.protocols/TASK-151-T3-FT-013-W16/verification.md)
+и [semantic-pass](../.protocols/TASK-151-T3-FT-013-W16/red-verification.md).
+Текущий [feature semantic-pass](../.tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-01.md)
+покрыл AC-001..014; root как explicit manual owner завершил FT-013. Прежний
+[FAIL](../.tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-03.md) сохранён;
+исторический [PASS AC-001..009](../.tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-02.md)
+не подменяет текущую проверку. REQ-PUB-001/002/006/007/008/009 теперь verified
+по соответствующим строкам RTM; REQ-PUB-003..005 и FT-014..016 сохраняют
+прежнее verified покрытие. Production activation и реальные платежи отдельно
+не доказаны.
 
 | REQ | Epic | Feature | Test / evidence target | Lifecycle |
 |---|---|---|---|---|
-| `REQ-PUB-001` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md) (order-core supplier), [FT-016](features/FT-016.md) | Historical `FT-013-AC-001..004/007`, `FT-014-AC-006`, `FT-016-AC-001`; new `FT-013-AC-010/013/014` (order continuity subset); PRD AC-PUB-01/02/06 | planned |
-| `REQ-PUB-002` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md) | Historical `FT-013-AC-002..003/007..008`; new `FT-013-AC-011/012`; PRD AC-PUB-01/02/06 | planned |
+| `REQ-PUB-001` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md) (order-core supplier), [FT-016](features/FT-016.md) | Historical `FT-013-AC-001..004/007`, `FT-014-AC-006`, `FT-016-AC-001`; new `FT-013-AC-010/013/014` (order continuity subset); PRD AC-PUB-01/02/06 | verified |
+| `REQ-PUB-002` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md) | Historical `FT-013-AC-002..003/007..008`; new `FT-013-AC-011/012`; PRD AC-PUB-01/02/06 | verified |
 | `REQ-PUB-003` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md) | `FT-013-AC-005`, `FT-013-AC-008`, `FT-013-AC-009`, `FT-014-AC-001`; PRD AC-PUB | verified |
 | `REQ-PUB-004` | [EP-004](epics/EP-004.md) | [FT-014](features/FT-014.md), [FT-016](features/FT-016.md) | `FT-014-AC-001..006`, `FT-016-AC-001`; PRD AC-PUB | verified |
 | `REQ-PUB-005` | [EP-004](epics/EP-004.md) | [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-015-AC-001..002`, `FT-016-AC-001`; PRD AC-PUB | verified |
-| `REQ-PUB-006` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md) (order continuity), [FT-014](features/FT-014.md) (order-core supplier), [FT-016](features/FT-016.md) | `FT-014-AC-006`, `FT-016-AC-001..003/005`, `FT-013-AC-014` (pre-redirect continuation subset); PRD AC-PUB | planned |
-| `REQ-PUB-007` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md) (order continuity), [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-015-AC-002..004`, `FT-016-AC-002..005`, `FT-013-AC-014` (preparing/ready subset); PRD AC-PUB | planned |
-| `REQ-PUB-008` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md), [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | Historical `FT-013-AC-006/008..009`, `FT-014-AC-003..004`, `FT-015-AC-001/003`, `FT-016-AC-003..004`; new `FT-013-AC-013`; PRD AC-PUB-06 | planned |
-| `REQ-PUB-009` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md) | `FT-013-AC-012/014` (cookie proof TASK-150; order continuity subset TASK-151); PRD AC-PUB-06 | planned |
+| `REQ-PUB-006` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md) (order continuity), [FT-014](features/FT-014.md) (order-core supplier), [FT-016](features/FT-016.md) | `FT-014-AC-006`, `FT-016-AC-001..003/005`, `FT-013-AC-014` (pre-redirect continuation subset); PRD AC-PUB | verified |
+| `REQ-PUB-007` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md) (order continuity), [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | `FT-015-AC-002..004`, `FT-016-AC-002..005`, `FT-013-AC-014` (preparing/ready subset); PRD AC-PUB | verified |
+| `REQ-PUB-008` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md), [FT-014](features/FT-014.md), [FT-015](features/FT-015.md), [FT-016](features/FT-016.md) | Historical `FT-013-AC-006/008..009`, `FT-014-AC-003..004`, `FT-015-AC-001/003`, `FT-016-AC-003..004`; new `FT-013-AC-013`; PRD AC-PUB-06 | verified |
+| `REQ-PUB-009` | [EP-004](epics/EP-004.md) | [FT-013](features/FT-013.md) | `FT-013-AC-012/014` (cookie proof TASK-150; order continuity subset TASK-151); PRD AC-PUB-06 | verified |

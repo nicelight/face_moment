@@ -179,6 +179,17 @@ be able to receive public TCP `80` and `443` for ACME validation.
 
 ## Deploy the central application
 
+### Capture/retry update — operator exception, 2026-10-07
+
+The operator requires retention to remain enabled; do not stop or restart its
+timer. For this update, `cf498fd9..47f9a19` changes profile transaction admission
+but no migration, schema, initializer, Compose/env, model or dependency files.
+Use the full sequence below with retention untouched: before rollout confirm
+the deployed Alembic revision already equals the target head, so `migrate`
+applies no schema change, and the existing venue makes initialization a no-op.
+Preserve volumes, environment and old images. Stop if either condition fails;
+this exception does not authorize concurrent schema changes.
+
 1. Ensure the central checkout is exactly the reviewed commit. A clean checkout
    with access to `origin` may use `git fetch origin` followed by a non-forcing
    checkout of that commit. Record the resulting short commit ID; do not deploy
@@ -194,7 +205,9 @@ be able to receive public TCP `80` and `443` for ACME validation.
 3. Build the selected source. For an update, agree on a maintenance window:
    stop the retention timer if active, wait for any running cleanup to finish,
    then stop application writers before migrating. Keep the old image ID and
-   commit recorded; do not prune images during the release.
+   commit recorded; give the old image a separate retained release tag before
+   rebuilding `face-moment:dev`. Recording an ID alone may not preserve an
+   inspectable image after tag replacement. Do not prune images during release.
 
    ```bash
    docker compose build
@@ -305,10 +318,35 @@ existing retention policy, so it belongs to the approved deployment window.
 
 ## Public acceptance
 
+### Verified capture/retry follow-up — 2026-10-07
+
+Current central checkout is clean at `47f9a1932c32e588b6eb6070943e90d7d6fe58ea`,
+transferred as a verified Git bundle without publishing to GitHub. Backend,
+worker and realtime are healthy on
+`sha256:e81993f1e6bf66f616e92ba7465a635bd894cfde625c05da89ae9d95c5b201fc`;
+worker/realtime report the production model loaded. The release is retained as
+`face-moment:release-47f9a19`; exact baseline source cf498fd9 is retained as
+`face-moment:rollback-cf498fd9` with seven runtime hashes checked against Git
+and the previous running backend. This image is not a database backup.
+
+The exact-source packaged smoke and independent functional/semantic reviews
+passed. Dependency layers were cached; no dependency downloads occurred.
+`migrate` applied no revisions; existing-venue initialization changed nothing.
+PostgreSQL, MinIO, their volumes, the mode-600 environment and the enabled,
+active retention timer were preserved. Alembic remains 0033, with one venue.
+Inner Caddy and local/public health passed; public routes passed 9/9 and five
+public asset hashes match the packaged source. Production selfie searches,
+payments and email sends were not performed. Payment/SMTP configuration was
+not changed or newly accepted.
+
+[Rollout acceptance](../../.protocols/capture-retry-2026-10-07/server-rollout-acceptance-report.md),
+[packaged proof](../../.protocols/capture-retry-2026-10-07/current-source-packaged-proof-report.md),
+[owner checkpoint](../../.protocols/capture-retry-2026-10-07/deployment-owner-checkpoint.md).
+
 ### Verified public search/archive release — 2026-10-07
 
 Central release commit `cf498fd9df87c528d860272164ed1830339bc48d` is deployed
-from clean prior checkout `ff27965`. The current application image for backend,
+from clean prior checkout `ff27965`. The application image at that checkpoint for backend,
 background-worker and realtime is
 `sha256:5fd309bc506f317bc5bd39c20358259c885e1f13b1df8c2b07cdd91205ad4c93`.
 The full migration procedure reached `0033_promo_session_gallery`;

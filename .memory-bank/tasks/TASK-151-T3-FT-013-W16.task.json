@@ -1,7 +1,7 @@
 {
   "id": "TASK-151-T3-FT-013-W16",
   "title": "Сохранить preparing заказ при паузе поиска и продолжить оплату после ready",
-  "status": "in_progress",
+  "status": "done",
   "wave": "W16",
   "feature": "FT-013",
   "reqs": [
@@ -48,6 +48,29 @@
         ".protocols/TASK-151-T3-FT-013-W16/verification.md",
         ".protocols/capture-retry-2026-10-07/task-151-verification-report.md"
       ]
+    },
+    {
+      "stage": "verify-attempt-2",
+      "verdict": "PASS",
+      "summary": "Fresh GPT-6 Sol: unit110/110, payment10/10, search7/7; new HTTPS outcome and inline probe prove same order continuation ready-only, pending link closed, ordinary new selection. Root records functional PASS; semantic verification pending.",
+      "evidence": [
+        ".protocols/TASK-151-T3-FT-013-W16/verification.md",
+        ".protocols/capture-retry-2026-10-07/task-151-verification-attempt-2-report.md"
+      ]
+    },
+    {
+      "stage": "red-verify",
+      "verdict": "semantic-pass",
+      "summary": "Fresh read-only adversarial review of AC-014 preparing-order continuity and the actual three-file delta found no material contract break; sequential GPT-6 Sol co-reviews covered deployment path and client state transitions.",
+      "evidence": [
+        ".protocols/TASK-151-T3-FT-013-W16/red-verification.md",
+        ".tasks/TASK-151-T3-FT-013-W16/TASK-151-T3-FT-013-W16-S-RED-VERIFY-final-report-docs-01.md"
+      ]
+    },
+    {
+      "stage": "manual-owner-closure",
+      "verdict": "done",
+      "summary": "Root explicit manual owner closes TASK-151 after independent functional PASS and separate semantic-pass; prior NEEDS-CLARIFICATION retained. Feature semantic verification and wave sync follow."
     }
   ],
   "docs": [
@@ -83,7 +106,7 @@
     ".memory-bank/features/FT-013.md#preparing-order-continuity",
     ".memory-bank/tasks/plans/IMPL-FT-013.md",
     ".protocols/capture-retry-2026-10-07/order-continuity-triage-report.md",
-    ".tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-01.md"
+    ".tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-03.md"
   ],
   "normative_inputs": [
     ".memory-bank/constitution.md",

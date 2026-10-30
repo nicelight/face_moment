@@ -13,7 +13,7 @@ last_updated: 2026-10-07
 [FT-013](../../features/FT-013.md), [EP-004](../../epics/EP-004.md),
 [PRD public extension](../../prd.md#h-public-selfie-search-and-purchase--accepted-extension-2026-10-03)
 и [REQ-PUB-001/002/003/008](../../requirements.md) определяют acceptance.
-Все восемь existing canonical feature links переиспользуются; новых specs нет.
+Все девять existing canonical feature links переиспользуются; новых specs нет.
 [Public API](../../contracts/public-photo-search-api.md),
 [Profile](../../domains/browser-search-profile.md),
 [Photo Orders venue extension](../../domains/photo-orders.md#владельцы-и-данные),
@@ -63,9 +63,8 @@ T3 требует independent verify/red-verify; feature completion — semantic
 
 Quote/selection/payment/ZIP принадлежат FT-014..016; нет production-only task,
 backfill/no_faces rewrite, extra workers/queues, новой accuracy/latency гарантии.
-Constitution KISS, private stores и concise canonical links обязательны.
-Следующий шаг: отдельный свежий `/review-tasks-plan FT-013`, затем применимые
-workflow gates. Task planning не выполняет implementation/deploy.
+Constitution KISS, private stores и canonical links сохраняются. Исторический
+план TASK-120..126 завершён; task planning не выполнял implementation/deploy.
 
 ## 2026-10-07 capture/retry reconciliation
 
@@ -108,7 +107,7 @@ verification проверяет путь четырёх экранов/повт�
 
 [FT-013-AC-014](../../features/FT-013.md#preparing-order-continuity) требует,
 чтобы cooldown останавливал новый поиск, сохраняя доступ к созданному заказу.
-[Feature semantic-fail](../../../.tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-01.md)
+[Historical feature semantic-fail](../../../.tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-03.md)
 и [triage](../../../.protocols/capture-retry-2026-10-07/order-continuity-triage-report.md)
 показали два связанных client gap: пустой выбор удаляет `preparing` attempt до
 redirect, а refresh идёт по post-redirect status-only пути. Один новый
@@ -127,12 +126,13 @@ processing writes. [Photo Orders](../../domains/photo-orders.md#исполнен
 маршрутизации до исполнения. Отсутствуют новая история, восстановление до
 redirect после reload, server/financial/production actions и смена Revision 4.
 
-Proof: honest RED/GREEN в существующем HTTPS fixture с изолированным состоянием,
-реальными пятью `no_matches` и заглушками order/payment. Сравнить одинаковый
-order ID, owner GET, один `POST /orders`, сохранённую панель и доступный refresh;
-после ZIP `ready` продолжить оплату того же заказа. Pending после redirect
-держит paid link закрытым до server-confirmed success; новый непустой выбор
-использует обычный start. Native gates: `npm run test:unit`, focused payment
-browser и search browser regression. T3 требует отдельные functional verify и
-task red-verify; feature completion — новый semantic verdict и owner closure.
-Design/behavior impact: none; используются существующие canonical specs.
+Proof выполнен для bounded AC-014 subsection: [claim evidence](../../../.tasks/TASK-151-T3-FT-013-W16/claim-evidence.md)
+содержит honest RED/GREEN HTTPS fixture, пять real `no_matches`, тот же order ID,
+owner GET, один `POST /orders`, панель/refresh и оплату после ZIP `ready`.
+Independent [functional PASS](../../../.protocols/TASK-151-T3-FT-013-W16/verification.md)
+и [semantic-pass](../../../.protocols/TASK-151-T3-FT-013-W16/red-verification.md)
+проверили pending link до server-confirmed success, новый непустой выбор,
+unit/payment/search browser gates. Root закрыл TASK-151; текущий
+[feature semantic-pass](../../../.tasks/FT-013/FT-013-S-RED-VERIFY-final-report-docs-01.md)
+закрыл FT-013 AC-001..014. Design/behavior impact: none; существующие specs
+сохранены.
