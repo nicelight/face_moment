@@ -1,7 +1,7 @@
 ---
 description: Canonical non-destructive procedure for deploying Face Moment to facecentral and accepting the public origin.
 status: active
-last_updated: 2026-10-07
+last_updated: 2026-10-30
 source_of_truth:
   - .memory-bank/runbooks/server-deployment.md
 ---
@@ -317,6 +317,32 @@ host timer. Its activation deletes expired diagnostic data according to the
 existing retention policy, so it belongs to the approved deployment window.
 
 ## Public acceptance
+
+### Verified buyer-information release — 2026-10-30
+
+Application commit `8f55e69` pushed to `origin/main` and deployed from clean
+`47f9a19` after explicit owner authorization. Runtime delta is only
+`client/site.html` and `client/site.css`; the remaining delta is documentation.
+Public `/` now includes 350 ₽ per paid photograph, delivery/refund details,
+draft terms/privacy information and explicitly fictional seller contacts.
+The real tariff and payment activation remain separate from this static text.
+
+Because a full build stalled downloading Debian GCC after the mutable base
+changed, this release used the preserved running application image plus COPY
+of the two exact target assets. All 438 runtime files matched the target by
+SHA-256. The existing `SMOKE_PREBUILT_IMAGE` fallback passed the complete
+packaged smoke in an isolated server-side environment; it does not claim a
+fresh dependency build. Narrow rollout used that checked image with
+`up --no-deps --wait`; production migrations/initializer were not invoked.
+
+Running application image is
+`sha256:9941fbed50334a213a03b062ed620a24265c7f8c7282ad965ed3c8d1561a1f33`,
+retained as `face-moment:release-8f55e69`. Prior image remains tagged
+`face-moment:rollback-before-purchase-8f55e69`. All roles healthy; model and
+recovery checks passed. PostgreSQL/MinIO stayed running; volume names,
+environment and enabled/active retention timer were preserved. Public checks
+passed 10/10, including exact HTML/CSS equality. No real payment/email/search
+operation was performed. [Release evidence](../../.protocols/purchase-info-2026-10-30/deployment-report.md).
 
 ### Verified capture/retry follow-up — 2026-10-07
 

@@ -1,0 +1,11 @@
+GET /: 200
+GET /site: 200
+GET /client/site.css: 200
+GET /client1: 200
+GET /display: 200
+GET /staff/login: 200
+GET /healthz: 200
+GET /phone: 303
+GET /api/phone/session: 401
+HTTP redirect: 308 to HTTPS
+HTML and CSS exactly match local release files.

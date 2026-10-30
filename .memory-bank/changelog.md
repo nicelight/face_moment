@@ -4,6 +4,16 @@ status: active
 ---
 # Changelog
 
+## [2026-10-30] Информация покупателям на главной
+
+- По решению владельца опубликованы описание JPEG, 350 ₽ за платное фото,
+  получение/возврат, проекты условий и информации о данных, вымышленные
+  контакты с явной пометкой. Реальный тариф и настройки платежей не менялись.
+- `8f55e69` pushed/deployed; unit tests 110/110, isolated packaged smoke
+  и 10 публичных HTTP-проверок PASS. HTML/CSS совпадают с target.
+- Данные, env, модели и retention timer сохранены.
+  [Деплой и ограничения](runbooks/server-deployment.md#verified-buyer-information-release--2026-10-30).
+
 ## [2026-10-07] Capture/retry deployment
 
 - Deployed reviewed commit `47f9a19` to facecentral via exact Git bundle.
